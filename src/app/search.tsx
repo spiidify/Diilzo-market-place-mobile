@@ -186,7 +186,7 @@ export default function SearchScreen() {
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <LinearGradient
-            colors={['#ff6a00', '#ff8520', '#ff9500']}
+            colors={['#e55f00', '#ff6a00', '#ff8520']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.header}
@@ -207,7 +207,7 @@ export default function SearchScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Orange gradient header with search bar ─────────────── */}
         <LinearGradient
-          colors={['#ff6a00', '#ff8520', '#ff9500']}
+          colors={['#e55f00', '#ff6a00', '#ff8520']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}

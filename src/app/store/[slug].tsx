@@ -85,7 +85,7 @@ export default function StoreDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <LinearGradient
-            colors={['#ff6a00', '#ff8520', '#ff9500']}
+            colors={['#e55f00', '#ff6a00', '#ff8520']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -111,7 +111,7 @@ export default function StoreDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <LinearGradient
-            colors={['#ff6a00', '#ff8520', '#ff9500']}
+            colors={['#e55f00', '#ff6a00', '#ff8520']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -173,7 +173,7 @@ export default function StoreDetailScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Top bar ─────────────────────────────────────────────── */}
         <LinearGradient
-          colors={['#ff6a00', '#ff8520', '#ff9500']}
+          colors={['#e55f00', '#ff6a00', '#ff8520']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.topBar}
@@ -212,7 +212,7 @@ export default function StoreDetailScreen() {
             <View>
               {/* ── Hero banner ────────────────────────────────────── */}
               <LinearGradient
-                colors={['#ff6a00', '#ff8520', '#ff9500']}
+                colors={['#e55f00', '#ff6a00', '#ff8520']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroBanner}

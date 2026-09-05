@@ -124,6 +124,8 @@ export interface User {
   phone: string;
   avatar_url: string | null;
   is_active: boolean;
+  is_staff: boolean;
+  has_store: boolean;
   date_joined: string;
 }
 

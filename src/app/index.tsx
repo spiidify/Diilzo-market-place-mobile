@@ -422,43 +422,46 @@ export default function ProductFeedScreen() {
         </View>
       </Pressable>
 
-      {/* ── Quick links grid (Top Stores, Suppliers, Verified, Sell) ── */}
-      <View style={styles.quickLinksContainer}>
+      {/* ── Quick links — full-width horizontal row ─────────────────── */}
+      <View style={styles.quickLinksSection}>
         <Pressable
-          style={({ pressed }) => [styles.quickLink, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
           onPress={() => router.push('/suppliers' as any)}
         >
-          <View style={[styles.quickLinkIcon, { backgroundColor: '#FFF3E8' }]}>
+          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#FFF3E8' }]}>
             <MaterialCommunityIcons name="store" size={24} color={Brand.primary} />
           </View>
-          <Text style={styles.quickLinkText}>Top Stores</Text>
+          <Text style={styles.quickLinkLabel}>Top Stores</Text>
         </Pressable>
+
         <Pressable
-          style={({ pressed }) => [styles.quickLink, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
           onPress={() => router.push('/suppliers' as any)}
         >
-          <View style={[styles.quickLinkIcon, { backgroundColor: '#E8F5E9' }]}>
+          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#E8F5E9' }]}>
             <MaterialCommunityIcons name="factory" size={24} color="#16A34A" />
           </View>
-          <Text style={styles.quickLinkText}>Suppliers</Text>
+          <Text style={styles.quickLinkLabel}>Suppliers</Text>
         </Pressable>
+
         <Pressable
-          style={({ pressed }) => [styles.quickLink, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
           onPress={() => router.push('/suppliers' as any)}
         >
-          <View style={[styles.quickLinkIcon, { backgroundColor: '#E3F2FD' }]}>
-            <MaterialCommunityIcons name="shield-check" size={24} color='#1976D2' />
+          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#E3F2FD' }]}>
+            <MaterialCommunityIcons name="shield-check" size={24} color="#1976D2" />
           </View>
-          <Text style={styles.quickLinkText}>Verified</Text>
+          <Text style={styles.quickLinkLabel}>Verified</Text>
         </Pressable>
+
         <Pressable
-          style={({ pressed }) => [styles.quickLink, pressed && { opacity: 0.7 }]}
+          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
           onPress={() => router.push('/suppliers' as any)}
         >
-          <View style={[styles.quickLinkIcon, { backgroundColor: '#FCE4EC' }]}>
-            <MaterialCommunityIcons name="account-plus" size={24} color='#C62828' />
+          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#FCE4EC' }]}>
+            <MaterialCommunityIcons name="account-plus" size={24} color="#C62828" />
           </View>
-          <Text style={styles.quickLinkText}>Sell</Text>
+          <Text style={styles.quickLinkLabel}>Sell</Text>
         </Pressable>
       </View>
 
@@ -590,72 +593,79 @@ export default function ProductFeedScreen() {
         </View>
       </Pressable>
 
-      {/* ── All Products section title ───────────────────────────── */}
-      <View style={styles.allProductsHeader}>
-        <MaterialCommunityIcons name="view-grid" size={22} color={Brand.primary} />
-        <Text style={styles.allProductsTitle}>
-          {activeCategory
-            ? categories.find((c) => c.slug === activeCategory)?.name || 'Products'
-            : 'All Products'}
-        </Text>
-      </View>
+      {/* ── Category-filtered section title ──────────────────────── */}
+      {activeCategory ? (
+        <View style={styles.allProductsHeader}>
+          <MaterialCommunityIcons name="view-grid" size={22} color={Brand.primary} />
+          <Text style={styles.allProductsTitle}>
+            {categories.find((c) => c.slug === activeCategory)?.name || 'Products'}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 
   if (loading && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          {/* Header */}
-          <LinearGradient colors={['#ff6a00', '#ff8520', '#ff9500']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Text style={styles.logo}>Diilzo</Text>
-            <Pressable
-              style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
-              onPress={() => router.push('/cart')}
-            >
-              <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
-              {cartCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+          <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+              <View style={styles.logoWrap}>
+                <View style={styles.logoWrap}>
+                  <Text style={styles.logo}>Diilzo</Text>
+                  <Text style={styles.logoSub}>Marketplace</Text>
                 </View>
-              )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-              onPress={() => router.push('/chat' as any)}
-            >
-              <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-              {chatUnread > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-              onPress={() => router.push('/account')}
-            >
-              <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
-              {notificationCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
-              <Text style={styles.userName} numberOfLines={1}>
-                {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
-              </Text>
-              {isAuthenticated && user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                </View>
-              )}
-            </Pressable>
-          </LinearGradient>
-        </SafeAreaView>
+                <Text style={styles.logoSub}>Marketplace</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
+                onPress={() => router.push('/cart')}
+              >
+                <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+                {cartCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
+                onPress={() => router.push('/chat' as any)}
+              >
+                <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
+                {chatUnread > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
+                onPress={() => router.push('/account')}
+              >
+                <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+                {notificationCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
+                </Text>
+                {isAuthenticated && user?.avatar_url ? (
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
+                  </View>
+                )}
+              </Pressable>
+            </LinearGradient>
+          </SafeAreaView>
+        </LinearGradient>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Brand.primary} />
           <Text style={styles.loadingText}>Loading...</Text>
@@ -667,57 +677,64 @@ export default function ProductFeedScreen() {
   if (error && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          {/* Header */}
-          <LinearGradient colors={['#ff6a00', '#ff8520', '#ff9500']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Text style={styles.logo}>Diilzo</Text>
-            <Pressable
-              style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
-              onPress={() => router.push('/cart')}
-            >
-              <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
-              {cartCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+          <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+              <View style={styles.logoWrap}>
+                <View style={styles.logoWrap}>
+                  <Text style={styles.logo}>Diilzo</Text>
+                  <Text style={styles.logoSub}>Marketplace</Text>
                 </View>
-              )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-              onPress={() => router.push('/chat' as any)}
-            >
-              <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-              {chatUnread > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-              onPress={() => router.push('/account')}
-            >
-              <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
-              {notificationCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
-              <Text style={styles.userName} numberOfLines={1}>
-                {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
-              </Text>
-              {isAuthenticated && user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                </View>
-              )}
-            </Pressable>
-          </LinearGradient>
-        </SafeAreaView>
+                <Text style={styles.logoSub}>Marketplace</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
+                onPress={() => router.push('/cart')}
+              >
+                <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+                {cartCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
+                onPress={() => router.push('/chat' as any)}
+              >
+                <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
+                {chatUnread > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
+                onPress={() => router.push('/account')}
+              >
+                <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+                {notificationCount > 0 && (
+                  <View style={styles.notifBadge}>
+                    <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
+                </Text>
+                {isAuthenticated && user?.avatar_url ? (
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
+                  </View>
+                )}
+              </Pressable>
+            </LinearGradient>
+          </SafeAreaView>
+        </LinearGradient>
         <View style={styles.centerContainer}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
           <Text style={styles.errorTitle}>Connection Error</Text>
@@ -732,62 +749,66 @@ export default function ProductFeedScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Gradient header bar */}
-        <LinearGradient colors={['#ff6a00', '#ff8520', '#ff9500']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          {/* App name on left */}
-          <Text style={styles.logo}>Diilzo</Text>
-          {/* Cart icon — pushed to the right */}
-          <Pressable
-            style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
-            onPress={() => router.push('/cart')}
-          >
-            <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
-            {cartCount > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
-              </View>
-            )}
-          </Pressable>
-          {/* Chat icon with unread badge */}
-          <Pressable
-            style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-            onPress={() => router.push('/chat' as any)}
-          >
-            <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-            {chatUnread > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
-              </View>
-            )}
-          </Pressable>
-          {/* Notification bell with count badge */}
-          <Pressable
-            style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-            onPress={() => router.push('/account')}
-          >
-            <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
-            {notificationCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
-              </View>
-            )}
-          </Pressable>
-          {/* User name + profile picture on the far right */}
-          <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
-            </Text>
-            {isAuthenticated && user?.avatar_url ? (
-              <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-              </View>
-            )}
-          </Pressable>
-        </LinearGradient>
-      </SafeAreaView>
+      <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+            {/* App name on left */}
+            <View style={styles.logoWrap}>
+              <Text style={styles.logo}>Diilzo</Text>
+              <Text style={styles.logoSub}>Marketplace</Text>
+            </View>
+            {/* Cart icon — pushed to the right */}
+            <Pressable
+              style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
+              onPress={() => router.push('/cart')}
+            >
+              <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+              {cartCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+                </View>
+              )}
+            </Pressable>
+            {/* Chat icon with unread badge */}
+            <Pressable
+              style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
+              onPress={() => router.push('/chat' as any)}
+            >
+              <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
+              {chatUnread > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
+                </View>
+              )}
+            </Pressable>
+            {/* Notification bell with count badge */}
+            <Pressable
+              style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
+              onPress={() => router.push('/account')}
+            >
+              <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+              {notificationCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
+                </View>
+              )}
+            </Pressable>
+            {/* User name + profile picture on the far right */}
+            <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+              <Text style={styles.userName} numberOfLines={1}>
+                {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
+              </Text>
+              {isAuthenticated && user?.avatar_url ? (
+                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
+                </View>
+              )}
+            </Pressable>
+          </LinearGradient>
+        </SafeAreaView>
+      </LinearGradient>
 
       <FlatList
         data={products}
@@ -824,8 +845,13 @@ export default function ProductFeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 0, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#F3F4F6' },
+  safeArea: { flex: 0, backgroundColor: 'transparent' },
+  headerBg: {
+    width: '100%',
+    borderBottomWidth: 3,
+    borderBottomColor: Brand.primary,
+  },
 
   // ── Header ──────────────────────────────────────────────────────
   header: {
@@ -841,9 +867,19 @@ const styles = StyleSheet.create({
   },
   logo: {
     color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
     letterSpacing: 0.5,
+  },
+  logoWrap: {
+    gap: 0,
+  },
+  logoSub: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginTop: -2,
   },
   cartIcon: {
     padding: Spacing.one + 2,
@@ -866,10 +902,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#ff6a00',
+    borderColor: Brand.primary,
   },
   cartBadgeText: {
-    color: '#ff6a00',
+    color: Brand.primary,
     fontSize: 10,
     fontWeight: '800',
   },
@@ -890,7 +926,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#ff6a00',
+    borderColor: Brand.primary,
   },
   notifBadgeText: {
     color: '#FFFFFF',
@@ -933,11 +969,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: Brand.yellow,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     marginHorizontal: Spacing.two,
-    marginTop: Spacing.two,
+    marginTop: Spacing.three,
+    marginBottom: Spacing.one,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     gap: Spacing.two,
@@ -959,6 +996,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     gap: Spacing.two,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: Spacing.two,
+    marginVertical: Spacing.one,
+    borderRadius: 12,
   },
   chip: {
     paddingHorizontal: Spacing.three,
@@ -987,9 +1028,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     backgroundColor: '#FFFFFF',
-    borderRadius: 6,
+    borderRadius: 16,
     paddingVertical: Spacing.two,
-    marginHorizontal: 0,
+    marginHorizontal: Spacing.two,
     elevation: 1,
     shadowColor: '#000000',
     shadowOpacity: 0.04,
@@ -1097,38 +1138,55 @@ const styles = StyleSheet.create({
     color: Brand.text,
   },
 
-  // ── Quick links ─────────────────────────────────────────────────
-  quickLinksContainer: {
+  // ── Quick links — horizontal row ─────────────────────────────────
+  quickLinksSection: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    paddingVertical: Spacing.three,
+    paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+    marginBottom: Spacing.two,
+    marginHorizontal: Spacing.two,
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
-  quickLink: {
+  quickLinkCard: {
     flex: 1,
     alignItems: 'center',
     gap: 8,
   },
-  quickLinkIcon: {
-    width: 52,
-    height: 52,
+  quickLinkIconWrap: {
+    width: 54,
+    height: 54,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quickLinkText: { fontSize: 11, fontWeight: '600', color: '#374151', textAlign: 'center' },
+  quickLinkLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#374151',
+    textAlign: 'center',
+  },
 
   // ── Top Stores section ──────────────────────────────────────────
   storesSection: {
     backgroundColor: '#FFFFFF',
-    marginTop: Spacing.two,
+    marginTop: Spacing.three,
+    marginBottom: Spacing.one,
+    marginHorizontal: Spacing.two,
     paddingVertical: Spacing.three,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   storesCarousel: { paddingHorizontal: Spacing.three, gap: 12 },
   storeCard: {
@@ -1201,13 +1259,13 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 6,
+    borderRadius: 12,
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   cardPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 

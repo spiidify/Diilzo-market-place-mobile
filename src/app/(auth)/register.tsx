@@ -17,6 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { getSafeErrorMessage } from '@/utils/errors';
+import { checkPasswordStrength, isPasswordValid, isValidEmail, isValidPhone, sanitizeEmail, sanitizeString } from '@/utils/validation';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -30,24 +32,41 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const passwordStrength = checkPasswordStrength(password);
+
   const handleRegister = async () => {
-    if (!email || !password || !firstName) {
+    // Validate all inputs
+    if (!firstName || !email || !password) {
       setError('Please fill in all required fields.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
       return;
     }
+    if (!isPasswordValid(password)) {
+      setError('Password must be at least 8 characters with letters and numbers.');
+      return;
+    }
+    if (phone && !isValidPhone(phone)) {
+      setError('Please enter a valid phone number.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await register(email, password, firstName, lastName, phone);
+      // Sanitize all inputs before sending
+      await register(
+        sanitizeEmail(email),
+        sanitizeString(password, 128),
+        sanitizeString(firstName, 60),
+        sanitizeString(lastName, 60),
+        sanitizeString(phone, 20),
+      );
       router.replace('/');
     } catch (e: any) {
-      const data = e?.response?.data;
-      const msg = data?.password?.[0] || data?.email?.[0] || data?.detail || 'Registration failed.';
-      setError(msg);
+      setError(getSafeErrorMessage(e, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -67,7 +86,7 @@ export default function RegisterScreen() {
           >
             {/* Orange gradient header */}
             <LinearGradient
-              colors={['#ff6a00', '#ff8520', '#ff9500']}
+              colors={['#e55f00', '#ff6a00', '#ff8520']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.header}
@@ -216,7 +235,48 @@ export default function RegisterScreen() {
                   />
                 </Pressable>
               </View>
-              <Text style={styles.hint}>Minimum 8 characters</Text>
+              {/* Password strength indicator */}
+              {password.length > 0 && (
+                <View style={styles.strengthWrap}>
+                  <View style={styles.strengthBars}>
+                    {[0, 1, 2, 3].map((i) => (
+                      <View
+                        key={`strength-${i}`}
+                        style={[
+                          styles.strengthBar,
+                          {
+                            backgroundColor:
+                              passwordStrength.score > i
+                                ? passwordStrength.score <= 1
+                                  ? '#EF4444'
+                                  : passwordStrength.score <= 2
+                                    ? '#F59E0B'
+                                    : passwordStrength.score <= 3
+                                      ? '#3B82F6'
+                                      : '#16A34A'
+                                : '#E5E7EB',
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text
+                    style={[
+                      styles.strengthLabel,
+                      {
+                        color:
+                          passwordStrength.score <= 1 ? '#EF4444'
+                            : passwordStrength.score <= 2 ? '#F59E0B'
+                              : passwordStrength.score <= 3 ? '#3B82F6'
+                                : '#16A34A',
+                      },
+                    ]}
+                  >
+                    {passwordStrength.label}
+                  </Text>
+                </View>
+              )}
+              <Text style={styles.hint}>Minimum 8 characters with letters and numbers</Text>
 
               {/* Sign Up button */}
               <Pressable
@@ -389,6 +449,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     marginTop: 4,
+  },
+  strengthWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  strengthBars: {
+    flexDirection: 'row',
+    gap: 4,
+    flex: 1,
+  },
+  strengthBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+  },
+  strengthLabel: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Sign Up button

@@ -32,6 +32,20 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.production
+
+# secrets & credentials
+google-service-account.json
+*.keystore
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+credentials.json
+eas-credentials.json
+api-keys.json
 
 # typescript
 *.tsbuildinfo

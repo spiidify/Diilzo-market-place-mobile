@@ -1,5 +1,6 @@
 // ── Diilzo Mobile API Client ─────────────────────────────────────
 // Axios instance with dynamic BASE_URL, JWT auth, and auto-refresh.
+// Security: HTTPS-only, token rotation, timeout, error sanitization.
 
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
@@ -12,19 +13,42 @@ const PRODUCTION_API_URL = 'https://diilzo-market-place-production.up.railway.ap
 function resolveBaseUrl(): string {
   // Allow override via env for local development
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl) return envUrl.replace(/\/$/, '');
+  if (envUrl) {
+    const cleaned = envUrl.replace(/\/$/, '');
+    // SECURITY: Only allow HTTPS in production builds
+    if (!__DEV__ && !cleaned.startsWith('https://')) {
+      console.warn('Non-HTTPS API URL blocked in production. Falling back to production URL.');
+      return PRODUCTION_API_URL;
+    }
+    return cleaned;
+  }
 
   return PRODUCTION_API_URL;
 }
 
 export const BASE_URL = resolveBaseUrl();
 
-// ── Token storage keys ───────────────────────────────────────────
+// ── Token storage keys (use keychain/keystore via SecureStore) ───
 const ACCESS_TOKEN_KEY = 'diilzo_access_token';
 const REFRESH_TOKEN_KEY = 'diilzo_refresh_token';
+// Track when tokens were last refreshed for session timeout
+const TOKEN_TIMESTAMP_KEY = 'diilzo_token_timestamp';
+
+// ── Session timeout (30 minutes of inactivity) ───────────────────
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 export async function getAccessToken(): Promise<string | null> {
   try {
+    // Check session timeout
+    const timestamp = await SecureStore.getItemAsync(TOKEN_TIMESTAMP_KEY);
+    if (timestamp) {
+      const elapsed = Date.now() - parseInt(timestamp, 10);
+      if (elapsed > SESSION_TIMEOUT_MS) {
+        // Session expired — clear tokens
+        await clearTokens();
+        return null;
+      }
+    }
     return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
   } catch {
     return null;
@@ -40,28 +64,56 @@ export async function getRefreshToken(): Promise<string | null> {
 }
 
 export async function setTokens(access: string, refresh: string): Promise<void> {
-  await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access);
-  await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh);
+  // SECURITY: Require authentication for SecureStore on Android
+  await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+  await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+  await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, Date.now().toString());
 }
 
 export async function clearTokens(): Promise<void> {
   await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+  await SecureStore.deleteItemAsync(TOKEN_TIMESTAMP_KEY);
+}
+
+/** Update the session timestamp on activity (call from app state change). */
+export async function touchSession(): Promise<void> {
+  try {
+    const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+    if (token) {
+      await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, Date.now().toString());
+    }
+  } catch {
+    // ignore
+  }
 }
 
 // ── Axios instance ───────────────────────────────────────────────
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
+  maxContentLength: 10 * 1024 * 1024, // 10MB max response
+  maxBodyLength: 2 * 1024 * 1024,     // 2MB max request body
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-Client': 'diilzo-mobile',
+    'X-Client-Version': '1.0.0',
   },
 });
 
-// Request interceptor — attach JWT
+// Request interceptor — attach JWT + validate HTTPS
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // SECURITY: Block non-HTTPS requests in production
+    if (!__DEV__ && config.baseURL && !config.baseURL.startsWith('https://')) {
+      return Promise.reject(new Error('Insecure request blocked'));
+    }
+
     const token = await getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

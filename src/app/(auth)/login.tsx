@@ -17,6 +17,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { getSafeErrorMessage } from '@/utils/errors';
+import { isValidEmail, sanitizeEmail, sanitizeString } from '@/utils/validation';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -28,21 +30,28 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    // Validate inputs
     if (!email || !password) {
       setError('Please enter your email and password.');
       return;
     }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      await login(email, password);
+      // Sanitize inputs before sending
+      await login(sanitizeEmail(email), sanitizeString(password, 128));
       router.replace('/');
     } catch (e: any) {
-      const msg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.error ||
-        'Login failed. Check your credentials.';
-      setError(msg);
+      setError(getSafeErrorMessage(e, 'Login failed. Please check your credentials.'));
     } finally {
       setLoading(false);
     }
@@ -62,7 +71,7 @@ export default function LoginScreen() {
           >
             {/* Orange gradient header */}
             <LinearGradient
-              colors={['#ff6a00', '#ff8520', '#ff9500']}
+              colors={['#e55f00', '#ff6a00', '#ff8520']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.header}

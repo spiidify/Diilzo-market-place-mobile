@@ -52,7 +52,7 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={['#ff6a00', '#ff8520', '#ff9500']}
+            colors={['#e55f00', '#ff6a00', '#ff8520']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -78,7 +78,7 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={['#ff6a00', '#ff8520', '#ff9500']}
+            colors={['#e55f00', '#ff6a00', '#ff8520']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -113,7 +113,7 @@ export default function ProductDetailScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* ── Top bar (orange gradient) ──────────────────────────── */}
         <LinearGradient
-          colors={['#ff6a00', '#ff8520', '#ff9500']}
+          colors={['#e55f00', '#ff6a00', '#ff8520']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.topBar}

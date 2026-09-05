@@ -119,7 +119,7 @@ export default function SuppliersScreen() {
             <Image source={{ uri: item.banner_url }} style={styles.banner} contentFit="cover" />
           ) : (
             <LinearGradient
-              colors={['#ff6a00', '#ff8520', '#ff9500']}
+              colors={['#e55f00', '#ff6a00', '#ff8520']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.bannerFallback}
@@ -226,7 +226,7 @@ export default function SuppliersScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Orange gradient header ──────────────────────────────── */}
         <LinearGradient
-          colors={['#ff6a00', '#ff8520', '#ff9500']}
+          colors={['#e55f00', '#ff6a00', '#ff8520']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
