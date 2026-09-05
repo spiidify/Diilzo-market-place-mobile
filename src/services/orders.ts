@@ -1,7 +1,7 @@
 // ── Orders API Service ────────────────────────────────────────────
 
-import { apiRequest } from './api';
 import type { Order, PaginatedResponse } from '../types';
+import { apiRequest } from './api';
 
 /** GET /api/v1/orders/ — list user's orders */
 export async function fetchOrders(): Promise<Order[]> {
@@ -17,4 +17,47 @@ export async function fetchOrderById(id: number): Promise<Order> {
 /** POST /api/v1/orders/<id>/cancel/ — cancel order */
 export async function cancelOrder(id: number): Promise<{ message: string; status: string }> {
   return apiRequest({ method: 'POST', url: `/orders/${id}/cancel/` });
+}
+
+/** POST /api/v1/orders/create/ — create order from cart */
+export async function createOrder(params: {
+  shipping_address?: Record<string, any>;
+  notes?: string;
+}): Promise<Order> {
+  return apiRequest<Order>({ method: 'POST', url: '/orders/create/', data: params });
+}
+
+/** GET /api/v1/orders/<id>/track/ — shipment tracking */
+export async function fetchOrderTracking(id: number): Promise<{
+  order_id: number;
+  order_status: string;
+  shipments: Array<{
+    id: number;
+    carrier: string;
+    tracking_number: string;
+    status: string;
+    shipped_at: string | null;
+    delivered_at: string | null;
+    estimated_delivery: string | null;
+  }>;
+}> {
+  return apiRequest({ method: 'GET', url: `/orders/${id}/track/` });
+}
+
+/** POST /api/v1/orders/<id>/return/ — request a return */
+export async function requestReturn(id: number, reason: string, items?: string): Promise<{
+  id: number;
+  status: string;
+  detail: string;
+}> {
+  return apiRequest({
+    method: 'POST',
+    url: `/orders/${id}/return/`,
+    data: { reason, items: items || '' },
+  });
+}
+
+/** POST /api/v1/orders/<id>/reorder/ — add all items to cart */
+export async function reorder(id: number): Promise<{ detail: string; added: number }> {
+  return apiRequest({ method: 'POST', url: `/orders/${id}/reorder/` });
 }

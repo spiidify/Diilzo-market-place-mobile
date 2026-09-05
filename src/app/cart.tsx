@@ -12,15 +12,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
 import type { CartItem, Cart as CartType } from '@/types';
 
-const ORANGE = '#ff6a00';
-const LINK = '#007185';
-const DANGER = '#B12704';
-const PRICE_BLACK = '#0F1111';
+const ORANGE = Brand.primary; // Vibrant Green primary
+const LINK = Brand.primary;
+const DANGER = Brand.danger;
+const PRICE_BLACK = Brand.text;
 const HEADER_DARK = '#131921';
 const DIVIDER = '#E7E7E7';
 
@@ -87,7 +87,7 @@ export default function CartScreen() {
   };
 
   const handleCheckout = () => {
-    Alert.alert('Checkout', 'Proceeding to checkout is not yet implemented.');
+    router.push('/checkout');
   };
 
   // Not signed in state
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkoutText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
   },

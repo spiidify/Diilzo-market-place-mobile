@@ -17,13 +17,13 @@ import { Brand } from '@/constants/theme';
 import { getMyOrders, type SellerOrder } from '@/services/seller';
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
+  pending: Brand.rating,
   accepted: '#3B82F6',
   processing: '#8B5CF6',
   shipped: '#06B6D4',
   delivered: '#16A34A',
-  cancelled: '#EF4444',
-  refunded: '#9CA3AF',
+  cancelled: Brand.danger,
+  refunded: Brand.textTertiary,
 };
 
 export default function SellerOrdersScreen() {
@@ -48,7 +48,7 @@ export default function SellerOrdersScreen() {
   useEffect(() => { load(); }, [load]);
 
   const renderItem = ({ item }: { item: SellerOrder }) => {
-    const statusColor = STATUS_COLORS[item.status] || '#9CA3AF';
+    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
     return (
       <View style={styles.card}>
         <View style={styles.cardTop}>
@@ -80,7 +80,7 @@ export default function SellerOrdersScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -94,7 +94,7 @@ export default function SellerOrdersScreen() {
           </View>
         ) : orders.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="clipboard-list-outline" size={48} color="#9CA3AF" />
+            <MaterialCommunityIcons name="clipboard-list-outline" size={48} color={Brand.textTertiary} />
             <Text style={styles.emptyText}>No orders yet</Text>
           </View>
         ) : (
@@ -112,27 +112,27 @@ export default function SellerOrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
   list: { padding: 12, gap: 10 },
   card: {
     backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  orderNumber: { fontSize: 16, fontWeight: '700', color: '#1F2937' },
+  orderNumber: { fontSize: 16, fontWeight: '700', color: Brand.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '700' },
   cardBody: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   amountCol: { flex: 1, gap: 2 },
-  amountLabel: { fontSize: 11, color: '#9CA3AF' },
-  amountValue: { fontSize: 13, fontWeight: '700', color: '#1F2937' },
-  dateText: { fontSize: 12, color: '#9CA3AF' },
+  amountLabel: { fontSize: 11, color: Brand.textTertiary },
+  amountValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  dateText: { fontSize: 12, color: Brand.textTertiary },
 });
 
 

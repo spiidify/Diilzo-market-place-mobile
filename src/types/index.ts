@@ -1,6 +1,21 @@
 // ── Diilzo Mobile API Types ──────────────────────────────────────
 // Mirrors the Django DRF serializers in apps/api/serializers.py
 
+// ── Homepage Slide ───────────────────────────────────────────────
+export interface Slide {
+  id: number;
+  title: string;
+  headline: string;
+  subheadline: string;
+  display_image: string;
+  background_color: string;
+  cta_text: string;
+  cta_link: string;
+  button_style: string;
+  text_position: string;
+  sort_order: number;
+}
+
 // ── Store ────────────────────────────────────────────────────────
 export interface Store {
   id: number;
@@ -37,9 +52,13 @@ export interface Category {
   id: number;
   name: string;
   slug: string;
-  display_image: string;
-  product_count: number;
+  image?: string | null;
+  image_url?: string | null;
+  display_image?: string;
+  product_count?: number;
   sort_order: number;
+  is_active?: boolean;
+  parent?: number | null;
   children?: Category[];
 }
 
@@ -241,21 +260,25 @@ export interface ChatMessage {
   sender_name: string;
   sender_avatar: string | null;
   message: string;
+  message_type: 'text' | 'audio';
+  audio_url: string | null;
+  audio_duration: number;
   is_read: boolean;
   created_at: string;
 }
 
 export interface ChatThread {
   id: number;
-  store: number;
-  store_name: string;
+  store: number | null;
+  store_name: string | null;
   store_logo: string | null;
-  store_slug: string;
+  store_slug: string | null;
   buyer: number;
   buyer_name: string;
   product: number | null;
   product_name: string | null;
   product_slug: string | null;
+  is_support?: boolean;
   created_at: string;
   updated_at: string;
   last_message: {
@@ -274,6 +297,24 @@ export interface Review {
   comment: string;
   is_verified_purchase: boolean;
   created_at: string;
+}
+
+export interface StoreReview {
+  id: number;
+  rating: number;
+  comment: string;
+  user_name: string;
+  created_at: string;
+}
+
+export interface Shipment {
+  id: number;
+  carrier: string;
+  tracking_number: string;
+  status: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  estimated_delivery: string | null;
 }
 
 // ── Generic ──────────────────────────────────────────────────────

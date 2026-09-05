@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
 import { fetchStoresPage } from '@/services/catalog';
 import type { PaginatedResponse, Store } from '@/types';
@@ -99,6 +100,17 @@ export default function SuppliersScreen() {
     load(false);
   }, [hasMore, loadingMore, refreshing, load]);
 
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const listRef = useRef<FlatList>(null);
+
+  const handleScroll = useCallback((event: any) => {
+    setShowScrollTop(event.nativeEvent.contentOffset.y > 300);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
   const renderStore = ({ item }: { item: Store }) => {
     const icon = BUSINESS_ICONS[item.business_type || 'individual'] || 'store';
     const iconName = icon as any;
@@ -119,7 +131,7 @@ export default function SuppliersScreen() {
             <Image source={{ uri: item.banner_url }} style={styles.banner} contentFit="cover" />
           ) : (
             <LinearGradient
-              colors={['#e55f00', '#ff6a00', '#ff8520']}
+              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.bannerFallback}
@@ -168,7 +180,7 @@ export default function SuppliersScreen() {
                 <MaterialCommunityIcons name={iconName} size={13} color={Brand.primary} />
                 <Text style={styles.typeText}>{businessLabel}</Text>
                 <Text style={styles.dot}>•</Text>
-                <MaterialCommunityIcons name="map-marker" size={13} color="#9CA3AF" />
+                <MaterialCommunityIcons name="map-marker" size={13} color={Brand.textTertiary} />
                 <Text style={styles.locationText}>{item.city}, {item.country}</Text>
               </View>
             </View>
@@ -188,13 +200,13 @@ export default function SuppliersScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <MaterialCommunityIcons name="package-variant-closed" size={14} color="#6B7280" />
+              <MaterialCommunityIcons name="package-variant-closed" size={14} color={Brand.textSecondary} />
               <Text style={styles.statValue}>{item.product_count || 0}</Text>
               <Text style={styles.statSub}>products</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <MaterialCommunityIcons name="clock-outline" size={14} color="#6B7280" />
+              <MaterialCommunityIcons name="clock-outline" size={14} color={Brand.textSecondary} />
               <Text style={styles.statSub}>Responds fast</Text>
             </View>
           </View>
@@ -226,7 +238,7 @@ export default function SuppliersScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Orange gradient header ──────────────────────────────── */}
         <LinearGradient
-          colors={['#e55f00', '#ff6a00', '#ff8520']}
+          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -239,18 +251,18 @@ export default function SuppliersScreen() {
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.searchBar}>
-            <MaterialCommunityIcons name="magnify" size={20} color="#9CA3AF" />
+            <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
             <TextInput
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
               placeholder="Search suppliers, products..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={Brand.textTertiary}
               autoCapitalize="none"
             />
             {search.length > 0 && (
               <Pressable onPress={() => setSearch('')} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={20} color="#9CA3AF" />
+                <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
               </Pressable>
             )}
           </View>
@@ -321,7 +333,7 @@ export default function SuppliersScreen() {
         ) : stores.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="store-off-outline" size={48} color="#9CA3AF" />
+              <MaterialCommunityIcons name="store-off-outline" size={48} color={Brand.textTertiary} />
             </View>
             <Text style={styles.emptyTitle}>No suppliers found</Text>
             <Text style={styles.emptySubtext}>Try adjusting your filters or search</Text>
@@ -334,6 +346,7 @@ export default function SuppliersScreen() {
           </View>
         ) : (
           <FlatList
+            ref={listRef}
             data={stores}
             keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
             renderItem={renderStore}
@@ -342,6 +355,8 @@ export default function SuppliersScreen() {
             windowSize={7}
             initialNumToRender={6}
             removeClippedSubviews={true}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -361,6 +376,7 @@ export default function SuppliersScreen() {
             }
           />
         )}
+        <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
       </SafeAreaView>
     </View>
   );
@@ -393,13 +409,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  searchInput: { flex: 1, fontSize: 14, color: '#1F2937', paddingVertical: 0, height: '100%' },
+  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 0, height: '100%' },
 
   // ── Filter bar ──────────────────────────────────────────────────
   filterBar: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: Brand.surfaceAlt,
   },
   filterStats: {
     flexDirection: 'row',
@@ -408,8 +424,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
-  filterStatNum: { fontSize: 15, fontWeight: '800', color: '#1F2937' },
-  filterStatLabel: { fontSize: 12, color: '#6B7280' },
+  filterStatNum: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  filterStatLabel: { fontSize: 12, color: Brand.textSecondary },
   filterChips: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   filterChip: {
     flexDirection: 'row',
@@ -421,10 +437,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterChipInactive: { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
+  filterChipInactive: { backgroundColor: Brand.surfaceAlt, borderColor: Brand.border },
   filterChipText: { fontSize: 13, fontWeight: '600' },
   filterChipTextActive: { color: '#FFFFFF' },
-  filterChipTextInactive: { color: '#6B7280' },
+  filterChipTextInactive: { color: Brand.textSecondary },
 
   // ── List ────────────────────────────────────────────────────────
   list: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 },
@@ -434,7 +450,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: Brand.surfaceAlt,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -462,7 +478,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 4,
   },
-  badgeGold: { backgroundColor: '#FFA41C' },
+  badgeGold: { backgroundColor: Brand.accent },
   badgeVerified: { backgroundColor: '#16A34A' },
   badgeTA: { backgroundColor: 'rgba(0,0,0,0.6)' },
   bannerBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
@@ -482,14 +498,14 @@ const styles = StyleSheet.create({
   logo: { width: '100%', height: '100%' },
   logoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   identity: { flex: 1, justifyContent: 'flex-end', paddingBottom: 4 },
-  storeName: { fontSize: 16, fontWeight: '700', color: '#1F2937', lineHeight: 21 },
+  storeName: { fontSize: 16, fontWeight: '700', color: Brand.text, lineHeight: 21 },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
   typeText: { fontSize: 12, color: Brand.primary, fontWeight: '600' },
-  dot: { fontSize: 12, color: '#D1D5DB' },
-  locationText: { fontSize: 12, color: '#6B7280' },
+  dot: { fontSize: 12, color: Brand.textTertiary },
+  locationText: { fontSize: 12, color: Brand.textSecondary },
 
   // ── Tagline ─────────────────────────────────────────────────────
-  tagline: { fontSize: 13, color: '#4B5563', lineHeight: 18, marginTop: 10 },
+  tagline: { fontSize: 13, color: Brand.textSecondary, lineHeight: 18, marginTop: 10 },
 
   // ── Stats row ───────────────────────────────────────────────────
   statsRow: {
@@ -498,13 +514,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Brand.surfaceAlt,
     borderRadius: 8,
   },
   statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 13, fontWeight: '700', color: '#1F2937' },
-  statSub: { fontSize: 11, color: '#6B7280' },
-  statDivider: { width: 1, height: 20, backgroundColor: '#E5E7EB' },
+  statValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  statSub: { fontSize: 11, color: Brand.textSecondary },
+  statDivider: { width: 1, height: 20, backgroundColor: Brand.border },
 
   // ── Footer ──────────────────────────────────────────────────────
   cardFooter: {
@@ -522,7 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Brand.primary,
-    backgroundColor: '#FFF3E8',
+    backgroundColor: Brand.surfaceAlt,
   },
   contactText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   visitBtn: {
@@ -539,19 +555,19 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: '#6B7280', fontSize: 14 },
+  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6',
+    width: 80, height: 80, borderRadius: 40, backgroundColor: Brand.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
   emptyBtn: {
     marginTop: 20, backgroundColor: Brand.primary,
     paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8,
   },
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
-  endText: { textAlign: 'center', paddingVertical: 16, color: '#9CA3AF', fontSize: 13 },
+  endText: { textAlign: 'center', paddingVertical: 16, color: Brand.textTertiary, fontSize: 13 },
 });

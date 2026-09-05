@@ -86,7 +86,7 @@ export default function RegisterScreen() {
           >
             {/* Orange gradient header */}
             <LinearGradient
-              colors={['#e55f00', '#ff6a00', '#ff8520']}
+              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.header}
@@ -140,7 +140,7 @@ export default function RegisterScreen() {
                   <MaterialCommunityIcons
                     name="account-outline"
                     size={20}
-                    color="#9CA3AF"
+                    color={Brand.textTertiary}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -148,14 +148,14 @@ export default function RegisterScreen() {
                     value={firstName}
                     onChangeText={setFirstName}
                     placeholder="First name"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={Brand.textTertiary}
                   />
                 </View>
                 <View style={styles.inputWrap}>
                   <MaterialCommunityIcons
                     name="account-outline"
                     size={20}
-                    color="#9CA3AF"
+                    color={Brand.textTertiary}
                     style={styles.inputIcon}
                   />
                   <TextInput
@@ -163,7 +163,7 @@ export default function RegisterScreen() {
                     value={lastName}
                     onChangeText={setLastName}
                     placeholder="Last name"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={Brand.textTertiary}
                   />
                 </View>
               </View>
@@ -173,7 +173,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name="email-outline"
                   size={20}
-                  color="#9CA3AF"
+                  color={Brand.textTertiary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -181,7 +181,7 @@ export default function RegisterScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@example.com"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={Brand.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -193,7 +193,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name="phone-outline"
                   size={20}
-                  color="#9CA3AF"
+                  color={Brand.textTertiary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -201,7 +201,7 @@ export default function RegisterScreen() {
                   value={phone}
                   onChangeText={setPhone}
                   placeholder="+256 700 000 000"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={Brand.textTertiary}
                   keyboardType="phone-pad"
                 />
               </View>
@@ -211,7 +211,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name="lock-outline"
                   size={20}
-                  color="#9CA3AF"
+                  color={Brand.textTertiary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -219,7 +219,7 @@ export default function RegisterScreen() {
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Create a password"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={Brand.textTertiary}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -231,7 +231,7 @@ export default function RegisterScreen() {
                   <MaterialCommunityIcons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color="#9CA3AF"
+                    color={Brand.textTertiary}
                   />
                 </Pressable>
               </View>
@@ -248,13 +248,13 @@ export default function RegisterScreen() {
                             backgroundColor:
                               passwordStrength.score > i
                                 ? passwordStrength.score <= 1
-                                  ? '#EF4444'
+                                  ? Brand.danger
                                   : passwordStrength.score <= 2
-                                    ? '#F59E0B'
+                                    ? Brand.rating
                                     : passwordStrength.score <= 3
                                       ? '#3B82F6'
                                       : '#16A34A'
-                                : '#E5E7EB',
+                                : Brand.border,
                           },
                         ]}
                       />
@@ -265,8 +265,8 @@ export default function RegisterScreen() {
                       styles.strengthLabel,
                       {
                         color:
-                          passwordStrength.score <= 1 ? '#EF4444'
-                            : passwordStrength.score <= 2 ? '#F59E0B'
+                          passwordStrength.score <= 1 ? Brand.danger
+                            : passwordStrength.score <= 2 ? Brand.rating
                               : passwordStrength.score <= 3 ? '#3B82F6'
                                 : '#16A34A',
                       },
@@ -367,14 +367,14 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Brand.border,
     borderRadius: 10,
     paddingVertical: 12,
   },
   socialText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
+    color: Brand.text,
   },
 
   // Divider
@@ -387,11 +387,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: Brand.border,
   },
   dividerText: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: Brand.textTertiary,
     marginHorizontal: 10,
   },
 
@@ -399,13 +399,13 @@ const styles = StyleSheet.create({
   errorBox: {
     backgroundColor: '#FFF3F3',
     borderLeftWidth: 3,
-    borderLeftColor: '#B12704',
+    borderLeftColor: Brand.danger,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
   },
   errorText: {
-    color: '#B12704',
+    color: Brand.danger,
     fontSize: 13,
   },
 
@@ -422,9 +422,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Brand.border,
     borderRadius: 10,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Brand.surfaceAlt,
     marginBottom: 10,
     height: 48,
   },
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     fontSize: 15,
-    color: '#111827',
+    color: Brand.text,
     backgroundColor: 'transparent',
   },
   eyeBtn: {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   // Password hint
   hint: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: Brand.textTertiary,
     marginTop: 4,
   },
   strengthWrap: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Brand.textSecondary,
   },
   linkText: {
     color: Brand.primary,

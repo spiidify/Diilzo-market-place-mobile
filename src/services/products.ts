@@ -1,7 +1,7 @@
 // ── Product API Service ──────────────────────────────────────────
 
-import api, { apiRequest } from './api';
-import type { Product, PaginatedResponse } from '../types';
+import type { PaginatedResponse, Product } from '../types';
+import { apiRequest } from './api';
 
 export interface ProductListParams {
   page?: number;
@@ -13,6 +13,9 @@ export interface ProductListParams {
   on_sale?: 'true' | 'false';
   new_arrival?: 'true' | 'false';
   in_stock?: 'true' | 'false';
+  ordering?: string;       // price, -price, -created_at, rating
+  min_price?: string;
+  max_price?: string;
 }
 
 /**
@@ -41,6 +44,6 @@ export async function fetchProductBySlug(slug: string): Promise<Product> {
 /**
  * Search products by name or description.
  */
-export async function searchProducts(query: string, page = 1): Promise<PaginatedResponse<Product>> {
-  return fetchProducts({ search: query, page });
+export async function searchProducts(query: string, page = 1, extraParams: ProductListParams = {}): Promise<PaginatedResponse<Product>> {
+  return fetchProducts({ search: query, page, ...extraParams });
 }

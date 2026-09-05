@@ -1,7 +1,13 @@
 // ── Catalog API Service (Categories, Brands, Stores, Reviews) ─────
 
-import type { Brand, Category, PaginatedResponse, Product, Review, Store, StoreDetail } from '../types';
+import type { Brand, Category, PaginatedResponse, Product, Review, Slide, Store, StoreDetail, StoreReview } from '../types';
 import { apiRequest } from './api';
+
+/** GET /api/v1/slides/ — active homepage carousel slides */
+export async function fetchSlides(): Promise<Slide[]> {
+  const data = await apiRequest<PaginatedResponse<Slide>>({ method: 'GET', url: '/slides/' });
+  return data.results || (data as any);
+}
 
 /** GET /api/v1/categories/ — fetch ALL categories (auto-paginates) */
 export async function fetchCategories(): Promise<Category[]> {
@@ -114,4 +120,43 @@ export async function createReview(slug: string, rating: number, comment: string
     url: `/products/${slug}/reviews/`,
     data: { rating, comment },
   });
+}
+
+/** POST /api/v1/stores/<slug>/follow/ — follow a store */
+export async function followStore(slug: string): Promise<{ following: boolean; created: boolean }> {
+  return apiRequest({ method: 'POST', url: `/stores/${slug}/follow/` });
+}
+
+/** DELETE /api/v1/stores/<slug>/follow/ — unfollow a store */
+export async function unfollowStore(slug: string): Promise<{ following: boolean }> {
+  return apiRequest({ method: 'DELETE', url: `/stores/${slug}/follow/` });
+}
+
+/** GET /api/v1/stores/<slug>/reviews/ — store reviews */
+export async function fetchStoreReviews(slug: string): Promise<StoreReview[]> {
+  return apiRequest<StoreReview[]>({ method: 'GET', url: `/stores/${slug}/reviews/` });
+}
+
+/** POST /api/v1/stores/<slug>/reviews/ — create store review */
+export async function createStoreReview(slug: string, rating: number, comment: string): Promise<StoreReview> {
+  return apiRequest<StoreReview>({
+    method: 'POST',
+    url: `/stores/${slug}/reviews/`,
+    data: { rating, comment },
+  });
+}
+
+/** POST /api/v1/coupons/validate/ — validate a coupon */
+export async function validateCoupon(code: string): Promise<{
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount: number;
+}> {
+  return apiRequest({ method: 'POST', url: '/coupons/validate/', data: { code } });
+}
+
+/** POST /api/v1/products/<slug>/view/ — track product view */
+export async function trackProductView(slug: string): Promise<void> {
+  await apiRequest({ method: 'POST', url: `/products/${slug}/view/` });
 }

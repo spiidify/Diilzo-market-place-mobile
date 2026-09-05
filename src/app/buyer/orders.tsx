@@ -26,12 +26,12 @@ interface Order {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
+  pending: Brand.rating,
   processing: '#8B5CF6',
   shipped: '#06B6D4',
   delivered: '#16A34A',
-  cancelled: '#EF4444',
-  refunded: '#9CA3AF',
+  cancelled: Brand.danger,
+  refunded: Brand.textTertiary,
 };
 
 export default function BuyerOrdersScreen() {
@@ -56,7 +56,7 @@ export default function BuyerOrdersScreen() {
   useEffect(() => { load(); }, [load]);
 
   const renderItem = ({ item }: { item: Order }) => {
-    const statusColor = STATUS_COLORS[item.status] || '#9CA3AF';
+    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
     return (
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
@@ -81,7 +81,7 @@ export default function BuyerOrdersScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -95,7 +95,7 @@ export default function BuyerOrdersScreen() {
           </View>
         ) : orders.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="shopping-outline" size={48} color="#9CA3AF" />
+            <MaterialCommunityIcons name="shopping-outline" size={48} color={Brand.textTertiary} />
             <Text style={styles.emptyText}>No orders yet</Text>
             <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
               <Text style={styles.shopBtnText}>Start Shopping</Text>
@@ -116,12 +116,12 @@ export default function BuyerOrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
   shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
   list: { padding: 12, gap: 10 },
@@ -130,14 +130,14 @@ const styles = StyleSheet.create({
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  orderNumber: { fontSize: 16, fontWeight: '700', color: '#1F2937' },
+  orderNumber: { fontSize: 16, fontWeight: '700', color: Brand.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '700' },
   cardBody: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 },
-  totalLabel: { fontSize: 13, color: '#9CA3AF' },
+  totalLabel: { fontSize: 13, color: Brand.textTertiary },
   totalValue: { fontSize: 18, fontWeight: '800', color: Brand.primary },
-  dateText: { fontSize: 12, color: '#9CA3AF' },
+  dateText: { fontSize: 12, color: Brand.textTertiary },
 });
 
 

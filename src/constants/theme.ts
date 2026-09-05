@@ -1,5 +1,6 @@
 /**
- * Diilzo theme — Amazon-inspired marketplace design.
+ * Diilzo theme — Vibrant Green e-commerce palette.
+ * 60% white canvas, 30% deep green text, 10% vibrant green/teal accents.
  */
 
 import '@/global.css';
@@ -8,44 +9,44 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#0F1111',
-    background: '#ffffff',
-    backgroundElement: '#F3F4F6',
-    backgroundSelected: '#E7E9EC',
-    textSecondary: '#565959',
+    text: '#0A2E1A',
+    background: '#FFFFFF',
+    backgroundElement: '#F0FBF5',
+    backgroundSelected: '#DCF5EC',
+    textSecondary: '#1A6B45',
   },
   dark: {
-    text: '#ffffff',
-    background: '#0F1111',
-    backgroundElement: '#1E2222',
-    backgroundSelected: '#2A2E2E',
-    textSecondary: '#B0B4BA',
+    text: '#FFFFFF',
+    background: '#0A2E1A',
+    backgroundElement: '#0F3D26',
+    backgroundSelected: '#1A5233',
+    textSecondary: '#5AB58A',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-// ── Diilzo brand palette (matches backend CSS variables) ──────────
+// ── Diilzo Vibrant Green palette ─────────────────────────────────────
 export const Brand = {
-  primary: '#ff6a00',      // --diilzo-primary: Diilzo orange
-  primaryDark: '#e55f00',
-  accent: '#ff9500',       // --diilzo-accent: lighter orange
-  dark: '#131921',         // --diilzo-dark: dark navy (header)
-  darkLight: '#232F3E',
-  yellow: '#FEBD69',       // search bar yellow accent
-  yellowDark: '#F3A847',
-  link: '#007185',         // teal link
-  linkHover: '#C7511F',
-  success: '#16a34a',      // green (in stock, delivered)
-  danger: '#B12704',       // red (sale price, error)
-  rating: '#ffa41c',       // --diilzo-star: star yellow
-  surface: '#FFFFFF',
-  surfaceAlt: '#F7F8F8',   // light gray bg
-  border: '#D5D9D9',
-  borderLight: '#e7e7e7',  // --diilzo-border
-  text: '#0f1111',         // --diilzo-text
-  textSecondary: '#565959',// --diilzo-muted
-  textTertiary: '#848688',
+  primary: '#32C700',       // Vibrant Green — Add to Cart, Checkout, CTA, active states
+  primaryDark: '#00C732',   // Green — pressed/hover, gradient mid
+  accent: '#008525',        // Deep Green — gradient end, highlights, badges
+  dark: '#0A2E1A',          // Deep Green — headers, primary text
+  darkLight: '#0F3D26',
+  yellow: '#008525',        // alias to accent
+  yellowDark: '#006B1E',
+  link: '#32C700',          // links use vibrant green
+  linkHover: '#00C732',
+  success: '#32C700',       // same as primary — vibrant green (in stock, delivered)
+  danger: '#DC2626',        // red (error, cancel)
+  rating: '#F59E0B',        // amber for star ratings
+  surface: '#FFFFFF',       // Pure White — cards
+  surfaceAlt: '#F0FBF5',    // Off-White with green tint — dividers, containers
+  border: '#C5E8D5',
+  borderLight: '#E0F5EC',
+  text: '#0A2E1A',          // Deep Green
+  textSecondary: '#1A6B45', // muted green
+  textTertiary: '#4A8A6A',
 } as const;
 
 export const Fonts = Platform.select({

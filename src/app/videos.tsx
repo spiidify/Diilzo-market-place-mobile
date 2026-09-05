@@ -57,7 +57,7 @@ export default function VideosScreen() {
     return (
       <View style={styles.centerScreen}>
         <View style={styles.emptyIconWrap}>
-          <MaterialCommunityIcons name="play-circle-outline" size={56} color="#9CA3AF" />
+          <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
         </View>
         <Text style={styles.emptyTitle}>No videos yet</Text>
         <Text style={styles.emptySubtext}>Product videos will appear here</Text>
@@ -254,13 +254,13 @@ export default function VideosScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000000' },
   centerScreen: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: '#9CA3AF', fontSize: 14 },
+  loadingText: { marginTop: 8, color: Brand.textTertiary, fontSize: 14 },
   emptyIconWrap: {
     width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: '#9CA3AF' },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary },
 
   // ── Feed ────────────────────────────────────────────────────────
   feedContainer: { flex: 1 },

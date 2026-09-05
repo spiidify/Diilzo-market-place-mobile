@@ -44,14 +44,14 @@ export default function SellerProductsScreen() {
         <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="cover" />
       ) : (
         <View style={styles.productImageFallback}>
-          <MaterialCommunityIcons name="package-variant" size={28} color="#9CA3AF" />
+          <MaterialCommunityIcons name="package-variant" size={28} color={Brand.textTertiary} />
         </View>
       )}
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.productPrice}>UGX {Number(item.final_price).toLocaleString()}</Text>
         <View style={styles.productMeta}>
-          <View style={[styles.statusDot, { backgroundColor: item.is_active ? '#16A34A' : '#9CA3AF' }]} />
+          <View style={[styles.statusDot, { backgroundColor: item.is_active ? '#16A34A' : Brand.textTertiary }]} />
           <Text style={styles.productStatus}>{item.is_active ? 'Active' : 'Inactive'}</Text>
           <Text style={styles.stockText}> · {item.stock_quantity} in stock</Text>
         </View>
@@ -62,7 +62,7 @@ export default function SellerProductsScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -78,7 +78,7 @@ export default function SellerProductsScreen() {
           </View>
         ) : products.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="package-variant" size={48} color="#9CA3AF" />
+            <MaterialCommunityIcons name="package-variant" size={48} color={Brand.textTertiary} />
             <Text style={styles.emptyText}>No products yet</Text>
           </View>
         ) : (
@@ -96,12 +96,12 @@ export default function SellerProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
   list: { padding: 12, gap: 10 },
   card: {
     flexDirection: 'row', gap: 12, backgroundColor: '#FFFFFF',
@@ -109,14 +109,14 @@ const styles = StyleSheet.create({
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   productImage: { width: 70, height: 70, borderRadius: 10 },
-  productImageFallback: { width: 70, height: 70, borderRadius: 10, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
+  productImageFallback: { width: 70, height: 70, borderRadius: 10, backgroundColor: Brand.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   productInfo: { flex: 1, gap: 4, justifyContent: 'center' },
-  productName: { fontSize: 15, fontWeight: '600', color: '#1F2937' },
+  productName: { fontSize: 15, fontWeight: '600', color: Brand.text },
   productPrice: { fontSize: 14, fontWeight: '700', color: Brand.primary },
   productMeta: { flexDirection: 'row', alignItems: 'center' },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  productStatus: { fontSize: 12, color: '#6B7280', fontWeight: '600' },
-  stockText: { fontSize: 12, color: '#9CA3AF' },
+  productStatus: { fontSize: 12, color: Brand.textSecondary, fontWeight: '600' },
+  stockText: { fontSize: 12, color: Brand.textTertiary },
 });
 
 

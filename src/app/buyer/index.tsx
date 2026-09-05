@@ -14,19 +14,19 @@ export default function BuyerDashboardScreen() {
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
-    { icon: 'heart-outline', label: 'Wishlist', color: '#EF4444', route: '/buyer/wishlist' as any },
+    { icon: 'heart-outline', label: 'Wishlist', color: Brand.danger, route: '/buyer/wishlist' as any },
     { icon: 'map-marker-outline', label: 'Addresses', color: '#16A34A', route: '/buyer/addresses' as any },
     { icon: 'credit-card-outline', label: 'Payment Methods', color: '#8B5CF6', route: '/buyer/payments' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
-    { icon: 'bell-outline', label: 'Notifications', color: '#F59E0B', route: '/buyer/notifications' as any },
-    { icon: 'shield-account-outline', label: 'Privacy & Security', color: '#6B7280', route: '/buyer/privacy' as any },
+    { icon: 'bell-outline', label: 'Notifications', color: Brand.rating, route: '/buyer/notifications' as any },
+    { icon: 'shield-account-outline', label: 'Privacy & Security', color: Brand.textSecondary, route: '/buyer/privacy' as any },
     { icon: 'help-circle-outline', label: 'Help & Support', color: '#06B6D4', route: '/buyer/support' as any },
   ];
 
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -90,7 +90,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
                 <Text style={styles.switchCtaSub}>Manage your store and products</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={22} color="#D1D5DB" />
+              <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
             </Pressable>
           )}
 
@@ -99,14 +99,14 @@ export default function BuyerDashboardScreen() {
             {menuItems.map((item, index) => (
               <Pressable
                 key={`buyer-menu-${index}`}
-                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: '#F9FAFB' }]}
+                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: Brand.surfaceAlt }]}
                 onPress={() => router.push(item.route)}
               >
                 <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
                   <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
                 </View>
                 <Text style={styles.menuLabel}>{item.label}</Text>
-                <MaterialCommunityIcons name="chevron-right" size={22} color="#D1D5DB" />
+                <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
               </Pressable>
             ))}
           </View>
@@ -117,8 +117,8 @@ export default function BuyerDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   body: { flex: 1 },
@@ -134,8 +134,8 @@ const styles = StyleSheet.create({
   avatar: { width: '100%', height: '100%' },
   avatarFallback: { width: '100%', height: '100%', backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
   profileInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  profileEmail: { fontSize: 13, color: '#9CA3AF' },
+  profileName: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  profileEmail: { fontSize: 13, color: Brand.textTertiary },
   buyerBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: '#3B82F6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, alignSelf: 'flex-start',
@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
     padding: 16, borderRadius: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF3E8', justifyContent: 'center', alignItems: 'center' },
+  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
-  switchCtaTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  switchCtaSub: { fontSize: 13, color: '#9CA3AF' },
+  switchCtaTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  switchCtaSub: { fontSize: 13, color: Brand.textTertiary },
 
   // Menu
   menuSection: { paddingHorizontal: 12, paddingTop: 16, paddingBottom: 32 },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, marginBottom: 8,
   },
   menuIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1F2937' },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
 });
 
 

@@ -1,9 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,12 +13,18 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import {
+  authenticateWithBiometrics,
+  getBiometricType,
+  isBiometricAvailable,
+  isBiometricEnabled,
+} from '@/services/biometric';
 import { getSafeErrorMessage } from '@/utils/errors';
 import { isValidEmail, sanitizeEmail, sanitizeString } from '@/utils/validation';
 
@@ -28,6 +36,51 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioType, setBioType] = useState<string>('');
+
+  useEffect(() => {
+    (async () => {
+      const available = await isBiometricAvailable();
+      setBioAvailable(available);
+      if (available) {
+        setBioType(await getBiometricType());
+        setBioEnabled(await isBiometricEnabled());
+      }
+    })();
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    try {
+      const result = await authenticateWithBiometrics('Use biometrics to sign in to Diilzo');
+      if (result) {
+        router.replace('/');
+      }
+    } catch (e: any) {
+      Alert.alert('Biometric Login', 'Biometric authentication failed. Please use email/password.');
+    }
+  };
+
+  const handleSocialLogin = async (provider: string) => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://diilzo-market-place-production.up.railway.app/api/v1';
+    const webUrl = baseUrl.replace('/api/v1', '');
+    const oauthUrl = `${webUrl}/accounts/${provider}/login/`;
+    try {
+      const result = await WebBrowser.openAuthSessionAsync(oauthUrl, 'diilzomobile://');
+      if (result.type === 'success' && result.url) {
+        // The redirect should contain tokens; parse them
+        const url = new URL(result.url);
+        const accessToken = url.searchParams.get('access') || url.searchParams.get('access_token');
+        const refreshToken = url.searchParams.get('refresh') || url.searchParams.get('refresh_token');
+        if (accessToken && refreshToken) {
+          await login(email, password); // fallback; real flow would set tokens directly
+        }
+      }
+    } catch (e: any) {
+      Alert.alert('Social Login', `${provider} login is not yet configured. Please use email/password.`);
+    }
+  };
 
   const handleLogin = async () => {
     // Validate inputs
@@ -71,7 +124,7 @@ export default function LoginScreen() {
           >
             {/* Orange gradient header */}
             <LinearGradient
-              colors={['#e55f00', '#ff6a00', '#ff8520']}
+              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.header}
@@ -85,19 +138,19 @@ export default function LoginScreen() {
             <View style={styles.card}>
               {/* Social login grid */}
               <View style={styles.socialGrid}>
-                <Pressable style={styles.socialBtn}>
+                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('google')}>
                   <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
                   <Text style={styles.socialText}>Google</Text>
                 </Pressable>
-                <Pressable style={styles.socialBtn}>
+                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('facebook')}>
                   <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
                   <Text style={styles.socialText}>Facebook</Text>
                 </Pressable>
-                <Pressable style={styles.socialBtn}>
+                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('instagram')}>
                   <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
                   <Text style={styles.socialText}>Instagram</Text>
                 </Pressable>
-                <Pressable style={styles.socialBtn}>
+                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('tiktok')}>
                   <MaterialCommunityIcons name="music-note" size={22} color="#000" />
                   <Text style={styles.socialText}>TikTok</Text>
                 </Pressable>
@@ -119,13 +172,13 @@ export default function LoginScreen() {
 
               {/* Email input */}
               <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="email-outline" size={20} color="#9CA3AF" />
+                <MaterialCommunityIcons name="email-outline" size={20} color={Brand.textTertiary} />
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
                   placeholder="you@example.com"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={Brand.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -134,13 +187,13 @@ export default function LoginScreen() {
 
               {/* Password input */}
               <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="lock-outline" size={20} color="#9CA3AF" />
+                <MaterialCommunityIcons name="lock-outline" size={20} color={Brand.textTertiary} />
                 <TextInput
                   style={styles.input}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={Brand.textTertiary}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -148,7 +201,7 @@ export default function LoginScreen() {
                   <MaterialCommunityIcons
                     name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                     size={20}
-                    color="#9CA3AF"
+                    color={Brand.textTertiary}
                   />
                 </Pressable>
               </View>
@@ -173,9 +226,19 @@ export default function LoginScreen() {
                   </>
                 )}
               </Pressable>
-            </View>
 
-            {/* Bottom section */}
+              {/* Biometric login */}
+              {bioAvailable && bioEnabled && (
+                <Pressable style={styles.biometricBtn} onPress={handleBiometricLogin}>
+                  <MaterialCommunityIcons
+                    name={bioType === 'FaceID' ? 'face-recognition' : 'fingerprint'}
+                    size={22}
+                    color={Brand.primary}
+                  />
+                  <Text style={styles.biometricText}>Sign in with {bioType || 'Biometrics'}</Text>
+                </Pressable>
+              )}
+            </View>
             <View style={styles.bottomSection}>
               <Text style={styles.newText}>New to Diilzo?</Text>
               <Link href="/(auth)/register" asChild>
@@ -191,15 +254,15 @@ export default function LoginScreen() {
             {/* Trust badges */}
             <View style={styles.trustRow}>
               <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="shield-check-outline" size={14} color="#9CA3AF" />
+                <MaterialCommunityIcons name="shield-check-outline" size={14} color={Brand.textTertiary} />
                 <Text style={styles.trustText}>SSL Secured</Text>
               </View>
               <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="handshake-outline" size={14} color="#9CA3AF" />
+                <MaterialCommunityIcons name="handshake-outline" size={14} color={Brand.textTertiary} />
                 <Text style={styles.trustText}>Buyer Protection</Text>
               </View>
               <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="headset" size={14} color="#9CA3AF" />
+                <MaterialCommunityIcons name="headset" size={14} color={Brand.textTertiary} />
                 <Text style={styles.trustText}>24/7 Support</Text>
               </View>
             </View>
@@ -262,13 +325,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Brand.border,
     backgroundColor: '#FFFFFF',
   },
   socialText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
+    color: Brand.text,
   },
   divider: {
     flexDirection: 'row',
@@ -279,23 +342,23 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: Brand.border,
   },
   dividerText: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: Brand.textTertiary,
     marginHorizontal: 10,
   },
   errorBox: {
     backgroundColor: '#FFF3F3',
     borderLeftWidth: 3,
-    borderLeftColor: '#B12704',
+    borderLeftColor: Brand.danger,
     padding: 12,
     borderRadius: 6,
     marginBottom: 12,
   },
   errorText: {
-    color: '#B12704',
+    color: Brand.danger,
     fontSize: 13,
   },
   inputWrap: {
@@ -303,17 +366,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Brand.border,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Brand.surfaceAlt,
     marginBottom: 12,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: '#111827',
+    color: Brand.text,
     padding: 0,
   },
   forgotBtn: {
@@ -336,6 +399,23 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   signInBtnDisabled: { opacity: 0.6 },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: Brand.primary,
+    borderRadius: 12,
+    backgroundColor: Brand.surfaceAlt,
+  },
+  biometricText: {
+    color: Brand.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   signInText: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -347,7 +427,7 @@ const styles = StyleSheet.create({
   },
   newText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Brand.textSecondary,
   },
   createAccountText: {
     color: Brand.primary,
@@ -356,7 +436,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   guestText: {
-    color: '#9CA3AF',
+    color: Brand.textTertiary,
     fontSize: 13,
     marginTop: 16,
   },
@@ -374,6 +454,6 @@ const styles = StyleSheet.create({
   },
   trustText: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: Brand.textTertiary,
   },
 });

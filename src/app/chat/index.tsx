@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { fetchChatThreads } from '@/services/chat';
+import { createSupportChat, fetchChatThreads } from '@/services/chat';
 import type { ChatThread } from '@/types';
 
 export default function ChatListScreen() {
@@ -25,6 +25,7 @@ export default function ChatListScreen() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [startingSupport, setStartingSupport] = useState(false);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return; }
@@ -42,16 +43,38 @@ export default function ChatListScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleSupportChat = async () => {
+    if (!isAuthenticated) {
+      router.push('/(auth)/login' as any);
+      return;
+    }
+    try {
+      setStartingSupport(true);
+      const thread = await createSupportChat();
+      router.push(`/chat/${thread.id}` as any);
+    } catch (e: any) {
+      console.error('Support chat error:', e?.message);
+    } finally {
+      setStartingSupport(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: ChatThread }) => {
     const lastMsg = item.last_message;
     const time = lastMsg ? new Date(lastMsg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    const isSupport = item.is_support;
+    const displayName = isSupport ? 'Diilzo Support' : (item.store_name || 'Unknown Store');
     return (
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
         onPress={() => router.push(`/chat/${item.id}` as any)}
       >
         <View style={styles.avatarWrap}>
-          {item.store_logo ? (
+          {isSupport ? (
+            <View style={[styles.avatarFallback, { backgroundColor: Brand.text }]}>
+              <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
+            </View>
+          ) : item.store_logo ? (
             <Image source={{ uri: item.store_logo }} style={styles.avatar} contentFit="cover" />
           ) : (
             <View style={styles.avatarFallback}>
@@ -64,7 +87,10 @@ export default function ChatListScreen() {
         </View>
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
-            <Text style={styles.storeName} numberOfLines={1}>{item.store_name}</Text>
+            <View style={styles.nameRow}>
+              {isSupport && <MaterialCommunityIcons name="shield-check" size={14} color={Brand.primary} />}
+              <Text style={styles.storeName} numberOfLines={1}>{displayName}</Text>
+            </View>
             <Text style={styles.time}>{time}</Text>
           </View>
           {item.product_name ? (
@@ -90,7 +116,7 @@ export default function ChatListScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Header ──────────────────────────────────────────────── */}
         <LinearGradient
-          colors={['#e55f00', '#ff6a00', '#ff8520']}
+          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -106,10 +132,10 @@ export default function ChatListScreen() {
         {!isAuthenticated ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="message-outline" size={48} color="#9CA3AF" />
+              <MaterialCommunityIcons name="message-outline" size={48} color={Brand.textTertiary} />
             </View>
             <Text style={styles.emptyTitle}>Sign in to view messages</Text>
-            <Text style={styles.emptySubtext}>Chat with suppliers and sellers</Text>
+            <Text style={styles.emptySubtext}>Chat with suppliers and Diilzo staff</Text>
             <Pressable style={styles.signInBtn} onPress={() => router.push('/(auth)/login' as any)}>
               <Text style={styles.signInBtnText}>Sign In</Text>
             </Pressable>
@@ -119,27 +145,51 @@ export default function ChatListScreen() {
             <ActivityIndicator size="large" color={Brand.primary} />
             <Text style={styles.loadingText}>Loading messages...</Text>
           </View>
-        ) : threads.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="message-off-outline" size={48} color="#9CA3AF" />
-            </View>
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
-            <Text style={styles.emptySubtext}>Start chatting with suppliers from their store pages</Text>
-            <Pressable style={styles.browseBtn} onPress={() => router.push('/suppliers' as any)}>
-              <Text style={styles.browseBtnText}>Browse Suppliers</Text>
-            </Pressable>
-          </View>
         ) : (
-          <FlatList
-            data={threads}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />
-            }
-          />
+          <>
+            {/* ── Chat with Diilzo Staff banner ─────────────────── */}
+            <Pressable
+              style={({ pressed }) => [styles.supportBanner, pressed && { opacity: 0.85 }]}
+              onPress={handleSupportChat}
+              disabled={startingSupport}
+            >
+              <View style={styles.supportIconWrap}>
+                {startingSupport ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <MaterialCommunityIcons name="headset" size={24} color="#FFFFFF" />
+                )}
+              </View>
+              <View style={styles.supportInfo}>
+                <Text style={styles.supportTitle}>Chat with Diilzo Staff</Text>
+                <Text style={styles.supportSub}>Get help, ask questions, report issues</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+            </Pressable>
+
+            {threads.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconWrap}>
+                  <MaterialCommunityIcons name="message-off-outline" size={48} color={Brand.textTertiary} />
+                </View>
+                <Text style={styles.emptyTitle}>No conversations yet</Text>
+                <Text style={styles.emptySubtext}>Start chatting with suppliers from their store pages</Text>
+                <Pressable style={styles.browseBtn} onPress={() => router.push('/suppliers' as any)}>
+                  <Text style={styles.browseBtnText}>Browse Suppliers</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <FlatList
+                data={threads}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={renderItem}
+                contentContainerStyle={styles.list}
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />
+                }
+              />
+            )}
+          </>
         )}
       </SafeAreaView>
     </View>
@@ -162,6 +212,36 @@ const styles = StyleSheet.create({
 
   // ── List ────────────────────────────────────────────────────────
   list: { paddingVertical: 8 },
+
+  // ── Support banner ──────────────────────────────────────────────
+  supportBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 12,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: Brand.text,
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  supportIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  supportInfo: { flex: 1, gap: 2 },
+  supportTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
+  supportSub: { fontSize: 12, color: 'rgba(255,255,255,0.65)' },
+
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,8 +249,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: Brand.surfaceAlt,
   },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   avatarWrap: { position: 'relative' },
   avatar: { width: 52, height: 52, borderRadius: 26 },
   avatarFallback: {
@@ -189,11 +270,11 @@ const styles = StyleSheet.create({
   },
   cardBody: { flex: 1, gap: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  storeName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  time: { fontSize: 11, color: '#9CA3AF' },
+  storeName: { flex: 1, fontSize: 15, fontWeight: '700', color: Brand.text },
+  time: { fontSize: 11, color: Brand.textTertiary },
   productName: { fontSize: 12, color: Brand.primary, fontWeight: '500' },
   lastMsgRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  lastMsg: { flex: 1, fontSize: 13, color: '#6B7280' },
+  lastMsg: { flex: 1, fontSize: 13, color: Brand.textSecondary },
   unreadBadge: {
     minWidth: 20, height: 20, borderRadius: 10,
     backgroundColor: Brand.primary,
@@ -204,14 +285,14 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: '#6B7280', fontSize: 14 },
+  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6',
+    width: 80, height: 80, borderRadius: 40, backgroundColor: Brand.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: '#6B7280', textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
   signInBtn: {
     marginTop: 20, backgroundColor: Brand.primary,
     paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8,

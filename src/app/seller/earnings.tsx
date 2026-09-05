@@ -58,18 +58,18 @@ export default function SellerEarningsScreen() {
 
   const renderLedgerItem = ({ item }: { item: any }) => (
     <View style={styles.ledgerRow}>
-      <View style={[styles.ledgerIcon, { backgroundColor: item.is_credit ? '#16A34A20' : '#EF444420' }]}>
+      <View style={[styles.ledgerIcon, { backgroundColor: item.is_credit ? '#16A34A20' : '#DC262620' }]}>
         <MaterialCommunityIcons
           name={item.is_credit ? 'arrow-down-bold' : 'arrow-up-bold'}
           size={18}
-          color={item.is_credit ? '#16A34A' : '#EF4444'}
+          color={item.is_credit ? '#16A34A' : Brand.danger}
         />
       </View>
       <View style={styles.ledgerInfo}>
         <Text style={styles.ledgerRef} numberOfLines={1}>{item.reference || item.entry_type}</Text>
         <Text style={styles.ledgerDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
       </View>
-      <Text style={[styles.ledgerAmount, { color: item.is_credit ? '#16A34A' : '#EF4444' }]}>
+      <Text style={[styles.ledgerAmount, { color: item.is_credit ? '#16A34A' : Brand.danger }]}>
         {item.is_credit ? '+' : '-'}UGX {Number(item.amount).toLocaleString()}
       </Text>
     </View>
@@ -78,7 +78,7 @@ export default function SellerEarningsScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -104,8 +104,8 @@ export default function SellerEarningsScreen() {
                     <Text style={styles.balanceLabel}>Available</Text>
                     <Text style={styles.balanceValue}>UGX {Number(data?.available_balance || 0).toLocaleString()}</Text>
                   </View>
-                  <View style={[styles.balanceCard, { backgroundColor: '#1F2937' }]}>
-                    <Text style={[styles.balanceLabel, { color: '#9CA3AF' }]}>Pending</Text>
+                  <View style={[styles.balanceCard, { backgroundColor: Brand.text }]}>
+                    <Text style={[styles.balanceLabel, { color: Brand.textTertiary }]}>Pending</Text>
                     <Text style={[styles.balanceValue, { color: '#FFFFFF' }]}>UGX {Number(data?.pending_balance || 0).toLocaleString()}</Text>
                   </View>
                 </View>
@@ -164,12 +164,12 @@ export default function SellerEarningsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
   list: { padding: 12, paddingBottom: 32 },
 
   balanceRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
@@ -184,17 +184,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 12,
   },
-  commissionText: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
+  commissionText: { fontSize: 14, fontWeight: '600', color: Brand.text },
 
   payoutCard: {
     backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  payoutTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
+  payoutTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 12 },
   payoutInputRow: { flexDirection: 'row', gap: 10 },
   payoutInput: {
-    flex: 1, backgroundColor: '#F3F4F6', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1, borderColor: '#E5E7EB',
+    flex: 1, backgroundColor: Brand.surfaceAlt, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1, borderColor: Brand.border,
   },
   payoutBtn: { backgroundColor: Brand.primary, borderRadius: 10, paddingHorizontal: 24, justifyContent: 'center' },
   payoutBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -204,11 +204,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, marginBottom: 6,
   },
-  payoutHistoryAmount: { fontSize: 14, fontWeight: '700', color: '#1F2937' },
+  payoutHistoryAmount: { fontSize: 14, fontWeight: '700', color: Brand.text },
   payoutHistoryStatus: { fontSize: 12, fontWeight: '600', color: Brand.primary },
-  payoutHistoryDate: { fontSize: 12, color: '#9CA3AF' },
+  payoutHistoryDate: { fontSize: 12, color: Brand.textTertiary },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10, marginTop: 4 },
 
   ledgerRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -216,8 +216,8 @@ const styles = StyleSheet.create({
   },
   ledgerIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   ledgerInfo: { flex: 1, gap: 2 },
-  ledgerRef: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  ledgerDate: { fontSize: 12, color: '#9CA3AF' },
+  ledgerRef: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  ledgerDate: { fontSize: 12, color: Brand.textTertiary },
   ledgerAmount: { fontSize: 14, fontWeight: '700' },
 });
 

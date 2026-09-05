@@ -1,38 +1,41 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DiilzoLogo } from '@/components/diilzo-logo';
+import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { addToCart, getCartCount } from '@/services/cart';
-import { fetchCategories, fetchTopStores } from '@/services/catalog';
+import { getCartCount } from '@/services/cart';
+import { fetchCategories, fetchSlides, fetchTopStores } from '@/services/catalog';
 import { createChatThread, getChatUnreadCount } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
-import type { Category, Product, Store } from '@/types';
+import type { Category, Product, Slide, Store } from '@/types';
 
 // ── Memoized product card for FlatList performance ──────────────────
 const ProductCard = memo(function ProductCard({
   item,
   onPress,
-  onAddToCart,
   onChat,
 }: {
   item: Product;
   onPress: (slug: string) => void;
-  onAddToCart: (product: Product) => void;
   onChat: (product: Product) => void;
 }) {
   const isSupplier = item.store?.is_wholesaler === true;
@@ -103,11 +106,11 @@ const ProductCard = memo(function ProductCard({
               style={({ pressed }) => [styles.addToCartBtn, pressed && styles.addToCartPressed]}
               onPress={(e) => {
                 e.stopPropagation();
-                onAddToCart(item);
+                onPress(item.slug);
               }}
             >
-              <MaterialCommunityIcons name="plus" size={14} color="#FFFFFF" />
-              <Text style={styles.addToCartText}>Add to cart</Text>
+              <MaterialCommunityIcons name="shopping" size={14} color="#FFFFFF" />
+              <Text style={styles.addToCartText}>BUY Now</Text>
             </Pressable>
           </View>
         ) : (
@@ -119,18 +122,18 @@ const ProductCard = memo(function ProductCard({
                 onPress(item.slug);
               }}
             >
-              <MaterialCommunityIcons name="eye-outline" size={14} color="#6B7280" />
+              <MaterialCommunityIcons name="eye-outline" size={14} color={Brand.primary} />
               <Text style={styles.viewBtnText}>View</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.addToCartBtn, pressed && styles.addToCartPressed]}
               onPress={(e) => {
                 e.stopPropagation();
-                onAddToCart(item);
+                onPress(item.slug);
               }}
             >
-              <MaterialCommunityIcons name="plus" size={14} color="#FFFFFF" />
-              <Text style={styles.addToCartText}>Add to cart</Text>
+              <MaterialCommunityIcons name="shopping" size={14} color="#FFFFFF" />
+              <Text style={styles.addToCartText}>BUY Now</Text>
             </Pressable>
           </View>
         )}
@@ -171,26 +174,41 @@ export default function ProductFeedScreen() {
   const [cartCount, setCartCount] = useState(0);
   const [chatUnread, setChatUnread] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [slides, setSlides] = useState<Slide[]>([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const slideScrollRef = useRef<ScrollView | null>(null);
+  const slideTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Section data
   const [deals, setDeals] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [recommended, setRecommended] = useState<Product[]>([]);
   const [topStores, setTopStores] = useState<Store[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
 
   // ── Load all sections in parallel ────────────────────────────────
   const loadAllSections = useCallback(async () => {
     try {
-      const [dealsRes, newArrRes, featRes, stores] = await Promise.all([
+      const [dealsRes, newArrRes, featRes, stores, slideData] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
         fetchProducts({ new_arrival: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
         fetchProducts({ featured: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
         fetchTopStores().catch(() => [] as Store[]),
+        fetchSlides().catch(() => [] as Slide[]),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setNewArrivals(newArrRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
       setTopStores(stores.slice(0, 10));
+      setSlides(slideData);
+
+      // Load recently viewed from local storage
+      try {
+        const raw = await AsyncStorage.getItem('recently_viewed');
+        if (raw) setRecentlyViewed(JSON.parse(raw));
+      } catch { }
     } catch (e) {
       // Sections are optional — main grid still loads
     }
@@ -242,6 +260,26 @@ export default function ProductFeedScreen() {
     loadCategories();
   }, []);
 
+  // ── Auto-scroll homepage carousel ───────────────────────────────
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    slideTimerRef.current = setInterval(() => {
+      setActiveSlide((prev) => {
+        const next = (prev + 1) % slides.length;
+        if (slideScrollRef.current) {
+          (slideScrollRef.current as any).scrollTo({
+            x: next * Dimensions.get('window').width,
+            animated: true,
+          });
+        }
+        return next;
+      });
+    }, 4000);
+    return () => {
+      if (slideTimerRef.current) clearInterval(slideTimerRef.current);
+    };
+  }, [slides.length]);
+
   // ── Refresh cart count when screen gains focus ──────────────────
   const loadCartCount = useCallback(async () => {
     if (!isAuthenticated) { setCartCount(0); return; }
@@ -286,6 +324,16 @@ export default function ProductFeedScreen() {
     if (!hasMore || loadingMore || refreshing) return;
     loadProducts(false);
   }, [hasMore, loadingMore, refreshing, loadProducts]);
+
+  // ── Scroll tracking + scroll-to-top ─────────────────────────────
+  const handleScroll = useCallback((event: any) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    setShowScrollTop(offsetY > 300);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   const renderStars = (rating: string) => {
     const value = parseFloat(rating) || 0;
@@ -381,16 +429,6 @@ export default function ProductFeedScreen() {
     router.push(`/product/${slug}`);
   }, [router]);
 
-  const handleAddToCart = useCallback(async (product: Product) => {
-    try {
-      await addToCart(product.id, product.min_order_quantity || 1);
-      const count = await getCartCount();
-      setCartCount(count);
-    } catch (e: any) {
-      console.error('Add to cart error:', e?.message);
-    }
-  }, []);
-
   const handleChat = useCallback(async (product: Product) => {
     try {
       if (!product.store?.slug) return;
@@ -403,9 +441,9 @@ export default function ProductFeedScreen() {
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
-      <ProductCard item={item} onPress={handleProductPress} onAddToCart={handleAddToCart} onChat={handleChat} />
+      <ProductCard item={item} onPress={handleProductPress} onChat={handleChat} />
     ),
-    [handleProductPress, handleAddToCart, handleChat]
+    [handleProductPress, handleChat]
   );
 
   const renderHeader = () => (
@@ -422,98 +460,142 @@ export default function ProductFeedScreen() {
         </View>
       </Pressable>
 
-      {/* ── Quick links — full-width horizontal row ─────────────────── */}
-      <View style={styles.quickLinksSection}>
-        <Pressable
-          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/suppliers' as any)}
-        >
-          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#FFF3E8' }]}>
-            <MaterialCommunityIcons name="store" size={24} color={Brand.primary} />
-          </View>
-          <Text style={styles.quickLinkLabel}>Top Stores</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/suppliers' as any)}
-        >
-          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#E8F5E9' }]}>
-            <MaterialCommunityIcons name="factory" size={24} color="#16A34A" />
-          </View>
-          <Text style={styles.quickLinkLabel}>Suppliers</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/suppliers' as any)}
-        >
-          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#E3F2FD' }]}>
-            <MaterialCommunityIcons name="shield-check" size={24} color="#1976D2" />
-          </View>
-          <Text style={styles.quickLinkLabel}>Verified</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [styles.quickLinkCard, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/suppliers' as any)}
-        >
-          <View style={[styles.quickLinkIconWrap, { backgroundColor: '#FCE4EC' }]}>
-            <MaterialCommunityIcons name="account-plus" size={24} color="#C62828" />
-          </View>
-          <Text style={styles.quickLinkLabel}>Sell</Text>
-        </Pressable>
-      </View>
-
-      {/* Category chips — dynamic from API */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsRow}
-      >
-        {/* "All" chip */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.chip,
-            activeCategory === null ? styles.chipActive : styles.chipInactive,
-            pressed && styles.chipPressed,
-          ]}
-          onPress={() => setActiveCategory(null)}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              activeCategory === null ? styles.chipTextActive : styles.chipTextInactive,
-            ]}
+      {/* ── Homepage carousel ─────────────────────────────────────── */}
+      {slides.length > 0 && (
+        <View style={styles.carouselWrap}>
+          <ScrollView
+            ref={(ref) => { if (ref) { (slideScrollRef as any).current = ref; } }}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={(e) => {
+              const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get('window').width - 32));
+              if (idx !== activeSlide) setActiveSlide(idx);
+            }}
+            scrollEventThrottle={16}
           >
-            All
-          </Text>
-        </Pressable>
-        {categories.slice(0, 15).map((cat) => {
-          const active = cat.slug === activeCategory;
-          return (
-            <Pressable
-              key={cat.id}
-              style={({ pressed }) => [
-                styles.chip,
-                active ? styles.chipActive : styles.chipInactive,
-                pressed && styles.chipPressed,
-              ]}
-              onPress={() => setActiveCategory(cat.slug)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  active ? styles.chipTextActive : styles.chipTextInactive,
-                ]}
-                numberOfLines={1}
+            {slides.map((slide) => (
+              <Pressable
+                key={`slide-${slide.id}`}
+                style={styles.slideCard}
+                onPress={() => {
+                  if (slide.cta_link) {
+                    const link = slide.cta_link;
+                    if (link.startsWith('/')) {
+                      router.push(link as any);
+                    } else {
+                      Linking.openURL(link).catch(() => { });
+                    }
+                  }
+                }}
               >
-                {cat.name}
-              </Text>
+                {slide.display_image ? (
+                  <Image
+                    source={{ uri: slide.display_image }}
+                    style={styles.slideImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.slideFallback}
+                  >
+                    <View style={styles.slideTextWrap}>
+                      {slide.headline ? (
+                        <Text style={styles.slideHeadline}>{slide.headline}</Text>
+                      ) : null}
+                      {slide.subheadline ? (
+                        <Text style={styles.slideSubheadline}>{slide.subheadline}</Text>
+                      ) : null}
+                      {slide.cta_text ? (
+                        <View style={styles.slideCtaBtn}>
+                          <Text style={styles.slideCtaText}>{slide.cta_text}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </LinearGradient>
+                )}
+                {slide.display_image && (slide.headline || slide.cta_text) && (
+                  <View style={styles.slideOverlay}>
+                    <View style={styles.slideTextWrap}>
+                      {slide.headline ? (
+                        <Text style={styles.slideHeadline}>{slide.headline}</Text>
+                      ) : null}
+                      {slide.subheadline ? (
+                        <Text style={styles.slideSubheadline}>{slide.subheadline}</Text>
+                      ) : null}
+                      {slide.cta_text ? (
+                        <View style={styles.slideCtaBtn}>
+                          <Text style={styles.slideCtaText}>{slide.cta_text}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                )}
+              </Pressable>
+            ))}
+          </ScrollView>
+          {/* Dot indicators */}
+          {slides.length > 1 && (
+            <View style={styles.carouselDots}>
+              {slides.map((_, i) => (
+                <View
+                  key={`dot-${i}`}
+                  style={[styles.carouselDot, i === activeSlide && styles.carouselDotActive]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ── Shop by Category — horizontal round carousel ─────────────── */}
+      <View style={styles.categoriesSection}>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionTitleRow}>
+            <MaterialCommunityIcons name="apps" size={20} color={Brand.primary} />
+            <Text style={styles.sectionTitle}>Shop by Category</Text>
+          </View>
+          <Pressable onPress={() => router.push('/categories' as any)}>
+            <Text style={styles.seeAllText}>View All ›</Text>
+          </Pressable>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryCarousel}
+        >
+          {categories.slice(0, 12).map((cat) => (
+            <Pressable
+              key={`cat-${cat.id}-${cat.slug}`}
+              style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
+              onPress={() => router.push({
+                pathname: '/search',
+                params: { category: cat.slug, categoryName: cat.name },
+              } as any)}
+            >
+              <View style={styles.categoryCircle}>
+                {cat.display_image ? (
+                  <Image
+                    source={{ uri: cat.display_image }}
+                    style={styles.categoryCircleImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <View style={styles.categoryCircleFallback}>
+                    <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
+                  </View>
+                )}
+              </View>
+              <Text style={styles.categoryItemName} numberOfLines={1}>{cat.name}</Text>
             </Pressable>
-          );
-        })}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* ── Today's Deals — horizontal sliding carousel ──────────── */}
       {renderSection('fire', "Today's Deals", deals, () => router.push('/search'))}
@@ -523,6 +605,9 @@ export default function ProductFeedScreen() {
 
       {/* ── Recommended for You — horizontal sliding carousel ────── */}
       {renderSection('thumb-up-outline', 'Recommended for You', recommended, () => router.push('/search'))}
+
+      {/* ── Recently Viewed — from local storage ─────────────────── */}
+      {recentlyViewed.length > 0 && renderSection('history', 'Recently Viewed', recentlyViewed, () => { })}
 
       {/* ── Top Stores — horizontal carousel ──────────────────────── */}
       {topStores.length > 0 && (
@@ -559,7 +644,7 @@ export default function ProductFeedScreen() {
                 <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
                 <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
                 <View style={styles.storeMetaRow}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={11} color="#6B7280" />
+                  <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.textSecondary} />
                   <Text style={styles.storeMetaText}>{s.product_count || 0} products</Text>
                 </View>
                 {s.is_wholesaler && (
@@ -608,16 +693,10 @@ export default function ProductFeedScreen() {
   if (loading && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
-              <View style={styles.logoWrap}>
-                <View style={styles.logoWrap}>
-                  <Text style={styles.logo}>Diilzo</Text>
-                  <Text style={styles.logoSub}>Marketplace</Text>
-                </View>
-                <Text style={styles.logoSub}>Marketplace</Text>
-              </View>
+              <DiilzoLogo size={36} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -677,16 +756,10 @@ export default function ProductFeedScreen() {
   if (error && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
-              <View style={styles.logoWrap}>
-                <View style={styles.logoWrap}>
-                  <Text style={styles.logo}>Diilzo</Text>
-                  <Text style={styles.logoSub}>Marketplace</Text>
-                </View>
-                <Text style={styles.logoSub}>Marketplace</Text>
-              </View>
+              <DiilzoLogo size={36} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -749,14 +822,11 @@ export default function ProductFeedScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+      <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
-            {/* App name on left */}
-            <View style={styles.logoWrap}>
-              <Text style={styles.logo}>Diilzo</Text>
-              <Text style={styles.logoSub}>Marketplace</Text>
-            </View>
+            {/* Logo on left */}
+            <DiilzoLogo size={36} />
             {/* Cart icon — pushed to the right */}
             <Pressable
               style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
@@ -811,6 +881,7 @@ export default function ProductFeedScreen() {
       </LinearGradient>
 
       <FlatList
+        ref={flatListRef}
         data={products}
         keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
         renderItem={renderProduct}
@@ -822,6 +893,8 @@ export default function ProductFeedScreen() {
         windowSize={7}
         initialNumToRender={8}
         removeClippedSubviews={true}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -840,12 +913,15 @@ export default function ProductFeedScreen() {
           ) : null
         }
       />
+
+      {/* ── Floating scroll-to-top button ──────────────────────── */}
+      <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
   safeArea: { flex: 0, backgroundColor: 'transparent' },
   headerBg: {
     width: '100%',
@@ -971,7 +1047,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Brand.border,
     marginHorizontal: Spacing.two,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
@@ -989,6 +1065,87 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderLeftColor: Brand.borderLight,
     paddingLeft: Spacing.two,
+  },
+
+  // ── Homepage carousel ───────────────────────────────────────────
+  carouselWrap: {
+    marginHorizontal: Spacing.two,
+    marginVertical: Spacing.two,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  slideCard: {
+    width: Dimensions.get('window').width - 32,
+    height: 180,
+    position: 'relative',
+  },
+  slideImage: {
+    width: '100%',
+    height: '100%',
+  },
+  slideFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+  },
+  slideOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0,
+    backgroundColor: 'rgba(10,46,26,0.45)',
+    justifyContent: 'center',
+  },
+  slideTextWrap: {
+    padding: 20,
+  },
+  slideHeadline: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  slideSubheadline: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 12,
+  },
+  slideCtaBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  slideCtaText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Brand.primary,
+  },
+  carouselDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  carouselDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Brand.border,
+  },
+  carouselDotActive: {
+    width: 22,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Brand.primary,
   },
 
   // ── Category chips ──────────────────────────────────────────────
@@ -1083,7 +1240,7 @@ const styles = StyleSheet.create({
   carouselImageWrap: {
     width: '100%',
     height: 150,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Brand.surfaceAlt,
     position: 'relative',
   },
   carouselImage: { width: '100%', height: '100%' },
@@ -1127,7 +1284,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     marginHorizontal: 0,
-    backgroundColor: '#FFF3E8',
+    backgroundColor: Brand.surfaceAlt,
     borderRadius: 6,
     borderLeftWidth: 4,
     borderLeftColor: Brand.primary,
@@ -1138,39 +1295,58 @@ const styles = StyleSheet.create({
     color: Brand.text,
   },
 
-  // ── Quick links — horizontal row ─────────────────────────────────
-  quickLinksSection: {
-    flexDirection: 'row',
+  // ── Shop by Category — round horizontal carousel ────────────────
+  categoriesSection: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    gap: Spacing.two,
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
     marginHorizontal: Spacing.two,
     borderRadius: 16,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
     elevation: 2,
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
-  quickLinkCard: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
+  categoryCarousel: {
+    paddingHorizontal: 4,
+    gap: 14,
   },
-  quickLinkIconWrap: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
+  categoryItem: {
+    alignItems: 'center',
+    width: 76,
+  },
+  categoryCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: Brand.surfaceAlt,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  categoryCircleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  categoryCircleFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Brand.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quickLinkLabel: {
+  categoryItemName: {
+    marginTop: 6,
     fontSize: 11,
     fontWeight: '700',
-    color: '#374151',
+    color: Brand.textSecondary,
     textAlign: 'center',
   },
 
@@ -1191,13 +1367,13 @@ const styles = StyleSheet.create({
   storesCarousel: { paddingHorizontal: Spacing.three, gap: 12 },
   storeCard: {
     width: 120,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Brand.surfaceAlt,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: Brand.surfaceAlt,
   },
   storeLogoWrap: {
     width: 56,
@@ -1209,10 +1385,10 @@ const styles = StyleSheet.create({
   },
   storeLogo: { width: '100%', height: '100%' },
   storeLogoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  storeName: { fontSize: 13, fontWeight: '700', color: '#1F2937', textAlign: 'center' },
-  storeLocation: { fontSize: 11, color: '#6B7280', textAlign: 'center' },
+  storeName: { fontSize: 13, fontWeight: '700', color: Brand.text, textAlign: 'center' },
+  storeLocation: { fontSize: 11, color: Brand.textSecondary, textAlign: 'center' },
   storeMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  storeMetaText: { fontSize: 11, color: '#6B7280' },
+  storeMetaText: { fontSize: 11, color: Brand.textSecondary },
   storeWholesaleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1272,7 +1448,7 @@ const styles = StyleSheet.create({
   imageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Brand.surfaceAlt,
     position: 'relative',
   },
   image: { width: '100%', height: '100%' },
@@ -1280,7 +1456,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Brand.surfaceAlt,
   },
   saleBadge: {
     position: 'absolute',
@@ -1351,22 +1527,27 @@ const styles = StyleSheet.create({
   addToCartBtn: {
     flex: 1,
     backgroundColor: Brand.primary,
-    borderRadius: 6,
+    borderRadius: 20,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    shadowColor: Brand.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  addToCartPressed: { backgroundColor: Brand.primaryDark },
+  addToCartPressed: { backgroundColor: Brand.primaryDark, transform: [{ scale: 0.96 }] },
   addToCartText: {
     color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '900',
   },
   inquiryBtn: {
     flex: 1,
-    backgroundColor: '#FFF3E8',
+    backgroundColor: Brand.surfaceAlt,
     borderRadius: 6,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
@@ -1376,7 +1557,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.primary,
   },
-  inquiryBtnPressed: { backgroundColor: '#FFE4CC' },
+  inquiryBtnPressed: { backgroundColor: Brand.border },
   inquiryBtnText: {
     color: Brand.primary,
     fontSize: 10,
@@ -1384,19 +1565,19 @@ const styles = StyleSheet.create({
   },
   viewBtn: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
+    backgroundColor: 'transparent',
+    borderRadius: 20,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderWidth: 1.5,
+    borderColor: Brand.primary,
   },
-  viewBtnPressed: { backgroundColor: '#E5E7EB' },
+  viewBtnPressed: { backgroundColor: Brand.surfaceAlt, transform: [{ scale: 0.96 }] },
   viewBtnText: {
-    color: '#6B7280',
+    color: Brand.primary,
     fontSize: 10,
     fontWeight: '700',
   },
@@ -1407,7 +1588,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: '#F97316',
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 4,

@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
-import { fetchStoreBySlug, fetchStoreProducts } from '@/services/catalog';
+import { useAuth } from '@/context/AuthContext';
+import { fetchStoreBySlug, fetchStoreProducts, followStore, unfollowStore } from '@/services/catalog';
+import { createChatThread } from '@/services/chat';
 import type { PaginatedResponse, Product, StoreDetail } from '@/types';
 
 const BUSINESS_ICONS: Record<string, string> = {
@@ -38,6 +40,8 @@ export default function StoreDetailScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const load = useCallback(async (reset = false) => {
     if (!slug) return;
@@ -73,6 +77,33 @@ export default function StoreDetailScreen() {
     load(true);
   }, []);
 
+  const handleFollow = useCallback(async () => {
+    if (!store?.slug) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
+    try {
+      if (isFollowing) {
+        await unfollowStore(store.slug);
+        setIsFollowing(false);
+      } else {
+        await followStore(store.slug);
+        setIsFollowing(true);
+      }
+    } catch (e: any) {
+      console.error('Follow error:', e?.message);
+    }
+  }, [store, isFollowing, isAuthenticated, router]);
+
+  const handleContact = useCallback(async () => {
+    if (!store?.slug) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
+    try {
+      const thread = await createChatThread(store.slug);
+      router.push(`/chat/${thread.id}` as any);
+    } catch (e: any) {
+      console.error('Chat create error:', e?.message);
+    }
+  }, [store, isAuthenticated, router]);
+
   const onRefresh = useCallback(() => load(true), [load]);
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || refreshing) return;
@@ -85,7 +116,7 @@ export default function StoreDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <LinearGradient
-            colors={['#e55f00', '#ff6a00', '#ff8520']}
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -111,7 +142,7 @@ export default function StoreDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           <LinearGradient
-            colors={['#e55f00', '#ff6a00', '#ff8520']}
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -149,7 +180,7 @@ export default function StoreDetailScreen() {
           <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="cover" />
         ) : (
           <View style={styles.noImage}>
-            <MaterialCommunityIcons name="package-variant-closed" size={32} color="#D1D5DB" />
+            <MaterialCommunityIcons name="package-variant-closed" size={32} color={Brand.textTertiary} />
           </View>
         )}
         {item.is_on_sale && (
@@ -173,7 +204,7 @@ export default function StoreDetailScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Top bar ─────────────────────────────────────────────── */}
         <LinearGradient
-          colors={['#e55f00', '#ff6a00', '#ff8520']}
+          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.topBar}
@@ -212,7 +243,7 @@ export default function StoreDetailScreen() {
             <View>
               {/* ── Hero banner ────────────────────────────────────── */}
               <LinearGradient
-                colors={['#e55f00', '#ff6a00', '#ff8520']}
+                colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroBanner}
@@ -233,7 +264,7 @@ export default function StoreDetailScreen() {
                       <Text style={styles.heroTagline} numberOfLines={2}>{store.tagline}</Text>
                     ) : null}
                     <View style={styles.heroMetaRow}>
-                      <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
+                      <MaterialCommunityIcons name="star" size={14} color={Brand.accent} />
                       <Text style={styles.heroMetaText}>{rating.toFixed(1)}</Text>
                       <Text style={styles.heroMetaSub}>({store.review_count || 0})</Text>
                       <Text style={styles.heroMetaDot}>•</Text>
@@ -280,7 +311,7 @@ export default function StoreDetailScreen() {
 
               {/* ── Action buttons ─────────────────────────────────── */}
               <View style={styles.actionsRow}>
-                <Pressable style={styles.actionBtn}>
+                <Pressable style={styles.actionBtn} onPress={handleContact}>
                   <MaterialCommunityIcons name="chat-outline" size={20} color={Brand.primary} />
                   <Text style={styles.actionBtnText}>Contact</Text>
                 </Pressable>
@@ -290,9 +321,9 @@ export default function StoreDetailScreen() {
                     <Text style={styles.actionBtnText}>Request Quote</Text>
                   </Pressable>
                 )}
-                <Pressable style={styles.actionBtn}>
-                  <MaterialCommunityIcons name="heart-outline" size={20} color={Brand.danger} />
-                  <Text style={styles.actionBtnText}>Follow</Text>
+                <Pressable style={styles.actionBtn} onPress={handleFollow}>
+                  <MaterialCommunityIcons name={isFollowing ? 'heart' : 'heart-outline'} size={20} color={Brand.danger} />
+                  <Text style={styles.actionBtnText}>{isFollowing ? 'Following' : 'Follow'}</Text>
                 </Pressable>
               </View>
 
@@ -308,23 +339,23 @@ export default function StoreDetailScreen() {
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionTitle}>Store Information</Text>
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="map-marker" size={16} color="#6B7280" />
+                  <MaterialCommunityIcons name="map-marker" size={16} color={Brand.textSecondary} />
                   <Text style={styles.infoText}>{store.city}, {store.country}</Text>
                 </View>
                 {store.phone ? (
                   <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="phone" size={16} color="#6B7280" />
+                    <MaterialCommunityIcons name="phone" size={16} color={Brand.textSecondary} />
                     <Text style={styles.infoText}>{store.phone}</Text>
                   </View>
                 ) : null}
                 {store.email ? (
                   <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="email" size={16} color="#6B7280" />
+                    <MaterialCommunityIcons name="email" size={16} color={Brand.textSecondary} />
                     <Text style={styles.infoText}>{store.email}</Text>
                   </View>
                 ) : null}
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="calendar" size={16} color="#6B7280" />
+                  <MaterialCommunityIcons name="calendar" size={16} color={Brand.textSecondary} />
                   <Text style={styles.infoText}>
                     Member since {new Date(store.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </Text>
@@ -395,7 +426,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: 'rgba(255,255,255,0.25)',
   },
-  heroBadgeGold: { backgroundColor: '#FFA41C' },
+  heroBadgeGold: { backgroundColor: Brand.accent },
   heroBadgeVerified: { backgroundColor: '#16A34A' },
   heroBadgeType: { backgroundColor: 'rgba(255,255,255,0.3)' },
   heroBadgeTA: { backgroundColor: 'rgba(255,255,255,0.3)' },
@@ -409,7 +440,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: Brand.surfaceAlt,
   },
   actionBtn: {
     flex: 1,
@@ -420,10 +451,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: Brand.border,
+    backgroundColor: Brand.surfaceAlt,
   },
-  actionBtnText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  actionBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
 
   // ── Section cards ───────────────────────────────────────────────
   sectionCard: {
@@ -431,13 +462,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
     gap: 8,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  descText: { fontSize: 13, lineHeight: 20, color: '#4B5563' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  descText: { fontSize: 13, lineHeight: 20, color: Brand.textSecondary },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  infoText: { fontSize: 13, color: '#374151' },
+  infoText: { fontSize: 13, color: Brand.textSecondary },
 
   // ── Products ────────────────────────────────────────────────────
   productsHeader: {
@@ -448,9 +479,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
   },
-  productsTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  productsTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
   list: { paddingBottom: 20 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
   productCard: {
@@ -459,33 +490,33 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: Brand.surfaceAlt,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
-  productImageWrap: { position: 'relative', backgroundColor: '#F9FAFB', aspectRatio: 1 },
+  productImageWrap: { position: 'relative', backgroundColor: Brand.surfaceAlt, aspectRatio: 1 },
   productImage: { width: '100%', height: '100%' },
-  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
+  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Brand.surfaceAlt },
   saleBadge: {
     position: 'absolute', top: 8, left: 8,
-    backgroundColor: '#FF4747', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
+    backgroundColor: Brand.danger, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
   },
   saleBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   productBody: { padding: 10, gap: 4 },
-  productName: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: '#1F2937' },
+  productName: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: Brand.text },
   productPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  productCurrency: { fontSize: 11, fontWeight: '600', color: '#1F2937' },
-  productPrice: { fontSize: 16, fontWeight: '700', color: '#1F2937' },
+  productCurrency: { fontSize: 11, fontWeight: '600', color: Brand.text },
+  productPrice: { fontSize: 16, fontWeight: '700', color: Brand.text },
 
   // ── States ──────────────────────────────────────────────────────
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  centerText: { marginTop: 8, color: '#6B7280', fontSize: 14 },
+  centerText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   errorTitle: { marginTop: 8, marginBottom: 12, fontSize: 16, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
-  endText: { textAlign: 'center', paddingVertical: 16, color: '#9CA3AF', fontSize: 13 },
+  endText: { textAlign: 'center', paddingVertical: 16, color: Brand.textTertiary, fontSize: 13 },
 });

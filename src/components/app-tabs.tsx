@@ -9,7 +9,7 @@ export default function AppTabs() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Brand.primary,
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarInactiveTintColor: Brand.textTertiary,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIconStyle: styles.tabBarIcon,
@@ -26,11 +26,11 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen
-        name="search"
+        name="categories"
         options={{
-          title: 'Search',
+          title: 'Categories',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="magnify" size={26} color={color} />
+            <MaterialCommunityIcons name="format-list-bulleted" size={26} color={color} />
           ),
         }}
       />
@@ -63,6 +63,7 @@ export default function AppTabs() {
       />
       {/* Hidden routes */}
       <Tabs.Screen name="cart" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="search" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="explore" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="product/[slug]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="store/[slug]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
@@ -88,11 +89,11 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 2,
-    borderTopColor: '#FFE4CC',
+    borderTopColor: Brand.border,
     height: 88,
     paddingBottom: 24,
     paddingTop: 10,
-    shadowColor: '#ff6a00',
+    shadowColor: Brand.primary,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,

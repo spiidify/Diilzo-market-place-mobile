@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,15 +8,20 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
-import { fetchProductReviews } from '@/services/catalog';
+import { useAuth } from '@/context/AuthContext';
+import { addToCart, getCartCount } from '@/services/cart';
+import { fetchProductReviews, trackProductView } from '@/services/catalog';
+import { createChatThread } from '@/services/chat';
 import { fetchProductBySlug } from '@/services/products';
+import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Product, Review } from '@/types';
 
 export default function ProductDetailScreen() {
@@ -27,6 +33,9 @@ export default function ProductDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const { isAuthenticated } = useAuth();
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -37,14 +46,85 @@ export default function ProductDetailScreen() {
       setProduct(data);
       setQuantity(data.min_order_quantity || 1);
       fetchProductReviews(slug).then(setReviews).catch(() => { });
+      trackProductView(slug).catch(() => { });
+      if (isAuthenticated && data.id) {
+        checkWishlist(data.id).then((r: any) => setIsWishlisted(!!r.is_wishlisted)).catch(() => { });
+        getCartCount().then(setCartCount).catch(() => { });
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load product');
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleWishlist = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(product.id);
+        setIsWishlisted(false);
+      } else {
+        await addToWishlist(product.id);
+        setIsWishlisted(true);
+      }
+    } catch (e: any) {
+      console.error('Wishlist error:', e?.message);
+    }
+  }, [product, isWishlisted, isAuthenticated, router]);
+
+  const handleChat = useCallback(async () => {
+    if (!product?.store?.slug) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
+    try {
+      const thread = await createChatThread(product.store.slug, product.id);
+      router.push(`/chat/${thread.id}` as any);
+    } catch (e: any) {
+      console.error('Chat create error:', e?.message);
+    }
+  }, [product, isAuthenticated, router]);
+
+  const handleAddToCart = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) { router.push('/login'); return; }
+    try {
+      await addToCart(product.id, quantity);
+      const count = await getCartCount();
+      setCartCount(count);
+    } catch (e: any) {
+      console.error('Add to cart error:', e?.message);
+    }
+  }, [product, quantity, isAuthenticated, router]);
+
+  const handleShare = useCallback(async () => {
+    if (!product) return;
+    try {
+      await Share.share({
+        message: `Check out ${product.name} on Diilzo — ${product.currency} ${Number(product.final_price).toLocaleString()}`,
+        url: `https://diilzo-market-place-production.up.railway.app/products/${product.slug}`,
+        title: product.name,
+      });
+    } catch (e: any) {
+      console.error('Share error:', e?.message);
+    }
+  }, [product]);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (!product) return;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('recently_viewed');
+        const list: any[] = raw ? JSON.parse(raw) : [];
+        const filtered = list.filter((p: any) => p.slug !== product.slug);
+        filtered.unshift({ id: product.id, slug: product.slug, name: product.name, primary_image_url: product.primary_image_url, final_price: product.final_price, currency: product.currency });
+        await AsyncStorage.setItem('recently_viewed', JSON.stringify(filtered.slice(0, 20)));
+      } catch { }
+    })();
+  }, [product]);
 
   // ── Loading ────────────────────────────────────────────────────
   if (loading) {
@@ -52,7 +132,7 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={['#e55f00', '#ff6a00', '#ff8520']}
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -78,7 +158,7 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={['#e55f00', '#ff6a00', '#ff8520']}
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.topBar}
@@ -113,7 +193,7 @@ export default function ProductDetailScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* ── Top bar (orange gradient) ──────────────────────────── */}
         <LinearGradient
-          colors={['#e55f00', '#ff6a00', '#ff8520']}
+          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.topBar}
@@ -122,7 +202,7 @@ export default function ProductDetailScreen() {
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
           <Text style={styles.topBarTitle} numberOfLines={1}>Product Details</Text>
-          <Pressable hitSlop={12}>
+          <Pressable hitSlop={12} onPress={handleShare}>
             <MaterialCommunityIcons name="share-variant-outline" size={22} color="#FFFFFF" />
           </Pressable>
         </LinearGradient>
@@ -144,7 +224,7 @@ export default function ProductDetailScreen() {
                 />
               ) : (
                 <View style={styles.noImage}>
-                  <MaterialCommunityIcons name="image-off" size={56} color="#D1D5DB" />
+                  <MaterialCommunityIcons name="image-off" size={56} color={Brand.textTertiary} />
                 </View>
               )}
               {/* Badges */}
@@ -243,11 +323,11 @@ export default function ProductDetailScreen() {
 
           {/* ── Wishlist + Chat actions ─────────────────────────────── */}
           <View style={styles.actionsRow}>
-            <Pressable style={styles.actionChip}>
-              <MaterialCommunityIcons name="heart-outline" size={18} color={Brand.danger} />
-              <Text style={styles.actionChipText}>Add to Wishlist</Text>
+            <Pressable style={styles.actionChip} onPress={handleWishlist}>
+              <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={18} color={Brand.danger} />
+              <Text style={styles.actionChipText}>{isWishlisted ? 'In Wishlist' : 'Add to Wishlist'}</Text>
             </Pressable>
-            <Pressable style={styles.actionChip}>
+            <Pressable style={styles.actionChip} onPress={handleChat}>
               <MaterialCommunityIcons name="chat-outline" size={18} color={Brand.link} />
               <Text style={styles.actionChipText}>Chat with Seller</Text>
             </Pressable>
@@ -262,14 +342,14 @@ export default function ProductDetailScreen() {
                   style={styles.qtyBtn}
                   onPress={() => setQuantity((q) => Math.max(product.min_order_quantity || 1, q - 1))}
                 >
-                  <MaterialCommunityIcons name="minus" size={16} color="#374151" />
+                  <MaterialCommunityIcons name="minus" size={16} color={Brand.textSecondary} />
                 </Pressable>
                 <Text style={styles.qtyValue}>{quantity}</Text>
                 <Pressable
                   style={styles.qtyBtn}
                   onPress={() => setQuantity((q) => Math.min(product.stock_quantity, q + 1))}
                 >
-                  <MaterialCommunityIcons name="plus" size={16} color="#374151" />
+                  <MaterialCommunityIcons name="plus" size={16} color={Brand.textSecondary} />
                 </Pressable>
               </View>
             </View>
@@ -363,7 +443,7 @@ export default function ProductDetailScreen() {
               <Text style={styles.shipText}>Buyer protection guaranteed</Text>
             </View>
             <View style={styles.shipRow}>
-              <MaterialCommunityIcons name="credit-card" size={18} color="#374151" />
+              <MaterialCommunityIcons name="credit-card" size={18} color={Brand.textSecondary} />
               <Text style={styles.shipText}>MoMo, Card, PayPal, Cash on Delivery</Text>
             </View>
           </View>
@@ -493,16 +573,16 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   mainImage: { width: '100%', height: '100%' },
-  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' },
+  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Brand.surfaceAlt },
   badgeStack: { position: 'absolute', top: 12, left: 12, gap: 4 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
-  badgeSale: { backgroundColor: '#FF4747' },
+  badgeSale: { backgroundColor: Brand.danger },
   badgeNew: { backgroundColor: '#0FA958' },
   badgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
   thumbs: { paddingHorizontal: 16, gap: 8, paddingTop: 8 },
   thumb: {
     width: 48, height: 48, borderRadius: 6, borderWidth: 1.5,
-    borderColor: '#E5E7EB', overflow: 'hidden',
+    borderColor: Brand.border, overflow: 'hidden',
   },
   thumbActive: { borderColor: Brand.primary },
   thumbImg: { width: '100%', height: '100%' },
@@ -512,37 +592,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginTop: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 10,
   },
   priceBlock: { gap: 2 },
-  oldPrice: { fontSize: 13, color: '#9CA3AF', textDecorationLine: 'line-through' },
+  oldPrice: { fontSize: 13, color: Brand.textTertiary, textDecorationLine: 'line-through' },
   priceMainRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  priceCurrency: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
-  priceAmount: { fontSize: 26, fontWeight: '800', color: '#1F2937' },
+  priceCurrency: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  priceAmount: { fontSize: 26, fontWeight: '800', color: Brand.text },
   discountTag: {
-    backgroundColor: '#FF4747', paddingHorizontal: 6, paddingVertical: 2,
+    backgroundColor: Brand.danger, paddingHorizontal: 6, paddingVertical: 2,
     borderRadius: 4, marginLeft: 4,
   },
   discountTagText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   saveLine: { fontSize: 12, color: Brand.danger, fontWeight: '600' },
 
-  productName: { fontSize: 16, fontWeight: '600', color: '#1F2937', lineHeight: 22 },
+  productName: { fontSize: 16, fontWeight: '600', color: Brand.text, lineHeight: 22 },
 
   metaLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   starsRow: { flexDirection: 'row', gap: 1 },
-  ratingText: { fontSize: 13, fontWeight: '700', color: '#1F2937' },
-  reviewText: { fontSize: 12, color: '#6B7280' },
-  dividerDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#D1D5DB' },
+  ratingText: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  reviewText: { fontSize: 12, color: Brand.textSecondary },
+  dividerDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: Brand.textTertiary },
   stockText: { fontSize: 12, fontWeight: '600' },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: {
-    backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4,
+    backgroundColor: Brand.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4,
   },
-  tagText: { fontSize: 11, color: '#6B7280', fontWeight: '500' },
+  tagText: { fontSize: 11, color: Brand.textSecondary, fontWeight: '500' },
   tagChoice: { backgroundColor: 'rgba(6,125,98,0.1)' },
   tagChoiceText: { fontSize: 11, color: Brand.success, fontWeight: '600' },
 
@@ -554,7 +634,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
   },
   actionChip: {
     flex: 1,
@@ -565,77 +645,77 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: Brand.border,
+    backgroundColor: Brand.surfaceAlt,
   },
-  actionChipText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  actionChipText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
 
   // ── Qty + delivery card ─────────────────────────────────────────
   qtyDeliveryCard: {
     backgroundColor: '#FFFFFF',
     marginTop: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
   },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  qtyLabel: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
+  qtyLabel: { fontSize: 14, fontWeight: '600', color: Brand.text },
   qtyControls: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 6, paddingHorizontal: 4,
+    borderWidth: 1, borderColor: Brand.border, borderRadius: 6, paddingHorizontal: 4,
   },
   qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center' },
-  qtyValue: { fontSize: 16, fontWeight: '700', color: '#1F2937', minWidth: 20, textAlign: 'center' },
+  qtyValue: { fontSize: 16, fontWeight: '700', color: Brand.text, minWidth: 20, textAlign: 'center' },
   deliveryMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  deliveryMiniText: { fontSize: 13, color: '#374151' },
+  deliveryMiniText: { fontSize: 13, color: Brand.textSecondary },
 
   // ── Cards ───────────────────────────────────────────────────────
   card: {
     backgroundColor: '#FFFFFF',
     marginTop: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Brand.surfaceAlt,
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 8,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
 
   // ── Wholesale tiers ─────────────────────────────────────────────
   tierRow: {
     flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F3F4F6',
+    paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Brand.surfaceAlt,
   },
-  tierQty: { fontSize: 13, color: '#6B7280' },
+  tierQty: { fontSize: 13, color: Brand.textSecondary },
   tierPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary },
-  moqHint: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+  moqHint: { fontSize: 12, color: Brand.textTertiary, marginTop: 4 },
 
   // ── Description ─────────────────────────────────────────────────
-  descText: { fontSize: 13, lineHeight: 20, color: '#4B5563' },
+  descText: { fontSize: 13, lineHeight: 20, color: Brand.textSecondary },
 
   // ── Features ────────────────────────────────────────────────────
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  featureText: { fontSize: 13, color: '#374151', flex: 1, lineHeight: 18 },
+  featureText: { fontSize: 13, color: Brand.textSecondary, flex: 1, lineHeight: 18 },
 
   // ── Specs ───────────────────────────────────────────────────────
   specRow: {
     flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F3F4F6',
+    paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Brand.surfaceAlt,
   },
   specRowLast: { borderBottomWidth: 0 },
-  specKey: { fontSize: 13, color: '#6B7280' },
-  specVal: { fontSize: 13, color: '#1F2937', fontWeight: '500' },
+  specKey: { fontSize: 13, color: Brand.textSecondary },
+  specVal: { fontSize: 13, color: Brand.text, fontWeight: '500' },
 
   // ── Shipping ────────────────────────────────────────────────────
   shipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  shipText: { fontSize: 13, color: '#374151' },
+  shipText: { fontSize: 13, color: Brand.textSecondary },
 
   // ── Reviews ─────────────────────────────────────────────────────
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   ratingSummary: { alignItems: 'flex-end', gap: 2 },
-  ratingBig: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  ratingBig: { fontSize: 18, fontWeight: '800', color: Brand.text },
   reviewItem: { flexDirection: 'row', gap: 10, paddingVertical: 6 },
   reviewAvatar: {
     width: 32, height: 32, borderRadius: 16, backgroundColor: Brand.primary,
@@ -644,11 +724,11 @@ const styles = StyleSheet.create({
   reviewAvatarText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   reviewBody: { flex: 1, gap: 2 },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  reviewName: { fontSize: 13, fontWeight: '600', color: '#1F2937' },
+  reviewName: { fontSize: 13, fontWeight: '600', color: Brand.text },
   verifiedTag: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   verifiedText: { fontSize: 10, color: Brand.success, fontWeight: '600' },
-  reviewComment: { fontSize: 12, color: '#4B5563', lineHeight: 16 },
-  noReviewsText: { fontSize: 13, color: '#9CA3AF', paddingVertical: 4 },
+  reviewComment: { fontSize: 12, color: Brand.textSecondary, lineHeight: 16 },
+  noReviewsText: { fontSize: 13, color: Brand.textTertiary, paddingVertical: 4 },
 
   // ── Seller ──────────────────────────────────────────────────────
   sellerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -657,9 +737,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   sellerInfo: { flex: 1, gap: 1 },
-  sellerName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  sellerLoc: { fontSize: 12, color: '#6B7280' },
-  wholeTag: { backgroundColor: '#FFF3E8', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  sellerName: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  sellerLoc: { fontSize: 12, color: Brand.textSecondary },
+  wholeTag: { backgroundColor: Brand.surfaceAlt, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   wholeText: { fontSize: 10, fontWeight: '600', color: Brand.primary },
 
   // ── Action bar ──────────────────────────────────────────────────
@@ -671,7 +751,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: Brand.border,
   },
   cartBtn: {
     flex: 1,
@@ -679,7 +759,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#FFF3E8',
+    backgroundColor: Brand.surfaceAlt,
     borderRadius: 8,
     paddingVertical: 12,
     borderWidth: 1.5,
@@ -698,7 +778,7 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  centerText: { marginTop: 8, color: '#6B7280', fontSize: 14 },
+  centerText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   errorTitle: { marginTop: 8, marginBottom: 12, fontSize: 16, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },

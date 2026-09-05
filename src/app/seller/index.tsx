@@ -47,9 +47,9 @@ export default function SellerDashboardScreen() {
     { icon: 'package-variant-closed', label: 'Products', color: '#3B82F6', route: '/seller/products' as any, count: stats?.total_products },
     { icon: 'clipboard-list-outline', label: 'Orders', color: '#16A34A', route: '/seller/orders' as any, count: stats?.pending_orders },
     { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings' as any },
-    { icon: 'chart-line', label: 'Analytics', color: '#F59E0B', route: '/seller/analytics' as any },
+    { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
-    { icon: 'store-settings-outline', label: 'Store Settings', color: '#6B7280', route: '/seller/settings' as any },
+    { icon: 'store-settings-outline', label: 'Store Settings', color: Brand.textSecondary, route: '/seller/settings' as any },
   ];
 
   if (loading && !data) {
@@ -69,7 +69,7 @@ export default function SellerDashboardScreen() {
     return (
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
               <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
             </Pressable>
@@ -91,7 +91,7 @@ export default function SellerDashboardScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={['#ff5a00', '#ff6a00', '#ff8520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
@@ -146,7 +146,7 @@ export default function SellerDashboardScreen() {
               <Text style={styles.statLabel}>Available (UGX)</Text>
             </View>
             <View style={styles.statCard}>
-              <MaterialCommunityIcons name="clock-outline" size={24} color="#F59E0B" />
+              <MaterialCommunityIcons name="clock-outline" size={24} color={Brand.rating} />
               <Text style={styles.statValue}>{Number(stats?.pending_balance || 0).toLocaleString()}</Text>
               <Text style={styles.statLabel}>Pending (UGX)</Text>
             </View>
@@ -171,7 +171,7 @@ export default function SellerDashboardScreen() {
             {menuItems.map((item, index) => (
               <Pressable
                 key={`seller-menu-${index}`}
-                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: '#F9FAFB' }]}
+                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: Brand.surfaceAlt }]}
                 onPress={() => router.push(item.route)}
               >
                 <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
@@ -183,7 +183,7 @@ export default function SellerDashboardScreen() {
                     <Text style={styles.menuBadgeText}>{item.count}</Text>
                   </View>
                 )}
-                <MaterialCommunityIcons name="chevron-right" size={22} color="#D1D5DB" />
+                <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
               </Pressable>
             ))}
           </View>
@@ -194,8 +194,8 @@ export default function SellerDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F3F4F6' },
-  safeArea: { flex: 1, backgroundColor: '#ff6a00' },
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.primary },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  loadingText: { marginTop: 8, color: '#6B7280', fontSize: 14 },
+  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center' },
   retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700' },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   storeLogo: { width: '100%', height: '100%' },
   storeLogoFallback: { width: '100%', height: '100%', backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
   storeInfo: { flex: 1, gap: 4 },
-  storeName: { fontSize: 17, fontWeight: '700', color: '#1F2937' },
+  storeName: { fontSize: 17, fontWeight: '700', color: Brand.text },
   storeStatus: { fontSize: 13, color: '#16A34A', fontWeight: '600' },
   supplierBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
@@ -240,31 +240,31 @@ const styles = StyleSheet.create({
     borderRadius: 14, padding: 16, gap: 6,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  statValue: { fontSize: 22, fontWeight: '800', color: '#1F2937' },
-  statLabel: { fontSize: 12, color: '#6B7280' },
+  statValue: { fontSize: 22, fontWeight: '800', color: Brand.text },
+  statLabel: { fontSize: 12, color: Brand.textSecondary },
 
   // ── Sales banner ────────────────────────────────────────────────
   salesBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#1F2937', marginHorizontal: 12, marginTop: 12,
+    backgroundColor: Brand.text, marginHorizontal: 12, marginTop: 12,
     padding: 18, borderRadius: 16,
   },
-  salesLabel: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+  salesLabel: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
   salesValue: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginTop: 4 },
   salesRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ratingText: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  reviewText: { fontSize: 12, color: '#9CA3AF' },
+  reviewText: { fontSize: 12, color: Brand.textTertiary },
 
   // ── Menu ────────────────────────────────────────────────────────
   menuSection: { paddingHorizontal: 12, paddingTop: 20, paddingBottom: 32 },
-  menuTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 10 },
+  menuTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10 },
   menuItem: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: '#FFFFFF', paddingVertical: 14, paddingHorizontal: 16,
     borderRadius: 12, marginBottom: 8,
   },
   menuIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1F2937' },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
   menuBadge: {
     backgroundColor: Brand.primary, minWidth: 22, height: 22, borderRadius: 11,
     paddingHorizontal: 6, justifyContent: 'center', alignItems: 'center',
