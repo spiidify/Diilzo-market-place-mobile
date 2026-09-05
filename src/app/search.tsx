@@ -51,6 +51,41 @@ async function fetchTrendingImages(): Promise<Record<string, string>> {
   return results;
 }
 
+// ── Sponsored product card (horizontal scroll) ─────────────────────
+const SponsoredProductCard = memo(function SponsoredProductCard({
+  item,
+  onPress,
+  badgeText,
+  badgeColor,
+}: {
+  item: Product;
+  onPress: (slug: string) => void;
+  badgeText: string;
+  badgeColor: string;
+}) {
+  return (
+    <Pressable
+      style={styles.sponsoredCard}
+      onPress={() => onPress(item.slug)}
+    >
+      <View style={styles.sponsoredImgWrap}>
+        {item.primary_image_url ? (
+          <Image source={{ uri: item.primary_image_url }} style={styles.sponsoredImg} contentFit="cover" />
+        ) : (
+          <View style={[styles.sponsoredImg, { backgroundColor: Brand.surfaceAlt }]}>
+            <MaterialCommunityIcons name="image-off-outline" size={28} color={Brand.textTertiary} />
+          </View>
+        )}
+        <View style={[styles.sponsoredBadge, { backgroundColor: badgeColor }]}>
+          <Text style={styles.sponsoredBadgeText}>{badgeText}</Text>
+        </View>
+      </View>
+      <Text style={styles.sponsoredName} numberOfLines={2}>{item.name}</Text>
+      <Text style={styles.sponsoredPrice}>UGX {Number(item.final_price).toLocaleString()}</Text>
+    </Pressable>
+  );
+});
+
 // ── Memoized product card ───────────────────────────────────────────
 const SearchProductCard = memo(function SearchProductCard({
   item,
@@ -105,6 +140,8 @@ export default function SearchScreen() {
   const params = useLocalSearchParams<{ category?: string; categoryName?: string }>();
   const categorySlug = params.category || null;
   const [products, setProducts] = useState<Product[]>([]);
+  const [pinned, setPinned] = useState<Product[]>([]);
+  const [sponsored, setSponsored] = useState<Product[]>([]);
   const [count, setCount] = useState(0);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -147,6 +184,10 @@ export default function SearchScreen() {
       const data = query
         ? await searchProducts(query, targetPage, baseParams)
         : await fetchProducts(baseParams);
+      if (reset) {
+        setPinned(data.pinned || []);
+        setSponsored(data.sponsored || []);
+      }
       setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
       setCount(data.count);
       setHasMore(data.next !== null);
@@ -425,15 +466,59 @@ export default function SearchScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             ListHeaderComponent={
-              categorySlug ? (
-                <View style={styles.categoryBanner}>
-                  <Pressable onPress={() => router.back()} hitSlop={12} style={styles.categoryBackBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.primary} />
-                  </Pressable>
-                  <Text style={styles.categoryBannerTitle}>{params.categoryName || 'Category'}</Text>
-                  <View style={{ width: 22 }} />
-                </View>
-              ) : null
+              <View>
+                {categorySlug && (
+                  <View style={styles.categoryBanner}>
+                    <Pressable onPress={() => router.back()} hitSlop={12} style={styles.categoryBackBtn}>
+                      <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.primary} />
+                    </Pressable>
+                    <Text style={styles.categoryBannerTitle}>{params.categoryName || 'Category'}</Text>
+                    <View style={{ width: 22 }} />
+                  </View>
+                )}
+
+                {/* Pinned products (TOP Ads) */}
+                {pinned.length > 0 && (
+                  <View style={styles.promoSection}>
+                    <View style={styles.promoSectionHeader}>
+                      <MaterialCommunityIcons name="pin" size={16} color={Brand.rating} />
+                      <Text style={styles.promoSectionTitle}>TOP Ads</Text>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {pinned.map((item) => (
+                        <SponsoredProductCard
+                          key={`pinned-${item.id}`}
+                          item={item}
+                          onPress={handleProductPress}
+                          badgeText="TOP AD"
+                          badgeColor={Brand.rating}
+                        />
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* Sponsored products (CPC) */}
+                {sponsored.length > 0 && (
+                  <View style={styles.promoSection}>
+                    <View style={styles.promoSectionHeader}>
+                      <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#3B82F6" />
+                      <Text style={styles.promoSectionTitle}>Sponsored</Text>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {sponsored.map((item) => (
+                        <SponsoredProductCard
+                          key={`sponsored-${item.id}`}
+                          item={item}
+                          onPress={handleProductPress}
+                          badgeText="SPONSORED"
+                          badgeColor="#3B82F6"
+                        />
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
             }
             refreshControl={
               <RefreshControl
@@ -784,4 +869,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Brand.text,
   },
+
+  // ── Sponsored / Pinned sections ─────────────────────────────────
+  promoSection: { marginBottom: 12 },
+  promoSectionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 12, marginBottom: 8,
+  },
+  promoSectionTitle: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary },
+  sponsoredCard: {
+    width: 140, marginLeft: 12, backgroundColor: '#FFFFFF',
+    borderRadius: 10, padding: 8, borderWidth: 1, borderColor: Brand.borderLight,
+  },
+  sponsoredImgWrap: { position: 'relative', marginBottom: 6 },
+  sponsoredImg: {
+    width: '100%', height: 120, borderRadius: 8, backgroundColor: Brand.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  sponsoredBadge: {
+    position: 'absolute', top: 4, left: 4,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+  },
+  sponsoredBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
+  sponsoredName: { fontSize: 12, fontWeight: '600', color: Brand.text, lineHeight: 16, minHeight: 32 },
+  sponsoredPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary, marginTop: 4 },
 });

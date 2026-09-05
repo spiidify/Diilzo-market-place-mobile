@@ -48,6 +48,7 @@ export default function SellerDashboardScreen() {
     { icon: 'clipboard-list-outline', label: 'Orders', color: '#16A34A', route: '/seller/orders' as any, count: stats?.pending_orders },
     { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings' as any },
     { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' as any },
+    { icon: 'bullhorn-outline', label: 'Promotions', color: '#F59E0B', route: '/seller/promotions' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
     { icon: 'store-settings-outline', label: 'Store Settings', color: Brand.textSecondary, route: '/seller/settings' as any },
   ];

@@ -159,6 +159,96 @@ function renderStarsStatic(rating: string) {
   return <View style={styles.starsRow}>{stars}</View>;
 }
 
+// ── Home Carousel (self-contained, isolated state) ─────────────────
+// Extracted so the auto-scroll timer doesn't re-render the parent
+// (which was resetting the category ScrollView position).
+const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] }) {
+  const router = useRouter();
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slideScrollRef = useRef<ScrollView | null>(null);
+  const slideTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    slideTimerRef.current = setInterval(() => {
+      setActiveSlide((prev) => {
+        const next = (prev + 1) % slides.length;
+        if (slideScrollRef.current) {
+          (slideScrollRef.current as any).scrollTo({
+            x: next * Dimensions.get('window').width,
+            animated: true,
+          });
+        }
+        return next;
+      });
+    }, 4000);
+    return () => {
+      if (slideTimerRef.current) clearInterval(slideTimerRef.current);
+    };
+  }, [slides.length]);
+
+  if (slides.length === 0) return null;
+
+  return (
+    <View style={styles.carouselWrap}>
+      <ScrollView
+        ref={(ref) => { if (ref) { (slideScrollRef as any).current = ref; } }}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get('window').width - 32));
+          if (idx !== activeSlide) setActiveSlide(idx);
+        }}
+        scrollEventThrottle={16}
+      >
+        {slides.map((slide) => (
+          <Pressable
+            key={`slide-${slide.id}`}
+            style={styles.slideCard}
+            onPress={() => {
+              if (slide.cta_link) {
+                const link = slide.cta_link;
+                if (link.startsWith('/')) {
+                  router.push(link as any);
+                } else {
+                  Linking.openURL(link).catch(() => { });
+                }
+              }
+            }}
+          >
+            {slide.display_image ? (
+              <Image
+                source={{ uri: slide.display_image }}
+                style={styles.slideImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <LinearGradient
+                colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.slideFallback}
+              />
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+      {slides.length > 1 && (
+        <View style={styles.carouselDots}>
+          {slides.map((_, i) => (
+            <View
+              key={`dot-${i}`}
+              style={[styles.carouselDot, i === activeSlide && styles.carouselDotActive]}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+});
+
 export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -175,11 +265,8 @@ export default function ProductFeedScreen() {
   const [chatUnread, setChatUnread] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);
-  const [activeSlide, setActiveSlide] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const slideScrollRef = useRef<ScrollView | null>(null);
-  const slideTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Section data
   const [deals, setDeals] = useState<Product[]>([]);
@@ -259,26 +346,6 @@ export default function ProductFeedScreen() {
     loadAllSections();
     loadCategories();
   }, []);
-
-  // ── Auto-scroll homepage carousel ───────────────────────────────
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    slideTimerRef.current = setInterval(() => {
-      setActiveSlide((prev) => {
-        const next = (prev + 1) % slides.length;
-        if (slideScrollRef.current) {
-          (slideScrollRef.current as any).scrollTo({
-            x: next * Dimensions.get('window').width,
-            animated: true,
-          });
-        }
-        return next;
-      });
-    }, 4000);
-    return () => {
-      if (slideTimerRef.current) clearInterval(slideTimerRef.current);
-    };
-  }, [slides.length]);
 
   // ── Refresh cart count when screen gains focus ──────────────────
   const loadCartCount = useCallback(async () => {
@@ -461,96 +528,7 @@ export default function ProductFeedScreen() {
       </Pressable>
 
       {/* ── Homepage carousel ─────────────────────────────────────── */}
-      {slides.length > 0 && (
-        <View style={styles.carouselWrap}>
-          <ScrollView
-            ref={(ref) => { if (ref) { (slideScrollRef as any).current = ref; } }}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
-              const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get('window').width - 32));
-              if (idx !== activeSlide) setActiveSlide(idx);
-            }}
-            scrollEventThrottle={16}
-          >
-            {slides.map((slide) => (
-              <Pressable
-                key={`slide-${slide.id}`}
-                style={styles.slideCard}
-                onPress={() => {
-                  if (slide.cta_link) {
-                    const link = slide.cta_link;
-                    if (link.startsWith('/')) {
-                      router.push(link as any);
-                    } else {
-                      Linking.openURL(link).catch(() => { });
-                    }
-                  }
-                }}
-              >
-                {slide.display_image ? (
-                  <Image
-                    source={{ uri: slide.display_image }}
-                    style={styles.slideImage}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                ) : (
-                  <LinearGradient
-                    colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.slideFallback}
-                  >
-                    <View style={styles.slideTextWrap}>
-                      {slide.headline ? (
-                        <Text style={styles.slideHeadline}>{slide.headline}</Text>
-                      ) : null}
-                      {slide.subheadline ? (
-                        <Text style={styles.slideSubheadline}>{slide.subheadline}</Text>
-                      ) : null}
-                      {slide.cta_text ? (
-                        <View style={styles.slideCtaBtn}>
-                          <Text style={styles.slideCtaText}>{slide.cta_text}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </LinearGradient>
-                )}
-                {slide.display_image && (slide.headline || slide.cta_text) && (
-                  <View style={styles.slideOverlay}>
-                    <View style={styles.slideTextWrap}>
-                      {slide.headline ? (
-                        <Text style={styles.slideHeadline}>{slide.headline}</Text>
-                      ) : null}
-                      {slide.subheadline ? (
-                        <Text style={styles.slideSubheadline}>{slide.subheadline}</Text>
-                      ) : null}
-                      {slide.cta_text ? (
-                        <View style={styles.slideCtaBtn}>
-                          <Text style={styles.slideCtaText}>{slide.cta_text}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                )}
-              </Pressable>
-            ))}
-          </ScrollView>
-          {/* Dot indicators */}
-          {slides.length > 1 && (
-            <View style={styles.carouselDots}>
-              {slides.map((_, i) => (
-                <View
-                  key={`dot-${i}`}
-                  style={[styles.carouselDot, i === activeSlide && styles.carouselDotActive]}
-                />
-              ))}
-            </View>
-          )}
-        </View>
-      )}
+      <HomeCarousel slides={slides} />
 
       {/* ── Shop by Category — horizontal round carousel ─────────────── */}
       <View style={styles.categoriesSection}>
@@ -1081,7 +1059,7 @@ const styles = StyleSheet.create({
   },
   slideCard: {
     width: Dimensions.get('window').width - 32,
-    height: 180,
+    height: 220,
     position: 'relative',
   },
   slideImage: {
@@ -1092,41 +1070,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     justifyContent: 'center',
-  },
-  slideOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: 0,
-    backgroundColor: 'rgba(10,46,26,0.45)',
-    justifyContent: 'center',
-  },
-  slideTextWrap: {
-    padding: 20,
-  },
-  slideHeadline: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    marginBottom: 6,
-  },
-  slideSubheadline: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 12,
-  },
-  slideCtaBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  slideCtaText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Brand.primary,
   },
   carouselDots: {
     flexDirection: 'row',

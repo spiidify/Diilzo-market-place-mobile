@@ -1,6 +1,6 @@
 // ── Product API Service ──────────────────────────────────────────
 
-import type { PaginatedResponse, Product } from '../types';
+import type { PaginatedResponse, Product, ProductFeedResponse } from '../types';
 import { apiRequest } from './api';
 
 export interface ProductListParams {
@@ -21,13 +21,22 @@ export interface ProductListParams {
 /**
  * Fetch a paginated list of products.
  * GET /api/v1/products/
+ * Returns pinned, sponsored, and organic results sections.
  */
-export async function fetchProducts(params: ProductListParams = {}): Promise<PaginatedResponse<Product>> {
-  return apiRequest<PaginatedResponse<Product>>({
+export async function fetchProducts(params: ProductListParams = {}): Promise<ProductFeedResponse & PaginatedResponse<Product>> {
+  const data = await apiRequest<ProductFeedResponse & PaginatedResponse<Product>>({
     method: 'GET',
     url: '/products/',
     params,
   });
+  // Ensure pinned/sponsored arrays exist (backward compat with older API)
+  if (!data.pinned) data.pinned = [];
+  if (!data.sponsored) data.sponsored = [];
+  // Ensure results exists (fallback to data if flat array)
+  if (!data.results && Array.isArray(data)) {
+    data.results = data as any;
+  }
+  return data;
 }
 
 /**
@@ -44,6 +53,6 @@ export async function fetchProductBySlug(slug: string): Promise<Product> {
 /**
  * Search products by name or description.
  */
-export async function searchProducts(query: string, page = 1, extraParams: ProductListParams = {}): Promise<PaginatedResponse<Product>> {
+export async function searchProducts(query: string, page = 1, extraParams: ProductListParams = {}): Promise<ProductFeedResponse & PaginatedResponse<Product>> {
   return fetchProducts({ search: query, page, ...extraParams });
 }

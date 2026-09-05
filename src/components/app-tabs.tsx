@@ -63,8 +63,8 @@ export default function AppTabs() {
       />
       {/* Hidden routes */}
       <Tabs.Screen name="cart" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="checkout" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="search" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="explore" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="product/[slug]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="store/[slug]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="(auth)/login" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
@@ -73,10 +73,19 @@ export default function AppTabs() {
       <Tabs.Screen name="chat/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/orders/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer/wishlist" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer/addresses" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/notifications" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/payments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/privacy" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/support" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/tracking" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/products" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/products/add" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/products/edit" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/promotions" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/earnings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/analytics" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />

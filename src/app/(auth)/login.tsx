@@ -74,7 +74,13 @@ export default function LoginScreen() {
         const accessToken = url.searchParams.get('access') || url.searchParams.get('access_token');
         const refreshToken = url.searchParams.get('refresh') || url.searchParams.get('refresh_token');
         if (accessToken && refreshToken) {
-          await login(email, password); // fallback; real flow would set tokens directly
+          // Store tokens directly via the auth service
+          const { setTokens } = await import('@/services/api');
+          await setTokens(accessToken, refreshToken);
+          // Reload the app to let AuthContext pick up the new tokens
+          router.replace('/');
+        } else {
+          Alert.alert('Social Login', 'Authentication was cancelled or did not return tokens.');
         }
       }
     } catch (e: any) {
@@ -92,10 +98,8 @@ export default function LoginScreen() {
       setError('Please enter a valid email address.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
+    // Note: no minimum password length on login — existing accounts with
+    // shorter passwords should be able to sign in. The server validates.
 
     setLoading(true);
     setError(null);

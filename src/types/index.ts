@@ -25,6 +25,7 @@ export interface Store {
   city: string;
   country: string;
   is_wholesaler: boolean;
+  phone?: string;
   tagline?: string;
   is_featured?: boolean;
   product_count?: number;
@@ -129,8 +130,89 @@ export interface Product {
   width: string | null;
   height: string | null;
   video_url: string | null;
+  is_sponsored?: boolean;
+  promotion_type?: string | null;
+  promotion_id?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+// ── Promotion & Discovery Engine Types ───────────────────────────
+
+export type PackageType = 'top_ad' | 'sponsored' | 'homepage_featured' | 'category_pinned';
+
+export interface PromotionPackage {
+  id: number;
+  name: string;
+  package_type: PackageType;
+  duration_days: number;
+  price: string;
+  currency: string;
+  max_impressions: number;
+  max_clicks: number;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export type PromotionStatus = 'pending' | 'active' | 'paused' | 'expired' | 'cancelled';
+
+export interface KeywordBid {
+  id: number;
+  keyword: string;
+  bid_amount: string;
+  is_active: boolean;
+  created_at: string;
+  product_name: string | null;
+}
+
+export interface ProductPromotion {
+  id: number;
+  product: number;
+  product_name: string;
+  product_slug: string;
+  package: number | null;
+  package_name: string | null;
+  package_type: PackageType | null;
+  status: PromotionStatus;
+  starts_at: string | null;
+  ends_at: string | null;
+  target_keywords: string;
+  target_category: number | null;
+  impressions: number;
+  clicks: number;
+  add_to_carts: number;
+  purchases: number;
+  bid_per_click: string;
+  ad_spend: string;
+  ad_spend_budget: string;
+  is_currently_active: boolean;
+  ctr: number;
+  conversion_rate: number;
+  keyword_bids: KeywordBid[];
+  created_at: string;
+}
+
+export interface PromotionAnalytics {
+  total_promotions: number;
+  active_promotions: number;
+  pending_promotions: number;
+  expired_promotions: number;
+  total_impressions: number;
+  total_clicks: number;
+  total_add_to_carts: number;
+  total_purchases: number;
+  total_ad_spend: number;
+  overall_ctr: number;
+  overall_conversion_rate: number;
+}
+
+export interface ProductFeedResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  pinned: Product[];
+  sponsored: Product[];
+  results: Product[];
 }
 
 // ── User & Auth ──────────────────────────────────────────────────

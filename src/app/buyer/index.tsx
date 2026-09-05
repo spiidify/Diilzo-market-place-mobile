@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function BuyerDashboardScreen() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
@@ -23,6 +23,67 @@ export default function BuyerDashboardScreen() {
     { icon: 'help-circle-outline', label: 'Help & Support', color: '#06B6D4', route: '/buyer/support' as any },
   ];
 
+  // Show loading while auth state is being determined
+  if (isLoading) {
+    return (
+      <View style={styles.screen}>
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+            <View style={{ width: 24 }} />
+            <Text style={styles.headerTitle}>My Account</Text>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+          <View style={styles.loadingBody}>
+            <ActivityIndicator size="large" color={Brand.primary} />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // Not authenticated — show login prompt
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.screen}>
+        <SafeAreaView edges={['top']} style={styles.safeArea}>
+          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>My Account</Text>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+        </SafeAreaView>
+        <View style={styles.loginPromptBody}>
+          <View style={styles.loginPromptIcon}>
+            <MaterialCommunityIcons name="account-lock-outline" size={48} color={Brand.primary} />
+          </View>
+          <Text style={styles.loginPromptTitle}>Sign In Required</Text>
+          <Text style={styles.loginPromptSub}>
+            Please sign in to access your orders, wishlist, addresses, and account settings.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.loginBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/(auth)/login' as any)}
+          >
+            <MaterialCommunityIcons name="login" size={20} color="#FFFFFF" />
+            <Text style={styles.loginBtnText}>Sign In</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.registerBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/(auth)/register' as any)}
+          >
+            <Text style={styles.registerBtnText}>Create a Free Account</Text>
+          </Pressable>
+          <Pressable onPress={() => router.replace('/')} hitSlop={12}>
+            <Text style={styles.guestText}>Continue as guest</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -34,7 +95,7 @@ export default function BuyerDashboardScreen() {
           <View style={{ width: 24 }} />
         </LinearGradient>
 
-        <View style={styles.body}>
+        <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
           {/* Profile hero */}
           <View style={styles.profileCard}>
             <View style={styles.avatarWrap}>
@@ -110,7 +171,19 @@ export default function BuyerDashboardScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
+
+          {/* Logout */}
+          <Pressable
+            style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
+            onPress={async () => {
+              await logout();
+              router.replace('/');
+            }}
+          >
+            <MaterialCommunityIcons name="logout" size={20} color={Brand.danger} />
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </Pressable>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -122,6 +195,39 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   body: { flex: 1 },
+
+  // Loading state
+  loadingBody: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: 12, color: Brand.textSecondary, fontSize: 14 },
+
+  // Login prompt (not authenticated)
+  loginPromptBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  loginPromptIcon: {
+    width: 96, height: 96, borderRadius: 48, backgroundColor: Brand.primary + '15',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+  },
+  loginPromptTitle: { fontSize: 22, fontWeight: '700', color: Brand.text },
+  loginPromptSub: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  loginBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
+    borderRadius: 12, marginTop: 24, width: '100%',
+  },
+  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  registerBtn: {
+    borderWidth: 1, borderColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
+    borderRadius: 12, marginTop: 12, width: '100%', alignItems: 'center',
+  },
+  registerBtnText: { color: Brand.primary, fontSize: 15, fontWeight: '700' },
+  guestText: { color: Brand.textTertiary, fontSize: 13, marginTop: 20 },
+
+  // Logout
+  logoutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginBottom: 32, marginTop: 8,
+    paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: Brand.danger + '30',
+  },
+  logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
 
   // Profile card
   profileCard: {

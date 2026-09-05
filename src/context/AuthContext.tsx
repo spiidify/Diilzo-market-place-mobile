@@ -1,11 +1,11 @@
 // ── Auth Context ──────────────────────────────────────────────────
 // Global auth state for the Diilzo mobile app.
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import { login as apiLogin, register as apiRegister, logout as apiLogout, getProfile } from '../services/auth';
-import { getAccessToken, getRefreshToken } from '../services/api';
+import { getAccessToken } from '../services/api';
+import { login as apiLogin, logout as apiLogout, register as apiRegister, getProfile } from '../services/auth';
+import { clearGuestCartId } from '../services/cart';
 import type { User } from '../types';
 
 interface AuthState {
@@ -52,6 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     await apiLogin(email, password);
     const user = await getProfile();
+    // Clear guest cart ID — the backend merges guest cart items into the user's cart
+    await clearGuestCartId();
     setState({ user, isLoading: false, isAuthenticated: true });
   }, []);
 
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     await apiRegister(email, password, firstName, lastName, phone);
     const user = await getProfile();
+    await clearGuestCartId();
     setState({ user, isLoading: false, isAuthenticated: true });
   }, []);
 

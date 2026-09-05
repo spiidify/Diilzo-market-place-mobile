@@ -1,28 +1,24 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  FlatList, Pressable,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
 import type { CartItem, Cart as CartType } from '@/types';
-
-const ORANGE = Brand.primary; // Vibrant Green primary
-const LINK = Brand.primary;
-const DANGER = Brand.danger;
-const PRICE_BLACK = Brand.text;
-const HEADER_DARK = '#131921';
-const DIVIDER = '#E7E7E7';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -30,44 +26,87 @@ export default function CartScreen() {
   const [cart, setCart] = useState<CartType | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+  const [connectionError, setConnectionError] = useState(false);
 
   const loadCart = useCallback(async () => {
-    if (!isAuthenticated) { setLoading(false); return; }
     try {
+      setConnectionError(false);
       const data = await getCart();
       setCart(data);
     } catch (e: any) {
       console.error('Cart load error:', e?.message);
+      setConnectionError(true);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, []);
 
   useEffect(() => { loadCart(); }, [loadCart]);
+
+  // Optimistic helpers - update local cart state instantly, sync with API in background
+  const updateLocalCart = (updater: (prev: CartType) => CartType) => {
+    setCart((prev) => {
+      if (!prev) return prev;
+      return updater(prev);
+    });
+  };
+
+  const recalcTotals = (items: CartItem[]): { total_items: number; total_price: string } => {
+    const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+    const totalPrice = items.reduce((sum, i) => sum + Number(i.total_price), 0);
+    return { total_items: totalItems, total_price: String(totalPrice) };
+  };
 
   const handleQtyChange = async (item: CartItem, delta: number) => {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
+
+    const oldItem = { ...item };
+    updateLocalCart((prev) => {
+      const items = prev.items.map((i) =>
+        i.id === item.id
+          ? { ...i, quantity: newQty, total_price: String(Number(i.total_price) / i.quantity * newQty) }
+          : i
+      );
+      const totals = recalcTotals(items);
+      return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
+    });
+
     setUpdating(item.id);
     try {
       await updateCartItem(item.id, newQty);
-      await loadCart();
-    } catch (e: any) {
+    } catch {
+      updateLocalCart((prev) => {
+        const items = prev.items.map((i) => (i.id === item.id ? oldItem : i));
+        const totals = recalcTotals(items);
+        return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
+      });
       Alert.alert('Error', 'Failed to update quantity');
     } finally {
       setUpdating(null);
     }
   };
 
-  const handleRemove = async (item: CartItem) => {
+  const handleRemove = (item: CartItem) => {
     Alert.alert('Remove item', `Remove ${item.product.name} from cart?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove', style: 'destructive', onPress: async () => {
+          const oldItems = cart?.items || [];
+          updateLocalCart((prev) => {
+            const items = prev.items.filter((i) => i.id !== item.id);
+            const totals = recalcTotals(items);
+            return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
+          });
+
           try {
             await removeCartItem(item.id);
-            await loadCart();
           } catch {
+            setCart((prev) => {
+              if (!prev) return prev;
+              const totals = recalcTotals(oldItems);
+              return { ...prev, items: oldItems, total_items: totals.total_items, total_price: totals.total_price };
+            });
             Alert.alert('Error', 'Failed to remove item');
           }
         },
@@ -80,355 +119,469 @@ export default function CartScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear', style: 'destructive', onPress: async () => {
-          try { await clearCart(); await loadCart(); } catch { Alert.alert('Error', 'Failed to clear cart'); }
+          const oldItems = cart?.items || [];
+          updateLocalCart((prev) => ({
+            ...prev,
+            items: [],
+            total_items: 0,
+            total_price: '0',
+          }));
+
+          try {
+            await clearCart();
+          } catch {
+            setCart((prev) => {
+              if (!prev) return prev;
+              const totals = recalcTotals(oldItems);
+              return { ...prev, items: oldItems, total_items: totals.total_items, total_price: totals.total_price };
+            });
+            Alert.alert('Error', 'Failed to clear cart');
+          }
         },
       },
     ]);
   };
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in to proceed to checkout.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+        ],
+      );
+      return;
+    }
     router.push('/checkout');
   };
-
-  // Not signed in state
-  if (!isAuthenticated) {
-    return (
-      <ThemedView style={styles.center}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.darkHeader}>
-            <ThemedText style={styles.headerTitle}>Your Cart</ThemedText>
-          </View>
-          <View style={styles.centerContent}>
-            <MaterialCommunityIcons name="cart-outline" size={72} color="#999" />
-            <ThemedText style={styles.emptyTitle}>Sign in to view your cart</ThemedText>
-            <ThemedText style={styles.emptySub}>Your saved items will appear here once you sign in.</ThemedText>
-            <Pressable style={styles.orangeBtn} onPress={() => router.push('/(auth)/login')}>
-              <ThemedText style={styles.orangeBtnText}>Sign In</ThemedText>
-            </Pressable>
-          </View>
-        </SafeAreaView>
-      </ThemedView>
-    );
-  }
 
   // Loading state
   if (loading) {
     return (
-      <ThemedView style={styles.center}>
+      <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.darkHeader}>
-            <ThemedText style={styles.headerTitle}>Your Cart</ThemedText>
-          </View>
-          <View style={styles.centerContent}>
-            <ActivityIndicator size="large" color={ORANGE} />
+          <LinearGradient
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>Shopping Cart</Text>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+          <View style={styles.centerBody}>
+            <ActivityIndicator size="large" color={Brand.primary} />
+            <Text style={styles.loadingText}>Loading your cart...</Text>
           </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
+    );
+  }
+
+  // Connection error state
+  if (connectionError && (!cart || cart.items.length === 0)) {
+    return (
+      <View style={styles.screen}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <LinearGradient
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>Shopping Cart</Text>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+          <View style={styles.centerBody}>
+            <View style={styles.errorIconCircle}>
+              <MaterialCommunityIcons name="wifi-off" size={48} color="#FFFFFF" />
+            </View>
+            <Text style={styles.errorTitle}>Connection Error</Text>
+            <Text style={styles.emptySub}>
+              We couldn't load your cart. Check your internet connection and try again.
+            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => {
+                setLoading(true);
+                loadCart();
+              }}
+            >
+              <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
+              <Text style={styles.shopBtnText}>Retry</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   // Empty cart state
   if (!cart || cart.items.length === 0) {
     return (
-      <ThemedView style={styles.center}>
+      <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.darkHeader}>
-            <ThemedText style={styles.headerTitle}>Your Cart</ThemedText>
-          </View>
-          <View style={styles.centerContent}>
-            <MaterialCommunityIcons name="cart-off" size={72} color="#999" />
-            <ThemedText style={styles.emptyTitle}>Your cart is empty</ThemedText>
-            <ThemedText style={styles.emptySub}>Browse products and add items to your cart.</ThemedText>
-            <Pressable style={styles.orangeBtn} onPress={() => router.push('/')}>
-              <ThemedText style={styles.orangeBtnText}>Browse Products</ThemedText>
+          <LinearGradient
+            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            <Pressable onPress={() => router.back()} hitSlop={12}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+            </Pressable>
+            <Text style={styles.headerTitle}>Shopping Cart</Text>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+          <View style={styles.centerBody}>
+            <View style={styles.emptyIconWrap}>
+              <LinearGradient
+                colors={[Brand.primaryDark, Brand.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.emptyIconCircle}
+              >
+                <MaterialCommunityIcons name="cart-outline" size={56} color="#FFFFFF" />
+              </LinearGradient>
+            </View>
+            <Text style={styles.emptyTitle}>Your cart is empty</Text>
+            <Text style={styles.emptySub}>
+              Discover great deals and products from top sellers on Diilzo.
+            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/')}
+            >
+              <MaterialCommunityIcons name="store" size={20} color="#FFFFFF" />
+              <Text style={styles.shopBtnText}>Start Shopping</Text>
             </Pressable>
           </View>
         </SafeAreaView>
-      </ThemedView>
+      </View>
     );
   }
 
+  const currency = cart.items[0]?.product.currency || 'UGX';
+
   const renderItem = ({ item }: { item: CartItem }) => (
-    <ThemedView style={styles.cartItem}>
-      <Pressable onPress={() => router.push(`/product/${item.product.slug}`)}>
-        {item.product.primary_image_url ? (
-          <Image source={{ uri: item.product.primary_image_url }} style={styles.itemImage} contentFit="cover" />
-        ) : (
-          <View style={[styles.itemImage, styles.noImage]}>
-            <MaterialCommunityIcons name="package-variant-closed" size={36} color="#bbb" />
-          </View>
-        )}
-      </Pressable>
-      <ThemedView style={styles.itemInfo}>
+    <View style={styles.card}>
+      <View style={styles.cardBody}>
         <Pressable onPress={() => router.push(`/product/${item.product.slug}`)}>
-          <ThemedText style={styles.itemName} numberOfLines={2}>{item.product.name}</ThemedText>
+          {item.product.primary_image_url ? (
+            <Image
+              source={{ uri: item.product.primary_image_url }}
+              style={styles.itemImage}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={[styles.itemImage, styles.noImage]}>
+              <MaterialCommunityIcons name="package-variant-closed" size={28} color="#ccc" />
+            </View>
+          )}
         </Pressable>
-        {item.product.store && (
-          <Pressable onPress={() => { }}>
-            <ThemedText style={styles.itemStore}>{item.product.store.name}</ThemedText>
+
+        <View style={styles.itemInfo}>
+          <Pressable onPress={() => router.push(`/product/${item.product.slug}`)}>
+            <Text style={styles.itemName} numberOfLines={2}>{item.product.name}</Text>
           </Pressable>
-        )}
-        <ThemedView style={styles.priceRow}>
-          <ThemedText style={styles.currency}>{item.product.currency}</ThemedText>
-          <ThemedText style={styles.itemPrice}>{Number(item.total_price).toLocaleString()}</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.qtyRow}>
-          <Pressable
-            style={styles.qtyBtn}
-            onPress={() => handleQtyChange(item, -1)}
-            disabled={updating === item.id}
-          >
-            <MaterialCommunityIcons name="minus" size={20} color={PRICE_BLACK} />
-          </Pressable>
-          <ThemedText style={styles.qtyValue}>{item.quantity}</ThemedText>
-          <Pressable
-            style={styles.qtyBtn}
-            onPress={() => handleQtyChange(item, 1)}
-            disabled={updating === item.id}
-          >
-            <MaterialCommunityIcons name="plus" size={20} color={PRICE_BLACK} />
-          </Pressable>
-          <Pressable style={styles.removeBtn} onPress={() => handleRemove(item)}>
-            <MaterialCommunityIcons name="trash-can-outline" size={18} color={DANGER} />
-            <ThemedText style={styles.removeText}>Remove</ThemedText>
-          </Pressable>
-        </ThemedView>
-      </ThemedView>
-    </ThemedView>
+          {item.product.store && (
+            <View style={styles.storeRow}>
+              <MaterialCommunityIcons name="store-outline" size={13} color={Brand.textTertiary} />
+              <Text style={styles.itemStore} numberOfLines={1}>{item.product.store.name}</Text>
+            </View>
+          )}
+
+          <View style={styles.itemBottom}>
+            <View style={styles.priceCol}>
+              <Text style={styles.currencyText}>{currency}</Text>
+              <Text style={styles.itemPrice}>{Number(item.total_price).toLocaleString()}</Text>
+            </View>
+            <View style={styles.stepper}>
+              <Pressable
+                style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
+                onPress={() => handleQtyChange(item, -1)}
+                disabled={updating === item.id}
+              >
+                <MaterialCommunityIcons name="minus" size={18} color={Brand.primary} />
+              </Pressable>
+              <Text style={styles.stepperValue}>
+                {updating === item.id ? '...' : item.quantity}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [styles.stepperBtn, pressed && { opacity: 0.6 }]}
+                onPress={() => handleQtyChange(item, 1)}
+                disabled={updating === item.id}
+              >
+                <MaterialCommunityIcons name="plus" size={18} color={Brand.primary} />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <Pressable
+        style={({ pressed }) => [styles.removeRow, pressed && { opacity: 0.6 }]}
+        onPress={() => handleRemove(item)}
+      >
+        <MaterialCommunityIcons name="trash-can-outline" size={16} color={Brand.danger} />
+        <Text style={styles.removeText}>Remove</Text>
+      </Pressable>
+    </View>
   );
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.screen}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Dark Header */}
-        <View style={styles.darkHeader}>
-          <ThemedText style={styles.headerTitle}>Your Cart</ThemedText>
-        </View>
+        <LinearGradient
+          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+          </Pressable>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Shopping Cart</Text>
+            <Text style={styles.headerSub}>
+              {cart.total_items} {cart.total_items === 1 ? 'item' : 'items'}
+            </Text>
+          </View>
+          <Pressable onPress={handleClear} hitSlop={12}>
+            <MaterialCommunityIcons name="delete-sweep-outline" size={24} color="#FFFFFF" />
+          </Pressable>
+        </LinearGradient>
 
-        {/* Cart List */}
         <FlatList
           data={cart.items}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           onRefresh={loadCart}
           refreshing={false}
         />
 
-        {/* Bottom Summary Bar */}
-        <View style={styles.summaryWrap}>
-          <Pressable style={styles.clearLink} onPress={handleClear}>
-            <MaterialCommunityIcons name="delete-outline" size={18} color={DANGER} />
-            <ThemedText style={styles.clearLinkText}>Clear cart</ThemedText>
-          </Pressable>
-          <View style={styles.summary}>
-            <View style={styles.summaryTop}>
-              <ThemedText style={styles.subtotalLabel}>
-                Subtotal ({cart.total_items} {cart.total_items === 1 ? 'item' : 'items'})
-              </ThemedText>
+        <View style={styles.bottomBar}>
+          <View style={styles.bottomBarTop}>
+            <View style={styles.subtotalCol}>
+              <Text style={styles.subtotalLabel}>Subtotal</Text>
               <View style={styles.totalRow}>
-                <ThemedText style={styles.totalCurrency}>{cart.items[0]?.product.currency || 'UGX'}</ThemedText>
-                <ThemedText style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</ThemedText>
+                <Text style={styles.totalCurrency}>{currency}</Text>
+                <Text style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</Text>
               </View>
             </View>
-            <Pressable style={styles.checkoutBtn} onPress={handleCheckout}>
-              <ThemedText style={styles.checkoutText}>Proceed to Checkout</ThemedText>
+            <Pressable
+              style={({ pressed }) => [styles.checkoutBtn, pressed && { opacity: 0.85 }]}
+              onPress={handleCheckout}
+            >
+              <MaterialCommunityIcons name="cart-arrow-right" size={22} color="#FFFFFF" />
+              <Text style={styles.checkoutBtnText}>Checkout</Text>
             </Pressable>
           </View>
         </View>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  screen: { flex: 1, backgroundColor: '#F5F6F8' },
   safeArea: { flex: 1 },
-  center: { flex: 1 },
-  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  darkHeader: {
-    backgroundColor: HEADER_DARK,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
+
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + Spacing.one,
   },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+  headerCenter: { alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
+  loadingText: { marginTop: Spacing.two, fontSize: 14, color: Brand.textSecondary },
+  emptyIconWrap: { marginBottom: Spacing.four },
+  emptyIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: Spacing.three,
-    textAlign: 'center',
-    color: PRICE_BLACK,
+  errorIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Brand.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.three,
+    elevation: 6,
+    shadowColor: Brand.danger,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
+  errorTitle: { fontSize: 20, fontWeight: '800', color: Brand.text, textAlign: 'center' },
+  emptyTitle: { fontSize: 22, fontWeight: '800', color: Brand.text, textAlign: 'center' },
   emptySub: {
     fontSize: 14,
-    opacity: 0.6,
+    color: Brand.textSecondary,
     textAlign: 'center',
-    marginTop: Spacing.one,
+    marginTop: Spacing.one + 2,
     marginBottom: Spacing.four,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    lineHeight: 20,
   },
-  orangeBtn: {
-    backgroundColor: ORANGE,
-    borderRadius: 8,
+  shopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: Brand.primary,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    alignItems: 'center',
+    elevation: 4,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-  orangeBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+  shopBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
+
   list: {
-    paddingHorizontal: Spacing.three,
-    paddingBottom: 220,
+    paddingHorizontal: Spacing.two + 2,
+    paddingTop: Spacing.two,
+    paddingBottom: 140,
   },
-  cartItem: {
-    flexDirection: 'row',
-    gap: Spacing.two,
-    paddingVertical: Spacing.three,
-    borderBottomWidth: 1,
-    borderBottomColor: DIVIDER,
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: Spacing.two + 2,
+    padding: Spacing.two + 2,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
+  cardBody: { flexDirection: 'row', gap: Spacing.two + 2 },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 88,
+    height: 88,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
   },
-  noImage: {
-    backgroundColor: '#f3f3f3',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemInfo: {
-    flex: 1,
-    gap: 2,
-  },
+  noImage: { justifyContent: 'center', alignItems: 'center' },
+  itemInfo: { flex: 1, gap: 4 },
   itemName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: PRICE_BLACK,
-  },
-  itemStore: {
-    color: LINK,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 3,
-    marginTop: 6,
-  },
-  currency: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: PRICE_BLACK,
-  },
-  itemPrice: {
-    fontSize: 16,
     fontWeight: '700',
-    color: PRICE_BLACK,
+    color: Brand.text,
+    lineHeight: 19,
   },
-  qtyRow: {
+  storeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  itemStore: { fontSize: 12, color: Brand.textTertiary, flex: 1 },
+  itemBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
+    justifyContent: 'space-between',
+    marginTop: 6,
   },
-  qtyBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#ccc',
+  priceCol: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  currencyText: { fontSize: 12, fontWeight: '700', color: Brand.textSecondary },
+  itemPrice: { fontSize: 17, fontWeight: '800', color: Brand.text },
+
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Brand.surfaceAlt,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  stepperBtn: {
+    width: 34,
+    height: 34,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  qtyValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    minWidth: 24,
+  stepperValue: {
+    minWidth: 32,
     textAlign: 'center',
-    color: PRICE_BLACK,
+    fontSize: 15,
+    fontWeight: '800',
+    color: Brand.text,
   },
-  removeBtn: {
+
+  removeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 4,
-    marginLeft: 'auto',
+    marginTop: Spacing.one + 2,
+    paddingTop: Spacing.one + 2,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
   },
-  removeText: {
-    color: DANGER,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  summaryWrap: {
+  removeText: { color: Brand.danger, fontSize: 13, fontWeight: '600' },
+
+  bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-  },
-  clearLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'center',
-    paddingVertical: Spacing.one,
-    marginBottom: 2,
-  },
-  clearLinkText: {
-    color: DANGER,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  summary: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#E8E8E8',
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    gap: Spacing.two,
+    paddingVertical: Spacing.two + 2,
+    paddingBottom: Platform.select({ ios: Spacing.two + 6, android: Spacing.two + 2 }),
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -3 },
   },
-  summaryTop: {
+  bottomBarTop: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  subtotalLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 3,
-  },
-  totalCurrency: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: PRICE_BLACK,
-  },
-  totalAmount: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: PRICE_BLACK,
-  },
+  subtotalCol: { gap: 2 },
+  subtotalLabel: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
+  totalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  totalCurrency: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  totalAmount: { fontSize: 22, fontWeight: '900', color: Brand.text },
   checkoutBtn: {
-    backgroundColor: ORANGE,
-    borderRadius: 8,
-    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.one + 2,
+    backgroundColor: Brand.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    elevation: 4,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
-  checkoutText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 16,
-  },
+  checkoutBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
 });

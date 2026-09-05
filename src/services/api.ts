@@ -28,6 +28,11 @@ function resolveBaseUrl(): string {
 
 export const BASE_URL = resolveBaseUrl();
 
+// Debug: log which API URL is being used (helps troubleshoot env issues)
+if (__DEV__) {
+  console.log('[API] Using BASE_URL:', BASE_URL);
+}
+
 // ── Token storage keys (use keychain/keystore via SecureStore) ───
 const ACCESS_TOKEN_KEY = 'diilzo_access_token';
 const REFRESH_TOKEN_KEY = 'diilzo_refresh_token';
