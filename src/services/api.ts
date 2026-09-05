@@ -3,22 +3,18 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 // ── BASE_URL resolution ──────────────────────────────────────────
-// Android emulator uses 10.0.2.2 to reach the host machine's localhost.
-// iOS simulator can use localhost directly.
-// Physical device needs the actual LAN IP of the dev machine.
+// Production: hosted Railway backend (used by default for all devices)
+// Local dev: set EXPO_PUBLIC_API_URL env var to override (e.g. http://10.0.2.2:8000/api/v1)
+const PRODUCTION_API_URL = 'https://diilzo-market-place-production.up.railway.app/api/v1';
+
 function resolveBaseUrl(): string {
-  // Allow override via env (expo extra config) for production
+  // Allow override via env for local development
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
 
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000/api/v1';
-  }
-  // iOS simulator or web — localhost works
-  return 'http://localhost:8000/api/v1';
+  return PRODUCTION_API_URL;
 }
 
 export const BASE_URL = resolveBaseUrl();

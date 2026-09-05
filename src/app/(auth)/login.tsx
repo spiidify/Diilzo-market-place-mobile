@@ -1,23 +1,29 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView, Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Link } from 'expo-router';
-import { TextInput, Button } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-
-const ORANGE = '#ff6a00';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +38,10 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/');
     } catch (e: any) {
-      const msg = e?.response?.data?.detail || e?.response?.data?.error || 'Login failed. Check your credentials.';
+      const msg =
+        e?.response?.data?.detail ||
+        e?.response?.data?.error ||
+        'Login failed. Check your credentials.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -40,112 +49,322 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.kav}
         >
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <ThemedView style={styles.header}>
-              <ThemedText type="title" style={styles.brand}>Diilzo</ThemedText>
-              <ThemedText type="small" style={styles.subtitle}>Sign in to your account</ThemedText>
-            </ThemedView>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Orange gradient header */}
+            <LinearGradient
+              colors={['#ff6a00', '#ff8520', '#ff9500']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.header}
+            >
+              <Text style={styles.logo}>Diilzo</Text>
+              <Text style={styles.welcome}>Welcome back</Text>
+              <Text style={styles.subtitle}>Sign in to continue shopping</Text>
+            </LinearGradient>
 
-            {error && (
-              <ThemedView style={styles.errorBox}>
-                <ThemedText type="small" style={styles.errorText}>{error}</ThemedText>
-              </ThemedView>
-            )}
+            {/* White form card */}
+            <View style={styles.card}>
+              {/* Social login grid */}
+              <View style={styles.socialGrid}>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
+                  <Text style={styles.socialText}>Google</Text>
+                </Pressable>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+                  <Text style={styles.socialText}>Facebook</Text>
+                </Pressable>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
+                  <Text style={styles.socialText}>Instagram</Text>
+                </Pressable>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="music-note" size={22} color="#000" />
+                  <Text style={styles.socialText}>TikTok</Text>
+                </Pressable>
+              </View>
 
-            <ThemedView style={styles.form}>
-              <ThemedText type="small" style={styles.label}>Email</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor="#999"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or sign in with email</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
-              <ThemedText type="small" style={styles.label}>Password</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-              />
+              {/* Error box */}
+              {error && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
 
+              {/* Email input */}
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons name="email-outline" size={20} color="#9CA3AF" />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              {/* Password input */}
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons name="lock-outline" size={20} color="#9CA3AF" />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <Pressable onPress={() => setShowPassword((s) => !s)} hitSlop={8}>
+                  <MaterialCommunityIcons
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color="#9CA3AF"
+                  />
+                </Pressable>
+              </View>
+
+              {/* Forgot password */}
+              <Pressable style={styles.forgotBtn}>
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+
+              {/* Sign In button */}
               <Pressable
-                style={[styles.btn, loading && styles.btnDisabled]}
+                style={[styles.signInBtn, loading && styles.signInBtnDisabled]}
                 onPress={handleLogin}
                 disabled={loading}
               >
-                <ThemedText type="default" style={styles.btnText}>
-                  {loading ? 'Signing in…' : 'Sign In'}
-                </ThemedText>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.signInText}>Sign In</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+                  </>
+                )}
               </Pressable>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.footer}>
-              <ThemedText type="small">Don't have an account? </ThemedText>
+            {/* Bottom section */}
+            <View style={styles.bottomSection}>
+              <Text style={styles.newText}>New to Diilzo?</Text>
               <Link href="/(auth)/register" asChild>
                 <Pressable>
-                  <ThemedText type="small" style={styles.link}>Sign up</ThemedText>
+                  <Text style={styles.createAccountText}>Create a Free Account</Text>
                 </Pressable>
               </Link>
-            </ThemedView>
+              <Pressable onPress={() => router.replace('/')}>
+                <Text style={styles.guestText}>Continue as guest</Text>
+              </Pressable>
+            </View>
 
-            <Pressable style={styles.guestBtn} onPress={() => router.replace('/')}>
-              <ThemedText type="small" style={styles.guestText}>Continue as guest</ThemedText>
-            </Pressable>
+            {/* Trust badges */}
+            <View style={styles.trustRow}>
+              <View style={styles.trustItem}>
+                <MaterialCommunityIcons name="shield-check-outline" size={14} color="#9CA3AF" />
+                <Text style={styles.trustText}>SSL Secured</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <MaterialCommunityIcons name="handshake-outline" size={14} color="#9CA3AF" />
+                <Text style={styles.trustText}>Buyer Protection</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <MaterialCommunityIcons name="headset" size={14} color="#9CA3AF" />
+                <Text style={styles.trustText}>24/7 Support</Text>
+              </View>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   safeArea: { flex: 1 },
   kav: { flex: 1 },
-  scroll: { padding: Spacing.four, flexGrow: 1, justifyContent: 'center' },
-  header: { alignItems: 'center', marginBottom: Spacing.four },
-  brand: { fontSize: 32, fontWeight: '800', color: ORANGE },
-  subtitle: { marginTop: 4, opacity: 0.6 },
-  errorBox: { backgroundColor: '#fef2f2', borderRadius: 8, padding: Spacing.two, marginBottom: Spacing.three, borderLeftWidth: 3, borderLeftColor: '#e2231a' },
-  errorText: { color: '#e2231a' },
-  form: { gap: Spacing.two },
-  label: { fontWeight: '600', marginBottom: 4, opacity: 0.7 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: Spacing.two,
-    backgroundColor: '#fff',
-    color: '#333',
+  scroll: { flexGrow: 1 },
+  header: {
+    paddingVertical: 30,
+    paddingHorizontal: 20,
   },
-  btn: {
-    backgroundColor: ORANGE,
+  logo: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  welcome: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 4,
+  },
+  card: {
+    marginTop: -20,
+    marginHorizontal: 16,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  socialGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  socialBtn: {
+    flex: 1,
+    minWidth: '47%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  socialText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginHorizontal: 10,
+  },
+  errorBox: {
+    backgroundColor: '#FFF3F3',
+    borderLeftWidth: 3,
+    borderLeftColor: '#B12704',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#B12704',
+    fontSize: 13,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#F9FAFB',
+    marginBottom: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#111827',
+    padding: 0,
+  },
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  forgotText: {
+    color: Brand.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  signInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Brand.primary,
     borderRadius: 10,
     paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: Spacing.two,
+    marginTop: 20,
   },
-  btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.four },
-  link: { color: ORANGE, fontWeight: '600' },
-  guestBtn: { alignItems: 'center', marginTop: Spacing.three, padding: Spacing.two },
-  guestText: { opacity: 0.5 },
+  signInBtnDisabled: { opacity: 0.6 },
+  signInText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  bottomSection: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  newText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  createAccountText: {
+    color: Brand.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  guestText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    marginTop: 16,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  trustItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  trustText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
 });

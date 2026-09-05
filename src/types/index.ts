@@ -10,6 +10,14 @@ export interface Store {
   city: string;
   country: string;
   is_wholesaler: boolean;
+  tagline?: string;
+  is_featured?: boolean;
+  product_count?: number;
+  business_type?: string;
+  verification_status?: string;
+  rating?: string;
+  review_count?: number;
+  banner_url?: string | null;
 }
 
 export interface StoreDetail extends Store {
@@ -21,6 +29,7 @@ export interface StoreDetail extends Store {
   status: string;
   product_count: number;
   created_at: string;
+  banner_url?: string | null;
 }
 
 // ── Category & Brand ─────────────────────────────────────────────
@@ -31,6 +40,7 @@ export interface Category {
   display_image: string;
   product_count: number;
   sort_order: number;
+  children?: Category[];
 }
 
 export interface Brand {
@@ -219,6 +229,39 @@ export interface WishlistItem {
   id: number;
   product: Product;
   created_at: string;
+}
+
+// ── Chat ─────────────────────────────────────────────────────────
+export interface ChatMessage {
+  id: number;
+  thread: number;
+  sender: number;
+  sender_name: string;
+  sender_avatar: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface ChatThread {
+  id: number;
+  store: number;
+  store_name: string;
+  store_logo: string | null;
+  store_slug: string;
+  buyer: number;
+  buyer_name: string;
+  product: number | null;
+  product_name: string | null;
+  product_slug: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message: {
+    message: string;
+    sender: string;
+    created_at: string;
+  } | null;
+  unread_count: number;
 }
 
 // ── Reviews ──────────────────────────────────────────────────────

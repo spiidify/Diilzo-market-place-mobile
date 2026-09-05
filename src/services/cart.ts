@@ -1,11 +1,17 @@
 // ── Cart API Service ──────────────────────────────────────────────
 
-import { apiRequest } from './api';
 import type { Cart, CartItem } from '../types';
+import { apiRequest } from './api';
 
 /** GET /api/v1/cart/ — get current user's cart */
 export async function getCart(): Promise<Cart> {
   return apiRequest<Cart>({ method: 'GET', url: '/cart/' });
+}
+
+/** GET /api/v1/cart/count/ — get cart item count (lightweight) */
+export async function getCartCount(): Promise<number> {
+  const data = await apiRequest<{ total_items: number }>({ method: 'GET', url: '/cart/count/' });
+  return data.total_items;
 }
 
 /** POST /api/v1/cart/items/ — add product to cart */

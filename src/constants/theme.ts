@@ -1,6 +1,5 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Diilzo theme — Amazon-inspired marketplace design.
  */
 
 import '@/global.css';
@@ -9,32 +8,51 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
+    text: '#0F1111',
     background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    backgroundElement: '#F3F4F6',
+    backgroundSelected: '#E7E9EC',
+    textSecondary: '#565959',
   },
   dark: {
     text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
+    background: '#0F1111',
+    backgroundElement: '#1E2222',
+    backgroundSelected: '#2A2E2E',
     textSecondary: '#B0B4BA',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+// ── Diilzo brand palette (matches backend CSS variables) ──────────
+export const Brand = {
+  primary: '#ff6a00',      // --diilzo-primary: Diilzo orange
+  primaryDark: '#e55f00',
+  accent: '#ff9500',       // --diilzo-accent: lighter orange
+  dark: '#131921',         // --diilzo-dark: dark navy (header)
+  darkLight: '#232F3E',
+  yellow: '#FEBD69',       // search bar yellow accent
+  yellowDark: '#F3A847',
+  link: '#007185',         // teal link
+  linkHover: '#C7511F',
+  success: '#16a34a',      // green (in stock, delivered)
+  danger: '#B12704',       // red (sale price, error)
+  rating: '#ffa41c',       // --diilzo-star: star yellow
+  surface: '#FFFFFF',
+  surfaceAlt: '#F7F8F8',   // light gray bg
+  border: '#D5D9D9',
+  borderLight: '#e7e7e7',  // --diilzo-border
+  text: '#0f1111',         // --diilzo-text
+  textSecondary: '#565959',// --diilzo-muted
+  textTertiary: '#848688',
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

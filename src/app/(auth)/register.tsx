@@ -1,17 +1,22 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Link } from 'expo-router';
-import { TextInput } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-
-const ORANGE = '#ff6a00';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -21,6 +26,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,122 +54,375 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.kav}
         >
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-            <ThemedView style={styles.header}>
-              <ThemedText type="title" style={styles.brand}>Diilzo</ThemedText>
-              <ThemedText type="small" style={styles.subtitle}>Create your account</ThemedText>
-            </ThemedView>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Orange gradient header */}
+            <LinearGradient
+              colors={['#ff6a00', '#ff8520', '#ff9500']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.header}
+            >
+              <Text style={styles.logo}>Diilzo</Text>
+              <Text style={styles.heading}>Join Diilzo</Text>
+              <Text style={styles.subtitle}>Create your account in less than a minute</Text>
+            </LinearGradient>
 
-            {error && (
-              <ThemedView style={styles.errorBox}>
-                <ThemedText type="small" style={styles.errorText}>{error}</ThemedText>
-              </ThemedView>
-            )}
+            {/* White form card overlapping the gradient */}
+            <View style={styles.card}>
+              {/* Social login buttons — 2x2 grid */}
+              <View style={styles.socialRow}>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
+                  <Text style={styles.socialText}>Google</Text>
+                </Pressable>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+                  <Text style={styles.socialText}>Facebook</Text>
+                </Pressable>
+              </View>
+              <View style={styles.socialRow}>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
+                  <Text style={styles.socialText}>Instagram</Text>
+                </Pressable>
+                <Pressable style={styles.socialBtn}>
+                  <MaterialCommunityIcons name="music-note" size={22} color="#000" />
+                  <Text style={styles.socialText}>TikTok</Text>
+                </Pressable>
+              </View>
 
-            <ThemedView style={styles.form}>
-              <ThemedText type="small" style={styles.label}>First Name *</ThemedText>
-              <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholder="John" placeholderTextColor="#999" />
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or sign up with email</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
-              <ThemedText type="small" style={styles.label}>Last Name</ThemedText>
-              <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholder="Doe" placeholderTextColor="#999" />
+              {/* Error box */}
+              {error && (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
 
-              <ThemedText type="small" style={styles.label}>Email *</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor="#999"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              {/* First Name + Last Name */}
+              <View style={styles.nameRow}>
+                <View style={styles.inputWrap}>
+                  <MaterialCommunityIcons
+                    name="account-outline"
+                    size={20}
+                    color="#9CA3AF"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    placeholder="First name"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                <View style={styles.inputWrap}>
+                  <MaterialCommunityIcons
+                    name="account-outline"
+                    size={20}
+                    color="#9CA3AF"
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    value={lastName}
+                    onChangeText={setLastName}
+                    placeholder="Last name"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+              </View>
 
-              <ThemedText type="small" style={styles.label}>Phone</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="+256 700 000 000"
-                placeholderTextColor="#999"
-                keyboardType="phone-pad"
-              />
+              {/* Email */}
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons
+                  name="email-outline"
+                  size={20}
+                  color="#9CA3AF"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
 
-              <ThemedText type="small" style={styles.label}>Password * (min 8 chars)</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor="#999"
-                secureTextEntry
-                autoCapitalize="none"
-              />
+              {/* Phone */}
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons
+                  name="phone-outline"
+                  size={20}
+                  color="#9CA3AF"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="+256 700 000 000"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                />
+              </View>
 
+              {/* Password */}
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons
+                  name="lock-outline"
+                  size={20}
+                  color="#9CA3AF"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Create a password"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <Pressable
+                  onPress={() => setShowPassword((v) => !v)}
+                  style={styles.eyeBtn}
+                  hitSlop={8}
+                >
+                  <MaterialCommunityIcons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#9CA3AF"
+                  />
+                </Pressable>
+              </View>
+              <Text style={styles.hint}>Minimum 8 characters</Text>
+
+              {/* Sign Up button */}
               <Pressable
                 style={[styles.btn, loading && styles.btnDisabled]}
                 onPress={handleRegister}
                 disabled={loading}
               >
-                <ThemedText type="default" style={styles.btnText}>
-                  {loading ? 'Creating account…' : 'Sign Up'}
-                </ThemedText>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.btnText}>Create Account</Text>
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                  </>
+                )}
               </Pressable>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.footer}>
-              <ThemedText type="small">Already have an account? </ThemedText>
+            {/* Bottom section */}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account?</Text>
               <Link href="/(auth)/login" asChild>
                 <Pressable>
-                  <ThemedText type="small" style={styles.link}>Sign in</ThemedText>
+                  <Text style={styles.linkText}>Sign In</Text>
                 </Pressable>
               </Link>
-            </ThemedView>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   safeArea: { flex: 1 },
   kav: { flex: 1 },
-  scroll: { padding: Spacing.four, flexGrow: 1 },
-  header: { alignItems: 'center', marginBottom: Spacing.three },
-  brand: { fontSize: 32, fontWeight: '800', color: ORANGE },
-  subtitle: { marginTop: 4, opacity: 0.6 },
-  errorBox: { backgroundColor: '#fef2f2', borderRadius: 8, padding: Spacing.two, marginBottom: Spacing.three, borderLeftWidth: 3, borderLeftColor: '#e2231a' },
-  errorText: { color: '#e2231a' },
-  form: { gap: Spacing.two },
-  label: { fontWeight: '600', marginBottom: 4, opacity: 0.7 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: Spacing.two,
-    backgroundColor: '#fff',
-    color: '#333',
+  scroll: { flexGrow: 1 },
+
+  // Orange gradient header
+  header: {
+    paddingVertical: 30,
+    paddingHorizontal: 20,
   },
+  logo: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 4,
+  },
+
+  // White form card
+  card: {
+    marginTop: -20,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+
+  // Social login buttons
+  socialRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  socialText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111827',
+  },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginHorizontal: 10,
+  },
+
+  // Error box
+  errorBox: {
+    backgroundColor: '#FFF3F3',
+    borderLeftWidth: 3,
+    borderLeftColor: '#B12704',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#B12704',
+    fontSize: 13,
+  },
+
+  // Name row (first + last)
+  nameRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+
+  // Input wrapper (icon + input)
+  inputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    backgroundColor: '#F9FAFB',
+    marginBottom: 10,
+    height: 48,
+  },
+  inputIcon: {
+    marginLeft: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    fontSize: 15,
+    color: '#111827',
+    backgroundColor: 'transparent',
+  },
+  eyeBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  // Password hint
+  hint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+
+  // Sign Up button
   btn: {
-    backgroundColor: ORANGE,
+    backgroundColor: Brand.primary,
     borderRadius: 10,
     paddingVertical: 14,
+    marginTop: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.two,
+    justifyContent: 'center',
+    gap: 8,
   },
   btnDisabled: { opacity: 0.6 },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.four },
-  link: { color: ORANGE, fontWeight: '600' },
+  btnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // Footer
+  footer: {
+    marginTop: 24,
+    alignItems: 'center',
+    paddingBottom: 24,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  linkText: {
+    color: Brand.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 6,
+  },
 });
