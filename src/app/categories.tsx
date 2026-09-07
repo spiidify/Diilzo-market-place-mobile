@@ -19,8 +19,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { fetchCategories } from '@/services/catalog';
-import type { Category } from '@/types';
+import { fetchProducts } from '@/services/products';
+import type { Category, Product } from '@/types';
 
 // Right panel = screen width - left panel (100) - padding
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -41,8 +43,11 @@ export default function CategoriesScreen() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const leftListRef = useRef<FlatList>(null);
   const rightScrollRef = useRef<ScrollView>(null);
+  const productCardSize = useImageDimensions('productCard');
 
   // Filter categories by search query
   const filteredCategories = searchQuery.trim()
@@ -72,6 +77,22 @@ export default function CategoriesScreen() {
   }, [load]);
 
   const selectedCategory = filteredCategories.find((c) => c.slug === selectedSlug) || null;
+
+  // Fetch products for the selected parent category
+  useEffect(() => {
+    if (!selectedSlug) {
+      setCategoryProducts([]);
+      return;
+    }
+    setProductsLoading(true);
+    fetchProducts({ category: selectedSlug, page: 1, ...productCardSize })
+      .then((data) => setCategoryProducts(data.results || []))
+      .catch((e) => {
+        console.error('[Categories] products error:', e?.message);
+        setCategoryProducts([]);
+      })
+      .finally(() => setProductsLoading(false));
+  }, [selectedSlug, productCardSize]);
 
   const handleCategoryPress = (cat: Category) => {
     router.push({
@@ -299,6 +320,57 @@ export default function CategoriesScreen() {
                     >
                       <Text style={styles.browseBtnText}>Browse {selectedCategory.name}</Text>
                     </Pressable>
+                  </View>
+                )}
+
+                {/* Products from this category — 2 per row */}
+                {categoryProducts.length > 0 && (
+                  <View style={styles.productsSection}>
+                    <Text style={styles.productsSectionTitle}>Products in {selectedCategory.name}</Text>
+                    <View style={styles.productGrid}>
+                      {categoryProducts.map((item) => (
+                        <Pressable
+                          key={`cat-prod-${item.id}-${item.slug}`}
+                          style={({ pressed }) => [styles.productCard, pressed && { opacity: 0.9 }]}
+                          onPress={() => router.push(`/product/${item.slug}` as any)}
+                        >
+                          <View style={styles.productImageWrap}>
+                            {item.primary_image_url ? (
+                              <Image
+                                source={{ uri: item.primary_image_url }}
+                                style={styles.productImage}
+                                contentFit="contain"
+                                transition={200}
+                              />
+                            ) : (
+                              <View style={styles.productNoImage}>
+                                <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
+                              </View>
+                            )}
+                            {item.is_on_sale && (
+                              <View style={styles.productSaleBadge}>
+                                <Text style={styles.productSaleBadgeText}>{item.discount_percentage}% OFF</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={styles.productCardBody}>
+                            <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+                            <View style={styles.productPriceRow}>
+                              <Text style={styles.productCurrency}>{item.currency}</Text>
+                              <Text style={styles.productPrice}>
+                                {Number(item.final_price).toLocaleString()}
+                              </Text>
+                            </View>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {productsLoading && (
+                  <View style={styles.productsLoading}>
+                    <ActivityIndicator size="small" color={Brand.primary} />
+                    <Text style={styles.productsLoadingText}>Loading products...</Text>
                   </View>
                 )}
               </>
@@ -574,4 +646,99 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   browseBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
+  // ── Category products — 2 per row ──────────────────────────────
+  productsSection: {
+    marginTop: 20,
+    paddingHorizontal: 12,
+  },
+  productsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Brand.text,
+    marginBottom: 12,
+  },
+  productGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  productCard: {
+    width: '48%',
+    flex: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Brand.surfaceAlt,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  productImageWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: Brand.surfaceAlt,
+    position: 'relative',
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+  },
+  productNoImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productSaleBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: Brand.accent,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  productSaleBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  productCardBody: {
+    padding: 8,
+    gap: 4,
+  },
+  productName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Brand.text,
+    lineHeight: 15,
+  },
+  productPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 2,
+  },
+  productCurrency: {
+    fontSize: 10,
+    color: Brand.text,
+    fontWeight: '600',
+  },
+  productPrice: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Brand.text,
+  },
+  productsLoading: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  productsLoadingText: {
+    fontSize: 13,
+    color: Brand.textTertiary,
+  },
 });
