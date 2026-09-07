@@ -1475,6 +1475,7 @@ const styles = StyleSheet.create({
   },
   slideTextCol: {
     flex: 1,
+    flexShrink: 1,
     alignItems: 'flex-start',
     paddingRight: 10,
   },
@@ -1495,6 +1496,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 4,
+    flexShrink: 0,
   },
   slideButtonText: {
     fontSize: 12,
