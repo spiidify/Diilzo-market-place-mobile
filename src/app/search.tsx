@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +22,9 @@ import { Brand } from '@/constants/theme';
 import { fetchProducts, searchProducts } from '@/services/products';
 import type { Product } from '@/types';
 
+const RECENT_SEARCHES_KEY = 'recent_searches';
+const MAX_RECENT = 8;
+
 const TRENDING_SEARCHES: { term: string; icon: string }[] = [
   { term: 'Phone', icon: 'cellphone' },
   { term: 'Laptop', icon: 'laptop' },
@@ -30,6 +34,13 @@ const TRENDING_SEARCHES: { term: string; icon: string }[] = [
   { term: 'Bag', icon: 'shopping' },
   { term: 'Camera', icon: 'camera' },
   { term: 'TV', icon: 'television' },
+];
+
+const SORT_OPTIONS = [
+  { label: 'Newest', value: '-created_at' },
+  { label: 'Price ↑', value: 'price' },
+  { label: 'Price ↓', value: '-price' },
+  { label: 'Top Rated', value: '-rating' },
 ];
 
 // ── Fetch a thumbnail image for each trending term from the backend ──
@@ -95,6 +106,7 @@ const SearchProductCard = memo(function SearchProductCard({
   onPress: (slug: string) => void;
 }) {
   const onSale = item.is_on_sale && item.sale_price;
+  const rating = parseFloat(item.rating) || 0;
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -116,16 +128,12 @@ const SearchProductCard = memo(function SearchProductCard({
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-        {(() => {
-          const value = parseFloat(item.rating) || 0;
-          if (value <= 0) return null;
-          return (
-            <View style={styles.ratingRow}>
-              <MaterialCommunityIcons name="star" size={12} color={Brand.rating} />
-              <Text style={styles.ratingText}>{value.toFixed(1)}</Text>
-            </View>
-          );
-        })()}
+        {rating > 0 && (
+          <View style={styles.ratingRow}>
+            <MaterialCommunityIcons name="star" size={12} color={Brand.rating} />
+            <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+          </View>
+        )}
         <View style={styles.priceRow}>
           <Text style={styles.currency}>{item.currency}</Text>
           <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
@@ -140,6 +148,8 @@ export default function SearchScreen() {
   const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
   const categorySlug = params.category || null;
   const brandSlug = params.brand || null;
+  const contextTitle = categorySlug ? (params.categoryName || 'Category') : brandSlug ? (params.brandName || 'Brand') : null;
+
   const [products, setProducts] = useState<Product[]>([]);
   const [pinned, setPinned] = useState<Product[]>([]);
   const [sponsored, setSponsored] = useState<Product[]>([]);
@@ -151,6 +161,7 @@ export default function SearchScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [trendingImages, setTrendingImages] = useState<Record<string, string>>({});
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<string>('');
@@ -160,20 +171,25 @@ export default function SearchScreen() {
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList>(null);
 
-  // Fetch real product images for trending searches on mount
+  // Load trending images + recent searches on mount
   useEffect(() => {
-    fetchTrendingImages().then(setTrendingImages);
+    fetchTrendingImages().then(setTrendingImages).catch(() => { });
+    AsyncStorage.getItem(RECENT_SEARCHES_KEY).then((raw) => {
+      if (raw) {
+        try { setRecentSearches(JSON.parse(raw)); } catch { }
+      }
+    }).catch(() => { });
   }, []);
 
-  const load = useCallback(async (reset = false) => {
+  const load = useCallback(async (reset = false, userRefresh = false) => {
     const targetPage = reset ? 1 : page;
     if (reset) {
       setPage(1);
       setHasMore(true);
     }
     try {
-      if (reset) setRefreshing(true);
-      else setLoadingMore(true);
+      if (reset && userRefresh) setRefreshing(true);
+      else if (!reset) setLoadingMore(true);
       const baseParams = {
         page: targetPage,
         ...(categorySlug ? { category: categorySlug } : {}),
@@ -213,11 +229,12 @@ export default function SearchScreen() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Auto-focus the input on mount
+  // Auto-focus on mount only when there is no category/brand context
   useEffect(() => {
+    if (contextTitle) return;
     const t = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(t);
-  }, []);
+  }, [contextTitle]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || refreshing) return;
@@ -237,20 +254,40 @@ export default function SearchScreen() {
     inputRef.current?.focus();
   };
 
-  const renderStars = (rating: string) => {
-    const value = parseFloat(rating) || 0;
-    if (value <= 0) return null;
-    return (
-      <View style={styles.ratingRow}>
-        <MaterialCommunityIcons name="star" size={12} color={Brand.rating} />
-        <Text style={styles.ratingText}>{value.toFixed(1)}</Text>
-      </View>
-    );
-  };
+  // ── Recent searches helpers ───────────────────────────────────────
+  const saveRecentSearch = useCallback(async (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setRecentSearches((prev) => {
+      const next = [trimmed, ...prev.filter((t) => t.toLowerCase() !== trimmed.toLowerCase())].slice(0, MAX_RECENT);
+      AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next)).catch(() => { });
+      return next;
+    });
+  }, []);
+
+  const removeRecentSearch = useCallback((term: string) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((t) => t !== term);
+      AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next)).catch(() => { });
+      return next;
+    });
+  }, []);
+
+  const clearAllRecent = useCallback(() => {
+    setRecentSearches([]);
+    AsyncStorage.removeItem(RECENT_SEARCHES_KEY).catch(() => { });
+  }, []);
+
+  const handleSubmitSearch = useCallback(() => {
+    if (query.trim()) saveRecentSearch(query);
+    Keyboard.dismiss();
+    load(true);
+  }, [query, saveRecentSearch, load]);
 
   const handleProductPress = useCallback((slug: string) => {
+    if (query.trim()) saveRecentSearch(query);
     router.push(`/product/${slug}`);
-  }, [router]);
+  }, [router, query, saveRecentSearch]);
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
@@ -260,80 +297,94 @@ export default function SearchScreen() {
   );
 
   const showEmpty = !loading && !refreshing && products.length === 0 && query.length > 0;
+  const isIdle = query.length === 0 && !categorySlug && !brandSlug;
 
-  // ── Search bar component (reused in all states) ──────────────────
-  const SearchBar = () => (
-    <View style={styles.searchRow}>
-      <View style={styles.searchBar}>
-        <MaterialCommunityIcons name="magnify" size={22} color={Brand.textTertiary} />
-        <TextInput
-          ref={inputRef}
-          style={styles.searchInput}
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search products on Diilzo..."
-          placeholderTextColor={Brand.textTertiary}
-          autoCapitalize="none"
-          returnKeyType="search"
-        />
-        {query.length > 0 && (
-          <Pressable onPress={clearQuery} hitSlop={8} style={styles.clearBtn}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
-          </Pressable>
-        )}
+  // ── Header: back + search bar + filter ───────────────────────────
+  // Rendered as inline JSX (NOT nested components) — nested component
+  // functions remount on every keystroke, causing the TextInput to lose
+  // focus and taps to land on product cards (accidental navigation).
+  const searchHeader = (
+    <View style={styles.headerWrap}>
+      <View style={styles.searchRow}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+        </Pressable>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <TextInput
+            ref={inputRef}
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search products on Diilzo..."
+            placeholderTextColor={Brand.textTertiary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={handleSubmitSearch}
+          />
+          {query.length > 0 && (
+            <Pressable onPress={clearQuery} hitSlop={8}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+            </Pressable>
+          )}
+        </View>
+        <Pressable
+          style={[styles.filterBtn, (showFilters || sortBy || minPrice || maxPrice || onSaleOnly) && styles.filterBtnActive]}
+          onPress={() => setShowFilters((v) => !v)}
+        >
+          <MaterialCommunityIcons
+            name="tune"
+            size={20}
+            color={(showFilters || sortBy || minPrice || maxPrice || onSaleOnly) ? '#FFFFFF' : Brand.text}
+          />
+        </Pressable>
       </View>
-      <Pressable style={[styles.filterBtn, showFilters && styles.filterBtnActive]} onPress={() => setShowFilters(!showFilters)}>
-        <MaterialCommunityIcons name="filter-variant" size={22} color={showFilters ? '#FFFFFF' : Brand.primary} />
-      </Pressable>
     </View>
   );
 
-  const FilterPanel = () => {
-    if (!showFilters) return null;
-    return (
-      <View style={styles.filterPanel}>
-        <Text style={styles.filterLabel}>Sort By</Text>
-        <View style={styles.sortRow}>
-          {[
-            { label: 'Newest', value: '-created_at' },
-            { label: 'Price: Low→High', value: 'price' },
-            { label: 'Price: High→Low', value: '-price' },
-            { label: 'Top Rated', value: '-rating' },
-          ].map((opt) => (
-            <Pressable
-              key={opt.value}
-              style={[styles.sortChip, sortBy === opt.value && styles.sortChipActive]}
-              onPress={() => { setSortBy(opt.value); load(true); }}
-            >
-              <Text style={[styles.sortChipText, sortBy === opt.value && styles.sortChipTextActive]}>{opt.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={styles.filterLabel}>Price Range (UGX)</Text>
-        <View style={styles.filterPriceRow}>
-          <TextInput
-            style={styles.priceInput}
-            value={minPrice}
-            onChangeText={setMinPrice}
-            placeholder="Min"
-            keyboardType="numeric"
-            placeholderTextColor={Brand.textTertiary}
-          />
-          <Text style={styles.priceDash}>—</Text>
-          <TextInput
-            style={styles.priceInput}
-            value={maxPrice}
-            onChangeText={setMaxPrice}
-            placeholder="Max"
-            keyboardType="numeric"
-            placeholderTextColor={Brand.textTertiary}
-          />
-          <Pressable style={styles.applyBtn} onPress={() => load(true)}>
-            <Text style={styles.applyBtnText}>Apply</Text>
+  // ── Filter panel ──────────────────────────────────────────────────
+  // Inline JSX — see searchHeader comment above.
+  const filterPanel = showFilters ? (
+    <View style={styles.filterPanel}>
+      <Text style={styles.filterLabel}>Sort By</Text>
+      <View style={styles.sortRow}>
+        {SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            style={[styles.sortChip, sortBy === opt.value && styles.sortChipActive]}
+            onPress={() => { setSortBy(sortBy === opt.value ? '' : opt.value); load(true); }}
+          >
+            <Text style={[styles.sortChipText, sortBy === opt.value && styles.sortChipTextActive]}>{opt.label}</Text>
           </Pressable>
-        </View>
+        ))}
+      </View>
+      <Text style={styles.filterLabel}>Price Range (UGX)</Text>
+      <View style={styles.filterPriceRow}>
+        <TextInput
+          style={styles.priceInput}
+          value={minPrice}
+          onChangeText={setMinPrice}
+          placeholder="Min"
+          keyboardType="numeric"
+          placeholderTextColor={Brand.textTertiary}
+        />
+        <Text style={styles.priceDash}>—</Text>
+        <TextInput
+          style={styles.priceInput}
+          value={maxPrice}
+          onChangeText={setMaxPrice}
+          placeholder="Max"
+          keyboardType="numeric"
+          placeholderTextColor={Brand.textTertiary}
+        />
+        <Pressable style={styles.applyBtn} onPress={() => load(true)}>
+          <Text style={styles.applyBtnText}>Apply</Text>
+        </Pressable>
+      </View>
+      <View style={styles.filterFooter}>
         <Pressable
-          style={[styles.saleToggle, onSaleOnly && styles.saleToggleActive]}
+          style={styles.saleToggle}
           onPress={() => { setOnSaleOnly(!onSaleOnly); load(true); }}
         >
           <MaterialCommunityIcons
@@ -343,24 +394,105 @@ export default function SearchScreen() {
           />
           <Text style={styles.saleToggleText}>On Sale Only</Text>
         </Pressable>
+        {(sortBy || minPrice || maxPrice || onSaleOnly) ? (
+          <Pressable
+            onPress={() => {
+              setSortBy('');
+              setMinPrice('');
+              setMaxPrice('');
+              setOnSaleOnly(false);
+              setShowFilters(false);
+              setTimeout(() => load(true), 0);
+            }}
+            hitSlop={8}
+          >
+            <Text style={styles.clearFiltersText}>Clear all</Text>
+          </Pressable>
+        ) : null}
       </View>
-    );
-  };
+    </View>
+  ) : null;
+
+  // ── Idle state: recent + trending searches ───────────────────────
+  // Inline JSX — see searchHeader comment above.
+  const idleBody = (
+    <ScrollView
+      style={styles.idleScroll}
+      contentContainerStyle={{ paddingBottom: 32 }}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {recentSearches.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <MaterialCommunityIcons name="history" size={18} color={Brand.textSecondary} />
+              <Text style={styles.sectionTitle}>Recent Searches</Text>
+            </View>
+            <Pressable onPress={clearAllRecent} hitSlop={8}>
+              <Text style={styles.clearAllText}>Clear</Text>
+            </Pressable>
+          </View>
+          <View style={styles.recentWrap}>
+            {recentSearches.map((term) => (
+              <Pressable
+                key={term}
+                style={({ pressed }) => [styles.recentChip, pressed && { opacity: 0.8 }]}
+                onPress={() => setQuery(term)}
+              >
+                <MaterialCommunityIcons name="history" size={13} color={Brand.textTertiary} />
+                <Text style={styles.recentChipText} numberOfLines={1}>{term}</Text>
+                <Pressable onPress={() => removeRecentSearch(term)} hitSlop={6}>
+                  <MaterialCommunityIcons name="close" size={13} color={Brand.textTertiary} />
+                </Pressable>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <View style={styles.section}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="fire" size={18} color={Brand.danger} />
+          <Text style={styles.sectionTitle}>Trending Now</Text>
+        </View>
+        <View style={styles.trendingGrid}>
+          {TRENDING_SEARCHES.map((item) => {
+            const img = trendingImages[item.term];
+            return (
+              <Pressable
+                key={item.term}
+                style={({ pressed }) => [styles.trendingCard, pressed && { opacity: 0.85 }]}
+                onPress={() => setQuery(item.term)}
+              >
+                {img ? (
+                  <Image source={{ uri: img }} style={styles.trendingImg} contentFit="cover" transition={200} />
+                ) : (
+                  <View style={[styles.trendingImg, styles.trendingImgFallback]}>
+                    <MaterialCommunityIcons name={item.icon as any} size={24} color={Brand.primary} />
+                  </View>
+                )}
+                <View style={styles.trendingLabelRow}>
+                  <Text style={styles.trendingLabel} numberOfLines={1}>{item.term}</Text>
+                  <MaterialCommunityIcons name="arrow-top-right" size={14} color={Brand.textTertiary} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </ScrollView>
+  );
 
   // ── Loading state ────────────────────────────────────────────────
   if (loading && products.length === 0) {
     return (
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <SearchBar />
-          </LinearGradient>
-          <FilterPanel />
+          {searchHeader}
+          {contextTitle && (
+            <Text style={styles.contextTitle} numberOfLines={1}>{contextTitle}</Text>
+          )}
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
             <Text style={styles.loadingText}>Searching...</Text>
@@ -373,175 +505,129 @@ export default function SearchScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {/* ── Orange gradient header with search bar ─────────────── */}
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <SearchBar />
-        </LinearGradient>
-        <FilterPanel />
-
-        {/* ── Trending searches with images (only when no query) ──── */}
-        {query.length === 0 && (
-          <View style={styles.trendingSection}>
-            <View style={styles.trendingHeader}>
-              <MaterialCommunityIcons name="fire" size={18} color={Brand.primary} />
-              <Text style={styles.trendingTitle}>Trending Searches</Text>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trendingCards}
-            >
-              {TRENDING_SEARCHES.map((item) => {
-                const img = trendingImages[item.term];
-                return (
-                  <Pressable
-                    key={item.term}
-                    style={({ pressed }) => [styles.trendingCard, pressed && { opacity: 0.85 }]}
-                    onPress={() => setQuery(item.term)}
-                  >
-                    <View style={styles.trendingCardImage}>
-                      {img ? (
-                        <Image source={{ uri: img }} style={styles.trendingCardImg} contentFit="cover" transition={200} />
-                      ) : (
-                        <View style={styles.trendingCardFallback}>
-                          <MaterialCommunityIcons name={item.icon as any} size={28} color="#FFFFFF" />
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.trendingCardLabel} numberOfLines={1}>{item.term}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* ── Results count bar ──────────────────────────────────── */}
-        {!showEmpty && (
-          <View style={styles.countBar}>
-            <Text style={styles.countText}>
-              {count > 0 ? `${count} products found` : 'Loading...'}
-            </Text>
-            {query.length > 0 && (
-              <View style={styles.queryTag}>
-                <Text style={styles.queryTagText}>"{query}"</Text>
-                <Pressable onPress={clearQuery} hitSlop={8}>
-                  <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
-                </Pressable>
-              </View>
+        {searchHeader}
+        {contextTitle && !query && (
+          <View style={styles.contextBar}>
+            <Text style={styles.contextTitle} numberOfLines={1}>{contextTitle}</Text>
+            {!showEmpty && count > 0 && (
+              <Text style={styles.contextCount}>{count} products</Text>
             )}
           </View>
         )}
+        {filterPanel}
 
-        {/* ── Empty state ────────────────────────────────────────── */}
-        {showEmpty ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="magnify-close" size={48} color={Brand.textTertiary} />
-            </View>
-            <Text style={styles.emptyTitle}>No results found</Text>
-            <Text style={styles.emptySubtext}>
-              We couldn't find anything for "{query}".{'\n'}Try a different search term.
-            </Text>
-            <Pressable style={styles.emptyBtn} onPress={clearQuery}>
-              <Text style={styles.emptyBtnText}>Clear Search</Text>
-            </Pressable>
-          </View>
+        {isIdle ? (
+          idleBody
         ) : (
-          <FlatList
-            ref={listRef}
-            data={products}
-            keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
-            renderItem={renderProduct}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={6}
-            windowSize={7}
-            initialNumToRender={8}
-            removeClippedSubviews={true}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            ListHeaderComponent={
-              <View>
-                {(categorySlug || brandSlug) && (
-                  <View style={styles.categoryBanner}>
-                    <Pressable onPress={() => router.back()} hitSlop={12} style={styles.categoryBackBtn}>
-                      <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.primary} />
-                    </Pressable>
-                    <Text style={styles.categoryBannerTitle}>
-                      {categorySlug ? (params.categoryName || 'Category') : (params.brandName || 'Brand')}
-                    </Text>
-                    <View style={{ width: 22 }} />
-                  </View>
-                )}
-
-                {/* Pinned products (TOP Ads) */}
-                {pinned.length > 0 && (
-                  <View style={styles.promoSection}>
-                    <View style={styles.promoSectionHeader}>
-                      <MaterialCommunityIcons name="pin" size={16} color={Brand.rating} />
-                      <Text style={styles.promoSectionTitle}>TOP Ads</Text>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      {pinned.map((item) => (
-                        <SponsoredProductCard
-                          key={`pinned-${item.id}`}
-                          item={item}
-                          onPress={handleProductPress}
-                          badgeText="TOP AD"
-                          badgeColor={Brand.rating}
-                        />
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-
-                {/* Sponsored products (CPC) */}
-                {sponsored.length > 0 && (
-                  <View style={styles.promoSection}>
-                    <View style={styles.promoSectionHeader}>
-                      <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#3B82F6" />
-                      <Text style={styles.promoSectionTitle}>Sponsored</Text>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      {sponsored.map((item) => (
-                        <SponsoredProductCard
-                          key={`sponsored-${item.id}`}
-                          item={item}
-                          onPress={handleProductPress}
-                          badgeText="SPONSORED"
-                          badgeColor="#3B82F6"
-                        />
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+          <>
+            {/* ── Search info bar ─────────────────────────────── */}
+            {query.length > 0 && !showEmpty && (
+              <View style={styles.countBar}>
+                <Text style={styles.countText}>
+                  {count > 0 ? `${count} results for ` : 'Loading...'}
+                  {count > 0 && <Text style={styles.countQuery}>"{query}"</Text>}
+                </Text>
+                <Pressable onPress={clearQuery} hitSlop={8}>
+                  <Text style={styles.clearQueryText}>Clear</Text>
+                </Pressable>
               </View>
-            }
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={() => load(true)}
-                colors={[Brand.primary]}
-                tintColor={Brand.primary}
+            )}
+
+            {/* ── Empty state ─────────────────────────────────── */}
+            {showEmpty ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconWrap}>
+                  <MaterialCommunityIcons name="magnify-close" size={40} color={Brand.textTertiary} />
+                </View>
+                <Text style={styles.emptyTitle}>No results found</Text>
+                <Text style={styles.emptySubtext}>
+                  We couldn't find anything for "{query}".{'\n'}Check the spelling or try a different term.
+                </Text>
+                <Pressable style={styles.emptyBtn} onPress={clearQuery}>
+                  <Text style={styles.emptyBtnText}>Clear Search</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <FlatList
+                ref={listRef}
+                data={products}
+                keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
+                renderItem={renderProduct}
+                numColumns={2}
+                columnWrapperStyle={styles.row}
+                contentContainerStyle={styles.list}
+                maxToRenderPerBatch={6}
+                windowSize={7}
+                initialNumToRender={8}
+                removeClippedSubviews={true}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                keyboardShouldPersistTaps="handled"
+                ListHeaderComponent={
+                  <View>
+                    {/* Pinned products (TOP Ads) */}
+                    {pinned.length > 0 && (
+                      <View style={styles.promoSection}>
+                        <View style={styles.promoSectionHeader}>
+                          <MaterialCommunityIcons name="pin" size={16} color={Brand.rating} />
+                          <Text style={styles.promoSectionTitle}>TOP Ads</Text>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {pinned.map((item) => (
+                            <SponsoredProductCard
+                              key={`pinned-${item.id}`}
+                              item={item}
+                              onPress={handleProductPress}
+                              badgeText="TOP AD"
+                              badgeColor={Brand.rating}
+                            />
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+
+                    {/* Sponsored products (CPC) */}
+                    {sponsored.length > 0 && (
+                      <View style={styles.promoSection}>
+                        <View style={styles.promoSectionHeader}>
+                          <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#3B82F6" />
+                          <Text style={styles.promoSectionTitle}>Sponsored</Text>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {sponsored.map((item) => (
+                            <SponsoredProductCard
+                              key={`sponsored-${item.id}`}
+                              item={item}
+                              onPress={handleProductPress}
+                              badgeText="SPONSORED"
+                              badgeColor="#3B82F6"
+                            />
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
+                }
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => load(true, true)}
+                    colors={[Brand.primary]}
+                    tintColor={Brand.primary}
+                  />
+                }
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.5}
+                ListFooterComponent={
+                  loadingMore ? (
+                    <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
+                  ) : !hasMore && products.length > 0 ? (
+                    <Text style={styles.endText}>You've reached the end</Text>
+                  ) : null
+                }
               />
-            }
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              loadingMore ? (
-                <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
-              ) : !hasMore ? (
-                <Text style={styles.endText}>No more products</Text>
-              ) : null
-            }
-          />
+            )}
+          </>
         )}
         <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
       </SafeAreaView>
@@ -550,60 +636,102 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#F7F8F9' },
+  safeArea: { flex: 1, backgroundColor: '#F7F8F9' },
 
-  // ── Header ──────────────────────────────────────────────────────
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // ── Header (modern, always visible, no gradient) ───────────────
+  headerWrap: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
     paddingHorizontal: 12,
-    height: 46,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    paddingTop: 6,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Brand.surfaceAlt,
   },
   searchRow: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
   },
-  filterBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: Brand.surface,
+  backBtn: {
+    width: 40,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Brand.primary,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F3F4',
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    height: 44,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Brand.text,
+    paddingVertical: 0,
+    height: '100%',
+  },
+  filterBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F3F4',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterBtnActive: {
     backgroundColor: Brand.primary,
   },
+  contextBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Brand.surfaceAlt,
+  },
+  contextTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Brand.text,
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  contextCount: {
+    fontSize: 12,
+    color: Brand.textTertiary,
+    fontWeight: '600',
+  },
+
+  // ── Filter panel ────────────────────────────────────────────────
   filterPanel: {
-    backgroundColor: Brand.surface,
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 12,
-    marginTop: 8,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Brand.borderLight,
+    marginTop: 10,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   filterLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: Brand.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   sortRow: {
     flexDirection: 'row',
@@ -611,16 +739,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sortChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: Brand.surfaceAlt,
-    borderWidth: 1,
-    borderColor: Brand.border,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F1F3F4',
   },
   sortChipActive: {
     backgroundColor: Brand.primary,
-    borderColor: Brand.primary,
   },
   sortChipText: {
     fontSize: 12,
@@ -637,14 +762,12 @@ const styles = StyleSheet.create({
   },
   priceInput: {
     flex: 1,
-    backgroundColor: Brand.surfaceAlt,
-    borderRadius: 8,
+    backgroundColor: '#F1F3F4',
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     fontSize: 14,
     color: Brand.text,
-    borderWidth: 1,
-    borderColor: Brand.border,
   },
   priceDash: {
     color: Brand.textTertiary,
@@ -652,85 +775,117 @@ const styles = StyleSheet.create({
   },
   applyBtn: {
     backgroundColor: Brand.primary,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 9,
   },
   applyBtnText: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 13,
   },
+  filterFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   saleToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 4,
   },
-  saleToggleActive: {},
   saleToggleText: {
     fontSize: 14,
     color: Brand.text,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: Brand.text,
-    paddingVertical: 0,
-    height: '100%',
+  clearFiltersText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Brand.danger,
   },
-  clearBtn: { paddingVertical: 4 },
 
-  // ── Trending ────────────────────────────────────────────────────
-  trendingSection: {
-    backgroundColor: '#FFFFFF',
+  // ── Idle state sections ─────────────────────────────────────────
+  idleScroll: { flex: 1 },
+  section: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    paddingTop: 20,
   },
-  trendingHeader: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  trendingTitle: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  trendingCards: { gap: 14, paddingHorizontal: 2 },
-  trendingCard: {
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  clearAllText: { fontSize: 12, fontWeight: '700', color: Brand.danger },
+
+  // Recent searches as chips
+  recentWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  recentChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: 72,
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Brand.border,
+    maxWidth: '100%',
   },
-  trendingCardImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  recentChipText: {
+    fontSize: 13,
+    color: Brand.text,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+
+  // Trending as 2-column grid cards
+  trendingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  trendingCard: {
+    width: '31%',
+    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Brand.surfaceAlt,
-    elevation: 2,
-    shadowColor: '#000000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
-  trendingCardImg: {
+  trendingImg: {
     width: '100%',
-    height: '100%',
+    height: 74,
   },
-  trendingCardFallback: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: Brand.primary,
+  trendingImgFallback: {
+    backgroundColor: '#E7F5EF',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trendingCardLabel: {
-    marginTop: 6,
-    fontSize: 11,
+  trendingLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  trendingLabel: {
+    fontSize: 12,
     fontWeight: '700',
-    color: Brand.textSecondary,
-    textAlign: 'center',
+    color: Brand.text,
+    flex: 1,
   },
 
   // ── Count bar ───────────────────────────────────────────────────
@@ -740,26 +895,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
   },
-  countText: { fontSize: 13, color: Brand.textSecondary, fontWeight: '500' },
-  queryTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Brand.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  queryTagText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
+  countText: { fontSize: 13, color: Brand.textSecondary, fontWeight: '500', flex: 1 },
+  countQuery: { fontWeight: '800', color: Brand.text },
+  clearQueryText: { fontSize: 13, fontWeight: '700', color: Brand.primary },
 
   // ── List ────────────────────────────────────────────────────────
   list: {
     paddingHorizontal: 12,
-    paddingTop: 12,
     paddingBottom: 20,
   },
   row: { gap: 10, marginBottom: 10 },
@@ -768,13 +911,13 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
+    elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 3,
-    elevation: 2,
   },
   cardPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
   imageWrap: {
@@ -794,7 +937,7 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
     backgroundColor: Brand.danger,
-    borderRadius: 4,
+    borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -805,7 +948,7 @@ const styles = StyleSheet.create({
   ratingText: { fontSize: 11, fontWeight: '600', color: Brand.rating, marginLeft: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 },
   currency: { fontSize: 11, fontWeight: '600', color: Brand.text },
-  price: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  price: { fontSize: 15, fontWeight: '800', color: Brand.text },
 
   // ── Empty state ─────────────────────────────────────────────────
   emptyState: {
@@ -815,15 +958,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Brand.surfaceAlt,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#EDF2F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
@@ -836,7 +979,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 24,
   },
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
@@ -850,51 +993,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 16,
     color: Brand.textTertiary,
-    fontSize: 13,
-  },
-  categoryBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 4,
-  },
-  categoryBackBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Brand.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categoryBannerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Brand.text,
+    fontSize: 12,
   },
 
   // ── Sponsored / Pinned sections ─────────────────────────────────
   promoSection: { marginBottom: 12 },
   promoSectionHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 12, marginBottom: 8,
+    paddingHorizontal: 4, marginBottom: 8,
   },
   promoSectionTitle: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary },
   sponsoredCard: {
-    width: 140, marginLeft: 12, backgroundColor: '#FFFFFF',
-    borderRadius: 10, padding: 8, borderWidth: 1, borderColor: Brand.borderLight,
+    width: 140,
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
-  sponsoredImgWrap: { position: 'relative', marginBottom: 6 },
-  sponsoredImg: {
-    width: '100%', height: 120, borderRadius: 8, backgroundColor: Brand.surfaceAlt,
-    alignItems: 'center', justifyContent: 'center',
+  sponsoredImgWrap: {
+    position: 'relative',
+    width: '100%',
+    height: 120,
+    backgroundColor: Brand.surfaceAlt,
   },
+  sponsoredImg: { width: '100%', height: '100%' },
   sponsoredBadge: {
-    position: 'absolute', top: 4, left: 4,
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  sponsoredBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
-  sponsoredName: { fontSize: 12, fontWeight: '600', color: Brand.text, lineHeight: 16, minHeight: 32 },
-  sponsoredPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary, marginTop: 4 },
+  sponsoredBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800', letterSpacing: 0.3 },
+  sponsoredName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Brand.text,
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    lineHeight: 16,
+  },
+  sponsoredPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Brand.text,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    paddingTop: 2,
+  },
 });

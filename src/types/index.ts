@@ -2,6 +2,8 @@
 // Mirrors the Django DRF serializers in apps/api/serializers.py
 
 // ── Homepage Slide ───────────────────────────────────────────────
+export type SlidePosition = 'hero' | 'tile_a' | 'tile_b' | 'sidebar';
+
 export interface Slide {
   id: number;
   title: string;
@@ -19,6 +21,7 @@ export interface Slide {
   button_style: string;
   text_position: string;
   sort_order: number;
+  position?: SlidePosition | null;
 }
 
 // ── Store ────────────────────────────────────────────────────────
@@ -72,6 +75,8 @@ export interface Brand {
   id: number;
   name: string;
   slug: string;
+  logo_url?: string | null;
+  description?: string;
   product_count: number;
 }
 
@@ -138,8 +143,35 @@ export interface Product {
   is_sponsored?: boolean;
   promotion_type?: string | null;
   promotion_id?: number | null;
+  flash_sale_ends_at?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ── Voucher / Claimable Coupon ───────────────────────────────────
+export interface ClaimableCoupon {
+  code: string;
+  discount_type: string; // 'percentage' | 'fixed'
+  discount_value: string;
+  min_order_amount: string;
+  store_name: string | null;
+  valid_to: string | null;
+}
+
+// ── RFQ (Request for Quotation) ──────────────────────────────────
+export interface RFQPayload {
+  name: string;
+  email?: string;
+  phone?: string;
+  product_name: string;
+  quantity?: number;
+  target_price?: number | null;
+  message?: string;
+}
+
+export interface RFQResponse {
+  detail: string;
+  id: number;
 }
 
 // ── Promotion & Discovery Engine Types ───────────────────────────

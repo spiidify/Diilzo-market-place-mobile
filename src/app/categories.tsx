@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Pressable,
   RefreshControl,
@@ -20,6 +21,16 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCategories } from '@/services/catalog';
 import type { Category } from '@/types';
+
+// Right panel = screen width - left panel (100) - padding
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const LEFT_PANEL_WIDTH = 100;
+const SUB_GRID_PADDING = 24; // 12px each side
+const SUB_GRID_GAP = 10;
+const SUB_COLUMNS = 3;
+const SUB_CARD_WIDTH = Math.floor(
+  (SCREEN_WIDTH - LEFT_PANEL_WIDTH - SUB_GRID_PADDING - SUB_GRID_GAP * (SUB_COLUMNS - 1)) / SUB_COLUMNS
+);
 
 export default function CategoriesScreen() {
   const router = useRouter();
@@ -77,6 +88,12 @@ export default function CategoriesScreen() {
     rightScrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
+  // Reset right panel scroll when switching parent
+  const handleParentSelect = (slug: string) => {
+    setSelectedSlug(slug);
+    rightScrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
   // ── Left panel: parent categories ──────────────────────────────
   const renderParent = useCallback(
     ({ item }: { item: Category }) => {
@@ -84,10 +101,10 @@ export default function CategoriesScreen() {
       return (
         <Pressable
           style={({ pressed }) => [styles.parentItem, active && styles.parentItemActive, pressed && { opacity: 0.85 }]}
-          onPress={() => setSelectedSlug(item.slug)}
+          onPress={() => handleParentSelect(item.slug)}
         >
           {active && <View style={styles.activeBar} />}
-          <View style={styles.parentCircle}>
+          <View style={[styles.parentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
               <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} contentFit="cover" transition={150} />
             ) : (
@@ -106,29 +123,6 @@ export default function CategoriesScreen() {
       );
     },
     [selectedSlug]
-  );
-
-  // ── Right panel: subcategory card ──────────────────────────────
-  const renderSubCard = useCallback(
-    (cat: Category) => (
-      <Pressable
-        key={`sub-${cat.id}-${cat.slug}`}
-        style={({ pressed }) => [styles.subCard, pressed && { opacity: 0.85 }]}
-        onPress={() => handleCategoryPress(cat)}
-      >
-        <View style={styles.subCircle}>
-          {cat.display_image ? (
-            <Image source={{ uri: cat.display_image }} style={styles.subCircleImg} contentFit="cover" transition={150} />
-          ) : (
-            <View style={styles.subCircleFallback}>
-              <MaterialCommunityIcons name="tag" size={22} color="#FFFFFF" />
-            </View>
-          )}
-        </View>
-        <Text style={styles.subName} numberOfLines={2}>{cat.name}</Text>
-      </Pressable>
-    ),
-    [router]
   );
 
   if (loading) {
@@ -223,7 +217,7 @@ export default function CategoriesScreen() {
             />
           </View>
 
-          {/* Right panel — children of selected category */}
+          {/* Right panel — modern children view */}
           <ScrollView
             ref={rightScrollRef}
             style={styles.rightPanel}
@@ -232,50 +226,82 @@ export default function CategoriesScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
           >
-            {/* Selected category header */}
             {selectedCategory && (
-              <Pressable
-                style={({ pressed }) => [styles.selectedHeader, pressed && { opacity: 0.85 }]}
-                onPress={() => handleCategoryPress(selectedCategory)}
-              >
-                <View style={styles.selectedHeaderCircle}>
-                  {selectedCategory.display_image ? (
-                    <Image source={{ uri: selectedCategory.display_image }} style={styles.selectedHeaderImg} contentFit="cover" transition={150} />
-                  ) : (
-                    <View style={styles.selectedHeaderFallback}>
-                      <MaterialCommunityIcons name="tag" size={28} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.selectedHeaderInfo}>
-                  <Text style={styles.selectedHeaderName}>{selectedCategory.name}</Text>
-                  <Text style={styles.selectedHeaderHint}>Tap to browse all</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={Brand.textTertiary} />
-              </Pressable>
-            )}
-
-            {/* Subcategories grid */}
-            {selectedCategory?.children && selectedCategory.children.length > 0 ? (
               <>
-                <Text style={styles.subSectionTitle}>Subcategories</Text>
-                <View style={styles.subGrid}>
-                  {selectedCategory.children.map((child) => renderSubCard(child))}
+                {/* Category hero banner */}
+                <View style={styles.heroBanner}>
+                  {selectedCategory.display_image ? (
+                    <Image
+                      source={{ uri: selectedCategory.display_image }}
+                      style={styles.heroBg}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : (
+                    <View style={[styles.heroBg, styles.heroBgFallback]} />
+                  )}
+                  <View style={styles.heroOverlay} />
+                  <View style={styles.heroContent}>
+                    <Text style={styles.heroTitle}>{selectedCategory.name}</Text>
+                    <Text style={styles.heroCount}>
+                      {(selectedCategory.children || []).length} subcategories
+                    </Text>
+                  </View>
                 </View>
-              </>
-            ) : (
-              <View style={styles.emptySubs}>
-                <MaterialCommunityIcons name="package-variant-closed" size={40} color={Brand.textTertiary} />
-                <Text style={styles.emptySubsText}>No subcategories yet</Text>
-                {selectedCategory && (
-                  <Pressable
-                    style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.85 }]}
-                    onPress={() => handleCategoryPress(selectedCategory)}
-                  >
-                    <Text style={styles.browseBtnText}>Browse {selectedCategory.name}</Text>
-                  </Pressable>
+
+                {/* Browse all button — pill style */}
+                <Pressable
+                  style={({ pressed }) => [styles.browseAllPill, pressed && { opacity: 0.88 }]}
+                  onPress={() => handleCategoryPress(selectedCategory)}
+                >
+                  <MaterialCommunityIcons name="view-grid" size={18} color="#FFFFFF" />
+                  <Text style={styles.browseAllText}>Browse all {selectedCategory.name}</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
+                </Pressable>
+
+                {/* Subcategories — modern card grid */}
+                {selectedCategory.children && selectedCategory.children.length > 0 ? (
+                  <View style={styles.subGrid}>
+                    {selectedCategory.children.map((child) => (
+                      <Pressable
+                        key={`sub-${child.id}-${child.slug}`}
+                        style={({ pressed }) => [styles.subCard, pressed && { opacity: 0.85 }]}
+                        onPress={() => handleCategoryPress(child)}
+                      >
+                        <View style={styles.subCardIcon}>
+                          {child.display_image ? (
+                            <Image
+                              source={{ uri: child.display_image }}
+                              style={styles.subCardImg}
+                              contentFit="cover"
+                              transition={150}
+                            />
+                          ) : (
+                            <View style={styles.subCardFallback}>
+                              <MaterialCommunityIcons name="tag" size={22} color="#FFFFFF" />
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.subCardName} numberOfLines={2}>{child.name}</Text>
+                        {child.product_count !== undefined && child.product_count > 0 && (
+                          <Text style={styles.subCardCount}>{child.product_count} items</Text>
+                        )}
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptySubs}>
+                    <MaterialCommunityIcons name="package-variant-closed" size={44} color={Brand.textTertiary} />
+                    <Text style={styles.emptySubsText}>No subcategories yet</Text>
+                    <Pressable
+                      style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.85 }]}
+                      onPress={() => handleCategoryPress(selectedCategory)}
+                    >
+                      <Text style={styles.browseBtnText}>Browse {selectedCategory.name}</Text>
+                    </Pressable>
+                  </View>
                 )}
-              </View>
+              </>
             )}
           </ScrollView>
         </View>
@@ -381,6 +407,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Brand.border,
   },
+  parentCircleActive: {
+    borderColor: Brand.primary,
+    borderWidth: 2.5,
+  },
   parentCircleImg: { width: '100%', height: '100%' },
   parentCircleFallback: {
     width: '100%',
@@ -406,90 +436,127 @@ const styles = StyleSheet.create({
   rightPanel: {
     flex: 1,
     backgroundColor: '#FAFAFA',
-    borderLeftWidth: 1,
-    borderLeftColor: Brand.surfaceAlt,
   },
-  rightContent: { padding: 12, paddingBottom: 24 },
+  rightContent: { paddingBottom: 24 },
 
-  // Selected category header card
-  selectedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-    elevation: 1,
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  selectedHeaderCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  // ── Hero banner (replaces the old selectedHeader) ──────────────
+  heroBanner: {
+    height: 120,
+    position: 'relative',
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: Brand.surfaceAlt,
   },
-  selectedHeaderImg: { width: '100%', height: '100%' },
-  selectedHeaderFallback: {
+  heroBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     width: '100%',
     height: '100%',
+  },
+  heroBgFallback: {
     backgroundColor: Brand.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  selectedHeaderInfo: { flex: 1, gap: 2 },
-  selectedHeaderName: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  selectedHeaderHint: { fontSize: 12, color: Brand.textTertiary },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  heroCount: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 2,
+    fontWeight: '600',
+  },
 
-  // Subcategory grid
-  subSectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Brand.textSecondary,
-    marginBottom: 12,
+  // ── Browse all pill button ─────────────────────────────────────
+  browseAllPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 16,
+    backgroundColor: Brand.primary,
+    paddingVertical: 12,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
+  browseAllText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+    flex: 1,
+    textAlign: 'center',
+  },
+
+  // ── Subcategory list — 3 per row ───────────────────────────────
   subGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    paddingHorizontal: 12,
+    gap: 10,
   },
   subCard: {
-    width: 76,
+    width: SUB_CARD_WIDTH,
+    backgroundColor: '#F5F9F7',
+    borderRadius: 12,
+    padding: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8F0EC',
   },
-  subCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  subCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: Brand.surfaceAlt,
-    elevation: 2,
-    shadowColor: '#000000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: Brand.border,
+    marginBottom: 6,
   },
-  subCircleImg: { width: '100%', height: '100%' },
-  subCircleFallback: {
+  subCardImg: { width: '100%', height: '100%' },
+  subCardFallback: {
     width: '100%',
     height: '100%',
     backgroundColor: Brand.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  subName: {
-    marginTop: 6,
-    fontSize: 11,
-    fontWeight: '700',
+  subCardName: {
+    fontSize: 9.5,
+    fontWeight: '600',
     color: Brand.textSecondary,
     textAlign: 'center',
-    lineHeight: 13,
+    lineHeight: 11,
+  },
+  subCardCount: {
+    fontSize: 8,
+    color: Brand.textTertiary,
+    marginTop: 1,
   },
 
   // Empty state

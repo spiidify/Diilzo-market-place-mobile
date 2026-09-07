@@ -13,6 +13,8 @@ export interface ProductListParams {
   on_sale?: 'true' | 'false';
   new_arrival?: 'true' | 'false';
   in_stock?: 'true' | 'false';
+  flash_sale?: 'true' | 'false';
+  followed?: 'true' | 'false';
   ordering?: string;       // price, -price, -created_at, rating
   min_price?: string;
   max_price?: string;

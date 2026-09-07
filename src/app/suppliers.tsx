@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -18,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
-import { fetchStoresPage } from '@/services/catalog';
+import { fetchStoresPage, submitRFQ } from '@/services/catalog';
 import type { PaginatedResponse, Store } from '@/types';
 
 const BUSINESS_TYPES = [
@@ -40,6 +41,7 @@ const BUSINESS_ICONS: Record<string, string> = {
 
 export default function SuppliersScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ rfq?: string; product_name?: string; store?: string }>();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,6 +52,56 @@ export default function SuppliersScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [count, setCount] = useState(0);
+
+  // ── RFQ modal state ──────────────────────────────────────────────
+  const [rfqOpen, setRfqOpen] = useState(false);
+  const [rfqName, setRfqName] = useState('');
+  const [rfqEmail, setRfqEmail] = useState('');
+  const [rfqPhone, setRfqPhone] = useState('');
+  const [rfqProduct, setRfqProduct] = useState('');
+  const [rfqQty, setRfqQty] = useState('1');
+  const [rfqTarget, setRfqTarget] = useState('');
+  const [rfqMessage, setRfqMessage] = useState('');
+  const [rfqSubmitting, setRfqSubmitting] = useState(false);
+  const [rfqSuccess, setRfqSuccess] = useState(false);
+  const [rfqError, setRfqError] = useState<string | null>(null);
+
+  // Open RFQ modal automatically when navigated with ?rfq=1
+  useEffect(() => {
+    if (params.rfq === '1') {
+      if (params.product_name) setRfqProduct(String(params.product_name));
+      setRfqOpen(true);
+    }
+  }, [params.rfq, params.product_name]);
+
+  const submitRfqForm = useCallback(async () => {
+    setRfqError(null);
+    if (!rfqName.trim()) { setRfqError('Please enter your name'); return; }
+    if (!rfqProduct.trim()) { setRfqError('Please enter the product name'); return; }
+    setRfqSubmitting(true);
+    try {
+      await submitRFQ({
+        name: rfqName.trim(),
+        email: rfqEmail.trim(),
+        phone: rfqPhone.trim(),
+        product_name: rfqProduct.trim(),
+        quantity: parseInt(rfqQty, 10) || 1,
+        target_price: rfqTarget ? parseFloat(rfqTarget) : null,
+        message: rfqMessage.trim(),
+      });
+      setRfqSuccess(true);
+    } catch (e: any) {
+      setRfqError(e?.response?.data?.detail || e?.message || 'Failed to submit');
+    } finally {
+      setRfqSubmitting(false);
+    }
+  }, [rfqName, rfqEmail, rfqPhone, rfqProduct, rfqQty, rfqTarget, rfqMessage]);
+
+  const closeRfq = useCallback(() => {
+    setRfqOpen(false);
+    setRfqSuccess(false);
+    setRfqError(null);
+  }, []);
 
   const load = useCallback(async (reset = false) => {
     const targetPage = reset ? 1 : page;
@@ -377,6 +429,86 @@ export default function SuppliersScreen() {
           />
         )}
         <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
+
+        {/* ── Floating RFQ button ─────────────────────────────────── */}
+        <Pressable
+          style={({ pressed }) => [styles.rfqFab, pressed && { opacity: 0.9 }]}
+          onPress={() => setRfqOpen(true)}
+        >
+          <MaterialCommunityIcons name="file-document-edit-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.rfqFabText}>RFQ</Text>
+        </Pressable>
+
+        {/* ── RFQ Modal ───────────────────────────────────────────── */}
+        <Modal visible={rfqOpen} animationType="slide" transparent onRequestClose={closeRfq}>
+          <View style={styles.rfqModalOverlay}>
+            <View style={styles.rfqModalCard}>
+              {rfqSuccess ? (
+                <View style={styles.rfqSuccessWrap}>
+                  <MaterialCommunityIcons name="check-circle" size={56} color={Brand.success} />
+                  <Text style={styles.rfqSuccessTitle}>Request Submitted!</Text>
+                  <Text style={styles.rfqSuccessSub}>
+                    Suppliers will contact you with quotes shortly.
+                  </Text>
+                  <Pressable style={styles.rfqCloseBtn} onPress={closeRfq}>
+                    <Text style={styles.rfqCloseBtnText}>Done</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.rfqModalHeader}>
+                    <Text style={styles.rfqModalTitle}>Request for Quotation</Text>
+                    <Pressable onPress={closeRfq} hitSlop={8}>
+                      <MaterialCommunityIcons name="close" size={22} color={Brand.textSecondary} />
+                    </Pressable>
+                  </View>
+                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rfqForm}>
+                    <Text style={styles.rfqLabel}>Your Name *</Text>
+                    <TextInput style={styles.rfqInput} value={rfqName} onChangeText={setRfqName} placeholder="John Doe" />
+                    <Text style={styles.rfqLabel}>Email</Text>
+                    <TextInput style={styles.rfqInput} value={rfqEmail} onChangeText={setRfqEmail} placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
+                    <Text style={styles.rfqLabel}>Phone</Text>
+                    <TextInput style={styles.rfqInput} value={rfqPhone} onChangeText={setRfqPhone} placeholder="+254 7XX XXX XXX" keyboardType="phone-pad" />
+                    <Text style={styles.rfqLabel}>Product Name *</Text>
+                    <TextInput style={styles.rfqInput} value={rfqProduct} onChangeText={setRfqProduct} placeholder="What are you sourcing?" />
+                    <View style={styles.rfqRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.rfqLabel}>Quantity</Text>
+                        <TextInput style={styles.rfqInput} value={rfqQty} onChangeText={setRfqQty} placeholder="100" keyboardType="numeric" />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 8 }}>
+                        <Text style={styles.rfqLabel}>Target Price</Text>
+                        <TextInput style={styles.rfqInput} value={rfqTarget} onChangeText={setRfqTarget} placeholder="Optional" keyboardType="numeric" />
+                      </View>
+                    </View>
+                    <Text style={styles.rfqLabel}>Message</Text>
+                    <TextInput
+                      style={[styles.rfqInput, styles.rfqTextarea]}
+                      value={rfqMessage}
+                      onChangeText={setRfqMessage}
+                      placeholder="Specifications, delivery timeline, etc."
+                      multiline
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                    {rfqError && <Text style={styles.rfqErrorText}>{rfqError}</Text>}
+                    <Pressable
+                      style={({ pressed }) => [styles.rfqSubmitBtn, pressed && { opacity: 0.9 }]}
+                      onPress={submitRfqForm}
+                      disabled={rfqSubmitting}
+                    >
+                      {rfqSubmitting ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.rfqSubmitBtnText}>Submit Request</Text>
+                      )}
+                    </Pressable>
+                  </ScrollView>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </View>
   );
@@ -570,4 +702,82 @@ const styles = StyleSheet.create({
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
   endText: { textAlign: 'center', paddingVertical: 16, color: Brand.textTertiary, fontSize: 13 },
+
+  // ── RFQ floating button ──────────────────────────────────────────
+  rfqFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 28,
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  rfqFabText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+
+  // ── RFQ Modal ────────────────────────────────────────────────────
+  rfqModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  rfqModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+    paddingBottom: 20,
+  },
+  rfqModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Brand.borderLight,
+  },
+  rfqModalTitle: { fontSize: 17, fontWeight: '800', color: Brand.text },
+  rfqForm: { paddingHorizontal: 16, paddingTop: 12, gap: 4 },
+  rfqLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary, marginTop: 8, marginBottom: 2 },
+  rfqInput: {
+    borderWidth: 1,
+    borderColor: Brand.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: Brand.text,
+    backgroundColor: '#FFFFFF',
+  },
+  rfqTextarea: { minHeight: 70 },
+  rfqRow: { flexDirection: 'row' },
+  rfqErrorText: { color: Brand.danger, fontSize: 12, marginTop: 8, fontWeight: '600' },
+  rfqSubmitBtn: {
+    backgroundColor: Brand.primary,
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  rfqSubmitBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  rfqSuccessWrap: { alignItems: 'center', padding: 30, gap: 8 },
+  rfqSuccessTitle: { fontSize: 18, fontWeight: '800', color: Brand.text, marginTop: 8 },
+  rfqSuccessSub: { fontSize: 13, color: Brand.textSecondary, textAlign: 'center' },
+  rfqCloseBtn: {
+    backgroundColor: Brand.primary,
+    borderRadius: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  rfqCloseBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });

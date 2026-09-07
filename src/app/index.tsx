@@ -23,10 +23,28 @@ import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { fetchCategories, fetchSlides, fetchTopStores } from '@/services/catalog';
+import {
+  fetchBecauseYouViewed,
+  fetchCategories,
+  fetchClaimableCoupons,
+  fetchFlashSaleProducts,
+  fetchRecentlyViewed,
+  fetchSlides,
+  fetchTopBrands,
+  fetchTopStores,
+  fetchUnreadNotificationCount,
+} from '@/services/catalog';
 import { createChatThread, getChatUnreadCount } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
-import type { Category, Product, Slide, Store } from '@/types';
+import type {
+  Brand as BrandType,
+  Category,
+  ClaimableCoupon,
+  Product,
+  Slide,
+  SlidePosition,
+  Store,
+} from '@/types';
 
 // ── Memoized product card for FlatList performance ──────────────────
 const ProductCard = memo(function ProductCard({
@@ -260,6 +278,171 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
   );
 });
 
+// ── Flash Sale countdown hook ──────────────────────────────────────
+function useCountdown(endsAt: string | null) {
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    if (!endsAt) { setRemaining(0); return; }
+    const target = new Date(endsAt).getTime();
+    const tick = () => {
+      const diff = Math.max(0, target - Date.now());
+      setRemaining(diff);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [endsAt]);
+  if (remaining <= 0) return null;
+  const totalSec = Math.floor(remaining / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return { h, m, s };
+}
+
+// ── Flash Sale shelf with live countdown ───────────────────────────
+const FlashSaleShelf = memo(function FlashSaleShelf({
+  products,
+  endsAt,
+  onPress,
+}: {
+  products: Product[];
+  endsAt: string | null;
+  onPress: (slug: string) => void;
+}) {
+  const cd = useCountdown(endsAt);
+  if (!products.length) return null;
+  return (
+    <View style={styles.flashSection}>
+      <LinearGradient
+        colors={['#F97316', '#EF4444']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.flashHeader}
+      >
+        <View style={styles.flashTitleRow}>
+          <MaterialCommunityIcons name="flash" size={22} color="#FFFFFF" />
+          <Text style={styles.flashTitle}>Flash Sale</Text>
+        </View>
+        {cd && (
+          <View style={styles.countdownRow}>
+            <Text style={styles.countdownLabel}>Ends in</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.h).padStart(2, '0')}</Text></View>
+            <Text style={styles.countdownColon}>:</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.m).padStart(2, '0')}</Text></View>
+            <Text style={styles.countdownColon}>:</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.s).padStart(2, '0')}</Text></View>
+          </View>
+        )}
+      </LinearGradient>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselTrack}
+        decelerationRate="fast"
+        snapToInterval={160}
+        snapToAlignment="start"
+      >
+        {products.map((item) => (
+          <Pressable
+            key={`flash-${item.id}`}
+            style={({ pressed }) => [styles.carouselCard, pressed && styles.cardPressed]}
+            onPress={() => onPress(item.slug)}
+          >
+            <View style={styles.carouselImageWrap}>
+              {item.primary_image_url ? (
+                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} contentFit="cover" transition={200} />
+              ) : (
+                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
+              )}
+              <View style={styles.flashBadge}><Text style={styles.flashBadgeText}>-{item.discount_percentage}%</Text></View>
+            </View>
+            <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
+            <View style={styles.carouselPriceRow}>
+              <Text style={styles.currency}>{item.currency}</Text>
+              <Text style={styles.carouselPrice}>{Number(item.final_price).toLocaleString()}</Text>
+            </View>
+            {item.is_on_sale && (
+              <Text style={styles.carouselOrigPrice}>{item.currency} {Number(item.price).toLocaleString()}</Text>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ── Voucher banner (claimable coupons) ─────────────────────────────
+const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: ClaimableCoupon[] }) {
+  if (!vouchers.length) return null;
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.voucherTrack}
+    >
+      {vouchers.map((v) => (
+        <View key={`v-${v.code}`} style={styles.voucherCard}>
+          <View style={styles.voucherIconWrap}>
+            <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
+          </View>
+          <View style={styles.voucherBody}>
+            <Text style={styles.voucherCode}>{v.code}</Text>
+            <Text style={styles.voucherDesc}>
+              {v.discount_type === 'percentage'
+                ? `${v.discount_value}% OFF`
+                : `${v.discount_value} OFF`}
+              {v.store_name ? ` • ${v.store_name}` : ''}
+            </Text>
+            {v.min_order_amount && Number(v.min_order_amount) > 0 && (
+              <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
+            )}
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  );
+});
+
+// ── Dual promo banner tiles (tile_a / tile_b) ──────────────────────
+const DualBannerTiles = memo(function DualBannerTiles({
+  tileA,
+  tileB,
+  onPress,
+}: {
+  tileA: Slide[];
+  tileB: Slide[];
+  onPress: (slide: Slide) => void;
+}) {
+  if (!tileA.length && !tileB.length) return null;
+  return (
+    <View style={styles.dualTilesRow}>
+      {tileA[0] && (
+        <Pressable style={styles.dualTile} onPress={() => onPress(tileA[0])}>
+          {tileA[0].display_image ? (
+            <Image source={{ uri: tileA[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
+          ) : (
+            <LinearGradient colors={[Brand.primary, Brand.accent]} style={styles.dualTileFallback}>
+              <Text style={styles.dualTileText} numberOfLines={2}>{tileA[0].headline || tileA[0].title}</Text>
+            </LinearGradient>
+          )}
+        </Pressable>
+      )}
+      {tileB[0] && (
+        <Pressable style={styles.dualTile} onPress={() => onPress(tileB[0])}>
+          {tileB[0].display_image ? (
+            <Image source={{ uri: tileB[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
+          ) : (
+            <LinearGradient colors={['#F97316', '#EF4444']} style={styles.dualTileFallback}>
+              <Text style={styles.dualTileText} numberOfLines={2}>{tileB[0].headline || tileB[0].title}</Text>
+            </LinearGradient>
+          )}
+        </Pressable>
+      )}
+    </View>
+  );
+});
+
 export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -271,7 +454,7 @@ export default function ProductFeedScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [notificationCount, setNotificationCount] = useState(3);
+  const [notificationCount, setNotificationCount] = useState(0);
   const { cartCount, refreshCartCount } = useCart();
   const [chatUnread, setChatUnread] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -284,29 +467,66 @@ export default function ProductFeedScreen() {
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [recommended, setRecommended] = useState<Product[]>([]);
   const [topStores, setTopStores] = useState<Store[]>([]);
+  const [topBrands, setTopBrands] = useState<BrandType[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
+  const [flashSale, setFlashSale] = useState<Product[]>([]);
+  const [flashEndsAt, setFlashEndsAt] = useState<string | null>(null);
+  const [vouchers, setVouchers] = useState<ClaimableCoupon[]>([]);
+  const [tileA, setTileA] = useState<Slide[]>([]);
+  const [tileB, setTileB] = useState<Slide[]>([]);
+  const [becauseYouViewed, setBecauseYouViewed] = useState<Product[]>([]);
 
   // ── Load all sections in parallel ────────────────────────────────
   const loadAllSections = useCallback(async () => {
     try {
-      const [dealsRes, newArrRes, featRes, stores, slideData] = await Promise.all([
+      const [
+        dealsRes, newArrRes, featRes, stores, slideData, brandsData,
+        flashRes, voucherData, tileAData, tileBData, becauseData,
+      ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1 }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ new_arrival: 'true', page: 1 }).catch((e) => { console.error('[Home] newArr error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ featured: 'true', page: 1 }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchTopStores().catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
         fetchSlides().catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
+        fetchTopBrands().catch((e) => { console.error('[Home] brands error:', e?.message); return [] as BrandType[]; }),
+        fetchFlashSaleProducts(1).catch((e) => { console.error('[Home] flash error:', e?.message); return { results: [] as Product[] }; }),
+        fetchClaimableCoupons().catch((e) => { console.error('[Home] vouchers error:', e?.message); return [] as ClaimableCoupon[]; }),
+        fetchSlides('tile_a' as SlidePosition).catch((e) => { console.error('[Home] tileA error:', e?.message); return [] as Slide[]; }),
+        fetchSlides('tile_b' as SlidePosition).catch((e) => { console.error('[Home] tileB error:', e?.message); return [] as Slide[]; }),
+        fetchBecauseYouViewed().catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setNewArrivals(newArrRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
       setTopStores(stores.slice(0, 10));
       setSlides(slideData);
+      setTopBrands(brandsData);
+      setFlashSale(flashRes.results.slice(0, 10));
+      // Use the earliest active flash_sale_ends_at for the countdown
+      const ends = flashRes.results
+        .map((p) => p.flash_sale_ends_at)
+        .filter((v): v is string => !!v)
+        .sort()[0] || null;
+      setFlashEndsAt(ends);
+      setVouchers(voucherData.slice(0, 4));
+      setTileA(tileAData);
+      setTileB(tileBData);
+      setBecauseYouViewed(becauseData.slice(0, 10));
       console.log('[Home] Slides loaded:', slideData.length, slideData.map(s => s.title));
 
-      // Load recently viewed from local storage
+      // Load recently viewed from local storage as a fallback
       try {
         const raw = await AsyncStorage.getItem('recently_viewed');
-        if (raw) setRecentlyViewed(JSON.parse(raw));
+        if (raw) {
+          const local: Product[] = JSON.parse(raw);
+          setRecentlyViewed((prev) => (prev.length ? prev : local));
+        }
+      } catch { }
+
+      // Also fetch server-backed recently viewed (overrides local if present)
+      try {
+        const serverRecent = await fetchRecentlyViewed();
+        if (serverRecent.length) setRecentlyViewed(serverRecent.slice(0, 10));
       } catch { }
     } catch (e) {
       // Sections are optional — main grid still loads
@@ -345,7 +565,13 @@ export default function ProductFeedScreen() {
       setHasMore(data.next !== null);
       if (!reset) setPage(targetPage + 1);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load products');
+      // Only show error screen if we have no products at all
+      // If we already have products, keep showing them (transient error)
+      const msg = e?.response?.data?.detail || e?.message || 'Failed to load products';
+      setProducts((prev) => {
+        if (prev.length === 0) setError(msg);
+        return prev;
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -353,10 +579,22 @@ export default function ProductFeedScreen() {
     }
   }, [page, activeCategory]);
 
+  // Initial load with auto-retry
+  const initialLoadRef = useRef(false);
   useEffect(() => {
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
     loadProducts(true);
     loadAllSections();
     loadCategories();
+    // Auto-retry after 3s if products still empty (handles transient network errors)
+    const retryTimer = setTimeout(() => {
+      setProducts((prev) => {
+        if (prev.length === 0) loadProducts(true);
+        return prev;
+      });
+    }, 3000);
+    return () => clearTimeout(retryTimer);
   }, []);
 
   // ── Refresh cart count and chat unread when screen gains focus ──
@@ -370,12 +608,23 @@ export default function ProductFeedScreen() {
     }
   }, [isAuthenticated]);
 
+  const loadNotificationCount = useCallback(async () => {
+    if (!isAuthenticated) { setNotificationCount(0); return; }
+    try {
+      const count = await fetchUnreadNotificationCount();
+      setNotificationCount(count);
+    } catch {
+      setNotificationCount(0);
+    }
+  }, [isAuthenticated]);
+
   // Refresh cart count every time the home screen gains focus (real-time)
   useFocusEffect(
     useCallback(() => {
       refreshCartCount();
       loadChatUnread();
-    }, [refreshCartCount, loadChatUnread])
+      loadNotificationCount();
+    }, [refreshCartCount, loadChatUnread, loadNotificationCount])
   );
 
   // Reload products when category changes
@@ -511,6 +760,27 @@ export default function ProductFeedScreen() {
     }
   }, [router]);
 
+  const handleSlidePress = useCallback((slide: Slide) => {
+    if (slide.category_slug) {
+      router.push({
+        pathname: '/search',
+        params: { category: slide.category_slug, categoryName: slide.category_name || 'Category' },
+      } as any);
+    } else if (slide.brand_slug) {
+      router.push({
+        pathname: '/search',
+        params: { brand: slide.brand_slug, brandName: slide.brand_name || 'Brand' },
+      } as any);
+    } else if (slide.cta_link) {
+      const link = slide.cta_link;
+      if (link.startsWith('/')) {
+        router.push(link as any);
+      } else {
+        Linking.openURL(link).catch(() => { });
+      }
+    }
+  }, [router]);
+
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
       <ProductCard item={item} onPress={handleProductPress} onChat={handleChat} />
@@ -534,6 +804,9 @@ export default function ProductFeedScreen() {
 
       {/* ── Homepage carousel ─────────────────────────────────────── */}
       <HomeCarousel slides={slides} />
+
+      {/* ── Flash Sale shelf with live countdown ─────────────────── */}
+      <FlashSaleShelf products={flashSale} endsAt={flashEndsAt} onPress={handleProductPress} />
 
       {/* ── Shop by Category — horizontal round carousel ─────────────── */}
       <View style={styles.categoriesSection}>
@@ -583,11 +856,21 @@ export default function ProductFeedScreen() {
       {/* ── Today's Deals — horizontal sliding carousel ──────────── */}
       {renderSection('fire', "Today's Deals", deals, () => router.push('/search'))}
 
+      {/* ── Voucher banner (claimable coupons) ───────────────────── */}
+      <VoucherBanner vouchers={vouchers} />
+
+      {/* ── Dual promo banner tiles ──────────────────────────────── */}
+      <DualBannerTiles tileA={tileA} tileB={tileB} onPress={handleSlidePress} />
+
       {/* ── New Arrivals — horizontal sliding carousel ───────────── */}
       {renderSection('package-variant-closed', 'New Arrivals', newArrivals, () => router.push('/search'))}
 
       {/* ── Recommended for You — horizontal sliding carousel ────── */}
       {renderSection('thumb-up-outline', 'Recommended for You', recommended, () => router.push('/search'))}
+
+      {/* ── Because You Viewed — server-backed recommendations ──── */}
+      {becauseYouViewed.length > 0 &&
+        renderSection('lightbulb-on-outline', 'Because You Viewed', becauseYouViewed, () => router.push('/search'))}
 
       {/* ── Recently Viewed — from local storage ─────────────────── */}
       {recentlyViewed.length > 0 && renderSection('history', 'Recently Viewed', recentlyViewed, () => { })}
@@ -660,6 +943,51 @@ export default function ProductFeedScreen() {
           <MaterialCommunityIcons name="chevron-right" size={24} color="#FFFFFF" />
         </View>
       </Pressable>
+
+      {/* ── Top Brands — horizontal carousel with logos ──────────────── */}
+      {topBrands.length > 0 && (
+        <View style={styles.brandsSection}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <MaterialCommunityIcons name="certificate" size={20} color={Brand.primary} />
+              <Text style={styles.sectionTitle}>Popular Brands</Text>
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.brandsScroll}
+          >
+            {topBrands.map((b) => (
+              <Pressable
+                key={`brand-${b.id}`}
+                style={({ pressed }) => [styles.brandCard, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push({
+                  pathname: '/search',
+                  params: { brand: b.slug, brandName: b.name },
+                } as any)}
+              >
+                <View style={styles.brandLogoWrap}>
+                  {b.logo_url ? (
+                    <Image
+                      source={{ uri: b.logo_url }}
+                      style={styles.brandLogo}
+                      contentFit="contain"
+                      transition={150}
+                    />
+                  ) : (
+                    <View style={styles.brandLogoFallback}>
+                      <MaterialCommunityIcons name="tag" size={22} color={Brand.primary} />
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.brandName} numberOfLines={1}>{b.name}</Text>
+                <Text style={styles.brandCount}>{b.product_count} products</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* ── Category-filtered section title ──────────────────────── */}
       {activeCategory ? (
@@ -860,8 +1188,8 @@ export default function ProductFeedScreen() {
               )}
             </Pressable>
           </LinearGradient>
-        </SafeAreaView>
-      </LinearGradient>
+        </SafeAreaView >
+      </LinearGradient >
 
       <FlatList
         ref={flatListRef}
@@ -899,7 +1227,7 @@ export default function ProductFeedScreen() {
 
       {/* ── Floating scroll-to-top button ──────────────────────── */}
       <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
-    </View>
+    </View >
   );
 }
 
@@ -1349,6 +1677,59 @@ const styles = StyleSheet.create({
   },
   storeWholesaleText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
 
+  // ── Top Brands section ──────────────────────────────────────────
+  brandsSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: Spacing.three,
+    marginBottom: Spacing.one,
+    paddingVertical: Spacing.three,
+    borderTopWidth: 1,
+    borderTopColor: Brand.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Brand.border,
+  },
+  brandsScroll: { paddingHorizontal: Spacing.three, gap: 12 },
+  brandCard: {
+    width: 90,
+    alignItems: 'center',
+  },
+  brandLogoWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: Brand.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  brandLogo: { width: '100%', height: '100%', padding: 6 },
+  brandLogoFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#DCF5EC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  brandName: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '700',
+    color: Brand.text,
+    textAlign: 'center',
+  },
+  brandCount: {
+    fontSize: 10,
+    color: Brand.textTertiary,
+    marginTop: 1,
+  },
+
   // ── Supplier banner ─────────────────────────────────────────────
   supplierBanner: {
     marginHorizontal: Spacing.three,
@@ -1590,4 +1971,100 @@ const styles = StyleSheet.create({
     color: Brand.textTertiary,
     fontSize: 12,
   },
+
+  // ── Flash Sale shelf ─────────────────────────────────────────────
+  flashSection: {
+    marginHorizontal: Spacing.two,
+    marginVertical: Spacing.two,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  flashHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  flashTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  flashTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
+  countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  countdownLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '600', marginRight: 4 },
+  countdownBox: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  countdownDigit: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  countdownColon: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  flashBadge: {
+    position: 'absolute',
+    top: Spacing.one,
+    left: Spacing.one,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  flashBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+
+  // ── Voucher banner ───────────────────────────────────────────────
+  voucherTrack: { paddingHorizontal: Spacing.two, gap: Spacing.two, paddingVertical: Spacing.one },
+  voucherCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Brand.primary,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+    minWidth: 240,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  voucherIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voucherBody: { flex: 1, gap: 1 },
+  voucherCode: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
+  voucherDesc: { color: 'rgba(255,255,255,0.95)', fontSize: 12, fontWeight: '600' },
+  voucherMin: { color: 'rgba(255,255,255,0.8)', fontSize: 10 },
+
+  // ── Dual promo banner tiles ──────────────────────────────────────
+  dualTilesRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginHorizontal: Spacing.two,
+    marginVertical: Spacing.two,
+  },
+  dualTile: {
+    flex: 1,
+    height: 110,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  dualTileImage: { width: '100%', height: '100%' },
+  dualTileFallback: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', padding: 10 },
+  dualTileText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', textAlign: 'center' },
 });

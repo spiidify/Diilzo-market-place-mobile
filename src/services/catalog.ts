@@ -1,30 +1,56 @@
 // ── Catalog API Service (Categories, Brands, Stores, Reviews) ─────
 
-import type { Brand, Category, PaginatedResponse, Product, Review, Slide, Store, StoreDetail, StoreReview } from '../types';
+import type {
+  Brand,
+  Category,
+  ClaimableCoupon,
+  PaginatedResponse,
+  Product,
+  RFQPayload,
+  RFQResponse,
+  Review,
+  Slide,
+  SlidePosition,
+  Store,
+  StoreDetail,
+  StoreReview
+} from '../types';
 import { apiRequest } from './api';
 
-/** GET /api/v1/slides/ — active homepage carousel slides */
-export async function fetchSlides(): Promise<Slide[]> {
-  const data = await apiRequest<PaginatedResponse<Slide>>({ method: 'GET', url: '/slides/' });
+/** GET /api/v1/slides/ — active homepage carousel slides (optionally by position). */
+export async function fetchSlides(position?: SlidePosition): Promise<Slide[]> {
+  const data = await apiRequest<PaginatedResponse<Slide>>({
+    method: 'GET',
+    url: '/slides/',
+    params: position ? { position } : undefined,
+  });
   return data.results || (data as any);
 }
 
-/** GET /api/v1/categories/ — fetch ALL categories (auto-paginates) */
+/** GET /api/v1/categories/ — fetch ALL categories in one request and build tree */
 export async function fetchCategories(): Promise<Category[]> {
-  let page = 1;
-  let all: Category[] = [];
-  let next: string | null = null;
-  do {
-    const data = await apiRequest<PaginatedResponse<Category>>({
-      method: 'GET',
-      url: '/categories/',
-      params: { page },
-    });
-    all = [...all, ...data.results];
-    next = data.next;
-    page += 1;
-  } while (next);
-  return all;
+  // Fetch all categories in a single request (page_size=500) to avoid
+  // making 15+ paginated calls that trigger rate limiting (429 errors)
+  const data = await apiRequest<PaginatedResponse<Category>>({
+    method: 'GET',
+    url: '/categories/',
+    params: { page_size: 500 },
+  });
+  const all = data.results;
+
+  // Build tree: group children under their parent
+  const parents = all.filter((c) => !c.parent);
+  const childrenByParent = new Map<number, Category[]>();
+  for (const c of all) {
+    if (c.parent) {
+      const siblings = childrenByParent.get(c.parent) || [];
+      siblings.push(c);
+      childrenByParent.set(c.parent, siblings);
+    }
+  }
+  return parents
+    .map((p) => ({ ...p, children: childrenByParent.get(p.id) || [] }))
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
 }
 
 /** GET /api/v1/categories/ — single page (for lazy loading) */
@@ -36,10 +62,22 @@ export async function fetchCategoriesPage(page = 1): Promise<PaginatedResponse<C
   });
 }
 
-/** GET /api/v1/brands/ — list all brands */
+/** GET /api/v1/brands/ — list all brands in one request */
 export async function fetchBrands(): Promise<Brand[]> {
-  const data = await apiRequest<PaginatedResponse<Brand>>({ method: 'GET', url: '/brands/' });
-  return data.results;
+  const data = await apiRequest<PaginatedResponse<Brand>>({
+    method: 'GET',
+    url: '/brands/',
+    params: { page_size: 500 },
+  });
+  return data.results.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
+}
+
+/** GET /api/v1/brands/ — top brands (with products) for homepage showcase */
+export async function fetchTopBrands(): Promise<Brand[]> {
+  const all = await fetchBrands();
+  return all
+    .filter((b) => (b.product_count || 0) > 0)
+    .slice(0, 12);
 }
 
 /** GET /api/v1/stores/ — list approved stores */
@@ -159,4 +197,48 @@ export async function validateCoupon(code: string): Promise<{
 /** POST /api/v1/products/<slug>/view/ — track product view */
 export async function trackProductView(slug: string): Promise<void> {
   await apiRequest({ method: 'POST', url: `/products/${slug}/view/` });
+}
+
+// ── Discovery / Personalization / B2B ─────────────────────────────
+
+/** GET /api/v1/products/recently-viewed/ — server-backed browsing history. */
+export async function fetchRecentlyViewed(): Promise<Product[]> {
+  const data = await apiRequest<{ results: Product[] }>({ method: 'GET', url: '/products/recently-viewed/' });
+  return data.results || [];
+}
+
+/** GET /api/v1/products/because-you-viewed/ — personalized recommendations. */
+export async function fetchBecauseYouViewed(): Promise<Product[]> {
+  const data = await apiRequest<{ results: Product[] }>({ method: 'GET', url: '/products/because-you-viewed/' });
+  return data.results || [];
+}
+
+/** GET /api/v1/products/?flash_sale=true — active flash sale products. */
+export async function fetchFlashSaleProducts(page = 1): Promise<PaginatedResponse<Product>> {
+  return apiRequest<PaginatedResponse<Product>>({
+    method: 'GET',
+    url: '/products/',
+    params: { flash_sale: 'true', page },
+  });
+}
+
+/** GET /api/v1/coupons/claimable/ — claimable vouchers for the home banner. */
+export async function fetchClaimableCoupons(): Promise<ClaimableCoupon[]> {
+  const data = await apiRequest<{ results: ClaimableCoupon[] }>({ method: 'GET', url: '/coupons/claimable/' });
+  return data.results || [];
+}
+
+/** GET /api/v1/notifications/unread-count/ — bell badge count. */
+export async function fetchUnreadNotificationCount(): Promise<number> {
+  try {
+    const data = await apiRequest<{ count: number }>({ method: 'GET', url: '/notifications/unread-count/' });
+    return data.count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** POST /api/v1/rfq/ — submit a Request for Quotation (Alibaba-style sourcing). */
+export async function submitRFQ(payload: RFQPayload): Promise<RFQResponse> {
+  return apiRequest<RFQResponse>({ method: 'POST', url: '/rfq/', data: payload });
 }

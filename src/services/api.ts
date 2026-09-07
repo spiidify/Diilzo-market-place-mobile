@@ -100,7 +100,7 @@ export async function touchSession(): Promise<void> {
 // ── Axios instance ───────────────────────────────────────────────
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   maxContentLength: 10 * 1024 * 1024, // 10MB max response
   maxBodyLength: 2 * 1024 * 1024,     // 2MB max request body
   headers: {
@@ -200,10 +200,26 @@ api.interceptors.response.use(
   }
 );
 
-// ── API helper ───────────────────────────────────────────────────
+// ── API helper with automatic retry on 429 (rate limit) ──────────
 export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
-  const response = await api.request<T>(config);
-  return response.data;
+  const maxRetries = 2;
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await api.request<T>(config);
+      return response.data;
+    } catch (error: any) {
+      lastError = error;
+      // Retry on 429 (Too Many Requests) with exponential backoff
+      if (error.response?.status === 429 && attempt < maxRetries) {
+        const delay = 1000 * Math.pow(2, attempt); // 1s, 2s
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 export default api;

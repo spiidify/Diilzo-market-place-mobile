@@ -885,13 +885,34 @@ export default function ProductDetailScreen() {
                   <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
                 </View>
                 <View style={styles.sellerInfo}>
-                  <Text style={styles.sellerName}>{product.store.name}</Text>
+                  <View style={styles.sellerNameRow}>
+                    <Text style={styles.sellerName}>{product.store.name}</Text>
+                    {product.store.verification_status === 'verified' && (
+                      <MaterialCommunityIcons name="check-decagram" size={14} color={Brand.primary} />
+                    )}
+                  </View>
                   <Text style={styles.sellerLoc}>{product.store.city}, {product.store.country}</Text>
                 </View>
                 {product.store.is_wholesaler && (
                   <View style={styles.wholeTag}><Text style={styles.wholeText}>Wholesale</Text></View>
                 )}
               </View>
+              {product.store.is_wholesaler && (
+                <Pressable
+                  style={({ pressed }) => [styles.rfqBtn, pressed && styles.rfqBtnPressed]}
+                  onPress={() => router.push({
+                    pathname: '/suppliers',
+                    params: {
+                      rfq: '1',
+                      product_name: product.name,
+                      store: product.store?.slug || '',
+                    },
+                  } as any)}
+                >
+                  <MaterialCommunityIcons name="file-document-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.rfqBtnText}>Request for Quotation</Text>
+                </Pressable>
+              )}
             </View>
           )}
 
@@ -1833,10 +1854,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   sellerInfo: { flex: 1, gap: 1 },
+  sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sellerName: { fontSize: 14, fontWeight: '600', color: Brand.text },
   sellerLoc: { fontSize: 12, color: Brand.textSecondary },
   wholeTag: { backgroundColor: Brand.surfaceAlt, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   wholeText: { fontSize: 10, fontWeight: '600', color: Brand.primary },
+  rfqBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Brand.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  rfqBtnPressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
+  rfqBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 
   // ── Action bar ──────────────────────────────────────────────────
   actionBar: {
