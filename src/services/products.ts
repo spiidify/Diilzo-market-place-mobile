@@ -18,6 +18,9 @@ export interface ProductListParams {
   ordering?: string;       // price, -price, -created_at, rating
   min_price?: string;
   max_price?: string;
+  /** Cloudinary image optimization dimensions (physical pixels) */
+  width?: number;
+  height?: number;
 }
 
 /**
@@ -45,10 +48,14 @@ export async function fetchProducts(params: ProductListParams = {}): Promise<Pro
  * Fetch a single product by slug.
  * GET /api/v1/products/<slug>/
  */
-export async function fetchProductBySlug(slug: string): Promise<Product> {
+export async function fetchProductBySlug(
+  slug: string,
+  imageSize?: { width: number; height: number }
+): Promise<Product> {
   return apiRequest<Product>({
     method: 'GET',
     url: `/products/${slug}/`,
+    params: imageSize,
   });
 }
 

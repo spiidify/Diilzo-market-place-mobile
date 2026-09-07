@@ -1,7 +1,7 @@
 // ── Auth API Service (SimpleJWT) ──────────────────────────────────
 
-import { apiRequest, setTokens, clearTokens, getAccessToken } from './api';
-import type { LoginResponse, RegisterResponse, RefreshResponse, User } from '../types';
+import type { LoginResponse, RefreshResponse, RegisterResponse, User } from '../types';
+import { apiRequest, clearTokens, getAccessToken, setTokens } from './api';
 
 /**
  * Login with email + password. Stores JWT tokens in SecureStore.
@@ -67,8 +67,10 @@ export async function logout(): Promise<void> {
  * Get current user profile.
  * GET /api/v1/auth/profile/
  */
-export async function getProfile(): Promise<User> {
-  return apiRequest<User>({ method: 'GET', url: '/auth/profile/' });
+export async function getProfile(
+  imageSize?: { width: number; height: number }
+): Promise<User> {
+  return apiRequest<User>({ method: 'GET', url: '/auth/profile/', params: imageSize });
 }
 
 /**

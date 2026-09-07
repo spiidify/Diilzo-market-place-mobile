@@ -3,6 +3,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
+import { useImageDimensions } from '../hooks/useImageDimensions';
 import { getAccessToken } from '../services/api';
 import { login as apiLogin, logout as apiLogout, register as apiRegister, getProfile } from '../services/auth';
 import { clearGuestCartId } from '../services/cart';
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
     isAuthenticated: false,
   });
+  const avatarSize = useImageDimensions('avatar');
 
   // Bootstrap: check for stored tokens on app launch
   useEffect(() => {
@@ -36,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const token = await getAccessToken();
         if (token) {
-          const user = await getProfile();
+          const user = await getProfile(avatarSize);
           setState({ user, isLoading: false, isAuthenticated: true });
         } else {
           setState({ user: null, isLoading: false, isAuthenticated: false });
@@ -51,20 +53,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     await apiLogin(email, password);
-    const user = await getProfile();
+    const user = await getProfile(avatarSize);
     // Clear guest cart ID — the backend merges guest cart items into the user's cart
     await clearGuestCartId();
     setState({ user, isLoading: false, isAuthenticated: true });
-  }, []);
+  }, [avatarSize]);
 
   const register = useCallback(async (
     email: string, password: string, firstName: string, lastName: string, phone?: string
   ) => {
     await apiRegister(email, password, firstName, lastName, phone);
-    const user = await getProfile();
+    const user = await getProfile(avatarSize);
     await clearGuestCartId();
     setState({ user, isLoading: false, isAuthenticated: true });
-  }, []);
+  }, [avatarSize]);
 
   const logout = useCallback(async () => {
     await apiLogout();
@@ -73,12 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const user = await getProfile();
+      const user = await getProfile(avatarSize);
       setState((prev) => ({ ...prev, user }));
     } catch {
       // ignore
     }
-  }, []);
+  }, [avatarSize]);
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, logout, refreshUser }}>

@@ -23,6 +23,7 @@ import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useImageDimensions } from '@/hooks/useImageDimensions';
 import {
   fetchBecauseYouViewed,
   fetchCategories,
@@ -492,6 +493,13 @@ export default function ProductFeedScreen() {
   const [tileB, setTileB] = useState<Slide[]>([]);
   const [becauseYouViewed, setBecauseYouViewed] = useState<Product[]>([]);
 
+  // ── Cloudinary image sizes per component layout ─────────────────
+  const productCardSize = useImageDimensions('productCard');
+  const categorySize = useImageDimensions('category');
+  const slideSize = useImageDimensions('slide');
+  const storeLogoSize = useImageDimensions('storeLogo');
+  const brandSize = useImageDimensions('category');
+
   // ── Load all sections in parallel ────────────────────────────────
   const loadAllSections = useCallback(async () => {
     try {
@@ -499,17 +507,17 @@ export default function ProductFeedScreen() {
         dealsRes, newArrRes, featRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
       ] = await Promise.all([
-        fetchProducts({ on_sale: 'true', page: 1 }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
-        fetchProducts({ new_arrival: 'true', page: 1 }).catch((e) => { console.error('[Home] newArr error:', e?.message); return { results: [] as Product[], next: null }; }),
-        fetchProducts({ featured: 'true', page: 1 }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
-        fetchTopStores().catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
-        fetchSlides().catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
-        fetchTopBrands().catch((e) => { console.error('[Home] brands error:', e?.message); return [] as BrandType[]; }),
-        fetchFlashSaleProducts(1).catch((e) => { console.error('[Home] flash error:', e?.message); return { results: [] as Product[] }; }),
+        fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ new_arrival: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] newArr error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchTopStores(storeLogoSize).catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
+        fetchSlides(undefined, slideSize).catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
+        fetchTopBrands(brandSize).catch((e) => { console.error('[Home] brands error:', e?.message); return [] as BrandType[]; }),
+        fetchFlashSaleProducts(1, productCardSize).catch((e) => { console.error('[Home] flash error:', e?.message); return { results: [] as Product[] }; }),
         fetchClaimableCoupons().catch((e) => { console.error('[Home] vouchers error:', e?.message); return [] as ClaimableCoupon[]; }),
-        fetchSlides('tile_a' as SlidePosition).catch((e) => { console.error('[Home] tileA error:', e?.message); return [] as Slide[]; }),
-        fetchSlides('tile_b' as SlidePosition).catch((e) => { console.error('[Home] tileB error:', e?.message); return [] as Slide[]; }),
-        fetchBecauseYouViewed().catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
+        fetchSlides('tile_a' as SlidePosition, slideSize).catch((e) => { console.error('[Home] tileA error:', e?.message); return [] as Slide[]; }),
+        fetchSlides('tile_b' as SlidePosition, slideSize).catch((e) => { console.error('[Home] tileB error:', e?.message); return [] as Slide[]; }),
+        fetchBecauseYouViewed(productCardSize).catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setNewArrivals(newArrRes.results.slice(0, 10));
@@ -547,19 +555,19 @@ export default function ProductFeedScreen() {
     } catch (e) {
       // Sections are optional — main grid still loads
     }
-  }, []);
+  }, [productCardSize, slideSize, categorySize, storeLogoSize, brandSize]);
 
   // ── Load categories from API ─────────────────────────────────────
   const loadCategories = useCallback(async () => {
     try {
-      const cats = await fetchCategories();
+      const cats = await fetchCategories(categorySize);
       // Sort by product_count descending so most relevant categories show first
       cats.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
       setCategories(cats);
     } catch (e) {
       // Categories are optional
     }
-  }, []);
+  }, [categorySize]);
 
   const loadProducts = useCallback(async (reset = false) => {
     const targetPage = reset ? 1 : page;
@@ -574,7 +582,7 @@ export default function ProductFeedScreen() {
         setLoadingMore(true);
       }
       setError(null);
-      const params: Record<string, any> = { page: targetPage };
+      const params: Record<string, any> = { page: targetPage, ...productCardSize };
       if (activeCategory) params.category = activeCategory;
       const data = await fetchProducts(params);
       setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
@@ -593,7 +601,7 @@ export default function ProductFeedScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [page, activeCategory]);
+  }, [page, activeCategory, productCardSize]);
 
   // Initial load with auto-retry
   const initialLoadRef = useRef(false);

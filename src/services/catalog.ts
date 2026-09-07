@@ -18,23 +18,28 @@ import type {
 import { apiRequest } from './api';
 
 /** GET /api/v1/slides/ — active homepage carousel slides (optionally by position). */
-export async function fetchSlides(position?: SlidePosition): Promise<Slide[]> {
+export async function fetchSlides(
+  position?: SlidePosition,
+  imageSize?: { width: number; height: number }
+): Promise<Slide[]> {
   const data = await apiRequest<PaginatedResponse<Slide>>({
     method: 'GET',
     url: '/slides/',
-    params: position ? { position } : undefined,
+    params: { ...(position ? { position } : {}), ...imageSize },
   });
   return data.results || (data as any);
 }
 
 /** GET /api/v1/categories/ — fetch ALL categories in one request and build tree */
-export async function fetchCategories(): Promise<Category[]> {
+export async function fetchCategories(
+  imageSize?: { width: number; height: number }
+): Promise<Category[]> {
   // Fetch all categories in a single request (page_size=500) to avoid
   // making 15+ paginated calls that trigger rate limiting (429 errors)
   const data = await apiRequest<PaginatedResponse<Category>>({
     method: 'GET',
     url: '/categories/',
-    params: { page_size: 500 },
+    params: { page_size: 500, ...imageSize },
   });
   const all = data.results;
 
@@ -63,25 +68,32 @@ export async function fetchCategoriesPage(page = 1): Promise<PaginatedResponse<C
 }
 
 /** GET /api/v1/brands/ — list all brands in one request */
-export async function fetchBrands(): Promise<Brand[]> {
+export async function fetchBrands(
+  imageSize?: { width: number; height: number }
+): Promise<Brand[]> {
   const data = await apiRequest<PaginatedResponse<Brand>>({
     method: 'GET',
     url: '/brands/',
-    params: { page_size: 500 },
+    params: { page_size: 500, ...imageSize },
   });
   return data.results.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
 }
 
 /** GET /api/v1/brands/ — top brands (with products) for homepage showcase */
-export async function fetchTopBrands(): Promise<Brand[]> {
-  const all = await fetchBrands();
+export async function fetchTopBrands(
+  imageSize?: { width: number; height: number }
+): Promise<Brand[]> {
+  const all = await fetchBrands(imageSize);
   return all
     .filter((b) => (b.product_count || 0) > 0)
     .slice(0, 12);
 }
 
 /** GET /api/v1/stores/ — list approved stores */
-export async function fetchStores(params?: { search?: string; country?: string; wholesaler?: string }): Promise<Store[]> {
+export async function fetchStores(
+  params?: { search?: string; country?: string; wholesaler?: string },
+  imageSize?: { width: number; height: number }
+): Promise<Store[]> {
   const data = await apiRequest<PaginatedResponse<Store>>({
     method: 'GET',
     url: '/stores/',
@@ -114,10 +126,13 @@ export async function fetchSuppliers(page = 1): Promise<PaginatedResponse<Store>
 }
 
 /** GET /api/v1/stores/?is_featured=true — fetch top/featured stores */
-export async function fetchTopStores(): Promise<Store[]> {
+export async function fetchTopStores(
+  imageSize?: { width: number; height: number }
+): Promise<Store[]> {
   const data = await apiRequest<PaginatedResponse<Store>>({
     method: 'GET',
     url: '/stores/',
+    params: { is_featured: 'true', ...imageSize },
   });
   // Sort by featured first, then by product count
   const stores = data.results.sort((a, b) => {
@@ -208,17 +223,26 @@ export async function fetchRecentlyViewed(): Promise<Product[]> {
 }
 
 /** GET /api/v1/products/because-you-viewed/ — personalized recommendations. */
-export async function fetchBecauseYouViewed(): Promise<Product[]> {
-  const data = await apiRequest<{ results: Product[] }>({ method: 'GET', url: '/products/because-you-viewed/' });
+export async function fetchBecauseYouViewed(
+  imageSize?: { width: number; height: number }
+): Promise<Product[]> {
+  const data = await apiRequest<{ results: Product[] }>({
+    method: 'GET',
+    url: '/products/because-you-viewed/',
+    params: imageSize,
+  });
   return data.results || [];
 }
 
 /** GET /api/v1/products/?flash_sale=true — active flash sale products. */
-export async function fetchFlashSaleProducts(page = 1): Promise<PaginatedResponse<Product>> {
+export async function fetchFlashSaleProducts(
+  page = 1,
+  imageSize?: { width: number; height: number }
+): Promise<PaginatedResponse<Product>> {
   return apiRequest<PaginatedResponse<Product>>({
     method: 'GET',
     url: '/products/',
-    params: { flash_sale: 'true', page },
+    params: { flash_sale: 'true', page, ...imageSize },
   });
 }
 
