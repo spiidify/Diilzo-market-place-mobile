@@ -11,6 +11,11 @@ export interface Slide {
   background_color: string;
   cta_text: string;
   cta_link: string;
+  link_url: string;
+  category_slug: string | null;
+  category_name: string | null;
+  brand_slug: string | null;
+  brand_name: string | null;
   button_style: string;
   text_position: string;
   sort_order: number;

@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -22,9 +22,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { apiRequest } from '@/services/api';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
-import { getMyStore } from '@/services/seller';
+import { createProduct, getMyStore } from '@/services/seller';
 import type { Brand as BrandType, Category } from '@/types';
 
 interface PickedImage {
@@ -153,12 +152,7 @@ export default function AddProductScreen() {
         } as any);
       });
 
-      await apiRequest<any>({
-        method: 'POST',
-        url: '/sellers/api/seller/products/',
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await createProduct(formData);
 
       Alert.alert('Success', 'Product created successfully', [
         { text: 'OK', onPress: () => router.back() },

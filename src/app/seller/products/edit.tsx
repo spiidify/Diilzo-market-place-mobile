@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand, Spacing } from '@/constants/theme';
 import { apiRequest } from '@/services/api';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
+import { getProductDetail, updateProduct } from '@/services/seller';
 import type { Brand as BrandType, Category, Product } from '@/types';
 
 interface PickedImage {
@@ -86,10 +87,9 @@ export default function EditProductScreen() {
       return;
     }
     try {
-      const url = slug
-        ? `/products/${slug}/`
-        : `/sellers/api/seller/products/${productId}/`;
-      const product = await apiRequest<Product>({ method: 'GET', url });
+      const product = slug
+        ? await apiRequest<Product>({ method: 'GET', url: `/products/${slug}/` })
+        : await getProductDetail(Number(productId));
       setName(product.name || '');
       setDescription(product.description || '');
       setPrice(product.price || '');
@@ -102,7 +102,7 @@ export default function EditProductScreen() {
       setWeight(product.weight || '');
       setVideoUrl(product.video_url || '');
       setIsActive(product.is_active);
-      const imgs = (product.images || [])
+      const imgs = ((product.images || []) as Array<{ image_url?: string }>)
         .map((img) => img.image_url)
         .filter((u): u is string => Boolean(u));
       setExistingImages(imgs);
@@ -184,16 +184,17 @@ export default function EditProductScreen() {
         } as any);
       });
 
-      const url = slug
-        ? `/products/${slug}/`
-        : `/sellers/api/seller/products/${productId}/`;
-
-      await apiRequest<any>({
-        method: 'PATCH',
-        url,
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      if (productId) {
+        await updateProduct(Number(productId), formData);
+      } else if (slug) {
+        // Fallback: use public product endpoint (read-only, won't work for PATCH)
+        await apiRequest<any>({
+          method: 'PATCH',
+          url: `/products/${slug}/`,
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
 
       Alert.alert('Success', 'Product updated successfully', [
         { text: 'OK', onPress: () => router.back() },

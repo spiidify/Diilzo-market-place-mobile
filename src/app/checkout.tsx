@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import { apiRequest } from '@/services/api';
 import { clearCart, getCart } from '@/services/cart';
 import { validateCoupon } from '@/services/catalog';
@@ -86,6 +87,7 @@ const TAX_RATE = 0.0;
 export default function CheckoutScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { setCartCount: setGlobalCartCount } = useCart();
 
   const [cart, setCart] = useState<CartType | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -230,7 +232,8 @@ export default function CheckoutScreen() {
       Alert.alert('Empty Cart', 'Your cart is empty.');
       return;
     }
-    if (!selectedAddressId) {
+    const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+    if (!selectedAddr) {
       Alert.alert('Select Address', 'Please choose a shipping address.');
       return;
     }
@@ -243,40 +246,66 @@ export default function CheckoutScreen() {
     setPlacing(true);
     setError(null);
     try {
+      // Send the full shipping_address dict — the backend expects this, not address_id
+      const shippingAddress = {
+        street: selectedAddr.street || '',
+        city: selectedAddr.city || '',
+        state: selectedAddr.state || '',
+        postal_code: selectedAddr.postal_code || '',
+        country: selectedAddr.country || '',
+        phone: selectedAddr.phone || phoneNumber || '',
+      };
+
       const order = await apiRequest<{ id: number; order_number: string }>({
         method: 'POST',
         url: '/orders/create/',
         data: {
-          address_id: selectedAddressId,
-          coupon_code: discount > 0 ? couponCode.trim() : undefined,
-          payment_method: selectedMethod,
+          shipping_address: shippingAddress,
           notes: orderNote || undefined,
         },
       });
 
-      const initResult = await initiatePayment({
-        order_id: order.id,
-        method: selectedMethod,
-        phone: opt?.requiresPhone ? phoneNumber.trim() : undefined,
-        return_url: Linking.createURL('/checkout'),
-      });
+      // Initiate payment as a separate step
+      try {
+        const initResult = await initiatePayment({
+          order_id: order.id,
+          method: selectedMethod,
+          phone: opt?.requiresPhone ? phoneNumber.trim() : undefined,
+          return_url: Linking.createURL('/checkout'),
+        });
 
-      if (selectedMethod === 'paypal' && initResult.redirect_url) {
-        Linking.openURL(initResult.redirect_url);
-        Alert.alert(
-          'PayPal',
-          'Complete your PayPal payment in the browser. We will verify your payment status.',
-          [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
-        );
-      } else if (opt?.requiresPhone) {
-        Alert.alert(
-          'Payment Sent',
-          `A payment request was sent to ${phoneNumber}. Approve it on your phone to complete the order.`,
-          [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
-        );
-      } else {
+        if (selectedMethod === 'paypal' && initResult.redirect_url) {
+          Linking.openURL(initResult.redirect_url);
+          Alert.alert(
+            'PayPal',
+            'Complete your PayPal payment in the browser. We will verify your payment status.',
+            [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
+          );
+        } else if (opt?.requiresPhone) {
+          Alert.alert(
+            'Payment Sent',
+            `A payment request was sent to ${phoneNumber}. Approve it on your phone to complete the order.`,
+            [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
+          );
+        } else {
+          await clearCart();
+          setGlobalCartCount(0);
+          showSuccess(order);
+        }
+      } catch (payErr: any) {
+        // Order was created but payment failed — still clear cart and show order
+        const payStatus = payErr?.response?.status;
+        let payMsg = payErr?.response?.data?.detail || payErr?.message || 'Payment could not be initiated.';
+        if (payStatus === 400) {
+          payMsg = payErr?.response?.data?.detail || 'Payment method unavailable. Your order is placed — pay from your orders page.';
+        }
         await clearCart();
-        showSuccess(order);
+        setGlobalCartCount(0);
+        Alert.alert(
+          'Order Placed',
+          `Your order #${order.order_number || order.id} was placed, but payment could not be initiated. ${payMsg}`,
+          [{ text: 'View Order', onPress: () => router.replace(`/buyer/orders/${order.id}` as any) }]
+        );
       }
     } catch (e: any) {
       const status = e?.response?.status;
@@ -307,6 +336,7 @@ export default function CheckoutScreen() {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           await clearCart();
+          setGlobalCartCount(0);
           setPlacing(false);
           showSuccess({ id: orderId, order_number: '' });
         } else if (status.status === 'failed' || status.status === 'cancelled') {

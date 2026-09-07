@@ -14,8 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
-import { apiRequest } from '@/services/api';
-import { getMyStore } from '@/services/seller';
+import { getAnalytics, getMyStore } from '@/services/seller';
 
 type Period = '7d' | '30d' | '90d';
 
@@ -49,11 +48,7 @@ export default function SellerAnalyticsScreen() {
       setError(null);
       // Try the dedicated analytics endpoint; fall back to deriving from dashboard
       try {
-        const result = await apiRequest<AnalyticsData>({
-          method: 'GET',
-          url: '/sellers/api/seller/analytics/',
-          params: { period },
-        });
+        const result = await getAnalytics(period);
         setData(result);
       } catch {
         // Fallback: derive basic stats from the dashboard store

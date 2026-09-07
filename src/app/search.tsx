@@ -137,8 +137,9 @@ const SearchProductCard = memo(function SearchProductCard({
 
 export default function SearchScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ category?: string; categoryName?: string }>();
+  const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
   const categorySlug = params.category || null;
+  const brandSlug = params.brand || null;
   const [products, setProducts] = useState<Product[]>([]);
   const [pinned, setPinned] = useState<Product[]>([]);
   const [sponsored, setSponsored] = useState<Product[]>([]);
@@ -176,6 +177,7 @@ export default function SearchScreen() {
       const baseParams = {
         page: targetPage,
         ...(categorySlug ? { category: categorySlug } : {}),
+        ...(brandSlug ? { brand: brandSlug } : {}),
         ...(sortBy ? { ordering: sortBy } : {}),
         ...(minPrice ? { min_price: minPrice } : {}),
         ...(maxPrice ? { max_price: maxPrice } : {}),
@@ -199,7 +201,7 @@ export default function SearchScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [page, query, categorySlug]);
+  }, [page, query, categorySlug, brandSlug]);
 
   useEffect(() => {
     load(true);
@@ -467,12 +469,14 @@ export default function SearchScreen() {
             scrollEventThrottle={16}
             ListHeaderComponent={
               <View>
-                {categorySlug && (
+                {(categorySlug || brandSlug) && (
                   <View style={styles.categoryBanner}>
                     <Pressable onPress={() => router.back()} hitSlop={12} style={styles.categoryBackBtn}>
                       <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.primary} />
                     </Pressable>
-                    <Text style={styles.categoryBannerTitle}>{params.categoryName || 'Category'}</Text>
+                    <Text style={styles.categoryBannerTitle}>
+                      {categorySlug ? (params.categoryName || 'Category') : (params.brandName || 'Brand')}
+                    </Text>
                     <View style={{ width: 22 }} />
                   </View>
                 )}

@@ -3,10 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   FlatList,
   Linking,
@@ -17,13 +18,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { addToCart, getCartCount } from '@/services/cart';
+import { useCart } from '@/context/CartContext';
+import { addToCart } from '@/services/cart';
 import { createReview, fetchProductReviews, trackProductView } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
@@ -45,7 +47,7 @@ export default function ProductDetailScreen() {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  const { cartCount, refreshCartCount, incrementCartCount } = useCart();
   const [showFullscreenGallery, setShowFullscreenGallery] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   // Review form state
@@ -56,6 +58,11 @@ export default function ProductDetailScreen() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [buyingNow, setBuyingNow] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const toastAnim = useRef(new Animated.Value(-100)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isAuthenticated } = useAuth();
 
   const load = useCallback(async () => {
@@ -72,8 +79,8 @@ export default function ProductDetailScreen() {
       if (isAuthenticated && data.id) {
         checkWishlist(data.id).then((r: any) => setIsWishlisted(!!r.is_wishlisted)).catch(() => { });
       }
-      // Cart count works for both authenticated and guest users
-      getCartCount().then(setCartCount).catch(() => { });
+      // Cart count is managed globally via CartContext
+      refreshCartCount();
 
       // ── Fetch related products (same category, exclude current) ──
       if (data.category?.slug) {
@@ -169,16 +176,65 @@ export default function ProductDetailScreen() {
     }
   }, [product, isAuthenticated, router]);
 
+  const showToast = useCallback((type: 'success' | 'error', text: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ type, text });
+    Animated.timing(toastAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    toastTimer.current = setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: -120,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setToast(null));
+    }, 2500);
+  }, [toastAnim]);
+
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
+    setAddingToCart(true);
     try {
       await addToCart(product.id, quantity);
-      const count = await getCartCount();
-      setCartCount(count);
+      incrementCartCount(quantity);
+      showToast('success', `${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart`);
     } catch (e: any) {
-      console.error('Add to cart error:', e?.message);
+      const status = e?.response?.status;
+      let msg = 'Failed to add to cart. Please try again.';
+      if (status === 400) {
+        msg = e?.response?.data?.detail || 'Could not add this item to cart.';
+      } else if (status === 404) {
+        msg = 'Product not available.';
+      }
+      showToast('error', msg);
+    } finally {
+      setAddingToCart(false);
     }
-  }, [product, quantity]);
+  }, [product, quantity, incrementCartCount, showToast]);
+
+  const handleBuyNow = useCallback(async () => {
+    if (!product) return;
+    setBuyingNow(true);
+    try {
+      await addToCart(product.id, quantity);
+      incrementCartCount(quantity);
+      // Navigate directly to checkout
+      router.push('/checkout');
+    } catch (e: any) {
+      const status = e?.response?.status;
+      let msg = 'Failed to place order. Please try again.';
+      if (status === 400) {
+        msg = e?.response?.data?.detail || 'Could not process this item.';
+      } else if (status === 404) {
+        msg = 'Product not available.';
+      }
+      showToast('error', msg);
+    } finally {
+      setBuyingNow(false);
+    }
+  }, [product, quantity, incrementCartCount, showToast, router]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;
@@ -1025,8 +1081,13 @@ export default function ProductDetailScreen() {
           <Pressable
             style={({ pressed }) => [styles.cartBtn, pressed && { opacity: 0.85 }]}
             onPress={handleAddToCart}
+            disabled={addingToCart || buyingNow}
           >
-            <MaterialCommunityIcons name="cart-plus" size={20} color={Brand.primary} />
+            {addingToCart ? (
+              <ActivityIndicator size="small" color={Brand.primary} />
+            ) : (
+              <MaterialCommunityIcons name="cart-plus" size={20} color={Brand.primary} />
+            )}
             <Text style={styles.cartBtnText}>Add to Cart</Text>
           </Pressable>
           <Pressable
@@ -1037,12 +1098,36 @@ export default function ProductDetailScreen() {
             <Text style={styles.callBtnText}>Call Now</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }, (buyingNow || addingToCart) && { opacity: 0.6 }]}
+            onPress={handleBuyNow}
+            disabled={buyingNow || addingToCart}
           >
-            <Text style={styles.buyBtnText}>Buy Now</Text>
+            {buyingNow ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buyBtnText}>Buy Now</Text>
+            )}
           </Pressable>
         </View>
       </SafeAreaView>
+
+      {/* ── Toast notification ──────────────────────────────────────── */}
+      {toast && (
+        <Animated.View
+          style={[
+            styles.toast,
+            toast.type === 'error' && styles.toastError,
+            { transform: [{ translateY: toastAnim }] },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={toast.type === 'success' ? 'check-circle' : 'alert-circle'}
+            size={22}
+            color="#FFFFFF"
+          />
+          <Text style={styles.toastText}>{toast.text}</Text>
+        </Animated.View>
+      )}
 
       {/* ── Fullscreen image gallery ──────────────────────────────── */}
       <Modal visible={showFullscreenGallery} transparent animationType="fade">
@@ -1797,6 +1882,36 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   buyBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+
+  // ── Toast ────────────────────────────────────────────────────────
+  toast: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    zIndex: 9999,
+  },
+  toastError: {
+    backgroundColor: Brand.danger,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
 
   // ── States ──────────────────────────────────────────────────────
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },

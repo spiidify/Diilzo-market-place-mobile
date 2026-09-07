@@ -21,8 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
-import { apiRequest } from '@/services/api';
-import { getMyStore } from '@/services/seller';
+import { getMyStore, updateStoreSettings } from '@/services/seller';
 
 interface StoreSettings {
   name: string;
@@ -175,16 +174,7 @@ export default function SellerSettingsScreen() {
         } as any);
       }
 
-      const url = storeSlug
-        ? `/sellers/api/seller/store/${storeSlug}/`
-        : '/sellers/api/seller/my_store/';
-
-      await apiRequest<any>({
-        method: 'PATCH',
-        url,
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await updateStoreSettings(formData);
 
       Alert.alert('Saved', 'Store settings updated successfully', [
         { text: 'OK', onPress: () => router.back() },

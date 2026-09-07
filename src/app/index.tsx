@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,7 +22,7 @@ import { DiilzoLogo } from '@/components/diilzo-logo';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { getCartCount } from '@/services/cart';
+import { useCart } from '@/context/CartContext';
 import { fetchCategories, fetchSlides, fetchTopStores } from '@/services/catalog';
 import { createChatThread, getChatUnreadCount } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
@@ -207,7 +207,18 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
             key={`slide-${slide.id}`}
             style={styles.slideCard}
             onPress={() => {
-              if (slide.cta_link) {
+              // Priority: category > brand > cta_link
+              if (slide.category_slug) {
+                router.push({
+                  pathname: '/search',
+                  params: { category: slide.category_slug, categoryName: slide.category_name || 'Category' },
+                } as any);
+              } else if (slide.brand_slug) {
+                router.push({
+                  pathname: '/search',
+                  params: { brand: slide.brand_slug, brandName: slide.brand_name || 'Brand' },
+                } as any);
+              } else if (slide.cta_link) {
                 const link = slide.cta_link;
                 if (link.startsWith('/')) {
                   router.push(link as any);
@@ -261,7 +272,7 @@ export default function ProductFeedScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(3);
-  const [cartCount, setCartCount] = useState(0);
+  const { cartCount, refreshCartCount } = useCart();
   const [chatUnread, setChatUnread] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -279,17 +290,18 @@ export default function ProductFeedScreen() {
   const loadAllSections = useCallback(async () => {
     try {
       const [dealsRes, newArrRes, featRes, stores, slideData] = await Promise.all([
-        fetchProducts({ on_sale: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
-        fetchProducts({ new_arrival: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
-        fetchProducts({ featured: 'true', page: 1 }).catch(() => ({ results: [] as Product[], next: null })),
-        fetchTopStores().catch(() => [] as Store[]),
-        fetchSlides().catch(() => [] as Slide[]),
+        fetchProducts({ on_sale: 'true', page: 1 }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ new_arrival: 'true', page: 1 }).catch((e) => { console.error('[Home] newArr error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ featured: 'true', page: 1 }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchTopStores().catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
+        fetchSlides().catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setNewArrivals(newArrRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
       setTopStores(stores.slice(0, 10));
       setSlides(slideData);
+      console.log('[Home] Slides loaded:', slideData.length, slideData.map(s => s.title));
 
       // Load recently viewed from local storage
       try {
@@ -347,17 +359,7 @@ export default function ProductFeedScreen() {
     loadCategories();
   }, []);
 
-  // ── Refresh cart count when screen gains focus ──────────────────
-  const loadCartCount = useCallback(async () => {
-    if (!isAuthenticated) { setCartCount(0); return; }
-    try {
-      const count = await getCartCount();
-      setCartCount(count);
-    } catch {
-      setCartCount(0);
-    }
-  }, [isAuthenticated]);
-
+  // ── Refresh cart count and chat unread when screen gains focus ──
   const loadChatUnread = useCallback(async () => {
     if (!isAuthenticated) { setChatUnread(0); return; }
     try {
@@ -368,10 +370,13 @@ export default function ProductFeedScreen() {
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    loadCartCount();
-    loadChatUnread();
-  }, [loadCartCount, loadChatUnread]);
+  // Refresh cart count every time the home screen gains focus (real-time)
+  useFocusEffect(
+    useCallback(() => {
+      refreshCartCount();
+      loadChatUnread();
+    }, [refreshCartCount, loadChatUnread])
+  );
 
   // Reload products when category changes
   useEffect(() => {
@@ -384,8 +389,8 @@ export default function ProductFeedScreen() {
     loadProducts(true);
     loadAllSections();
     loadCategories();
-    loadCartCount();
-  }, [loadProducts, loadAllSections, loadCategories, loadCartCount]);
+    refreshCartCount();
+  }, [loadProducts, loadAllSections, loadCategories, refreshCartCount]);
 
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || refreshing) return;

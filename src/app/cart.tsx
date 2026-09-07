@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,12 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
 import type { CartItem, Cart as CartType } from '@/types';
 
 export default function CartScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { setCartCount: setGlobalCartCount, refreshCartCount } = useCart();
   const [cart, setCart] = useState<CartType | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
@@ -33,15 +35,21 @@ export default function CartScreen() {
       setConnectionError(false);
       const data = await getCart();
       setCart(data);
+      setGlobalCartCount(data.total_items);
     } catch (e: any) {
       console.error('Cart load error:', e?.message);
       setConnectionError(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setGlobalCartCount]);
 
-  useEffect(() => { loadCart(); }, [loadCart]);
+  // Reload cart every time the screen gains focus (real-time sync)
+  useFocusEffect(
+    useCallback(() => {
+      loadCart();
+    }, [loadCart])
+  );
 
   // Optimistic helpers - update local cart state instantly, sync with API in background
   const updateLocalCart = (updater: (prev: CartType) => CartType) => {
@@ -62,6 +70,7 @@ export default function CartScreen() {
     if (newQty < 1) return;
 
     const oldItem = { ...item };
+    const oldTotalItems = cart?.total_items || 0;
     updateLocalCart((prev) => {
       const items = prev.items.map((i) =>
         i.id === item.id
@@ -71,6 +80,7 @@ export default function CartScreen() {
       const totals = recalcTotals(items);
       return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
     });
+    setGlobalCartCount(Math.max(0, oldTotalItems + delta));
 
     setUpdating(item.id);
     try {
@@ -81,37 +91,40 @@ export default function CartScreen() {
         const totals = recalcTotals(items);
         return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
       });
+      setGlobalCartCount(oldTotalItems);
       Alert.alert('Error', 'Failed to update quantity');
     } finally {
       setUpdating(null);
     }
   };
 
-  const handleRemove = (item: CartItem) => {
-    Alert.alert('Remove item', `Remove ${item.product.name} from cart?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove', style: 'destructive', onPress: async () => {
-          const oldItems = cart?.items || [];
-          updateLocalCart((prev) => {
-            const items = prev.items.filter((i) => i.id !== item.id);
-            const totals = recalcTotals(items);
-            return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
-          });
+  const handleRemove = async (item: CartItem) => {
+    // Save deep copies for rollback
+    const oldItems = cart?.items.map((i) => ({ ...i })) || [];
+    const oldTotalItems = cart?.total_items || 0;
 
-          try {
-            await removeCartItem(item.id);
-          } catch {
-            setCart((prev) => {
-              if (!prev) return prev;
-              const totals = recalcTotals(oldItems);
-              return { ...prev, items: oldItems, total_items: totals.total_items, total_price: totals.total_price };
-            });
-            Alert.alert('Error', 'Failed to remove item');
-          }
-        },
-      },
-    ]);
+    // Optimistic: remove from local state immediately
+    updateLocalCart((prev) => {
+      const items = prev.items.filter((i) => i.id !== item.id);
+      const totals = recalcTotals(items);
+      return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
+    });
+    setGlobalCartCount(Math.max(0, oldTotalItems - item.quantity));
+
+    try {
+      await removeCartItem(item.id);
+      // Sync count from server after success
+      refreshCartCount();
+    } catch (e: any) {
+      // Restore old items on failure
+      setCart((prev) => {
+        if (!prev) return prev;
+        const totals = recalcTotals(oldItems);
+        return { ...prev, items: oldItems, total_items: totals.total_items, total_price: totals.total_price };
+      });
+      setGlobalCartCount(oldTotalItems);
+      Alert.alert('Error', 'Failed to remove item. Please try again.');
+    }
   };
 
   const handleClear = () => {
@@ -119,13 +132,15 @@ export default function CartScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear', style: 'destructive', onPress: async () => {
-          const oldItems = cart?.items || [];
+          const oldItems = cart?.items.map((i) => ({ ...i })) || [];
+          const oldTotalItems = cart?.total_items || 0;
           updateLocalCart((prev) => ({
             ...prev,
             items: [],
             total_items: 0,
             total_price: '0',
           }));
+          setGlobalCartCount(0);
 
           try {
             await clearCart();
@@ -135,6 +150,7 @@ export default function CartScreen() {
               const totals = recalcTotals(oldItems);
               return { ...prev, items: oldItems, total_items: totals.total_items, total_price: totals.total_price };
             });
+            setGlobalCartCount(oldTotalItems);
             Alert.alert('Error', 'Failed to clear cart');
           }
         },
