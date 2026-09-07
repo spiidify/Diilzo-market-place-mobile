@@ -1472,6 +1472,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     backgroundColor: Brand.primary,
+    minHeight: 52,
   },
   slideTextCol: {
     flex: 1,
