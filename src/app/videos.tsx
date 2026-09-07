@@ -210,22 +210,12 @@ export default function VideosScreen() {
           <View style={styles.playerWrap}>
             <YoutubePlayer
               videoId={videoId}
-              height={screenHeight}
+              height="100%"
               play={isPlaying}
               onChangeState={(e: string) => {
                 if (e === 'ended') handleVideoEnd();
               }}
-              webViewProps={{
-                injectedJavaScript: `
-                  var element = document.getElementsByClassName('container')[0];
-                  element.style.position = 'absolute';
-                  element.style.top = '0';
-                  element.style.left = '0';
-                  element.style.width = '100%';
-                  element.style.height = '100%';
-                  true;
-                `,
-              }}
+              webViewStyle={{ opacity: 0.99 }}
             />
           </View>
         ) : (
@@ -248,12 +238,15 @@ export default function VideosScreen() {
           </>
         )}
 
-        {/* Dark gradient overlay for text readability (only when video is playing) */}
-        {isActive && <View style={styles.videoOverlay} />}
+        {/* Bottom gradient for text readability */}
+        <View style={styles.bottomGradient} />
 
-        {/* Tap to pause/play overlay (only for active video) */}
+        {/* Tap to pause/play (only for active video, above action bar area) */}
         {isActive && (
-          <Pressable style={styles.tapToggle} onPress={handleTogglePlay}>
+          <Pressable
+            style={styles.tapToggle}
+            onPress={handleTogglePlay}
+          >
             {!isPlaying && (
               <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.8)" />
             )}
@@ -509,11 +502,11 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  videoOverlay: {
+  bottomGradient: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    height: '50%',
-    backgroundColor: 'transparent',
+    height: 280,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 
   // ── Play / pause ────────────────────────────────────────────────
@@ -526,7 +519,7 @@ const styles = StyleSheet.create({
   },
   tapToggle: {
     position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
+    top: 0, left: 0, right: 70, bottom: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -535,9 +528,9 @@ const styles = StyleSheet.create({
   actionBar: {
     position: 'absolute',
     right: 12,
-    bottom: 160,
+    bottom: 100,
     alignItems: 'center',
-    gap: 20,
+    gap: 18,
   },
   actionAvatar: {
     width: 48, height: 48, borderRadius: 24,
@@ -558,9 +551,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     left: 0,
-    right: 80,
+    right: 70,
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 60,
   },
   storeName: { color: Brand.primary, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   productName: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', lineHeight: 24, marginBottom: 6 },
@@ -589,7 +582,7 @@ const styles = StyleSheet.create({
   // ── Progress ────────────────────────────────────────────────────
   progressWrap: {
     position: 'absolute',
-    bottom: 12,
+    top: 8,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 12, paddingVertical: 4,
