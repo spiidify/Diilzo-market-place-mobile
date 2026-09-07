@@ -376,31 +376,39 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
 const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: ClaimableCoupon[] }) {
   if (!vouchers.length) return null;
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.voucherTrack}
-    >
-      {vouchers.map((v) => (
-        <View key={`v-${v.code}`} style={styles.voucherCard}>
-          <View style={styles.voucherIconWrap}>
-            <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
-          </View>
-          <View style={styles.voucherBody}>
-            <Text style={styles.voucherCode}>{v.code}</Text>
-            <Text style={styles.voucherDesc}>
-              {v.discount_type === 'percentage'
-                ? `${v.discount_value}% OFF`
-                : `${v.discount_value} OFF`}
-              {v.store_name ? ` • ${v.store_name}` : ''}
-            </Text>
-            {v.min_order_amount && Number(v.min_order_amount) > 0 && (
-              <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
-            )}
-          </View>
+    <View style={styles.voucherSection}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="ticket-percent" size={20} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>Grab a Voucher</Text>
         </View>
-      ))}
-    </ScrollView>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.voucherTrack}
+      >
+        {vouchers.map((v) => (
+          <View key={`v-${v.code}`} style={styles.voucherCard}>
+            <View style={styles.voucherIconWrap}>
+              <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
+            </View>
+            <View style={styles.voucherBody}>
+              <Text style={styles.voucherCode}>{v.code}</Text>
+              <Text style={styles.voucherDesc}>
+                {v.discount_type === 'percentage'
+                  ? `${v.discount_value}% OFF`
+                  : `${v.discount_value} OFF`}
+                {v.store_name ? ` • ${v.store_name}` : ''}
+              </Text>
+              {v.min_order_amount && Number(v.min_order_amount) > 0 && (
+                <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
+              )}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 });
 
@@ -416,29 +424,37 @@ const DualBannerTiles = memo(function DualBannerTiles({
 }) {
   if (!tileA.length && !tileB.length) return null;
   return (
-    <View style={styles.dualTilesRow}>
-      {tileA[0] && (
-        <Pressable style={styles.dualTile} onPress={() => onPress(tileA[0])}>
-          {tileA[0].display_image ? (
-            <Image source={{ uri: tileA[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
-          ) : (
-            <LinearGradient colors={[Brand.primary, Brand.accent]} style={styles.dualTileFallback}>
-              <Text style={styles.dualTileText} numberOfLines={2}>{tileA[0].headline || tileA[0].title}</Text>
-            </LinearGradient>
-          )}
-        </Pressable>
-      )}
-      {tileB[0] && (
-        <Pressable style={styles.dualTile} onPress={() => onPress(tileB[0])}>
-          {tileB[0].display_image ? (
-            <Image source={{ uri: tileB[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
-          ) : (
-            <LinearGradient colors={['#F97316', '#EF4444']} style={styles.dualTileFallback}>
-              <Text style={styles.dualTileText} numberOfLines={2}>{tileB[0].headline || tileB[0].title}</Text>
-            </LinearGradient>
-          )}
-        </Pressable>
-      )}
+    <View style={styles.dualTilesWrap}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="tag-multiple" size={20} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>Featured Promotions</Text>
+        </View>
+      </View>
+      <View style={styles.dualTilesRow}>
+        {tileA[0] && (
+          <Pressable style={({ pressed }) => [styles.dualTile, pressed && { opacity: 0.9 }]} onPress={() => onPress(tileA[0])}>
+            {tileA[0].display_image ? (
+              <Image source={{ uri: tileA[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
+            ) : (
+              <LinearGradient colors={[Brand.primary, Brand.accent]} style={styles.dualTileFallback}>
+                <Text style={styles.dualTileText} numberOfLines={2}>{tileA[0].headline || tileA[0].title}</Text>
+              </LinearGradient>
+            )}
+          </Pressable>
+        )}
+        {tileB[0] && (
+          <Pressable style={({ pressed }) => [styles.dualTile, pressed && { opacity: 0.9 }]} onPress={() => onPress(tileB[0])}>
+            {tileB[0].display_image ? (
+              <Image source={{ uri: tileB[0].display_image }} style={styles.dualTileImage} contentFit="cover" transition={200} />
+            ) : (
+              <LinearGradient colors={['#F97316', '#EF4444']} style={styles.dualTileFallback}>
+                <Text style={styles.dualTileText} numberOfLines={2}>{tileB[0].headline || tileB[0].title}</Text>
+              </LinearGradient>
+            )}
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 });
@@ -2018,6 +2034,19 @@ const styles = StyleSheet.create({
   flashBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
 
   // ── Voucher banner ───────────────────────────────────────────────
+  voucherSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: Spacing.two,
+    marginBottom: Spacing.one,
+    marginHorizontal: Spacing.two,
+    borderRadius: 16,
+    paddingVertical: Spacing.two,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
   voucherTrack: { paddingHorizontal: Spacing.two, gap: Spacing.two, paddingVertical: Spacing.one },
   voucherCard: {
     flexDirection: 'row',
@@ -2047,11 +2076,23 @@ const styles = StyleSheet.create({
   voucherMin: { color: 'rgba(255,255,255,0.8)', fontSize: 10 },
 
   // ── Dual promo banner tiles ──────────────────────────────────────
+  dualTilesWrap: {
+    backgroundColor: '#FFFFFF',
+    marginTop: Spacing.two,
+    marginBottom: Spacing.two,
+    marginHorizontal: Spacing.two,
+    borderRadius: 16,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
   dualTilesRow: {
     flexDirection: 'row',
     gap: Spacing.two,
-    marginHorizontal: Spacing.two,
-    marginVertical: Spacing.two,
   },
   dualTile: {
     flex: 1,
