@@ -233,7 +233,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
           return (
             <Pressable
               key={`slide-${slide.id}`}
-              style={[styles.slideCard, { width: slideWidth }, slide.background_color ? { backgroundColor: slide.background_color } : null]}
+              style={[styles.slideCard, { width: slideWidth, height: slideWidth / 2 + 52 }, slide.background_color ? { backgroundColor: slide.background_color } : null]}
               onPress={() => {
                 // Priority: category > brand > cta_link / link_url
                 if (slide.category_slug) {
@@ -1454,8 +1454,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   slideImageWrap: {
+    flex: 1,
     width: '100%',
-    aspectRatio: 2,
   },
   slideImage: {
     width: '100%',
