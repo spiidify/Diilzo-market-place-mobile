@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,7 +15,6 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
 import { Brand } from '@/constants/theme';
@@ -29,7 +27,7 @@ import type { Category, Product, WishlistItem } from '@/types';
 
 export default function VideosScreen() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { height: screenHeight } = useWindowDimensions();
 
   // ── State ────────────────────────────────────────────────────────
@@ -40,7 +38,7 @@ export default function VideosScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   // Category tabs
   const [categories, setCategories] = useState<Category[]>([]);
@@ -53,6 +51,7 @@ export default function VideosScreen() {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
 
   const listRef = useRef<FlatList<Product>>(null);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   // ── Load categories for tabs ──────────────────────────────────────
   useEffect(() => {
@@ -109,6 +108,7 @@ export default function VideosScreen() {
     setActiveIndex(0);
     setPage(1);
     setHasMore(true);
+    setIsPlaying(true);
     load(true);
   }, [activeCategory, searchQuery]);
 
@@ -118,6 +118,7 @@ export default function VideosScreen() {
     setActiveIndex(0);
     setPage(1);
     setHasMore(true);
+    setIsPlaying(true);
     load(true);
   }, [load]);
 
@@ -127,31 +128,30 @@ export default function VideosScreen() {
     load(false);
   }, [loadingMore, hasMore, load]);
 
-  const currentProduct = products[activeIndex];
+  // Track active video via viewability — plays the visible video, pauses others
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setActiveIndex(viewableItems[0].index);
+      setIsPlaying(true);
+    }
+  }, []);
 
-  const handlePlay = useCallback((index: number) => {
-    setActiveIndex(index);
-    const product = products[index];
-    const videoId = product ? getYouTubeId(product.video_url || '') : null;
-    if (videoId) setPlayingId(videoId);
-  }, [products]);
+  // Toggle play/pause on tap
+  const handleTogglePlay = useCallback(() => {
+    setIsPlaying((prev) => !prev);
+  }, []);
 
-  // Auto-play next video when current ends
+  // Auto-advance to next video when current ends
   const handleVideoEnd = useCallback(() => {
     if (activeIndex < products.length - 1) {
-      setPlayingId(null);
-      // Small delay then advance and play next
-      setTimeout(() => {
-        const nextIndex = activeIndex + 1;
-        setActiveIndex(nextIndex);
-        const nextProduct = products[nextIndex];
-        const nextVideoId = nextProduct ? getYouTubeId(nextProduct.video_url || '') : null;
-        if (nextVideoId) setPlayingId(nextVideoId);
-      }, 300);
+      const nextIndex = activeIndex + 1;
+      setActiveIndex(nextIndex);
+      setIsPlaying(true);
+      listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
     } else {
-      setPlayingId(null);
+      setIsPlaying(false);
     }
-  }, [activeIndex, products]);
+  }, [activeIndex, products.length]);
 
   // Wishlist toggle
   const handleWishlistToggle = useCallback(async (product: Product) => {
@@ -196,26 +196,69 @@ export default function VideosScreen() {
     }
   }, []);
 
-  // ── Render each video card ────────────────────────────────────────
+  // ── Render each video card (inline playback, no modal) ────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
     const videoId = getYouTubeId(item.video_url || '');
     const thumb = videoId ? getYouTubeThumbnail(videoId) : item.primary_image_url;
     const isWishlisted = wishlistIds.has(item.id);
+    const isActive = index === activeIndex;
 
     return (
       <View style={[styles.feedItem, { height: screenHeight }]}>
-        {/* Background thumbnail */}
-        {thumb ? (
-          <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="cover" transition={200} />
+        {/* YouTube player fills the screen — only active video plays */}
+        {videoId && isActive ? (
+          <View style={styles.playerWrap}>
+            <YoutubePlayer
+              videoId={videoId}
+              height={screenHeight}
+              play={isPlaying}
+              onChangeState={(e: string) => {
+                if (e === 'ended') handleVideoEnd();
+              }}
+              webViewProps={{
+                injectedJavaScript: `
+                  var element = document.getElementsByClassName('container')[0];
+                  element.style.position = 'absolute';
+                  element.style.top = '0';
+                  element.style.left = '0';
+                  element.style.width = '100%';
+                  element.style.height = '100%';
+                  true;
+                `,
+              }}
+            />
+          </View>
         ) : (
-          <View style={styles.thumbnailFallback} />
+          <>
+            {/* Thumbnail for non-active items */}
+            {thumb ? (
+              <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="cover" transition={200} />
+            ) : (
+              <View style={styles.thumbnailFallback} />
+            )}
+            <View style={styles.overlay} />
+            {/* Tap to play */}
+            <Pressable style={styles.playBtn} onPress={() => {
+              setActiveIndex(index);
+              setIsPlaying(true);
+              listRef.current?.scrollToIndex({ index, animated: true });
+            }}>
+              <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
+            </Pressable>
+          </>
         )}
-        <View style={styles.overlay} />
 
-        {/* Play button */}
-        <Pressable style={styles.playBtn} onPress={() => handlePlay(index)}>
-          <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
-        </Pressable>
+        {/* Dark gradient overlay for text readability (only when video is playing) */}
+        {isActive && <View style={styles.videoOverlay} />}
+
+        {/* Tap to pause/play overlay (only for active video) */}
+        {isActive && (
+          <Pressable style={styles.tapToggle} onPress={handleTogglePlay}>
+            {!isPlaying && (
+              <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.8)" />
+            )}
+          </Pressable>
+        )}
 
         {/* Right action bar (TikTok-style) */}
         <View style={styles.actionBar}>
@@ -282,7 +325,7 @@ export default function VideosScreen() {
         </View>
       </View>
     );
-  }, [screenHeight, wishlistIds, handlePlay, handleWishlistToggle, handleShare, router]);
+  }, [screenHeight, activeIndex, isPlaying, wishlistIds, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
@@ -313,69 +356,6 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* ── Full-screen video player modal ────────────────────────── */}
-      <Modal
-        visible={playingId !== null}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setPlayingId(null)}
-      >
-        <View style={styles.modalScreen}>
-          <SafeAreaView style={styles.modalSafeArea}>
-            <View style={styles.modalHeader}>
-              <Pressable onPress={() => setPlayingId(null)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={28} color="#FFFFFF" />
-              </Pressable>
-              <Text style={styles.modalTitle} numberOfLines={1}>
-                {currentProduct?.name || 'Product Video'}
-              </Text>
-              <View style={{ width: 28 }} />
-            </View>
-            <View style={styles.playerWrap}>
-              {playingId && (
-                <YoutubePlayer
-                  videoId={playingId}
-                  height="100%"
-                  play
-                  onChangeState={(e: string) => {
-                    if (e === 'ended') handleVideoEnd();
-                  }}
-                  webViewProps={{
-                    injectedJavaScript: `
-                      var element = document.getElementsByClassName('container')[0];
-                      element.style.position = 'absolute';
-                      element.style.top = '50%';
-                      element.style.left = '50%';
-                      element.style.transform = 'translate(-50%, -50%)';
-                      true;
-                    `,
-                  }}
-                />
-              )}
-            </View>
-            {currentProduct && (
-              <View style={styles.modalProductInfo}>
-                <Text style={styles.modalProductName} numberOfLines={2}>{currentProduct.name}</Text>
-                <View style={styles.modalPriceRow}>
-                  <Text style={styles.modalCurrency}>{currentProduct.currency} </Text>
-                  <Text style={styles.modalPrice}>{Number(currentProduct.final_price).toLocaleString()}</Text>
-                </View>
-                <Pressable
-                  style={styles.modalViewBtn}
-                  onPress={() => {
-                    setPlayingId(null);
-                    router.push(`/product/${currentProduct.slug}` as any);
-                  }}
-                >
-                  <Text style={styles.modalViewBtnText}>View Product</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
-                </Pressable>
-              </View>
-            )}
-          </SafeAreaView>
-        </View>
-      </Modal>
-
       {/* ── Category tabs + search bar ────────────────────────────── */}
       <View style={styles.tabsContainer}>
         <ScrollView
@@ -431,7 +411,7 @@ export default function VideosScreen() {
         </View>
       )}
 
-      {/* ── Vertical swipe feed (FlatList with paging) ────────────── */}
+      {/* ── Vertical swipe feed (FlatList with paging + inline video) ── */}
       <FlatList
         ref={listRef}
         data={products}
@@ -439,12 +419,13 @@ export default function VideosScreen() {
         renderItem={renderVideoItem}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.y / screenHeight);
-          setActiveIndex(idx);
-        }}
+        onViewableItemsChanged={handleViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
+        onScrollToIndexFailed={({ index, averageItemLength }) => {
+          listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -496,22 +477,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  tabActive: {
-    backgroundColor: Brand.primary,
-  },
-  tabText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  tabTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  searchToggleBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
+  tabActive: { backgroundColor: Brand.primary },
+  tabText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
+  tabTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  searchToggleBtn: { paddingHorizontal: 8, paddingVertical: 4 },
 
   // ── Search bar ───────────────────────────────────────────────────
   searchBarWrap: {
@@ -525,29 +494,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#FFFFFF',
-    padding: 0,
-  },
+  searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF', padding: 0 },
 
   // ── Feed ────────────────────────────────────────────────────────
-  feedItem: { flex: 1, position: 'relative' },
+  feedItem: { flex: 1, position: 'relative', backgroundColor: '#000000' },
+  playerWrap: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%', height: '100%',
+  },
   thumbnail: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   thumbnailFallback: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1a1a1a' },
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
+  videoOverlay: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: '50%',
+    backgroundColor: 'transparent',
+  },
 
-  // ── Play button ─────────────────────────────────────────────────
+  // ── Play / pause ────────────────────────────────────────────────
   playBtn: {
     position: 'absolute',
     top: '50%',
     left: '50%',
     marginTop: -36,
     marginLeft: -36,
+  },
+  tapToggle: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   // ── Action bar (right side, TikTok-style) ───────────────────────
@@ -617,36 +598,5 @@ const styles = StyleSheet.create({
   progressText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
 
   // ── Footer loading ──────────────────────────────────────────────
-  footerLoading: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-
-  // ── Modal ───────────────────────────────────────────────────────
-  modalScreen: { flex: 1, backgroundColor: '#000000' },
-  modalSafeArea: { flex: 1 },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  modalTitle: { flex: 1, color: '#FFFFFF', fontSize: 16, fontWeight: '700', textAlign: 'center' },
-  playerWrap: { flex: 1, justifyContent: 'center' },
-  modalProductInfo: { padding: 16, paddingBottom: 32 },
-  modalProductName: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  modalPriceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 16 },
-  modalCurrency: { color: Brand.primary, fontSize: 16, fontWeight: '700' },
-  modalPrice: { color: '#FFFFFF', fontSize: 24, fontWeight: '900' },
-  modalViewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Brand.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  modalViewBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  footerLoading: { paddingVertical: 20, alignItems: 'center' },
 });
