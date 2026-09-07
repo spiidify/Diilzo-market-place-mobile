@@ -1416,7 +1416,7 @@ const styles = StyleSheet.create({
   },
   slideCard: {
     width: Dimensions.get('window').width - 32,
-    height: 220,
+    aspectRatio: 2,
     position: 'relative',
   },
   slideImage: {
@@ -2104,7 +2104,7 @@ const styles = StyleSheet.create({
   },
   dualTile: {
     flex: 1,
-    height: 110,
+    aspectRatio: 2,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 2,

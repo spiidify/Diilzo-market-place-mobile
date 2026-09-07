@@ -22,7 +22,7 @@ const LOGICAL_SIZES: Record<ImagePurpose, LogicalSize> = {
   category: { width: 70, height: 70 },
   avatar: { width: 80, height: 80 },
   carousel: { width: 400, height: 220 }, // width replaced below by screen width
-  slide: { width: 1200, height: 400 },
+  slide: { width: 1200, height: 600 },
   storeLogo: { width: 64, height: 64 },
   storeBanner: { width: 400, height: 180 }, // width replaced below by screen width
 };
