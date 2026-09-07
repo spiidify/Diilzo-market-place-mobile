@@ -227,8 +227,6 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
         scrollEventThrottle={16}
       >
         {slides.map((slide) => {
-          const textAlign = slide.text_position === 'center' ? 'center' : slide.text_position === 'right' ? 'right' : 'left';
-          const alignItems = slide.text_position === 'center' ? 'center' : slide.text_position === 'right' ? 'flex-end' : 'flex-start';
           const isDarkButton = slide.button_style === 'dark';
           const buttonBg = isDarkButton ? '#111111' : '#FFFFFF';
           const buttonColor = isDarkButton ? '#FFFFFF' : Brand.primary;
@@ -277,13 +275,15 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
                   />
                 )}
               </View>
-              <View style={[styles.slideOverlay, { alignItems }]}>
-                {!!slide.headline && (
-                  <Text style={[styles.slideHeadline, { textAlign }]} numberOfLines={1}>{slide.headline}</Text>
-                )}
-                {!!slide.subheadline && (
-                  <Text style={[styles.slideSubheadline, { textAlign }]} numberOfLines={2}>{slide.subheadline}</Text>
-                )}
+              <View style={styles.slideOverlay}>
+                <View style={styles.slideTextCol}>
+                  {!!slide.headline && (
+                    <Text style={styles.slideHeadline} numberOfLines={1}>{slide.headline}</Text>
+                  )}
+                  {!!slide.subheadline && (
+                    <Text style={styles.slideSubheadline} numberOfLines={2}>{slide.subheadline}</Text>
+                  )}
+                </View>
                 {!!slide.cta_text && (
                   <View style={[styles.slideButton, { backgroundColor: buttonBg }]}>
                     <Text style={[styles.slideButtonText, { color: buttonColor }]} numberOfLines={1}>{slide.cta_text}</Text>
@@ -1467,28 +1467,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   slideOverlay: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: Brand.primary,
-    justifyContent: 'center',
+  },
+  slideTextCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    paddingRight: 10,
   },
   slideHeadline: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 4,
+    textAlign: 'right',
+    marginBottom: 2,
   },
   slideSubheadline: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#FFFFFF',
     opacity: 0.9,
-    marginBottom: 8,
+    textAlign: 'right',
   },
   slideButton: {
     paddingVertical: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: 4,
-    marginTop: 2,
   },
   slideButtonText: {
     fontSize: 12,
