@@ -6,7 +6,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Linking,
   Pressable,
@@ -14,7 +13,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -183,6 +183,11 @@ function renderStarsStatic(rating: string) {
 // (which was resetting the category ScrollView position).
 const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] }) {
   const router = useRouter();
+  const { width: windowWidth } = useWindowDimensions();
+  // Single source of truth: carousel has Spacing.two (8px) horizontal margin
+  // on each side, so the visible ScrollView viewport = windowWidth - 16.
+  // Each slide card must match this exactly for pagingEnabled to snap cleanly.
+  const slideWidth = windowWidth - Spacing.two * 2;
   const [activeSlide, setActiveSlide] = useState(0);
   const slideScrollRef = useRef<ScrollView | null>(null);
   const slideTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -194,7 +199,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
         const next = (prev + 1) % slides.length;
         if (slideScrollRef.current) {
           (slideScrollRef.current as any).scrollTo({
-            x: next * Dimensions.get('window').width,
+            x: next * slideWidth,
             animated: true,
           });
         }
@@ -204,7 +209,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
     return () => {
       if (slideTimerRef.current) clearInterval(slideTimerRef.current);
     };
-  }, [slides.length]);
+  }, [slides.length, slideWidth]);
 
   if (slides.length === 0) return null;
 
@@ -216,7 +221,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onScroll={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / (Dimensions.get('window').width - 32));
+          const idx = Math.round(e.nativeEvent.contentOffset.x / slideWidth);
           if (idx !== activeSlide) setActiveSlide(idx);
         }}
         scrollEventThrottle={16}
@@ -230,7 +235,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
           return (
             <Pressable
               key={`slide-${slide.id}`}
-              style={[styles.slideCard, slide.background_color ? { backgroundColor: slide.background_color } : null]}
+              style={[styles.slideCard, { width: slideWidth }, slide.background_color ? { backgroundColor: slide.background_color } : null]}
               onPress={() => {
                 // Priority: category > brand > cta_link / link_url
                 if (slide.category_slug) {
@@ -1439,7 +1444,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   slideCard: {
-    width: Dimensions.get('window').width - 32,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: Brand.surface,
