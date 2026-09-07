@@ -1,48 +1,202 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Modal,
   Pressable,
+  RefreshControl,
+  ScrollView,
+  Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { fetchProductVideos, getYouTubeId, getYouTubeThumbnail } from '@/services/videos';
-import type { Product } from '@/types';
+import { fetchCategories } from '@/services/catalog';
+import { fetchProducts } from '@/services/products';
+import { getYouTubeId, getYouTubeThumbnail } from '@/services/videos';
+import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
+import type { Category, Product, WishlistItem } from '@/types';
 
 export default function VideosScreen() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
+  const { height: screenHeight } = useWindowDimensions();
+
+  // ── State ────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  // Category tabs
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Wishlist
+  const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+
+  const listRef = useRef<FlatList<Product>>(null);
+
+  // ── Load categories for tabs ──────────────────────────────────────
+  useEffect(() => {
+    fetchCategories()
+      .then((cats) => setCategories(cats))
+      .catch((e) => console.error('Category fetch error:', e?.message));
+  }, []);
+
+  // ── Load wishlist status ──────────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchWishlist()
+      .then((items) => {
+        setWishlistItems(items);
+        setWishlistIds(new Set(items.map((i) => i.product.id)));
+      })
+      .catch(() => { });
+  }, [isAuthenticated]);
+
+  // ── Load videos ───────────────────────────────────────────────────
+  const load = useCallback(async (reset = false) => {
+    const targetPage = reset ? 1 : page;
     try {
-      const data = await fetchProductVideos(1);
-      setProducts(data.results);
+      const params: Record<string, any> = {
+        has_video: 'true',
+        page: targetPage,
+      };
+      if (activeCategory) params.category = activeCategory;
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+
+      const data = await fetchProducts(params);
+
+      if (reset) {
+        setProducts(data.results || []);
+        setPage(2);
+      } else {
+        setProducts((prev) => [...prev, ...(data.results || [])]);
+        setPage((prev) => prev + 1);
+      }
+      setHasMore(!!data.next);
     } catch (e: any) {
       console.error('Video fetch error:', e?.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
+    }
+  }, [page, activeCategory, searchQuery]);
+
+  // Reload when category or search changes
+  useEffect(() => {
+    setLoading(true);
+    setProducts([]);
+    setActiveIndex(0);
+    setPage(1);
+    setHasMore(true);
+    load(true);
+  }, [activeCategory, searchQuery]);
+
+  // ── Handlers ──────────────────────────────────────────────────────
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    setActiveIndex(0);
+    setPage(1);
+    setHasMore(true);
+    load(true);
+  }, [load]);
+
+  const handleLoadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    load(false);
+  }, [loadingMore, hasMore, load]);
+
+  const currentProduct = products[activeIndex];
+
+  const handlePlay = useCallback((index: number) => {
+    setActiveIndex(index);
+    const product = products[index];
+    const videoId = product ? getYouTubeId(product.video_url || '') : null;
+    if (videoId) setPlayingId(videoId);
+  }, [products]);
+
+  // Auto-play next video when current ends
+  const handleVideoEnd = useCallback(() => {
+    if (activeIndex < products.length - 1) {
+      setPlayingId(null);
+      // Small delay then advance and play next
+      setTimeout(() => {
+        const nextIndex = activeIndex + 1;
+        setActiveIndex(nextIndex);
+        const nextProduct = products[nextIndex];
+        const nextVideoId = nextProduct ? getYouTubeId(nextProduct.video_url || '') : null;
+        if (nextVideoId) setPlayingId(nextVideoId);
+      }, 300);
+    } else {
+      setPlayingId(null);
+    }
+  }, [activeIndex, products]);
+
+  // Wishlist toggle
+  const handleWishlistToggle = useCallback(async (product: Product) => {
+    if (!isAuthenticated) {
+      router.push('/(auth)/login' as any);
+      return;
+    }
+    const productId = product.id;
+    const isWishlisted = wishlistIds.has(productId);
+    try {
+      if (isWishlisted) {
+        const item = wishlistItems.find((i) => i.product.id === productId);
+        if (item) {
+          await removeFromWishlist(item.id);
+          setWishlistIds((prev) => {
+            const next = new Set(prev);
+            next.delete(productId);
+            return next;
+          });
+          setWishlistItems((prev) => prev.filter((i) => i.product.id !== productId));
+        }
+      } else {
+        const newItem = await addToWishlist(productId);
+        setWishlistIds((prev) => new Set(prev).add(productId));
+        setWishlistItems((prev) => [...prev, newItem]);
+      }
+    } catch (e: any) {
+      console.error('Wishlist error:', e?.message);
+    }
+  }, [isAuthenticated, wishlistIds, wishlistItems, router]);
+
+  // Share
+  const handleShare = useCallback(async (product: Product) => {
+    try {
+      await Share.share({
+        message: `Check out ${product.name} on Diilzo — ${product.currency} ${Number(product.final_price).toLocaleString()}`,
+        url: `https://diilzo-market-place-production.up.railway.app/products/${product.slug}`,
+        title: product.name,
+      });
+    } catch (e: any) {
+      console.error('Share error:', e?.message);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const currentProduct = products[activeIndex];
-  const currentVideoId = currentProduct ? getYouTubeId(currentProduct.video_url || '') : null;
-
-  // ── Loading state ───────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.centerScreen}>
@@ -52,7 +206,7 @@ export default function VideosScreen() {
     );
   }
 
-  // ── Empty state ─────────────────────────────────────────────────
+  // ── Empty state ───────────────────────────────────────────────────
   if (products.length === 0) {
     return (
       <View style={styles.centerScreen}>
@@ -60,10 +214,102 @@ export default function VideosScreen() {
           <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
         </View>
         <Text style={styles.emptyTitle}>No videos yet</Text>
-        <Text style={styles.emptySubtext}>Product videos will appear here</Text>
+        <Text style={styles.emptySubtext}>
+          {searchQuery || activeCategory
+            ? 'Try a different category or search'
+            : 'Product videos will appear here'}
+        </Text>
       </View>
     );
   }
+
+  // ── Render each video card ────────────────────────────────────────
+  const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
+    const videoId = getYouTubeId(item.video_url || '');
+    const thumb = videoId ? getYouTubeThumbnail(videoId) : item.primary_image_url;
+    const isWishlisted = wishlistIds.has(item.id);
+
+    return (
+      <View style={[styles.feedItem, { height: screenHeight }]}>
+        {/* Background thumbnail */}
+        {thumb ? (
+          <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="cover" transition={200} />
+        ) : (
+          <View style={styles.thumbnailFallback} />
+        )}
+        <View style={styles.overlay} />
+
+        {/* Play button */}
+        <Pressable style={styles.playBtn} onPress={() => handlePlay(index)}>
+          <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
+        </Pressable>
+
+        {/* Right action bar (TikTok-style) */}
+        <View style={styles.actionBar}>
+          <View style={styles.actionAvatar}>
+            {item.store?.logo_url ? (
+              <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} contentFit="contain" />
+            ) : (
+              <View style={styles.storeAvatarFallback}>
+                <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+          {/* Wishlist */}
+          <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
+            <MaterialCommunityIcons
+              name={isWishlisted ? 'heart' : 'heart-outline'}
+              size={30}
+              color={isWishlisted ? '#FF4757' : '#FFFFFF'}
+            />
+            <Text style={styles.actionText}>{isWishlisted ? 'Saved' : 'Save'}</Text>
+          </Pressable>
+          {/* Share */}
+          <Pressable style={styles.actionItem} onPress={() => handleShare(item)}>
+            <MaterialCommunityIcons name="share-variant" size={30} color="#FFFFFF" />
+            <Text style={styles.actionText}>Share</Text>
+          </Pressable>
+          {/* Buy */}
+          <Pressable style={styles.actionItem} onPress={() => router.push(`/product/${item.slug}` as any)}>
+            <MaterialCommunityIcons name="shopping" size={30} color="#FFFFFF" />
+            <Text style={styles.actionText}>Buy</Text>
+          </Pressable>
+          {/* Rating */}
+          <View style={styles.actionItem}>
+            <MaterialCommunityIcons name="star" size={30} color={Brand.rating} />
+            <Text style={styles.actionText}>{item.rating ? parseFloat(item.rating).toFixed(1) : '0.0'}</Text>
+          </View>
+        </View>
+
+        {/* Bottom product info */}
+        <View style={styles.bottomInfo}>
+          <Text style={styles.storeName} numberOfLines={1}>
+            {item.store?.name || 'Diilzo Store'}
+          </Text>
+          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          {item.short_description ? (
+            <Text style={styles.description} numberOfLines={2}>{item.short_description}</Text>
+          ) : null}
+          <View style={styles.priceRow}>
+            <Text style={styles.currency}>{item.currency} </Text>
+            <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
+            {item.is_on_sale && (
+              <View style={styles.saleTag}>
+                <Text style={styles.saleTagText}>{item.discount_percentage}% OFF</Text>
+              </View>
+            )}
+          </View>
+          <Pressable
+            style={styles.viewProductBtn}
+            onPress={() => router.push(`/product/${item.slug}` as any)}
+          >
+            <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.viewProductText}>View Product</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }, [screenHeight, wishlistIds, handlePlay, handleWishlistToggle, handleShare, router]);
 
   return (
     <View style={styles.screen}>
@@ -92,7 +338,7 @@ export default function VideosScreen() {
                   height="100%"
                   play
                   onChangeState={(e: string) => {
-                    if (e === 'ended') setPlayingId(null);
+                    if (e === 'ended') handleVideoEnd();
                   }}
                   webViewProps={{
                     injectedJavaScript: `
@@ -107,7 +353,6 @@ export default function VideosScreen() {
                 />
               )}
             </View>
-            {/* Product info below video */}
             {currentProduct && (
               <View style={styles.modalProductInfo}>
                 <Text style={styles.modalProductName} numberOfLines={2}>{currentProduct.name}</Text>
@@ -131,117 +376,91 @@ export default function VideosScreen() {
         </View>
       </Modal>
 
-      {/* ── TikTok-style vertical feed ────────────────────────────── */}
-      <View style={styles.feedContainer}>
-        {products.map((product, index) => {
-          const videoId = getYouTubeId(product.video_url || '');
-          const thumb = videoId ? getYouTubeThumbnail(videoId) : product.primary_image_url;
-          const isActive = index === activeIndex;
-
-          return (
-            <View
-              key={`${product.id}-${product.slug}`}
-              style={[styles.feedItem, { display: isActive ? 'flex' : 'none' }]}
+      {/* ── Category tabs + search bar ────────────────────────────── */}
+      <View style={styles.tabsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContent}
+        >
+          <Pressable
+            style={[styles.tab, !activeCategory && styles.tabActive]}
+            onPress={() => setActiveCategory(null)}
+          >
+            <Text style={[styles.tabText, !activeCategory && styles.tabTextActive]}>All</Text>
+          </Pressable>
+          {categories.map((cat) => (
+            <Pressable
+              key={`cat-tab-${cat.id}-${cat.slug}`}
+              style={[styles.tab, activeCategory === cat.slug && styles.tabActive]}
+              onPress={() => setActiveCategory(cat.slug)}
             >
-              {/* Background thumbnail */}
-              {thumb ? (
-                <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="contain" />
-              ) : (
-                <View style={styles.thumbnailFallback} />
-              )}
-              {/* Dark overlay */}
-              <View style={styles.overlay} />
-
-              {/* Play button */}
-              <Pressable
-                style={styles.playBtn}
-                onPress={() => {
-                  setActiveIndex(index);
-                  if (videoId) setPlayingId(videoId);
-                }}
-              >
-                <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
-              </Pressable>
-
-              {/* Right action bar (TikTok-style) */}
-              <View style={styles.actionBar}>
-                <View style={styles.actionAvatar}>
-                  {product.store?.logo_url ? (
-                    <Image source={{ uri: product.store.logo_url }} style={styles.storeAvatar} contentFit="contain" />
-                  ) : (
-                    <View style={styles.storeAvatarFallback}>
-                      <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <Pressable style={styles.actionItem} onPress={() => router.push(`/product/${product.slug}` as any)}>
-                  <MaterialCommunityIcons name="shopping" size={30} color="#FFFFFF" />
-                  <Text style={styles.actionText}>Buy</Text>
-                </Pressable>
-                <View style={styles.actionItem}>
-                  <MaterialCommunityIcons name="star" size={30} color={Brand.rating} />
-                  <Text style={styles.actionText}>{product.rating ? parseFloat(product.rating).toFixed(1) : '0.0'}</Text>
-                </View>
-                <View style={styles.actionItem}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={30} color="#FFFFFF" />
-                  <Text style={styles.actionText}>{product.stock_quantity}</Text>
-                </View>
-              </View>
-
-              {/* Bottom product info */}
-              <View style={styles.bottomInfo}>
-                <Text style={styles.storeName} numberOfLines={1}>
-                  {product.store?.name || 'Diilzo Store'}
-                </Text>
-                <Text style={styles.productName} numberOfLines={2}>
-                  {product.name}
-                </Text>
-                {product.short_description ? (
-                  <Text style={styles.description} numberOfLines={2}>
-                    {product.short_description}
-                  </Text>
-                ) : null}
-                <View style={styles.priceRow}>
-                  <Text style={styles.currency}>{product.currency} </Text>
-                  <Text style={styles.price}>{Number(product.final_price).toLocaleString()}</Text>
-                  {product.is_on_sale && (
-                    <View style={styles.saleTag}>
-                      <Text style={styles.saleTagText}>{product.discount_percentage}% OFF</Text>
-                    </View>
-                  )}
-                </View>
-                <Pressable
-                  style={styles.viewProductBtn}
-                  onPress={() => router.push(`/product/${product.slug}` as any)}
-                >
-                  <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#FFFFFF" />
-                  <Text style={styles.viewProductText}>View Product</Text>
-                </Pressable>
-              </View>
-
-              {/* Navigation arrows */}
-              <View style={styles.navArrows}>
-                {index > 0 && (
-                  <Pressable
-                    style={styles.navUp}
-                    onPress={() => setActiveIndex((prev) => Math.max(0, prev - 1))}
-                  >
-                    <MaterialCommunityIcons name="chevron-up" size={32} color="rgba(255,255,255,0.6)" />
-                  </Pressable>
-                )}
-                {index < products.length - 1 && (
-                  <Pressable
-                    style={styles.navDown}
-                    onPress={() => setActiveIndex((prev) => Math.min(products.length - 1, prev + 1))}
-                  >
-                    <MaterialCommunityIcons name="chevron-down" size={32} color="rgba(255,255,255,0.6)" />
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          );
-        })}
+              <Text style={[styles.tabText, activeCategory === cat.slug && styles.tabTextActive]}>
+                {cat.name}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <Pressable
+          style={styles.searchToggleBtn}
+          onPress={() => setShowSearch((prev) => !prev)}
+        >
+          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+        </Pressable>
       </View>
+
+      {/* Search bar (collapsible) */}
+      {showSearch && (
+        <View style={styles.searchBarWrap}>
+          <MaterialCommunityIcons name="magnify" size={18} color="rgba(255,255,255,0.6)" />
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search videos..."
+            placeholderTextColor="rgba(255,255,255,0.5)"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.6)" />
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {/* ── Vertical swipe feed (FlatList with paging) ────────────── */}
+      <FlatList
+        ref={listRef}
+        data={products}
+        keyExtractor={(item, index) => `video-${item.id}-${item.slug}-${index}`}
+        renderItem={renderVideoItem}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.y / screenHeight);
+          setActiveIndex(idx);
+        }}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[Brand.primary]}
+            tintColor={Brand.primary}
+          />
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoading}>
+              <ActivityIndicator size="small" color={Brand.primary} />
+            </View>
+          ) : null
+        }
+      />
 
       {/* ── Progress indicator ────────────────────────────────────── */}
       <View style={styles.progressWrap}>
@@ -260,10 +479,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
+
+  // ── Category tabs ────────────────────────────────────────────────
+  tabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0a0a0a',
+    paddingVertical: 8,
+    paddingRight: 8,
+  },
+  tabsContent: { paddingHorizontal: 8, gap: 6 },
+  tab: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  tabActive: {
+    backgroundColor: Brand.primary,
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  searchToggleBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+
+  // ── Search bar ───────────────────────────────────────────────────
+  searchBarWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    padding: 0,
+  },
 
   // ── Feed ────────────────────────────────────────────────────────
-  feedContainer: { flex: 1 },
   feedItem: { flex: 1, position: 'relative' },
   thumbnail: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   thumbnailFallback: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1a1a1a' },
@@ -336,26 +605,22 @@ const styles = StyleSheet.create({
   },
   viewProductText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 
-  // ── Navigation arrows ───────────────────────────────────────────
-  navArrows: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -40 }],
-    gap: 8,
-  },
-  navUp: {}, navDown: { marginTop: 80 },
-
   // ── Progress ────────────────────────────────────────────────────
   progressWrap: {
     position: 'absolute',
-    top: 50,
+    bottom: 12,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 12, paddingVertical: 4,
     borderRadius: 12,
   },
   progressText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+
+  // ── Footer loading ──────────────────────────────────────────────
+  footerLoading: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
 
   // ── Modal ───────────────────────────────────────────────────────
   modalScreen: { flex: 1, backgroundColor: '#000000' },
