@@ -221,49 +221,73 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
         }}
         scrollEventThrottle={16}
       >
-        {slides.map((slide) => (
-          <Pressable
-            key={`slide-${slide.id}`}
-            style={styles.slideCard}
-            onPress={() => {
-              // Priority: category > brand > cta_link
-              if (slide.category_slug) {
-                router.push({
-                  pathname: '/search',
-                  params: { category: slide.category_slug, categoryName: slide.category_name || 'Category' },
-                } as any);
-              } else if (slide.brand_slug) {
-                router.push({
-                  pathname: '/search',
-                  params: { brand: slide.brand_slug, brandName: slide.brand_name || 'Brand' },
-                } as any);
-              } else if (slide.cta_link) {
-                const link = slide.cta_link;
-                if (link.startsWith('/')) {
-                  router.push(link as any);
+        {slides.map((slide) => {
+          const textAlign = slide.text_position === 'center' ? 'center' : slide.text_position === 'right' ? 'right' : 'left';
+          const alignItems = slide.text_position === 'center' ? 'center' : slide.text_position === 'right' ? 'flex-end' : 'flex-start';
+          const isDarkButton = slide.button_style === 'dark';
+          const buttonBg = isDarkButton ? '#111111' : '#FFFFFF';
+          const buttonColor = isDarkButton ? '#FFFFFF' : Brand.primary;
+          return (
+            <Pressable
+              key={`slide-${slide.id}`}
+              style={[styles.slideCard, slide.background_color ? { backgroundColor: slide.background_color } : null]}
+              onPress={() => {
+                // Priority: category > brand > cta_link / link_url
+                if (slide.category_slug) {
+                  router.push({
+                    pathname: '/search',
+                    params: { category: slide.category_slug, categoryName: slide.category_name || 'Category' },
+                  } as any);
+                } else if (slide.brand_slug) {
+                  router.push({
+                    pathname: '/search',
+                    params: { brand: slide.brand_slug, brandName: slide.brand_name || 'Brand' },
+                  } as any);
                 } else {
-                  Linking.openURL(link).catch(() => { });
+                  const link = slide.cta_link || slide.link_url;
+                  if (link) {
+                    if (link.startsWith('/')) {
+                      router.push(link as any);
+                    } else {
+                      Linking.openURL(link).catch(() => { });
+                    }
+                  }
                 }
-              }
-            }}
-          >
-            {slide.display_image ? (
-              <Image
-                source={{ uri: slide.display_image }}
-                style={styles.slideImage}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <LinearGradient
-                colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.slideFallback}
-              />
-            )}
-          </Pressable>
-        ))}
+              }}
+            >
+              <View style={styles.slideImageWrap}>
+                {slide.display_image ? (
+                  <Image
+                    source={{ uri: slide.display_image }}
+                    style={styles.slideImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.slideFallback}
+                  />
+                )}
+              </View>
+              <View style={[styles.slideOverlay, { alignItems }]}>
+                {!!slide.headline && (
+                  <Text style={[styles.slideHeadline, { textAlign }]} numberOfLines={1}>{slide.headline}</Text>
+                )}
+                {!!slide.subheadline && (
+                  <Text style={[styles.slideSubheadline, { textAlign }]} numberOfLines={2}>{slide.subheadline}</Text>
+                )}
+                {!!slide.cta_text && (
+                  <View style={[styles.slideButton, { backgroundColor: buttonBg }]}>
+                    <Text style={[styles.slideButtonText, { color: buttonColor }]} numberOfLines={1}>{slide.cta_text}</Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
       </ScrollView>
       {slides.length > 1 && (
         <View style={styles.carouselDots}>
@@ -1416,8 +1440,18 @@ const styles = StyleSheet.create({
   },
   slideCard: {
     width: Dimensions.get('window').width - 32,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Brand.surface,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  slideImageWrap: {
+    width: '100%',
     aspectRatio: 2,
-    position: 'relative',
   },
   slideImage: {
     width: '100%',
@@ -1427,6 +1461,35 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     justifyContent: 'center',
+  },
+  slideOverlay: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: Brand.primary,
+    justifyContent: 'center',
+  },
+  slideHeadline: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  slideSubheadline: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: 8,
+  },
+  slideButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginTop: 2,
+  },
+  slideButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   carouselDots: {
     flexDirection: 'row',
