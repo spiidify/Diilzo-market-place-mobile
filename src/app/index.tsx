@@ -1468,7 +1468,7 @@ const styles = StyleSheet.create({
   },
   slideOverlay: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     paddingVertical: 8,
     paddingHorizontal: 14,
     backgroundColor: Brand.primary,
@@ -1477,6 +1477,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     alignItems: 'flex-start',
+    justifyContent: 'center',
     paddingRight: 10,
   },
   slideHeadline: {
@@ -1497,6 +1498,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 4,
     flexShrink: 0,
+    justifyContent: 'center',
   },
   slideButtonText: {
     fontSize: 12,
