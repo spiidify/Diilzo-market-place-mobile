@@ -205,19 +205,16 @@ export default function VideosScreen() {
 
     return (
       <View style={[styles.feedItem, { height: screenHeight }]}>
-        {/* YouTube player fills the screen — only active video plays */}
+        {/* YouTube player — only active video renders, fills entire item */}
         {videoId && isActive ? (
-          <View style={styles.playerWrap}>
-            <YoutubePlayer
-              videoId={videoId}
-              height="100%"
-              play={isPlaying}
-              onChangeState={(e: string) => {
-                if (e === 'ended') handleVideoEnd();
-              }}
-              webViewStyle={{ opacity: 0.99 }}
-            />
-          </View>
+          <YoutubePlayer
+            videoId={videoId}
+            height={screenHeight}
+            play={isPlaying}
+            onChangeState={(e: string) => {
+              if (e === 'ended') handleVideoEnd();
+            }}
+          />
         ) : (
           <>
             {/* Thumbnail for non-active items */}
@@ -410,6 +407,7 @@ export default function VideosScreen() {
         data={products}
         keyExtractor={(item, index) => `video-${item.id}-${item.slug}-${index}`}
         renderItem={renderVideoItem}
+        extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
         pagingEnabled
         showsVerticalScrollIndicator={false}
         onViewableItemsChanged={handleViewableItemsChanged}
@@ -491,11 +489,6 @@ const styles = StyleSheet.create({
 
   // ── Feed ────────────────────────────────────────────────────────
   feedItem: { flex: 1, position: 'relative', backgroundColor: '#000000' },
-  playerWrap: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    width: '100%', height: '100%',
-  },
   thumbnail: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   thumbnailFallback: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1a1a1a' },
   overlay: {
