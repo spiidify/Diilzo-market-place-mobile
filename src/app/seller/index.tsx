@@ -108,7 +108,7 @@ export default function SellerDashboardScreen() {
           <View style={styles.storeCard}>
             <View style={styles.storeLogoWrap}>
               {store?.logo_url ? (
-                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} contentFit="cover" />
+                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} contentFit="contain" />
               ) : (
                 <View style={styles.storeLogoFallback}>
                   <MaterialCommunityIcons name="store" size={28} color="#FFFFFF" />

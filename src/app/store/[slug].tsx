@@ -177,7 +177,7 @@ export default function StoreDetailScreen() {
     >
       <View style={styles.productImageWrap}>
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="cover" />
+          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="contain" />
         ) : (
           <View style={styles.noImage}>
             <MaterialCommunityIcons name="package-variant-closed" size={32} color={Brand.textTertiary} />
@@ -251,7 +251,7 @@ export default function StoreDetailScreen() {
                 <View style={styles.heroContent}>
                   <View style={styles.heroLogoWrap}>
                     {store.logo_url ? (
-                      <Image source={{ uri: store.logo_url }} style={styles.heroLogo} contentFit="cover" />
+                      <Image source={{ uri: store.logo_url }} style={styles.heroLogo} contentFit="contain" />
                     ) : (
                       <View style={styles.heroLogoFallback}>
                         <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={36} color="#FFFFFF" />

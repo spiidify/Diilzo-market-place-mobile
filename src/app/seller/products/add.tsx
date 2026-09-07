@@ -209,7 +209,7 @@ export default function AddProductScreen() {
               <View style={styles.imageRow}>
                 {images.map((img, idx) => (
                   <View key={`img-${idx}`} style={styles.thumbWrap}>
-                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="cover" />
+                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="contain" />
                     <Pressable
                       style={styles.thumbRemove}
                       onPress={() => removeImage(idx)}

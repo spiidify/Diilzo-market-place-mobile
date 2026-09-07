@@ -69,7 +69,7 @@ const ProductCard = memo(function ProductCard({
           <Image
             source={{ uri: item.primary_image_url }}
             style={styles.image}
-            contentFit="cover"
+            contentFit="contain"
             transition={200}
           />
         ) : (
@@ -352,7 +352,7 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
           >
             <View style={styles.carouselImageWrap}>
               {item.primary_image_url ? (
-                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} contentFit="cover" transition={200} />
+                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} contentFit="contain" transition={200} />
               ) : (
                 <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
               )}
@@ -709,7 +709,7 @@ export default function ProductFeedScreen() {
           <Image
             source={{ uri: item.primary_image_url }}
             style={styles.carouselImage}
-            contentFit="cover"
+            contentFit="contain"
             transition={200}
           />
         ) : (
@@ -862,7 +862,7 @@ export default function ProductFeedScreen() {
                   <Image
                     source={{ uri: cat.display_image }}
                     style={styles.categoryCircleImage}
-                    contentFit="cover"
+                    contentFit="contain"
                     transition={200}
                   />
                 ) : (
@@ -924,7 +924,7 @@ export default function ProductFeedScreen() {
               >
                 <View style={styles.storeLogoWrap}>
                   {s.logo_url ? (
-                    <Image source={{ uri: s.logo_url }} style={styles.storeLogo} contentFit="cover" />
+                    <Image source={{ uri: s.logo_url }} style={styles.storeLogo} contentFit="contain" />
                   ) : (
                     <View style={styles.storeLogoFallback}>
                       <MaterialCommunityIcons name={s.is_wholesaler ? 'factory' : 'store'} size={24} color="#FFFFFF" />
@@ -1070,7 +1070,7 @@ export default function ProductFeedScreen() {
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
                 {isAuthenticated && user?.avatar_url ? (
-                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
@@ -1133,7 +1133,7 @@ export default function ProductFeedScreen() {
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
                 {isAuthenticated && user?.avatar_url ? (
-                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
@@ -1204,7 +1204,7 @@ export default function ProductFeedScreen() {
                 {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
               </Text>
               {isAuthenticated && user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />

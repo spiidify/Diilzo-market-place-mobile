@@ -547,7 +547,7 @@ export default function ProductDetailScreen() {
                     onPress={() => setActiveImage(idx)}
                     style={[styles.thumb, activeImage === idx && styles.thumbActive]}
                   >
-                    <Image source={{ uri: img }} style={styles.thumbImg} contentFit="cover" />
+                    <Image source={{ uri: img }} style={styles.thumbImg} contentFit="contain" />
                   </Pressable>
                 ))}
               </ScrollView>
@@ -938,7 +938,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="cover" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -983,7 +983,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="cover" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1037,7 +1037,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="cover" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1078,7 +1078,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="cover" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1208,7 +1208,7 @@ export default function ProductDetailScreen() {
                     onPress={() => setFullscreenIndex(idx)}
                     style={[styles.fsThumb, fullscreenIndex === idx && styles.fsThumbActive]}
                   >
-                    <Image source={{ uri: img }} style={styles.fsThumbImg} contentFit="cover" />
+                    <Image source={{ uri: img }} style={styles.fsThumbImg} contentFit="contain" />
                   </Pressable>
                 ))}
               </ScrollView>

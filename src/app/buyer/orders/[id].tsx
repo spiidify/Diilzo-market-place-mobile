@@ -311,7 +311,7 @@ export default function OrderDetailScreen() {
                         <Image
                           source={{ uri: item.product_image_url || item.product_image || '' }}
                           style={styles.itemImage}
-                          contentFit="cover"
+                          contentFit="contain"
                         />
                       ) : (
                         <View style={[styles.itemImage, styles.itemImageFallback]}>

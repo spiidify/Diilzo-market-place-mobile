@@ -101,7 +101,7 @@ export default function SellerProductsScreen() {
         onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
       >
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="cover" />
+          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="contain" />
         ) : (
           <View style={styles.productImageFallback}>
             <MaterialCommunityIcons name="package-variant" size={28} color={Brand.textTertiary} />

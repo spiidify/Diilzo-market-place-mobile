@@ -75,7 +75,7 @@ export default function ChatListScreen() {
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
           ) : item.store_logo ? (
-            <Image source={{ uri: item.store_logo }} style={styles.avatar} contentFit="cover" />
+            <Image source={{ uri: item.store_logo }} style={styles.avatar} contentFit="contain" />
           ) : (
             <View style={styles.avatarFallback}>
               <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />

@@ -667,7 +667,7 @@ export default function CheckoutScreen() {
                         <Image
                           source={{ uri: item.product.primary_image_url }}
                           style={styles.summaryItemImage}
-                          contentFit="cover"
+                          contentFit="contain"
                         />
                       ) : (
                         <View style={[styles.summaryItemImage, styles.summaryNoImage]}>

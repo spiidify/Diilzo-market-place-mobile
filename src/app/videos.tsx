@@ -145,7 +145,7 @@ export default function VideosScreen() {
             >
               {/* Background thumbnail */}
               {thumb ? (
-                <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="cover" />
+                <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="contain" />
               ) : (
                 <View style={styles.thumbnailFallback} />
               )}
@@ -167,7 +167,7 @@ export default function VideosScreen() {
               <View style={styles.actionBar}>
                 <View style={styles.actionAvatar}>
                   {product.store?.logo_url ? (
-                    <Image source={{ uri: product.store.logo_url }} style={styles.storeAvatar} contentFit="cover" />
+                    <Image source={{ uri: product.store.logo_url }} style={styles.storeAvatar} contentFit="contain" />
                   ) : (
                     <View style={styles.storeAvatarFallback}>
                       <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />

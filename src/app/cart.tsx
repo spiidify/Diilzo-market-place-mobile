@@ -295,7 +295,7 @@ export default function CartScreen() {
             <Image
               source={{ uri: item.product.primary_image_url }}
               style={styles.itemImage}
-              contentFit="cover"
+              contentFit="contain"
               transition={200}
             />
           ) : (

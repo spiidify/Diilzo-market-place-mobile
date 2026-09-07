@@ -219,7 +219,7 @@ export default function SuppliersScreen() {
           <View style={styles.logoRow}>
             <View style={styles.logoWrap}>
               {item.logo_url ? (
-                <Image source={{ uri: item.logo_url }} style={styles.logo} contentFit="cover" />
+                <Image source={{ uri: item.logo_url }} style={styles.logo} contentFit="contain" />
               ) : (
                 <View style={styles.logoFallback}>
                   <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={22} color="#FFFFFF" />

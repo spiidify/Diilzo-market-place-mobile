@@ -106,7 +106,7 @@ export default function CategoriesScreen() {
           {active && <View style={styles.activeBar} />}
           <View style={[styles.parentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
-              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} contentFit="cover" transition={150} />
+              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} contentFit="contain" transition={150} />
             ) : (
               <View style={styles.parentCircleFallback}>
                 <MaterialCommunityIcons name="tag" size={18} color="#FFFFFF" />
@@ -160,7 +160,7 @@ export default function CategoriesScreen() {
               {isAuthenticated && user ? (
                 <View style={styles.avatarWrap}>
                   {user.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
                   ) : (
                     <View style={styles.avatarFallback}>
                       <Text style={styles.avatarInitial}>
@@ -234,7 +234,7 @@ export default function CategoriesScreen() {
                     <Image
                       source={{ uri: selectedCategory.display_image }}
                       style={styles.heroBg}
-                      contentFit="cover"
+                      contentFit="contain"
                       transition={200}
                     />
                   ) : (
@@ -273,7 +273,7 @@ export default function CategoriesScreen() {
                             <Image
                               source={{ uri: child.display_image }}
                               style={styles.subCardImg}
-                              contentFit="cover"
+                              contentFit="contain"
                               transition={150}
                             />
                           ) : (

@@ -254,7 +254,7 @@ export default function EditProductScreen() {
                   <View style={styles.imageRow}>
                     {existingImages.map((uri, idx) => (
                       <View key={`ex-${idx}`} style={styles.thumbWrap}>
-                        <Image source={{ uri }} style={styles.thumb} contentFit="cover" />
+                        <Image source={{ uri }} style={styles.thumb} contentFit="contain" />
                         <Pressable
                           style={styles.thumbRemove}
                           onPress={() => removeExistingImage(idx)}
@@ -273,7 +273,7 @@ export default function EditProductScreen() {
               <View style={styles.imageRow}>
                 {images.map((img, idx) => (
                   <View key={`new-${idx}`} style={styles.thumbWrap}>
-                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="cover" />
+                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="contain" />
                     <Pressable
                       style={styles.thumbRemove}
                       onPress={() => removeNewImage(idx)}

@@ -57,7 +57,7 @@ export default function BuyerWishlistScreen() {
     >
       <View style={styles.imageWrap}>
         {item.product.primary_image_url ? (
-          <Image source={{ uri: item.product.primary_image_url }} style={styles.image} contentFit="cover" />
+          <Image source={{ uri: item.product.primary_image_url }} style={styles.image} contentFit="contain" />
         ) : (
           <View style={styles.noImage}>
             <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />

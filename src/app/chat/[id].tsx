@@ -243,7 +243,7 @@ export default function ChatThreadScreen() {
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatarWrap}>
               {storeLogo ? (
-                <Image source={{ uri: storeLogo }} style={styles.headerAvatar} contentFit="cover" />
+                <Image source={{ uri: storeLogo }} style={styles.headerAvatar} contentFit="contain" />
               ) : (
                 <View style={styles.headerAvatarFallback}>
                   <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
