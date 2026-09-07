@@ -196,33 +196,6 @@ export default function VideosScreen() {
     }
   }, []);
 
-  // ── Loading state ─────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <View style={styles.centerScreen}>
-        <ActivityIndicator size="large" color={Brand.primary} />
-        <Text style={styles.loadingText}>Loading videos...</Text>
-      </View>
-    );
-  }
-
-  // ── Empty state ───────────────────────────────────────────────────
-  if (products.length === 0) {
-    return (
-      <View style={styles.centerScreen}>
-        <View style={styles.emptyIconWrap}>
-          <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
-        </View>
-        <Text style={styles.emptyTitle}>No videos yet</Text>
-        <Text style={styles.emptySubtext}>
-          {searchQuery || activeCategory
-            ? 'Try a different category or search'
-            : 'Product videos will appear here'}
-        </Text>
-      </View>
-    );
-  }
-
   // ── Render each video card ────────────────────────────────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
     const videoId = getYouTubeId(item.video_url || '');
@@ -310,6 +283,33 @@ export default function VideosScreen() {
       </View>
     );
   }, [screenHeight, wishlistIds, handlePlay, handleWishlistToggle, handleShare, router]);
+
+  // ── Loading state ─────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <View style={styles.centerScreen}>
+        <ActivityIndicator size="large" color={Brand.primary} />
+        <Text style={styles.loadingText}>Loading videos...</Text>
+      </View>
+    );
+  }
+
+  // ── Empty state ───────────────────────────────────────────────────
+  if (products.length === 0) {
+    return (
+      <View style={styles.centerScreen}>
+        <View style={styles.emptyIconWrap}>
+          <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
+        </View>
+        <Text style={styles.emptyTitle}>No videos yet</Text>
+        <Text style={styles.emptySubtext}>
+          {searchQuery || activeCategory
+            ? 'Try a different category or search'
+            : 'Product videos will appear here'}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
