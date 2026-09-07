@@ -1475,21 +1475,21 @@ const styles = StyleSheet.create({
   },
   slideTextCol: {
     flex: 1,
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     paddingRight: 10,
   },
   slideHeadline: {
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-    textAlign: 'right',
+    textAlign: 'left',
     marginBottom: 2,
   },
   slideSubheadline: {
     fontSize: 12,
     color: '#FFFFFF',
     opacity: 0.9,
-    textAlign: 'right',
+    textAlign: 'left',
   },
   slideButton: {
     paddingVertical: 6,
