@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
-import { fetchProducts, searchProducts } from '@/services/products';
+import { esSearchProducts, fetchProducts, searchProducts } from '@/services/products';
 import type { Product } from '@/types';
 
 const RECENT_SEARCHES_KEY = 'recent_searches';
@@ -199,17 +199,47 @@ export default function SearchScreen() {
         ...(maxPrice ? { max_price: maxPrice } : {}),
         ...(onSaleOnly ? { on_sale: 'true' as const } : {}),
       };
-      const data = query
-        ? await searchProducts(query, targetPage, baseParams)
-        : await fetchProducts(baseParams);
-      if (reset) {
-        setPinned(data.pinned || []);
-        setSponsored(data.sponsored || []);
+      // ── Use Elasticsearch endpoint when there's a text query ──────
+      // esSearchProducts uses multi_match with title^3 boost + category
+      // faceted filtering. Falls back to ORM on the backend if ES is down.
+      // When no query (browsing by category/brand), use the regular feed.
+      if (query && query.trim().length >= 3) {
+        const data = await esSearchProducts({
+          q: query,
+          page: targetPage,
+          page_size: 20,
+          ordering: sortBy || undefined,
+          ...(categorySlug ? { category: categorySlug } : {}),
+        });
+        if (reset) {
+          setPinned([]);
+          setSponsored([]);
+        }
+        setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+        setCount(data.count);
+        setHasMore(data.has_next);
+        if (!reset) setPage(targetPage + 1);
+      } else if (query && query.trim().length > 0 && query.trim().length < 3) {
+        // Below 3-char threshold — instantly clear the UI list
+        if (reset) {
+          setPinned([]);
+          setSponsored([]);
+        }
+        setProducts([]);
+        setCount(0);
+        setHasMore(false);
+      } else {
+        // No query — browse all (with category/brand filters)
+        const data = await fetchProducts(baseParams);
+        if (reset) {
+          setPinned(data.pinned || []);
+          setSponsored(data.sponsored || []);
+        }
+        setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+        setCount(data.count);
+        setHasMore(data.next !== null);
+        if (!reset) setPage(targetPage + 1);
       }
-      setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
-      setCount(data.count);
-      setHasMore(data.next !== null);
-      if (!reset) setPage(targetPage + 1);
     } catch (e: any) {
       console.error('Search load error:', e?.message);
     } finally {
@@ -217,15 +247,29 @@ export default function SearchScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [page, query, categorySlug, brandSlug]);
+  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly]);
 
   useEffect(() => {
     load(true);
   }, []);
 
-  // Debounced search (400ms)
+  // ── Debounced search (300ms) ──────────────────────────────────────
+  // 300ms debounce protects the server from request spam while typing.
+  // Uses setTimeout cleanup function to cancel pending requests on each keystroke.
+  // Instantly clears the UI list if the input is wiped blank.
   useEffect(() => {
-    const t = setTimeout(() => load(true), 400);
+    // If query is blank, instantly clear results (no debounce needed)
+    if (query.trim().length === 0) {
+      setProducts([]);
+      setPinned([]);
+      setSponsored([]);
+      setCount(0);
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
+    // 300ms debounce — cancel previous timer on each keystroke
+    const t = setTimeout(() => load(true), 300);
     return () => clearTimeout(t);
   }, [query]);
 
@@ -296,8 +340,10 @@ export default function SearchScreen() {
     [handleProductPress]
   );
 
-  const showEmpty = !loading && !refreshing && products.length === 0 && query.length > 0;
+  const showEmpty = !loading && !refreshing && products.length === 0 && query.trim().length >= 3;
   const isIdle = query.length === 0 && !categorySlug && !brandSlug;
+  // Show a hint when query is 1-2 chars (below 3-char threshold)
+  const showMinHint = query.trim().length > 0 && query.trim().length < 3;
 
   // ── Header: back + search bar + filter ───────────────────────────
   // Rendered as inline JSX (NOT nested components) — nested component
@@ -533,13 +579,23 @@ export default function SearchScreen() {
               </View>
             )}
 
-            {/* ── Empty state ─────────────────────────────────── */}
-            {showEmpty ? (
+            {/* ── Minimum character hint (1-2 chars) ──────────── */}
+            {showMinHint ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIconWrap}>
+                  <MaterialCommunityIcons name="keyboard-outline" size={40} color={Brand.textTertiary} />
+                </View>
+                <Text style={styles.emptyTitle}>Keep typing</Text>
+                <Text style={styles.emptySubtext}>
+                  Enter at least 3 characters to search.
+                </Text>
+              </View>
+            ) : showEmpty ? (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIconWrap}>
                   <MaterialCommunityIcons name="magnify-close" size={40} color={Brand.textTertiary} />
                 </View>
-                <Text style={styles.emptyTitle}>No results found</Text>
+                <Text style={styles.emptyTitle}>No items found</Text>
                 <Text style={styles.emptySubtext}>
                   We couldn't find anything for "{query}".{'\n'}Check the spelling or try a different term.
                 </Text>

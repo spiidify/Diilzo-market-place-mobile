@@ -61,7 +61,58 @@ export async function fetchProductBySlug(
 
 /**
  * Search products by name or description.
+ * Uses the standard product list endpoint with `search` param (ORM icontains).
  */
 export async function searchProducts(query: string, page = 1, extraParams: ProductListParams = {}): Promise<ProductFeedResponse & PaginatedResponse<Product>> {
   return fetchProducts({ search: query, page, ...extraParams });
+}
+
+// ── Elasticsearch Search ──────────────────────────────────────────
+// High-performance search powered by Elasticsearch/OpenSearch.
+// Falls back to ORM (icontains) on the backend if ES is unavailable.
+
+export interface ESSearchParams {
+  q?: string;            // search keyword
+  category?: string;     // category slug for faceted filtering
+  page?: number;
+  page_size?: number;
+  ordering?: string;     // -created_at, price, -price, rating
+}
+
+export interface ESSearchResult {
+  results: Product[];
+  count: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
+  es_used: boolean;      // true if Elasticsearch was used, false if ORM fallback
+}
+
+/**
+ * Search products using Elasticsearch (multi_match with title^3 boost).
+ * GET /api/v1/search/?q=<keyword>&category=<slug>&page=1&page_size=20
+ *
+ * Falls back to ORM on the backend if Elasticsearch is unavailable.
+ */
+export async function esSearchProducts(params: ESSearchParams = {}): Promise<ESSearchResult> {
+  return apiRequest<ESSearchResult>({
+    method: 'GET',
+    url: '/search/',
+    params,
+  });
+}
+
+/**
+ * Lightweight live search for autocomplete suggestions.
+ * GET /api/v1/search/live/?q=<keyword>
+ * Returns up to 10 product results. Minimum 2 characters required.
+ */
+export async function esLiveSearch(q: string, limit = 10): Promise<Product[]> {
+  if (q.trim().length < 2) return [];
+  const data = await apiRequest<{ results: Product[] }>({
+    method: 'GET',
+    url: '/search/live/',
+    params: { q, limit },
+  });
+  return data.results || [];
 }
