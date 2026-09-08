@@ -17,13 +17,13 @@ interface LogicalSize {
 }
 
 const LOGICAL_SIZES: Record<ImagePurpose, LogicalSize> = {
-  productCard: { width: 160, height: 160 },
+  productCard: { width: 240, height: 240 },
   productDetail: { width: 800, height: 600 },
-  category: { width: 70, height: 70 },
-  avatar: { width: 80, height: 80 },
+  category: { width: 120, height: 120 },
+  avatar: { width: 160, height: 160 },
   carousel: { width: 400, height: 220 }, // width replaced below by screen width
   slide: { width: 1200, height: 600 },
-  storeLogo: { width: 64, height: 64 },
+  storeLogo: { width: 128, height: 128 },
   storeBanner: { width: 400, height: 180 }, // width replaced below by screen width
 };
 
