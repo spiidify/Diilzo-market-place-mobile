@@ -49,6 +49,8 @@ export default function CategoriesScreen() {
   const leftListRef = useRef<FlatList>(null);
   const rightScrollRef = useRef<ScrollView>(null);
   const productCardSize = useImageDimensions('productCard');
+  const categorySize = useImageDimensions('category');
+  const selectedSlugRef = useRef<string | null>(null);
 
   // Filter categories by search query
   const filteredCategories = searchQuery.trim()
@@ -60,9 +62,10 @@ export default function CategoriesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const cats = await fetchCategories();
+      const cats = await fetchCategories(categorySize);
       setCategories(cats);
-      if (cats.length > 0 && !selectedSlug) {
+      if (cats.length > 0 && !selectedSlugRef.current) {
+        selectedSlugRef.current = cats[0].slug;
         setSelectedSlug(cats[0].slug);
       }
     } catch (e: any) {
@@ -71,13 +74,15 @@ export default function CategoriesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedSlug]);
+  }, [categorySize]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const selectedCategory = filteredCategories.find((c) => c.slug === selectedSlug) || null;
+  // Look up selected category from the FULL list (not filtered) so the
+  // right panel doesn't go blank when search hides the selected parent.
+  const selectedCategory = categories.find((c) => c.slug === selectedSlug) || null;
 
   // Fetch products for the selected parent category
   useEffect(() => {
@@ -112,6 +117,7 @@ export default function CategoriesScreen() {
 
   // Reset right panel scroll when switching parent
   const handleParentSelect = (slug: string) => {
+    selectedSlugRef.current = slug;
     setSelectedSlug(slug);
     rightScrollRef.current?.scrollTo({ y: 0, animated: false });
   };
