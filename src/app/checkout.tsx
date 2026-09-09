@@ -492,7 +492,7 @@ export default function CheckoutScreen() {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={80}
+          keyboardVerticalOffset={0}
         >
           <ScrollView
             style={styles.body}
@@ -937,81 +937,83 @@ export default function CheckoutScreen() {
               )}
             </View>
           </ScrollView>
-
-          {/* ── Sticky footer ──────────────────────────────────── */}
-          <View style={styles.footer}>
-            <View style={styles.footerLeft}>
-              <Text style={styles.footerLabel}>Total</Text>
-              <View style={styles.footerTotalRow}>
-                <Text style={styles.footerCurrency}>{currency}</Text>
-                <Text style={styles.footerTotalValue}>{total.toLocaleString()}</Text>
-              </View>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                styles.placeOrderBtn,
-                (placing || !cart || cart.items.length === 0 || !selectedAddressId) && styles.placeOrderBtnDisabled,
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={handlePlaceOrder}
-              disabled={placing || !cart || cart.items.length === 0 || !selectedAddressId}
-            >
-              {placing ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Text style={styles.placeOrderBtnText}>Place Order</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
-                </>
-              )}
-            </Pressable>
-          </View>
         </KeyboardAvoidingView>
+
+        {/* ── Sticky footer (outside KeyboardAvoidingView) ──── */}
+        <View style={styles.footer}>
+          <View style={styles.footerLeft}>
+            <Text style={styles.footerLabel}>Total</Text>
+            <View style={styles.footerTotalRow}>
+              <Text style={styles.footerCurrency}>{currency}</Text>
+              <Text style={styles.footerTotalValue}>{total.toLocaleString()}</Text>
+            </View>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.placeOrderBtn,
+              (placing || !cart || cart.items.length === 0 || !selectedAddressId) && styles.placeOrderBtnDisabled,
+              pressed && { opacity: 0.85 },
+            ]}
+            onPress={handlePlaceOrder}
+            disabled={placing || !cart || cart.items.length === 0 || !selectedAddressId}
+          >
+            {placing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.placeOrderBtnText}>Place Order</Text>
+                <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+              </>
+            )}
+          </Pressable>
+        </View>
       </SafeAreaView>
 
       {/* ── Success overlay ────────────────────────────────────── */}
-      {successVisible && successOrder && (
-        <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
-          <View style={styles.successCard}>
-            <View style={styles.successIconWrap}>
-              <LinearGradient
-                colors={[Brand.primaryDark, Brand.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.successIconCircle}
+      {
+        successVisible && successOrder && (
+          <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
+            <View style={styles.successCard}>
+              <View style={styles.successIconWrap}>
+                <LinearGradient
+                  colors={[Brand.primaryDark, Brand.primary]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.successIconCircle}
+                >
+                  <MaterialCommunityIcons name="check" size={44} color="#FFFFFF" />
+                </LinearGradient>
+              </View>
+              <Text style={styles.successTitle}>Order Placed!</Text>
+              <Text style={styles.successSub}>
+                {successOrder.order_number
+                  ? `Order #${successOrder.order_number}`
+                  : 'Your order has been placed successfully'}
+              </Text>
+              <Pressable
+                style={({ pressed }) => [styles.successBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => {
+                  setSuccessVisible(false);
+                  router.replace(`/buyer/orders/${successOrder.id}` as any);
+                }}
               >
-                <MaterialCommunityIcons name="check" size={44} color="#FFFFFF" />
-              </LinearGradient>
+                <Text style={styles.successBtnText}>View Order</Text>
+                <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.successSecondary, pressed && { opacity: 0.7 }]}
+                onPress={() => {
+                  setSuccessVisible(false);
+                  router.replace('/');
+                }}
+              >
+                <Text style={styles.successSecondaryText}>Continue Shopping</Text>
+              </Pressable>
             </View>
-            <Text style={styles.successTitle}>Order Placed!</Text>
-            <Text style={styles.successSub}>
-              {successOrder.order_number
-                ? `Order #${successOrder.order_number}`
-                : 'Your order has been placed successfully'}
-            </Text>
-            <Pressable
-              style={({ pressed }) => [styles.successBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => {
-                setSuccessVisible(false);
-                router.replace(`/buyer/orders/${successOrder.id}` as any);
-              }}
-            >
-              <Text style={styles.successBtnText}>View Order</Text>
-              <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.successSecondary, pressed && { opacity: 0.7 }]}
-              onPress={() => {
-                setSuccessVisible(false);
-                router.replace('/');
-              }}
-            >
-              <Text style={styles.successSecondaryText}>Continue Shopping</Text>
-            </Pressable>
-          </View>
-        </Animated.View>
-      )}
-    </View>
+          </Animated.View>
+        )
+      }
+    </View >
   );
 }
 
