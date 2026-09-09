@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -7,13 +6,14 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  Image as RNImage,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  useWindowDimensions,
+  useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -138,7 +138,7 @@ export default function CategoriesScreen() {
           {active && <View style={styles.activeBar} />}
           <View style={[styles.parentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
-              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} contentFit="contain" transition={150} />
+              <RNImage source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="contain" />
             ) : (
               <View style={styles.parentCircleFallback}>
                 <MaterialCommunityIcons name="tag" size={18} color="#FFFFFF" />
@@ -192,7 +192,7 @@ export default function CategoriesScreen() {
               {isAuthenticated && user ? (
                 <View style={styles.avatarWrap}>
                   {user.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                    <RNImage source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarFallback}>
                       <Text style={styles.avatarInitial}>
@@ -286,11 +286,10 @@ export default function CategoriesScreen() {
                   {/* Category hero banner */}
                   <View style={styles.heroBanner}>
                     {selectedCategory.display_image ? (
-                      <Image
+                      <RNImage
                         source={{ uri: selectedCategory.display_image }}
                         style={styles.heroBg}
-                        contentFit="contain"
-                        transition={200}
+                        resizeMode="contain"
                       />
                     ) : (
                       <View style={[styles.heroBg, styles.heroBgFallback]} />
@@ -325,11 +324,10 @@ export default function CategoriesScreen() {
                         >
                           <View style={styles.subCardIcon}>
                             {child.display_image ? (
-                              <Image
+                              <RNImage
                                 source={{ uri: child.display_image }}
                                 style={styles.subCardImg}
-                                contentFit="contain"
-                                transition={150}
+                                resizeMode="contain"
                               />
                             ) : (
                               <View style={styles.subCardFallback}>
@@ -370,11 +368,10 @@ export default function CategoriesScreen() {
                           >
                             <View style={styles.productImageWrap}>
                               {item.primary_image_url ? (
-                                <Image
+                                <RNImage
                                   source={{ uri: item.primary_image_url }}
                                   style={styles.productImage}
-                                  contentFit="contain"
-                                  transition={200}
+                                  resizeMode="contain"
                                 />
                               ) : (
                                 <View style={styles.productNoImage}>
