@@ -35,7 +35,7 @@ import {
   fetchTopStores,
   fetchUnreadNotificationCount,
 } from '@/services/catalog';
-import { createChatThread, getChatUnreadCount } from '@/services/chat';
+import { createChatThread } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
   Brand as BrandType,
@@ -502,7 +502,6 @@ export default function ProductFeedScreen() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const { cartCount, refreshCartCount } = useCart();
-  const [chatUnread, setChatUnread] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -661,16 +660,6 @@ export default function ProductFeedScreen() {
   }, []);
 
   // ── Refresh cart count and chat unread when screen gains focus ──
-  const loadChatUnread = useCallback(async () => {
-    if (!isAuthenticated) { setChatUnread(0); return; }
-    try {
-      const count = await getChatUnreadCount();
-      setChatUnread(count);
-    } catch {
-      setChatUnread(0);
-    }
-  }, [isAuthenticated]);
-
   const loadNotificationCount = useCallback(async () => {
     if (!isAuthenticated) { setNotificationCount(0); return; }
     try {
@@ -690,8 +679,8 @@ export default function ProductFeedScreen() {
       // refreshCartCount comes from useCart(); it's sync-ish but we still
       // kick it off alongside the two async badge fetches.
       refreshCartCount();
-      Promise.all([loadChatUnread(), loadNotificationCount()]).catch(() => { });
-    }, [refreshCartCount, loadChatUnread, loadNotificationCount])
+      Promise.all([loadNotificationCount()]).catch(() => { });
+    }, [refreshCartCount, loadNotificationCount])
   );
 
   // Reload products when category changes
@@ -1087,17 +1076,6 @@ export default function ProductFeedScreen() {
                 )}
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-                onPress={() => router.push('/chat' as any)}
-              >
-                <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-                {chatUnread > 0 && (
-                  <View style={styles.cartBadge}>
-                    <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
-                  </View>
-                )}
-              </Pressable>
-              <Pressable
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
@@ -1148,17 +1126,6 @@ export default function ProductFeedScreen() {
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
-                  </View>
-                )}
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-                onPress={() => router.push('/chat' as any)}
-              >
-                <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-                {chatUnread > 0 && (
-                  <View style={styles.cartBadge}>
-                    <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
                   </View>
                 )}
               </Pressable>
@@ -1218,18 +1185,6 @@ export default function ProductFeedScreen() {
               {cartCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            {/* Chat icon with unread badge */}
-            <Pressable
-              style={({ pressed }) => [styles.chatIcon, pressed && styles.iconPressed]}
-              onPress={() => router.push('/chat' as any)}
-            >
-              <MaterialCommunityIcons name="chat-outline" size={24} color="#FFFFFF" />
-              {chatUnread > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
                 </View>
               )}
             </Pressable>
@@ -1342,10 +1297,6 @@ const styles = StyleSheet.create({
   cartIcon: {
     padding: Spacing.one + 2,
     marginLeft: 'auto',
-    position: 'relative',
-  },
-  chatIcon: {
-    padding: Spacing.one + 2,
     position: 'relative',
   },
   cartBadge: {
