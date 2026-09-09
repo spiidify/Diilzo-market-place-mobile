@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   Image,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -202,8 +202,10 @@ export default function CategoriesScreen() {
                   )}
                 </View>
               ) : (
-                <View style={styles.avatarFallback}>
-                  <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
+                <View style={styles.avatarWrap}>
+                  <View style={styles.avatarFallback}>
+                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
+                  </View>
                 </View>
               )}
             </Pressable>
