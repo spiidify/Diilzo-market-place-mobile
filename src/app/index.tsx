@@ -1063,12 +1063,14 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.header}>
-              <DiilzoLogo size={22} />
+              <View style={styles.logoBar}>
+                <DiilzoLogo size={22} variant="color" />
+              </View>
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
               >
-                <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+                <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -1079,7 +1081,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
-                <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+                <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
                 {notificationCount > 0 && (
                   <View style={styles.notifBadge}>
                     <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1095,7 +1097,7 @@ export default function ProductFeedScreen() {
                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                      <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
                     </View>
                   )}
                 </View>
@@ -1117,12 +1119,14 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.header}>
-              <DiilzoLogo size={22} />
+              <View style={styles.logoBar}>
+                <DiilzoLogo size={22} variant="color" />
+              </View>
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
               >
-                <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+                <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -1133,7 +1137,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
-                <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+                <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
                 {notificationCount > 0 && (
                   <View style={styles.notifBadge}>
                     <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1149,7 +1153,7 @@ export default function ProductFeedScreen() {
                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                      <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
                     </View>
                   )}
                 </View>
@@ -1174,26 +1178,28 @@ export default function ProductFeedScreen() {
       <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.header}>
-            {/* Logo on left */}
-            <DiilzoLogo size={22} />
-            {/* Cart icon — pushed to the right */}
+            {/* Logo on white bar */}
+            <View style={styles.logoBar}>
+              <DiilzoLogo size={22} variant="color" />
+            </View>
+            {/* Cart icon on white circle */}
             <Pressable
               style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
               onPress={() => router.push('/cart')}
             >
-              <MaterialCommunityIcons name="cart-outline" size={26} color="#FFFFFF" />
+              <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
               {cartCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
                 </View>
               )}
             </Pressable>
-            {/* Notification bell with count badge */}
+            {/* Notification bell on white circle */}
             <Pressable
               style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
               onPress={() => router.push('/account')}
             >
-              <MaterialCommunityIcons name="bell" size={24} color="#FFFFFF" />
+              <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
               {notificationCount > 0 && (
                 <View style={styles.notifBadge}>
                   <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1210,7 +1216,7 @@ export default function ProductFeedScreen() {
                   <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                    <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
                   </View>
                 )}
               </View>
@@ -1278,6 +1284,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  logoBar: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   logo: {
     color: '#FFFFFF',
     fontSize: 24,
@@ -1295,9 +1312,19 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   cartIcon: {
-    padding: Spacing.one + 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 'auto',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
   cartBadge: {
     position: 'absolute',
@@ -1319,9 +1346,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   notifBtn: {
-    padding: Spacing.one + 2,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: Spacing.one,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
   },
   notifBadge: {
     position: 'absolute',
@@ -1351,17 +1388,18 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   avatarRing: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
+    borderColor: '#FFFFFF',
     padding: 1.5,
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
   },
   avatar: {
     width: '100%',
@@ -1372,7 +1410,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: Brand.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
