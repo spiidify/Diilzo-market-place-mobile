@@ -1431,9 +1431,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.primary + '25',
   },
-  totalBoxLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2, flexShrink: 0 },
+  totalBoxLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
   totalBoxLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  totalBoxValue: { flex: 1, fontSize: 15, fontWeight: '900', color: Brand.primary, textAlign: 'right', marginLeft: Spacing.two },
+  totalBoxValue: { fontSize: 15, fontWeight: '900', color: Brand.primary },
 
   summaryItems: {
     marginTop: Spacing.two,
