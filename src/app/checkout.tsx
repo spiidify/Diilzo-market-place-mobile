@@ -842,9 +842,11 @@ export default function CheckoutScreen() {
                   <Text style={styles.cardTitle}>Order Summary</Text>
                 </View>
                 <View style={styles.summaryToggleRight}>
-                  <Text style={styles.summaryItemCount}>
-                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
-                  </Text>
+                  <View style={styles.itemCountBadge}>
+                    <Text style={styles.itemCountBadgeText}>
+                      {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                    </Text>
+                  </View>
                   <MaterialCommunityIcons
                     name={summaryExpanded ? 'chevron-up' : 'chevron-down'}
                     size={20}
@@ -871,11 +873,15 @@ export default function CheckoutScreen() {
                     </Text>
                   </View>
                 )}
-                <View style={styles.summaryTotalRow} />
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryTotalLabel}>Total</Text>
-                  <Text style={styles.summaryTotalValue}>{currency} {total.toLocaleString()}</Text>
+              </View>
+
+              {/* Total — highlighted box with green tint background */}
+              <View style={styles.totalBox}>
+                <View style={styles.totalBoxLeft}>
+                  <MaterialCommunityIcons name="cart-outline" size={16} color={Brand.primary} />
+                  <Text style={styles.totalBoxLabel}>Total</Text>
                 </View>
+                <Text style={styles.totalBoxValue}>{currency} {total.toLocaleString()}</Text>
               </View>
 
               {/* Expanded items */}
@@ -1394,8 +1400,14 @@ const styles = StyleSheet.create({
   // ── Summary ────────────────────────────────────────────────
   summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.two + 2 },
   summaryToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  summaryItemCount: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
+  summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
+  itemCountBadge: {
+    backgroundColor: Brand.primary + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  itemCountBadgeText: { fontSize: 11, fontWeight: '700', color: Brand.primary },
 
   summaryRows: {
     backgroundColor: Brand.surfaceAlt,
@@ -1406,9 +1418,23 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryLabel: { fontSize: 13, color: Brand.textSecondary },
   summaryValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
-  summaryTotalRow: { height: 1, backgroundColor: Brand.borderLight, marginVertical: 4 },
-  summaryTotalLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  summaryTotalValue: { fontSize: 16, fontWeight: '900', color: Brand.primary },
+
+  // Total box — modern highlighted with green tint
+  totalBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.two,
+    paddingHorizontal: Spacing.three - 2,
+    paddingVertical: Spacing.two + 2,
+    backgroundColor: Brand.primary + '10',
+    borderRadius: RADIUS_SM,
+    borderWidth: 1,
+    borderColor: Brand.primary + '25',
+  },
+  totalBoxLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
+  totalBoxLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
+  totalBoxValue: { fontSize: 18, fontWeight: '900', color: Brand.primary },
 
   summaryItems: {
     marginTop: Spacing.two,
