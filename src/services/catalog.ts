@@ -53,13 +53,14 @@ export async function fetchCategories(
   imageSize?: { width: number; height: number }
 ): Promise<Category[]> {
   return swr(
-    `catalog:categories:v2:${imageKey('all', imageSize)}`,
+    `catalog:categories:v3:${imageKey('all', imageSize)}`,
     CATEGORIES_TTL_MS,
     async () => {
       // Fetch all categories, paginating until we've collected every page.
       // The backend may cap page_size (e.g. at 100), so we follow the
       // `next` cursor to ensure no parents or children are missed.
       const all: Category[] = [];
+      const seenIds = new Set<number>();
       let page = 1;
       let next: string | null = null;
       do {
@@ -68,7 +69,12 @@ export async function fetchCategories(
           url: '/categories/',
           params: { page_size: 500, page, ...imageSize },
         });
-        all.push(...(data.results || []));
+        for (const c of data.results || []) {
+          if (!seenIds.has(c.id)) {
+            seenIds.add(c.id);
+            all.push(c);
+          }
+        }
         next = data.next;
         page += 1;
         // Safety guard: never loop more than 20 pages (10,000 categories)
@@ -106,10 +112,11 @@ export async function fetchBrands(
   imageSize?: { width: number; height: number }
 ): Promise<Brand[]> {
   return swr(
-    `catalog:brands:v2:${imageKey('all', imageSize)}`,
+    `catalog:brands:v3:${imageKey('all', imageSize)}`,
     BRANDS_TTL_MS,
     async () => {
       const all: Brand[] = [];
+      const seenIds = new Set<number>();
       let page = 1;
       let next: string | null = null;
       do {
@@ -118,7 +125,12 @@ export async function fetchBrands(
           url: '/brands/',
           params: { page_size: 500, page, ...imageSize },
         });
-        all.push(...(data.results || []));
+        for (const b of data.results || []) {
+          if (!seenIds.has(b.id)) {
+            seenIds.add(b.id);
+            all.push(b);
+          }
+        }
         next = data.next;
         page += 1;
       } while (next && page < 20);
