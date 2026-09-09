@@ -187,8 +187,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoImage: {
-    width: 180,
-    height: 56,
+    width: 140,
+    height: 44,
   },
   subtitle: {
     fontSize: 13,

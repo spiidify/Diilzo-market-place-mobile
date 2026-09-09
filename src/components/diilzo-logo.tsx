@@ -12,10 +12,10 @@ const COLOR_LOGO = require('@/assets/logos/DIILZO-LOGO-COLOR.png');
 
 /** Reusable Diilzo logo — renders the actual logo image file with
  *  optional "Marketplace" subtitle below the wordmark. */
-export function DiilzoLogo({ size = 28, variant = 'white', showSubtitle = true }: DiilzoLogoProps) {
+export function DiilzoLogo({ size = 22, variant = 'white', showSubtitle = true }: DiilzoLogoProps) {
   const source = variant === 'white' ? WHITE_LOGO : COLOR_LOGO;
   const textColor = variant === 'white' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
-  const logoWidth = size * 3.2;
+  const logoWidth = size * 3.19;
 
   return (
     <View style={styles.wrap}>
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   logoBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    aspectRatio: 3.2,
+    aspectRatio: 3.19,
   },
   subtitle: {
     fontSize: 9,
