@@ -1071,9 +1071,9 @@ export default function ProductFeedScreen() {
   if (loading && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+            <View style={styles.header}>
               <DiilzoLogo size={36} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
@@ -1120,7 +1120,7 @@ export default function ProductFeedScreen() {
                   </View>
                 )}
               </Pressable>
-            </LinearGradient>
+            </View>
           </SafeAreaView>
         </LinearGradient>
         <View style={styles.centerContainer}>
@@ -1134,9 +1134,9 @@ export default function ProductFeedScreen() {
   if (error && products.length === 0) {
     return (
       <View style={styles.screen}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+            <View style={styles.header}>
               <DiilzoLogo size={36} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
@@ -1183,7 +1183,7 @@ export default function ProductFeedScreen() {
                   </View>
                 )}
               </Pressable>
-            </LinearGradient>
+            </View>
           </SafeAreaView>
         </LinearGradient>
         <View style={styles.centerContainer}>
@@ -1200,9 +1200,9 @@ export default function ProductFeedScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+      <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient colors={['transparent', 'transparent']} style={styles.header}>
+          <View style={styles.header}>
             {/* Logo on left */}
             <DiilzoLogo size={36} />
             {/* Cart icon — pushed to the right */}
@@ -1254,7 +1254,7 @@ export default function ProductFeedScreen() {
                 </View>
               )}
             </Pressable>
-          </LinearGradient>
+          </View>
         </SafeAreaView >
       </LinearGradient >
 
@@ -1303,8 +1303,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 0, backgroundColor: 'transparent' },
   headerBg: {
     width: '100%',
-    borderBottomWidth: 3,
-    borderBottomColor: Brand.primary,
   },
 
   // ── Header ──────────────────────────────────────────────────────
