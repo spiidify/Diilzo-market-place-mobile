@@ -28,7 +28,7 @@ export default function BuyerDashboardScreen() {
     return (
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
             <View style={{ width: 24 }} />
             <Text style={styles.headerTitle}>My Account</Text>
             <View style={{ width: 24 }} />
@@ -47,9 +47,9 @@ export default function BuyerDashboardScreen() {
     return (
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+              <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
             </Pressable>
             <Text style={styles.headerTitle}>My Account</Text>
             <View style={{ width: 24 }} />
@@ -57,7 +57,7 @@ export default function BuyerDashboardScreen() {
         </SafeAreaView>
         <View style={styles.loginPromptBody}>
           <View style={styles.loginPromptIcon}>
-            <MaterialCommunityIcons name="account-lock-outline" size={48} color={Brand.primary} />
+            <MaterialCommunityIcons name="account-lock-outline" size={44} color={Brand.primary} />
           </View>
           <Text style={styles.loginPromptTitle}>Sign In Required</Text>
           <Text style={styles.loginPromptSub}>
@@ -87,15 +87,15 @@ export default function BuyerDashboardScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+            <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
           </Pressable>
           <Text style={styles.headerTitle}>My Account</Text>
-          <View style={{ width: 24 }} />
+          <View style={{ width: 22 }} />
         </LinearGradient>
 
-        <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
           {/* Profile hero — gradient card with avatar */}
           <View style={styles.profileCard}>
             <LinearGradient
@@ -137,13 +137,13 @@ export default function BuyerDashboardScreen() {
               onPress={() => router.push('/seller' as any)}
             >
               <View style={styles.sellerCtaIcon}>
-                <MaterialCommunityIcons name="store-plus" size={26} color="#FFFFFF" />
+                <MaterialCommunityIcons name="store-plus" size={24} color="#FFFFFF" />
               </View>
               <View style={styles.sellerCtaInfo}>
                 <Text style={styles.sellerCtaTitle}>Become a Seller</Text>
                 <Text style={styles.sellerCtaSub}>Start selling on Diilzo today</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#FFFFFF" />
+              <MaterialCommunityIcons name="chevron-right" size={22} color="#FFFFFF" />
             </Pressable>
           )}
 
@@ -154,29 +154,29 @@ export default function BuyerDashboardScreen() {
               onPress={() => router.push('/seller' as any)}
             >
               <View style={styles.switchCtaIcon}>
-                <MaterialCommunityIcons name="store" size={24} color={Brand.primary} />
+                <MaterialCommunityIcons name="store" size={22} color={Brand.primary} />
               </View>
               <View style={styles.switchCtaInfo}>
                 <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
                 <Text style={styles.switchCtaSub}>Manage your store and products</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
             </Pressable>
           )}
 
-          {/* Menu items */}
-          <View style={styles.menuSection}>
+          {/* Menu items — grouped in a single card with dividers */}
+          <View style={styles.menuCard}>
             {menuItems.map((item, index) => (
               <Pressable
                 key={`buyer-menu-${index}`}
-                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: Brand.surfaceAlt }]}
+                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: '#F8FAFB' }]}
                 onPress={() => router.push(item.route)}
               >
-                <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
+                <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
+                  <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
                 </View>
                 <Text style={styles.menuLabel}>{item.label}</Text>
-                <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
               </Pressable>
             ))}
           </View>
@@ -199,11 +199,12 @@ export default function BuyerDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+  safeArea: { flex: 1, backgroundColor: Brand.dark },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
   body: { flex: 1 },
+  bodyContent: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 40 },
 
   // Loading state
   loadingBody: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -212,36 +213,26 @@ const styles = StyleSheet.create({
   // Login prompt (not authenticated)
   loginPromptBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   loginPromptIcon: {
-    width: 96, height: 96, borderRadius: 48, backgroundColor: Brand.primary + '15',
+    width: 88, height: 88, borderRadius: 44, backgroundColor: Brand.primary + '12',
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
-  loginPromptTitle: { fontSize: 22, fontWeight: '700', color: Brand.text },
+  loginPromptTitle: { fontSize: 21, fontWeight: '800', color: Brand.text },
   loginPromptSub: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
   loginBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
-    borderRadius: 12, marginTop: 24, width: '100%',
+    borderRadius: 14, marginTop: 24, width: '100%',
   },
-  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  loginBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
   registerBtn: {
-    borderWidth: 1, borderColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
-    borderRadius: 12, marginTop: 12, width: '100%', alignItems: 'center',
+    borderWidth: 1.5, borderColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
+    borderRadius: 14, marginTop: 12, width: '100%', alignItems: 'center',
   },
   registerBtnText: { color: Brand.primary, fontSize: 15, fontWeight: '700' },
   guestText: { color: Brand.textTertiary, fontSize: 13, marginTop: 20 },
 
-  // Logout
-  logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginBottom: 32, marginTop: 8,
-    paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: Brand.danger + '30',
-  },
-  logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
-
   // Profile card — gradient hero
   profileCard: {
-    marginHorizontal: 12,
-    marginTop: 12,
     borderRadius: 18,
     overflow: 'hidden',
     elevation: 4,
@@ -299,37 +290,49 @@ const styles = StyleSheet.create({
   // Seller CTA
   sellerCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: Brand.primary, marginHorizontal: 12, marginTop: 12,
-    padding: 18, borderRadius: 16,
-    elevation: 3, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    backgroundColor: Brand.primary, marginTop: 12,
+    padding: 16, borderRadius: 16,
+    elevation: 3, shadowColor: Brand.primary, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  sellerCtaIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  sellerCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   sellerCtaInfo: { flex: 1, gap: 2 },
-  sellerCtaTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  sellerCtaTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
   sellerCtaSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
 
   // Switch to seller
   switchCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 12,
-    padding: 16, borderRadius: 14,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+    backgroundColor: '#FFFFFF', marginTop: 12,
+    padding: 16, borderRadius: 16,
+    borderWidth: 1, borderColor: '#E8EDF0',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.primary + '12', justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
   switchCtaTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
   switchCtaSub: { fontSize: 13, color: Brand.textTertiary },
 
-  // Menu
-  menuSection: { paddingHorizontal: 12, paddingTop: 16, paddingBottom: 32 },
-  menuItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', paddingVertical: 14, paddingHorizontal: 16,
-    borderRadius: 12, marginBottom: 8,
+  // Menu — single grouped card with dividers
+  menuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginTop: 12,
+    overflow: 'hidden',
+    borderWidth: 1, borderColor: '#E8EDF0',
   },
-  menuIcon: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  menuItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 14, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: '#F0F2F4',
+  },
+  menuIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
+
+  // Logout
+  logoutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: '#FFFFFF', marginBottom: 32, marginTop: 12,
+    paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: Brand.danger + '25',
+  },
+  logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
 });
-
-
-
