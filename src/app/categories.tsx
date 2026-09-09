@@ -171,7 +171,7 @@ export default function CategoriesScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           {/* Title row with profile on the right */}
           <View style={styles.titleRow}>
-            <View>
+            <View style={styles.titleTextWrap}>
               <Text style={styles.headerTitle}>Categories</Text>
               <Text style={styles.headerSub}>Browse all product categories</Text>
             </View>
@@ -403,9 +403,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+    gap: 12,
+  },
+  titleTextWrap: {
+    flex: 1,
   },
   profileBtn: {
     padding: 2,
+    flexShrink: 0,
   },
   avatarWrap: {
     width: 38,
