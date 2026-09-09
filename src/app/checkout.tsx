@@ -27,6 +27,10 @@ import { apiRequest } from '@/services/api';
 import { clearCart, getCart } from '@/services/cart';
 import { validateCoupon } from '@/services/catalog';
 import {
+  fetchPickupStations,
+  type PickUpStation,
+} from '@/services/logistics';
+import {
   checkPaymentStatus,
   fetchPaymentMethods,
   initiatePayment,
@@ -109,6 +113,16 @@ export default function CheckoutScreen() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Fulfillment method + pickup station state
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'home_delivery' | 'pickup_station'>('home_delivery');
+  const [pickupStations, setPickupStations] = useState<PickUpStation[]>([]);
+  const [pickupLoading, setPickupLoading] = useState(false);
+  const [pickupError, setPickupError] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string>('Central');
+  const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
+
+  const REGIONS = ['Central', 'Northern', 'West Nile'];
+
   const loadCheckout = useCallback(async () => {
     if (!isAuthenticated) {
       setLoading(false);
@@ -162,6 +176,26 @@ export default function CheckoutScreen() {
   useEffect(() => {
     loadCheckout();
   }, [loadCheckout]);
+
+  // Fetch pickup stations when user switches to pickup fulfillment
+  useEffect(() => {
+    if (fulfillmentMethod === 'pickup_station' && pickupStations.length === 0 && !pickupLoading) {
+      loadPickupStations();
+    }
+  }, [fulfillmentMethod, pickupStations.length, pickupLoading]);
+
+  const loadPickupStations = useCallback(async () => {
+    setPickupLoading(true);
+    setPickupError(null);
+    try {
+      const stations = await fetchPickupStations();
+      setPickupStations(stations);
+    } catch (e: any) {
+      setPickupError(e?.message || 'Failed to load pickup stations');
+    } finally {
+      setPickupLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -557,11 +591,259 @@ export default function CheckoutScreen() {
               />
             </View>
 
-            {/* Step 2: Payment Method */}
+            {/* Fulfillment Method: Home Delivery vs Pickup Station */}
             <View style={styles.stepSection}>
               <View style={styles.stepHeader}>
                 <View style={styles.stepNumber}>
                   <Text style={styles.stepNumberText}>2</Text>
+                </View>
+                <Text style={styles.stepTitle}>Delivery Method</Text>
+              </View>
+
+              <View style={styles.fulfillmentRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.fulfillmentCard,
+                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentCardSelected,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => setFulfillmentMethod('home_delivery')}
+                >
+                  <View style={[
+                    styles.fulfillmentIcon,
+                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentIconSelected,
+                  ]}>
+                    <MaterialCommunityIcons
+                      name="truck"
+                      size={22}
+                      color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
+                    />
+                  </View>
+                  <View style={styles.fulfillmentInfo}>
+                    <Text style={[
+                      styles.fulfillmentLabel,
+                      fulfillmentMethod === 'home_delivery' && styles.fulfillmentLabelSelected,
+                    ]}>Home Delivery</Text>
+                    <Text style={styles.fulfillmentSub}>Delivered to your address</Text>
+                  </View>
+                  <View style={[
+                    styles.fulfillmentRadio,
+                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentRadioSelected,
+                  ]}>
+                    {fulfillmentMethod === 'home_delivery' && <View style={styles.fulfillmentRadioDot} />}
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.fulfillmentCard,
+                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentCardSelected,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => setFulfillmentMethod('pickup_station')}
+                >
+                  <View style={[
+                    styles.fulfillmentIcon,
+                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentIconSelected,
+                  ]}>
+                    <MaterialCommunityIcons
+                      name="store"
+                      size={22}
+                      color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
+                    />
+                  </View>
+                  <View style={styles.fulfillmentInfo}>
+                    <Text style={[
+                      styles.fulfillmentLabel,
+                      fulfillmentMethod === 'pickup_station' && styles.fulfillmentLabelSelected,
+                    ]}>Pickup Station</Text>
+                    <Text style={styles.fulfillmentSub}>Collect from a nearby hub</Text>
+                  </View>
+                  <View style={[
+                    styles.fulfillmentRadio,
+                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentRadioSelected,
+                  ]}>
+                    {fulfillmentMethod === 'pickup_station' && <View style={styles.fulfillmentRadioDot} />}
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Pickup Station Selector */}
+              {fulfillmentMethod === 'pickup_station' && (
+                <View style={styles.pickupSection}>
+                  <View style={styles.pickupHeader}>
+                    <Text style={styles.pickupLabel}>Select Pickup Station</Text>
+                    <Text style={styles.pickupCount}>
+                      {pickupStations.filter(s => s.region === selectedRegion && s.is_active).length} stations
+                    </Text>
+                  </View>
+
+                  {/* Region Tabs */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.regionTabsScroll}
+                    contentContainerStyle={styles.regionTabsContent}
+                  >
+                    {REGIONS.map((region) => (
+                      <Pressable
+                        key={`region-${region}`}
+                        style={({ pressed }) => [
+                          styles.regionTab,
+                          selectedRegion === region && styles.regionTabActive,
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => setSelectedRegion(region)}
+                      >
+                        <MaterialCommunityIcons
+                          name="map-marker"
+                          size={14}
+                          color={selectedRegion === region ? Brand.primary : Brand.textTertiary}
+                        />
+                        <Text style={[
+                          styles.regionTabText,
+                          selectedRegion === region && styles.regionTabTextActive,
+                        ]}>{region}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+
+                  {/* Loading state */}
+                  {pickupLoading && (
+                    <View style={styles.pickupLoading}>
+                      <ActivityIndicator size="small" color={Brand.primary} />
+                      <Text style={styles.pickupLoadingText}>Loading stations...</Text>
+                    </View>
+                  )}
+
+                  {/* Error state */}
+                  {pickupError && !pickupLoading && (
+                    <View style={styles.pickupError}>
+                      <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Brand.danger} />
+                      <Text style={styles.pickupErrorText}>{pickupError}</Text>
+                      <Pressable style={styles.pickupRetryBtn} onPress={loadPickupStations}>
+                        <Text style={styles.pickupRetryText}>Retry</Text>
+                      </Pressable>
+                    </View>
+                  )}
+
+                  {/* Station Cards */}
+                  {!pickupLoading && !pickupError && (
+                    <View style={styles.stationList}>
+                      {pickupStations
+                        .filter(s => s.region === selectedRegion && s.is_active)
+                        .map((station) => {
+                          const selected = station.id === selectedStationId;
+                          return (
+                            <Pressable
+                              key={`station-${station.id}`}
+                              style={({ pressed }) => [
+                                styles.stationCard,
+                                selected && styles.stationCardSelected,
+                                pressed && { opacity: 0.85 },
+                              ]}
+                              onPress={() => setSelectedStationId(station.id)}
+                            >
+                              <View style={[
+                                styles.stationCardIcon,
+                                selected && styles.stationCardIconSelected,
+                              ]}>
+                                <MaterialCommunityIcons
+                                  name="store"
+                                  size={20}
+                                  color={selected ? '#FFFFFF' : Brand.primary}
+                                />
+                              </View>
+                              <View style={styles.stationCardBody}>
+                                <Text style={styles.stationCardName} numberOfLines={1}>
+                                  {station.name}
+                                </Text>
+                                <View style={styles.stationCardCityRow}>
+                                  <MaterialCommunityIcons name="map-marker-outline" size={11} color={Brand.textTertiary} />
+                                  <Text style={styles.stationCardCity} numberOfLines={1}>{station.city}</Text>
+                                </View>
+                                <View style={styles.stationCardHoursRow}>
+                                  <MaterialCommunityIcons name="clock-outline" size={11} color={Brand.textTertiary} />
+                                  <Text style={styles.stationCardHours} numberOfLines={1}>
+                                    {station.operating_hours || 'Hours not specified'}
+                                  </Text>
+                                </View>
+                              </View>
+                              {selected && (
+                                <View style={styles.stationCardCheck}>
+                                  <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
+                                </View>
+                              )}
+                            </Pressable>
+                          );
+                        })}
+                      {pickupStations.filter(s => s.region === selectedRegion && s.is_active).length === 0 && (
+                        <View style={styles.stationEmpty}>
+                          <MaterialCommunityIcons name="store-off-outline" size={32} color={Brand.textTertiary} />
+                          <Text style={styles.stationEmptyText}>
+                            No pickup stations in this region yet.
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Selected station detail */}
+                  {selectedStationId && !pickupLoading && !pickupError && (
+                    <View style={styles.stationDetail}>
+                      <View style={styles.stationDetailHeader}>
+                        <View style={styles.stationDetailIcon}>
+                          <MaterialCommunityIcons name="store" size={20} color="#FFFFFF" />
+                        </View>
+                        <View style={styles.stationDetailInfo}>
+                          <Text style={styles.stationDetailName} numberOfLines={1}>
+                            {pickupStations.find(s => s.id === selectedStationId)?.name || ''}
+                          </Text>
+                          <Text style={styles.stationDetailCity}>
+                            {pickupStations.find(s => s.id === selectedStationId)?.city || ''}
+                          </Text>
+                        </View>
+                        <Pressable
+                          style={styles.stationDetailClose}
+                          onPress={() => setSelectedStationId(null)}
+                        >
+                          <MaterialCommunityIcons name="close" size={18} color={Brand.textSecondary} />
+                        </Pressable>
+                      </View>
+                      <View style={styles.stationDetailBody}>
+                        <View style={styles.stationDetailRow}>
+                          <MaterialCommunityIcons name="map-marker" size={14} color={Brand.primary} />
+                          <Text style={styles.stationDetailText}>
+                            {pickupStations.find(s => s.id === selectedStationId)?.full_address ||
+                              pickupStations.find(s => s.id === selectedStationId)?.address_line_1 || ''}
+                          </Text>
+                        </View>
+                        <View style={styles.stationDetailRow}>
+                          <MaterialCommunityIcons name="clock-outline" size={14} color={Brand.primary} />
+                          <Text style={styles.stationDetailText}>
+                            {pickupStations.find(s => s.id === selectedStationId)?.operating_hours || 'Hours not specified'}
+                          </Text>
+                        </View>
+                        {pickupStations.find(s => s.id === selectedStationId)?.contact_number && (
+                          <View style={styles.stationDetailRow}>
+                            <MaterialCommunityIcons name="phone-outline" size={14} color={Brand.primary} />
+                            <Text style={styles.stationDetailText}>
+                              {pickupStations.find(s => s.id === selectedStationId)?.contact_number}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Step 3: Payment Method */}
+            <View style={styles.stepSection}>
+              <View style={styles.stepHeader}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>3</Text>
                 </View>
                 <Text style={styles.stepTitle}>Payment Method</Text>
               </View>
@@ -616,7 +898,7 @@ export default function CheckoutScreen() {
               )}
             </View>
 
-            {/* Step 3: Order Summary (collapsible) */}
+            {/* Step 4: Order Summary (collapsible) */}
             <View style={styles.stepSection}>
               <Pressable
                 style={({ pressed }) => [styles.summaryToggle, pressed && { opacity: 0.8 }]}
@@ -624,7 +906,7 @@ export default function CheckoutScreen() {
               >
                 <View style={styles.stepHeader}>
                   <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>3</Text>
+                    <Text style={styles.stepNumberText}>4</Text>
                   </View>
                   <Text style={styles.stepTitle}>Order Summary</Text>
                 </View>
@@ -985,6 +1267,192 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E8E8E8',
   },
+
+  // ── Fulfillment Method Cards ──────────────────────────────────
+  fulfillmentRow: { gap: Spacing.two },
+  fulfillmentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.one,
+    backgroundColor: '#FAFBFC',
+    borderWidth: 1.5,
+    borderColor: '#E8E8E8',
+    paddingVertical: Spacing.two + 2,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 14,
+  },
+  fulfillmentCardSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '08',
+    borderWidth: 2,
+  },
+  fulfillmentIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fulfillmentIconSelected: {
+    backgroundColor: Brand.primary,
+  },
+  fulfillmentInfo: { flex: 1, gap: 2 },
+  fulfillmentLabel: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  fulfillmentLabelSelected: { color: Brand.primary },
+  fulfillmentSub: { fontSize: 12, color: Brand.textTertiary },
+  fulfillmentRadio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#D0D0D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fulfillmentRadioSelected: { borderColor: Brand.primary },
+  fulfillmentRadioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Brand.primary },
+
+  // ── Pickup Station Section ────────────────────────────────────
+  pickupSection: { marginTop: Spacing.three },
+  pickupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.two,
+  },
+  pickupLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  pickupCount: {
+    fontSize: 12,
+    color: Brand.textSecondary,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+    fontWeight: '600',
+  },
+  regionTabsScroll: { marginBottom: Spacing.two + 2, flexGrow: 0 },
+  regionTabsContent: { gap: 8, paddingRight: Spacing.two },
+  regionTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF',
+  },
+  regionTabActive: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '10',
+  },
+  regionTabText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary },
+  regionTabTextActive: { color: Brand.primary },
+  pickupLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 28,
+  },
+  pickupLoadingText: { fontSize: 14, color: Brand.textTertiary },
+  pickupError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 14,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+  },
+  pickupErrorText: { flex: 1, fontSize: 13, color: '#B91C1C' },
+  pickupRetryBtn: {
+    backgroundColor: '#B91C1C',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  pickupRetryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+
+  // Station Cards
+  stationList: { gap: Spacing.two, maxHeight: 340 },
+  stationCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two + 2,
+    backgroundColor: '#FAFBFC',
+    borderWidth: 1.5,
+    borderColor: '#E8E8E8',
+    padding: Spacing.two + 2,
+    borderRadius: 12,
+  },
+  stationCardSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '06',
+    borderWidth: 2,
+  },
+  stationCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: Brand.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stationCardIconSelected: { backgroundColor: Brand.primary },
+  stationCardBody: { flex: 1, gap: 3 },
+  stationCardName: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  stationCardCityRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  stationCardCity: { fontSize: 12, color: Brand.textSecondary },
+  stationCardHoursRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  stationCardHours: { fontSize: 11, color: Brand.textTertiary },
+  stationCardCheck: { position: 'absolute', top: 10, right: 10 },
+  stationEmpty: { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  stationEmptyText: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
+
+  // Station Detail
+  stationDetail: {
+    marginTop: Spacing.two + 2,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  stationDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + 2,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + 2,
+    backgroundColor: Brand.primary + '06',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  stationDetailIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Brand.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stationDetailInfo: { flex: 1 },
+  stationDetailName: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  stationDetailCity: { fontSize: 12, color: Brand.textSecondary, marginTop: 2 },
+  stationDetailClose: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stationDetailBody: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, gap: 10 },
+  stationDetailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  stationDetailText: { flex: 1, fontSize: 13, color: Brand.textSecondary },
 
   paymentList: { gap: Spacing.two },
   paymentCard: {
