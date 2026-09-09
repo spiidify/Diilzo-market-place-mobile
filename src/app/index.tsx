@@ -1063,7 +1063,7 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.header}>
-              <DiilzoLogo size={36} />
+              <DiilzoLogo size={22} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -1117,7 +1117,7 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.header}>
-              <DiilzoLogo size={36} />
+              <DiilzoLogo size={22} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -1175,7 +1175,7 @@ export default function ProductFeedScreen() {
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.header}>
             {/* Logo on left */}
-            <DiilzoLogo size={36} />
+            <DiilzoLogo size={22} />
             {/* Cart icon — pushed to the right */}
             <Pressable
               style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
