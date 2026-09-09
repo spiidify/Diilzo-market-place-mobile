@@ -1110,7 +1110,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three - 2,
     borderWidth: 1,
     borderColor: Brand.borderLight,
-    overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1425,7 +1424,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: Spacing.two,
-    paddingHorizontal: Spacing.two + 2,
+    paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + 2,
     backgroundColor: Brand.primary + '10',
     borderRadius: RADIUS_SM,
@@ -1434,7 +1433,7 @@ const styles = StyleSheet.create({
   },
   totalBoxLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2, flexShrink: 0 },
   totalBoxLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  totalBoxValue: { flex: 1, fontSize: 16, fontWeight: '900', color: Brand.primary, textAlign: 'right', marginLeft: Spacing.two },
+  totalBoxValue: { flex: 1, fontSize: 15, fontWeight: '900', color: Brand.primary, textAlign: 'right', marginLeft: Spacing.two },
 
   summaryItems: {
     marginTop: Spacing.two,
