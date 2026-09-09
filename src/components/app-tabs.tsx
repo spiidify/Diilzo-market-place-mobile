@@ -90,6 +90,13 @@ export default function AppTabs() {
       <Tabs.Screen name="seller/earnings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/analytics" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/settings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/disputes" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/coupons" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/rfqs" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/shipping" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/shipments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/verification" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/messages" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="adminops" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="merchant-studio" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="adpulse" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />

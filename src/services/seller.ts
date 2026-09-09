@@ -259,3 +259,268 @@ export async function registerStore(data: {
     data,
   });
 }
+
+// ── Disputes ───────────────────────────────────────────────────────
+
+export interface SellerDispute {
+  id: number;
+  order_number: string;
+  reason: string;
+  description: string;
+  status: string;
+  resolution: string;
+  refund_amount: string;
+  opened_by: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface SellerDisputeDetail extends SellerDispute {
+  admin_notes: string;
+}
+
+export async function getDisputes(): Promise<SellerDispute[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/disputes/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function getDisputeDetail(id: number): Promise<SellerDisputeDetail> {
+  return apiRequest<SellerDisputeDetail>({ method: 'GET', url: `${SELLER_BASE}/${id}/dispute_detail/` });
+}
+
+export async function updateDisputeNotes(id: number, sellerNotes: string): Promise<any> {
+  return apiRequest<any>({
+    method: 'PATCH',
+    url: `${SELLER_BASE}/${id}/dispute_detail/`,
+    data: { seller_notes: sellerNotes },
+  });
+}
+
+// ── Coupons ────────────────────────────────────────────────────────
+
+export interface SellerCoupon {
+  id: number;
+  code: string;
+  discount_type: string;
+  discount_value: string;
+  min_order_amount: string;
+  max_uses: number;
+  used_count: number;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_active: boolean;
+  is_claimable: boolean;
+  created_at: string;
+}
+
+export async function getCoupons(): Promise<SellerCoupon[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/coupons/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createCoupon(payload: {
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount?: number;
+  max_uses?: number;
+  valid_from?: string;
+  valid_to?: string;
+  is_active?: boolean;
+  is_claimable?: boolean;
+}): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/coupons/`, data: payload });
+}
+
+export async function deleteCoupon(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/coupon_delete/` });
+}
+
+// ── RFQs ───────────────────────────────────────────────────────────
+
+export interface SellerRFQ {
+  id: number;
+  product_name: string;
+  quantity: number;
+  target_price: string | null;
+  quoted_price: string | null;
+  status: string;
+  buyer_email: string;
+  notes: string;
+  seller_notes: string;
+  created_at: string;
+}
+
+export interface SellerRFQDetail extends SellerRFQ {
+  quoted_total: string | null;
+}
+
+export async function getRFQs(): Promise<SellerRFQ[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/rfqs/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function getRFQDetail(id: number): Promise<SellerRFQDetail> {
+  return apiRequest<SellerRFQDetail>({ method: 'GET', url: `${SELLER_BASE}/${id}/rfq_detail/` });
+}
+
+export async function quoteRFQ(id: number, quotedPrice: number, sellerNotes: string): Promise<any> {
+  return apiRequest<any>({
+    method: 'PATCH',
+    url: `${SELLER_BASE}/${id}/rfq_detail/`,
+    data: { quoted_price: quotedPrice, seller_notes: sellerNotes },
+  });
+}
+
+// ── Shipping Methods ──────────────────────────────────────────────
+
+export interface ShippingMethod {
+  id: number;
+  name: string;
+  cost: string;
+  estimated_days: number;
+  is_active: boolean;
+}
+
+export async function getShippingMethods(): Promise<ShippingMethod[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/shipping_methods/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createShippingMethod(payload: {
+  name: string;
+  cost: number;
+  estimated_days: number;
+  is_active?: boolean;
+}): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/shipping_methods/`, data: payload });
+}
+
+export async function deleteShippingMethod(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/shipping_method_delete/` });
+}
+
+// ── Shipments ──────────────────────────────────────────────────────
+
+export interface SellerShipment {
+  id: number;
+  order_number: string;
+  carrier: string;
+  tracking_number: string;
+  status: string;
+  shipping_method: string;
+  fulfillment_type: string;
+  shipped_at: string | null;
+  estimated_delivery: string | null;
+  delivered_at: string | null;
+  created_at: string;
+}
+
+export interface SellerShipmentDetail extends SellerShipment {
+  shipping_cost: string;
+  weight_kg: string;
+}
+
+export async function getShipments(): Promise<SellerShipment[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/shipments/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function getShipmentDetail(id: number): Promise<SellerShipmentDetail> {
+  return apiRequest<SellerShipmentDetail>({ method: 'GET', url: `${SELLER_BASE}/${id}/shipment_detail/` });
+}
+
+// ── KYC / Verification ─────────────────────────────────────────────
+
+export interface SellerKYC {
+  id?: number;
+  business_name: string;
+  business_type: string;
+  trading_license_number: string;
+  tax_id: string;
+  status: string;
+  review_notes: string;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+}
+
+export interface VerificationLog {
+  id: number;
+  action: string;
+  notes: string;
+  previous_status: string;
+  new_status: string;
+  reviewed_by: string;
+  created_at: string;
+}
+
+export async function getKYC(): Promise<SellerKYC | null> {
+  try {
+    return await apiRequest<SellerKYC>({ method: 'GET', url: `${SELLER_BASE}/kyc/` });
+  } catch (e: any) {
+    if (e?.response?.status === 404) return null;
+    throw e;
+  }
+}
+
+export async function submitKYC(payload: {
+  business_name: string;
+  business_type: string;
+  trading_license_number: string;
+  tax_id: string;
+}): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/kyc/`, data: payload });
+}
+
+export async function getVerificationLogs(): Promise<VerificationLog[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/verification_logs/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+// ── Seller Messages / Chat ────────────────────────────────────────
+
+export interface SellerThread {
+  id: number;
+  buyer_name: string;
+  buyer_email: string;
+  product_name: string | null;
+  product_slug: string | null;
+  is_support: boolean;
+  unread_count: number;
+  last_message: string;
+  last_message_time: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SellerMessage {
+  id: number;
+  message: string;
+  is_me: boolean;
+  sender_name: string;
+  created_at: string;
+}
+
+export interface SellerThreadDetail {
+  thread_id: number;
+  buyer_name: string;
+  product_name: string | null;
+  messages: SellerMessage[];
+}
+
+export async function getSellerThreads(): Promise<SellerThread[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/messages/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function getSellerThreadDetail(id: number): Promise<SellerThreadDetail> {
+  return apiRequest<SellerThreadDetail>({ method: 'GET', url: `${SELLER_BASE}/${id}/message_thread/` });
+}
+
+export async function sendSellerMessage(threadId: number, message: string): Promise<any> {
+  return apiRequest<any>({
+    method: 'POST',
+    url: `${SELLER_BASE}/${threadId}/message_thread/`,
+    data: { message },
+  });
+}
