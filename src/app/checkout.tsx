@@ -871,6 +871,11 @@ export default function CheckoutScreen() {
                     </Text>
                   </View>
                 )}
+                <View style={styles.summaryTotalRow} />
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryTotalLabel}>Total</Text>
+                  <Text style={styles.summaryTotalValue}>{currency} {total.toLocaleString()}</Text>
+                </View>
               </View>
 
               {/* Expanded items */}
@@ -1090,7 +1095,7 @@ const styles = StyleSheet.create({
 
   // ── Body ────────────────────────────────────────────────────
   body: { flex: 1 },
-  bodyContent: { padding: Spacing.two + 2, paddingBottom: 100, gap: Spacing.two + 2 },
+  bodyContent: { padding: Spacing.two + 2, paddingBottom: 120, gap: Spacing.two + 2 },
 
   // ── Card (shared) ──────────────────────────────────────────
   card: {
@@ -1387,7 +1392,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Summary ────────────────────────────────────────────────
-  summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.two + 2 },
   summaryToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   summaryItemCount: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
@@ -1401,6 +1406,9 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   summaryLabel: { fontSize: 13, color: Brand.textSecondary },
   summaryValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  summaryTotalRow: { height: 1, backgroundColor: Brand.borderLight, marginVertical: 4 },
+  summaryTotalLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
+  summaryTotalValue: { fontSize: 16, fontWeight: '900', color: Brand.primary },
 
   summaryItems: {
     marginTop: Spacing.two,
