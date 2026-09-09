@@ -26,7 +26,7 @@ export function DiilzoLogo({ size = 22, variant = 'white', showSubtitle = true }
         />
       </View>
       {showSubtitle && (
-        <Text style={[styles.subtitle, { color: textColor, width: logoWidth }]}>Marketplace</Text>
+        <Text style={[styles.subtitle, { color: textColor, width: logoWidth }]} numberOfLines={1}>Marketplace</Text>
       )}
     </View>
   );
@@ -44,9 +44,9 @@ const styles = StyleSheet.create({
     aspectRatio: 3.19,
   },
   subtitle: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
-    letterSpacing: 2,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
