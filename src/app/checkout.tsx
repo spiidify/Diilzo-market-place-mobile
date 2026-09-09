@@ -111,6 +111,8 @@ export default function CheckoutScreen() {
   const [successOrder, setSuccessOrder] = useState<{ id: number; order_number: string } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const selectedMethodRef = useRef(selectedMethod);
+  selectedMethodRef.current = selectedMethod;
 
   // Fulfillment method + pickup station state
   const [fulfillmentMethod, setFulfillmentMethod] = useState<'home_delivery' | 'pickup_station'>('home_delivery');
@@ -153,7 +155,7 @@ export default function CheckoutScreen() {
       try {
         const methods = await fetchPaymentMethods();
         setPaymentMethods(methods);
-        if (methods.length > 0 && !methods.find((m) => m.method === selectedMethod)) {
+        if (methods.length > 0 && !methods.find((m) => m.method === selectedMethodRef.current)) {
           setSelectedMethod(methods[0].method);
         }
       } catch {
@@ -165,7 +167,7 @@ export default function CheckoutScreen() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, selectedMethod, user?.phone]);
+  }, [isAuthenticated, user?.phone]);
 
   useEffect(() => {
     loadCheckout();
