@@ -1062,10 +1062,8 @@ export default function ProductFeedScreen() {
       <View style={styles.screen}>
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <View style={styles.header}>
-              <View style={styles.logoBar}>
-                <DiilzoLogo size={22} variant="color" />
-              </View>
+            <View style={styles.headerBar}>
+              <DiilzoLogo size={22} variant="color" />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -1118,10 +1116,8 @@ export default function ProductFeedScreen() {
       <View style={styles.screen}>
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <View style={styles.header}>
-              <View style={styles.logoBar}>
-                <DiilzoLogo size={22} variant="color" />
-              </View>
+            <View style={styles.headerBar}>
+              <DiilzoLogo size={22} variant="color" />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
@@ -1177,12 +1173,10 @@ export default function ProductFeedScreen() {
     <View style={styles.screen}>
       <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.header}>
-            {/* Logo on white bar */}
-            <View style={styles.logoBar}>
-              <DiilzoLogo size={22} variant="color" />
-            </View>
-            {/* Cart icon on white circle */}
+          <View style={styles.headerBar}>
+            {/* Logo on left */}
+            <DiilzoLogo size={22} variant="color" />
+            {/* Cart icon */}
             <Pressable
               style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
               onPress={() => router.push('/cart')}
@@ -1194,7 +1188,7 @@ export default function ProductFeedScreen() {
                 </View>
               )}
             </Pressable>
-            {/* Notification bell on white circle */}
+            {/* Notification bell */}
             <Pressable
               style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
               onPress={() => router.push('/account')}
@@ -1273,27 +1267,20 @@ const styles = StyleSheet.create({
   },
 
   // ── Header ──────────────────────────────────────────────────────
-  header: {
+  headerBar: {
+    width: '100%',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + 2,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
-  },
-  logoBar: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
   },
   logo: {
     color: '#FFFFFF',
@@ -1312,19 +1299,9 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   cartIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: Spacing.one + 2,
     marginLeft: 'auto',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
   },
   cartBadge: {
     position: 'absolute',
@@ -1346,19 +1323,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   notifBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: Spacing.one + 2,
     marginLeft: Spacing.one,
     position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
   },
   notifBadge: {
     position: 'absolute',
@@ -1387,19 +1354,18 @@ const styles = StyleSheet.create({
     maxWidth: 140,
   },
   userName: {
-    color: '#FFFFFF',
+    color: Brand.dark,
     fontSize: 13,
     fontWeight: '600',
   },
   avatarRing: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: Brand.primary,
     padding: 1.5,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
   },
   avatar: {
     width: '100%',
