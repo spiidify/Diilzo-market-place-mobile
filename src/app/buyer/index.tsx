@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import {Image, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
@@ -163,6 +163,65 @@ export default function BuyerDashboardScreen() {
             </Pressable>
           )}
 
+          {/* Super Admin — all dashboards */}
+          {user?.is_superuser && (
+            <View style={styles.adminSection}>
+              <Text style={styles.adminSectionTitle}>Admin Access</Text>
+              <Pressable
+                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/seller' as any)}
+              >
+                <View style={[styles.adminCtaIcon, { backgroundColor: '#3B82F6' }]}>
+                  <MaterialCommunityIcons name="store-cog" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.adminCtaInfo}>
+                  <Text style={styles.adminCtaTitle}>Seller Dashboard</Text>
+                  <Text style={styles.adminCtaSub}>Manage all stores and products</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/merchant-studio' as any)}
+              >
+                <View style={[styles.adminCtaIcon, { backgroundColor: '#06B6D4' }]}>
+                  <MaterialCommunityIcons name="package-variant-closed" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.adminCtaInfo}>
+                  <Text style={styles.adminCtaTitle}>Merchant Studio</Text>
+                  <Text style={styles.adminCtaSub}>Inventory & order dispatch</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/adpulse' as any)}
+              >
+                <View style={[styles.adminCtaIcon, { backgroundColor: '#EC4899' }]}>
+                  <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.adminCtaInfo}>
+                  <Text style={styles.adminCtaTitle}>AdPulse Studio</Text>
+                  <Text style={styles.adminCtaSub}>Marketing & promotions</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/adminops' as any)}
+              >
+                <View style={[styles.adminCtaIcon, { backgroundColor: Brand.dark }]}>
+                  <MaterialCommunityIcons name="shield-crown-outline" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.adminCtaInfo}>
+                  <Text style={styles.adminCtaTitle}>AdminOps Central</Text>
+                  <Text style={styles.adminCtaSub}>Operations dashboard</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+            </View>
+          )}
+
           {/* Menu items — grouped in a single card with dividers */}
           <View style={styles.menuCard}>
             {menuItems.map((item, index) => (
@@ -310,6 +369,21 @@ const styles = StyleSheet.create({
   switchCtaInfo: { flex: 1, gap: 2 },
   switchCtaTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
   switchCtaSub: { fontSize: 13, color: Brand.textTertiary },
+
+  // ── Super Admin section ──────────────────────────────────────────
+  adminSection: { marginTop: 16, gap: 8 },
+  adminSectionTitle: { fontSize: 13, fontWeight: '800', color: Brand.textSecondary, paddingHorizontal: 4, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  adminCta: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#FFFFFF',
+    padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: '#E8EDF0',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  adminCtaIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  adminCtaInfo: { flex: 1, gap: 2 },
+  adminCtaTitle: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  adminCtaSub: { fontSize: 12, color: Brand.textTertiary },
 
   // Menu — single grouped card with dividers
   menuCard: {

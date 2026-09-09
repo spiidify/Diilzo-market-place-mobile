@@ -263,6 +263,7 @@ export interface User {
   avatar_url: string | null;
   is_active: boolean;
   is_staff: boolean;
+  is_superuser: boolean;
   has_store: boolean;
   date_joined: string;
 }
