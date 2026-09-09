@@ -9,14 +9,13 @@ import {
   Alert,
   Animated,
   KeyboardAvoidingView,
-  LayoutAnimation,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -108,7 +107,6 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [successVisible, setSuccessVisible] = useState(false);
   const [successOrder, setSuccessOrder] = useState<{ id: number; order_number: string } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -390,11 +388,6 @@ export default function CheckoutScreen() {
   const selectedOpt = PAYMENT_OPTIONS.find((o) => o.method === selectedMethod);
   const currency = cart?.items[0]?.product.currency || 'UGX';
   const itemCount = cart?.items.reduce((s, i) => s + i.quantity, 0) || 0;
-
-  const toggleSummary = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setSummaryExpanded(!summaryExpanded);
-  };
 
   const selectedStation = pickupStations.find(s => s.id === selectedStationId);
   const regionStations = pickupStations.filter(s => s.region === selectedRegion && s.is_active);
@@ -829,93 +822,80 @@ export default function CheckoutScreen() {
               )}
             </View>
 
-            {/* ── Section 4: Order Summary + Coupon ──────────────── */}
+            {/* ── Section 4: Order Summary ─────────────────────── */}
             <View style={styles.card}>
-              <Pressable
-                style={({ pressed }) => [styles.summaryToggle, pressed && { opacity: 0.8 }]}
-                onPress={toggleSummary}
-              >
-                <View style={styles.summaryToggleLeft}>
-                  <View style={styles.stepPill}>
-                    <Text style={styles.stepPillText}>4</Text>
-                  </View>
-                  <Text style={styles.cardTitle}>Order Summary</Text>
+              <View style={styles.cardHeader}>
+                <View style={styles.stepPill}>
+                  <Text style={styles.stepPillText}>4</Text>
                 </View>
-                <View style={styles.summaryToggleRight}>
-                  <View style={styles.itemCountBadge}>
-                    <Text style={styles.itemCountBadgeText}>
-                      {itemCount} {itemCount === 1 ? 'item' : 'items'}
-                    </Text>
-                  </View>
-                  <MaterialCommunityIcons
-                    name={summaryExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={Brand.textTertiary}
-                  />
+                <Text style={styles.cardTitle}>Order Summary</Text>
+                <View style={styles.itemCountBadge}>
+                  <Text style={styles.itemCountBadgeText}>
+                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                  </Text>
                 </View>
-              </Pressable>
-
-              {/* Compact summary rows */}
-              <View style={styles.summaryRows}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Subtotal</Text>
-                  <Text style={styles.summaryValue}>{currency} {subtotal.toLocaleString()}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Shipping</Text>
-                  <Text style={styles.summaryValue}>{currency} {shipping.toLocaleString()}</Text>
-                </View>
-                {discount > 0 && (
-                  <View style={styles.summaryRow}>
-                    <Text style={[styles.summaryLabel, { color: Brand.primary }]}>Discount</Text>
-                    <Text style={[styles.summaryValue, { color: Brand.primary }]}>
-                      −{currency} {discount.toLocaleString()}
-                    </Text>
-                  </View>
-                )}
               </View>
 
-              {/* Total — highlighted box with green tint background */}
-              <View style={styles.totalBox}>
-                <View style={styles.totalBoxLeft}>
-                  <MaterialCommunityIcons name="cart-outline" size={16} color={Brand.primary} />
-                  <Text style={styles.totalBoxLabel}>Total</Text>
-                </View>
-                <Text style={styles.totalBoxValue}>{currency} {total.toLocaleString()}</Text>
-              </View>
-
-              {/* Expanded items */}
-              {summaryExpanded && cart && (
-                <View style={styles.summaryItems}>
+              {/* Product list — always visible */}
+              {cart && cart.items.length > 0 && (
+                <View style={styles.productList}>
                   {cart.items.map((item) => (
-                    <View key={`ci-${item.id}`} style={styles.summaryItem}>
+                    <View key={`ci-${item.id}`} style={styles.productItem}>
                       {item.product.primary_image_url ? (
                         <Image
                           source={{ uri: item.product.primary_image_url }}
-                          style={styles.summaryItemImage}
-                          contentFit="contain"
+                          style={styles.productItemImage}
+                          contentFit="cover"
                         />
                       ) : (
-                        <View style={[styles.summaryItemImage, styles.summaryNoImage]}>
-                          <MaterialCommunityIcons name="package-variant-closed" size={14} color="#ccc" />
+                        <View style={[styles.productItemImage, styles.productNoImage]}>
+                          <MaterialCommunityIcons name="package-variant-closed" size={16} color="#bbb" />
                         </View>
                       )}
-                      <View style={styles.summaryItemInfo}>
-                        <Text style={styles.summaryItemName} numberOfLines={2}>{item.product.name}</Text>
-                        <Text style={styles.summaryItemStore} numberOfLines={1}>
-                          {item.product.store?.name || ''}
-                        </Text>
-                      </View>
-                      <View style={styles.summaryItemRight}>
-                        <Text style={styles.summaryItemQty}>×{item.quantity}</Text>
-                        <Text style={styles.summaryItemPrice}>{currency} {Number(item.total_price).toLocaleString()}</Text>
+                      <View style={styles.productItemInfo}>
+                        <Text style={styles.productItemName} numberOfLines={2}>{item.product.name}</Text>
+                        {item.product.store?.name ? (
+                          <Text style={styles.productItemStore} numberOfLines={1}>
+                            {item.product.store.name}
+                          </Text>
+                        ) : null}
+                        <View style={styles.productItemBottom}>
+                          <Text style={styles.productItemQty}>Qty {item.quantity}</Text>
+                          <Text style={styles.productItemPrice}>{currency} {Number(item.total_price).toLocaleString()}</Text>
+                        </View>
                       </View>
                     </View>
                   ))}
                 </View>
               )}
 
-              {/* Inline coupon */}
+              {/* Cost breakdown */}
+              <View style={styles.costBreakdown}>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Subtotal</Text>
+                  <Text style={styles.costValue}>{currency} {subtotal.toLocaleString()}</Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Shipping</Text>
+                  <Text style={styles.costValue}>{currency} {shipping.toLocaleString()}</Text>
+                </View>
+                {discount > 0 && (
+                  <View style={styles.costRow}>
+                    <Text style={[styles.costLabel, { color: Brand.primary }]}>Discount</Text>
+                    <Text style={[styles.costValue, { color: Brand.primary }]}>
+                      −{currency} {discount.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Total bar */}
+              <View style={styles.totalBar}>
+                <Text style={styles.totalBarLabel}>Total</Text>
+                <Text style={styles.totalBarValue}>{currency} {total.toLocaleString()}</Text>
+              </View>
+
+              {/* Coupon */}
               <View style={styles.couponRow}>
                 <View style={styles.couponInputWrap}>
                   <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={Brand.textTertiary} />
@@ -1397,9 +1377,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Summary ────────────────────────────────────────────────
-  summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.two + 2 },
-  summaryToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
   itemCountBadge: {
     backgroundColor: Brand.primary + '15',
     paddingHorizontal: 8,
@@ -1408,49 +1385,71 @@ const styles = StyleSheet.create({
   },
   itemCountBadgeText: { fontSize: 11, fontWeight: '700', color: Brand.primary },
 
-  summaryRows: {
+  // Product list — always visible
+  productList: {
+    gap: Spacing.one + 2,
+    marginBottom: Spacing.two + 2,
+  },
+  productItem: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    backgroundColor: Brand.surfaceAlt,
+    borderRadius: RADIUS_SM,
+    padding: Spacing.two,
+    borderWidth: 1,
+    borderColor: Brand.borderLight,
+  },
+  productItemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#F0F0F0',
+  },
+  productNoImage: { justifyContent: 'center', alignItems: 'center' },
+  productItemInfo: { flex: 1, gap: 2 },
+  productItemName: { fontSize: 13, fontWeight: '700', color: Brand.text, lineHeight: 16 },
+  productItemStore: { fontSize: 11, color: Brand.textTertiary },
+  productItemBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  productItemQty: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Brand.textSecondary,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  productItemPrice: { fontSize: 13, fontWeight: '800', color: Brand.primary },
+
+  // Cost breakdown
+  costBreakdown: {
     backgroundColor: Brand.surfaceAlt,
     borderRadius: RADIUS_SM,
     padding: Spacing.two + 2,
-    gap: 4,
+    gap: 5,
   },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  summaryLabel: { fontSize: 13, color: Brand.textSecondary },
-  summaryValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  costRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  costLabel: { fontSize: 13, color: Brand.textSecondary },
+  costValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
 
-  // Total box — modern highlighted with green tint
-  totalBox: {
+  // Total bar — full width green gradient feel
+  totalBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: Spacing.two,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + 2,
-    backgroundColor: Brand.primary + '10',
+    backgroundColor: Brand.primary,
     borderRadius: RADIUS_SM,
-    borderWidth: 1,
-    borderColor: Brand.primary + '25',
   },
-  totalBoxLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
-  totalBoxLabel: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  totalBoxValue: { fontSize: 15, fontWeight: '900', color: Brand.primary },
-
-  summaryItems: {
-    marginTop: Spacing.two,
-    backgroundColor: Brand.surfaceAlt,
-    borderRadius: RADIUS_SM,
-    padding: Spacing.two,
-    gap: Spacing.one + 2,
-  },
-  summaryItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
-  summaryItemImage: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#F0F0F0' },
-  summaryNoImage: { justifyContent: 'center', alignItems: 'center' },
-  summaryItemInfo: { flex: 1, gap: 1 },
-  summaryItemName: { fontSize: 12, color: Brand.text, fontWeight: '600', lineHeight: 15 },
-  summaryItemStore: { fontSize: 10, color: Brand.textTertiary },
-  summaryItemRight: { alignItems: 'flex-end', gap: 1 },
-  summaryItemQty: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
-  summaryItemPrice: { fontSize: 12, fontWeight: '700', color: Brand.text },
+  totalBarLabel: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
+  totalBarValue: { fontSize: 17, fontWeight: '900', color: '#FFFFFF' },
 
   // ── Coupon ─────────────────────────────────────────────────
   couponRow: { flexDirection: 'row', gap: Spacing.one + 2, marginTop: Spacing.two },
