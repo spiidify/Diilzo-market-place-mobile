@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -150,10 +151,10 @@ export default function CategoriesScreen() {
     return (
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.header}>
+          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
             <Text style={styles.headerTitle}>Categories</Text>
             <Text style={styles.headerSub}>Browse all product categories</Text>
-          </View>
+          </LinearGradient>
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
             <Text style={styles.loadingText}>Loading categories...</Text>
@@ -166,8 +167,8 @@ export default function CategoriesScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header with profile + search */}
-        <View style={styles.header}>
+        {/* Header with gradient + profile + search */}
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           {/* Title row with profile on the right */}
           <View style={styles.titleRow}>
             <View>
@@ -215,7 +216,7 @@ export default function CategoriesScreen() {
               </Pressable>
             )}
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Body: left menu + right content */}
         <View style={styles.body}>
@@ -388,12 +389,13 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+  safeArea: { flex: 1, backgroundColor: Brand.dark },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: Brand.primary,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   // Title row with profile on the right
   titleRow: {
@@ -423,17 +425,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarInitial: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#FFFFFF' },
+  headerTitle: { fontSize: 21, fontWeight: '900', color: '#FFFFFF' },
   headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 12,
+    paddingVertical: 9,
+    marginTop: 10,
   },
   searchInput: {
     flex: 1,
@@ -441,7 +443,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     padding: 0,
   },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F4F6' },
   loadingText: { marginTop: 8, color: Brand.primary, fontSize: 14 },
 
   // ── Body split layout ──────────────────────────────────────────
@@ -452,7 +454,7 @@ const styles = StyleSheet.create({
     width: 100,
     backgroundColor: '#FFFFFF',
     borderRightWidth: 1,
-    borderRightColor: Brand.surfaceAlt,
+    borderRightColor: '#E8EDF0',
   },
   parentList: { paddingVertical: 4, paddingHorizontal: 4 },
   parentItem: {
@@ -462,15 +464,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     position: 'relative',
     width: '100%',
+    borderRadius: 12,
   },
   parentItemActive: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: Brand.primary + '0A',
   },
   activeBar: {
     position: 'absolute',
     left: 0,
-    top: 8,
-    bottom: 8,
+    top: 10,
+    bottom: 10,
     width: 3,
     borderRadius: 3,
     backgroundColor: Brand.primary,
@@ -481,7 +484,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: Brand.border,
+    borderColor: '#E8EDF0',
   },
   parentCircleActive: {
     borderColor: Brand.primary,
@@ -511,15 +514,23 @@ const styles = StyleSheet.create({
   // ── Right panel ────────────────────────────────────────────────
   rightPanel: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#F2F4F6',
   },
   rightContent: { paddingBottom: 24 },
 
-  // ── Hero banner (replaces the old selectedHeader) ──────────────
+  // ── Hero banner ───────────────────────────────────────────────
   heroBanner: {
-    height: 120,
+    height: 110,
+    marginHorizontal: 10,
+    marginTop: 10,
+    borderRadius: 14,
     position: 'relative',
     overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
   },
   heroBg: {
     position: 'absolute',
@@ -546,10 +557,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 14,
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0,0,0,0.5)',
@@ -569,15 +580,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginHorizontal: 12,
-    marginTop: 12,
-    marginBottom: 16,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 14,
     backgroundColor: Brand.primary,
     paddingVertical: 12,
     borderRadius: 12,
-    elevation: 2,
+    elevation: 3,
     shadowColor: Brand.primary,
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
@@ -593,17 +604,17 @@ const styles = StyleSheet.create({
   subGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     gap: 10,
   },
   subCard: {
     width: SUB_CARD_WIDTH,
-    backgroundColor: '#F5F9F7',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E8F0EC',
+    borderColor: '#E8EDF0',
   },
   subCardIcon: {
     width: 48,
@@ -611,7 +622,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: '#E8EDF0',
     marginBottom: 6,
   },
   subCardImg: { width: '100%', height: '100%' },
@@ -653,14 +664,14 @@ const styles = StyleSheet.create({
 
   // ── Category products — 2 per row ──────────────────────────────
   productsSection: {
-    marginTop: 20,
-    paddingHorizontal: 12,
+    marginTop: 18,
+    paddingHorizontal: 10,
   },
   productsSectionTitle: {
     fontSize: 16,
     fontWeight: '800',
     color: Brand.text,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   productGrid: {
     flexDirection: 'row',
@@ -674,17 +685,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Brand.surfaceAlt,
+    borderColor: '#E8EDF0',
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
   },
   productImageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: '#F8FAFB',
     position: 'relative',
   },
   productImage: {
