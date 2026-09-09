@@ -270,6 +270,10 @@ export default function ChatThreadScreen() {
             contentContainerStyle={styles.messagesList}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             inverted={false}
+            maxToRenderPerBatch={15}
+            windowSize={11}
+            initialNumToRender={15}
+            removeClippedSubviews={true}
             ListEmptyComponent={
               <View style={styles.emptyChat}>
                 <MaterialCommunityIcons name="chat-outline" size={48} color={Brand.textTertiary} />

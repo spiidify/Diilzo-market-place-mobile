@@ -170,6 +170,10 @@ export default function SearchScreen() {
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList>(null);
+  // AbortController for the in-flight search request. Each new keystroke
+  // (or filter change) cancels the previous request so we never render
+  // stale results that arrive out of order on slow networks.
+  const abortRef = useRef<AbortController | null>(null);
 
   // Load trending images + recent searches on mount
   useEffect(() => {
@@ -187,6 +191,14 @@ export default function SearchScreen() {
       setPage(1);
       setHasMore(true);
     }
+    // Cancel any in-flight request before issuing a new one. This prevents
+    // stale responses from a slower prior query (e.g. "pho") from
+    // overwriting the results of a faster newer query (e.g. "phone").
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       if (reset && userRefresh) setRefreshing(true);
       else if (!reset) setLoadingMore(true);
@@ -210,7 +222,10 @@ export default function SearchScreen() {
           page_size: 20,
           ordering: sortBy || undefined,
           ...(categorySlug ? { category: categorySlug } : {}),
+          signal: controller.signal,
         });
+        // If a newer request superseded this one, drop the stale result.
+        if (controller.signal.aborted) return;
         if (reset) {
           setPinned([]);
           setSponsored([]);
@@ -230,7 +245,8 @@ export default function SearchScreen() {
         setHasMore(false);
       } else {
         // No query — browse all (with category/brand filters)
-        const data = await fetchProducts(baseParams);
+        const data = await fetchProducts({ ...baseParams, signal: controller.signal });
+        if (controller.signal.aborted) return;
         if (reset) {
           setPinned(data.pinned || []);
           setSponsored(data.sponsored || []);
@@ -241,16 +257,28 @@ export default function SearchScreen() {
         if (!reset) setPage(targetPage + 1);
       }
     } catch (e: any) {
+      // axios throws a CanceledError when the AbortController fires —
+      // that's expected, not an error to surface to the user.
+      if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED' || controller.signal.aborted) {
+        return;
+      }
       console.error('Search load error:', e?.message);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      // Only clear loading flags if this is still the active request.
+      if (abortRef.current === controller) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly]);
 
   useEffect(() => {
     load(true);
+    return () => {
+      // Cancel any in-flight search request when the screen unmounts.
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, []);
 
   // ── Debounced search (300ms) ──────────────────────────────────────
@@ -607,7 +635,7 @@ export default function SearchScreen() {
               <FlatList
                 ref={listRef}
                 data={products}
-                keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
+                keyExtractor={(item) => `${item.id}-${item.slug}`}
                 renderItem={renderProduct}
                 numColumns={2}
                 columnWrapperStyle={styles.row}

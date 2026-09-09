@@ -16,6 +16,20 @@ import type {
   StoreReview
 } from '../types';
 import { apiRequest } from './api';
+import { swr } from './cache';
+
+// TTLs for stable reference data. Categories and brands change rarely,
+// so a 30-minute TTL keeps the app feeling instant on subsequent loads
+// while still picking up admin-side changes within half an hour.
+const CATEGORIES_TTL_MS = 30 * 60 * 1000;
+const BRANDS_TTL_MS = 30 * 60 * 1000;
+
+/** Build a stable cache key that includes image-size variants so two
+ *  callers requesting different image dimensions don't collide. */
+function imageKey(prefix: string, imageSize?: { width: number; height: number }): string {
+  if (!imageSize) return `${prefix}:default`;
+  return `${prefix}:${imageSize.width}x${imageSize.height}`;
+}
 
 /** GET /api/v1/slides/ — active homepage carousel slides (optionally by position). */
 export async function fetchSlides(
@@ -30,32 +44,40 @@ export async function fetchSlides(
   return data.results || (data as any);
 }
 
-/** GET /api/v1/categories/ — fetch ALL categories in one request and build tree */
+/** GET /api/v1/categories/ — fetch ALL categories in one request and build tree.
+ *  Cached with a 30-minute TTL (stale-while-revalidate) so repeat mounts
+ *  across screens and app launches don't re-hit the API. */
 export async function fetchCategories(
   imageSize?: { width: number; height: number }
 ): Promise<Category[]> {
-  // Fetch all categories in a single request (page_size=500) to avoid
-  // making 15+ paginated calls that trigger rate limiting (429 errors)
-  const data = await apiRequest<PaginatedResponse<Category>>({
-    method: 'GET',
-    url: '/categories/',
-    params: { page_size: 500, ...imageSize },
-  });
-  const all = data.results;
+  return swr(
+    `catalog:categories:${imageKey('all', imageSize)}`,
+    CATEGORIES_TTL_MS,
+    async () => {
+      // Fetch all categories in a single request (page_size=500) to avoid
+      // making 15+ paginated calls that trigger rate limiting (429 errors)
+      const data = await apiRequest<PaginatedResponse<Category>>({
+        method: 'GET',
+        url: '/categories/',
+        params: { page_size: 500, ...imageSize },
+      });
+      const all = data.results;
 
-  // Build tree: group children under their parent
-  const parents = all.filter((c) => !c.parent);
-  const childrenByParent = new Map<number, Category[]>();
-  for (const c of all) {
-    if (c.parent) {
-      const siblings = childrenByParent.get(c.parent) || [];
-      siblings.push(c);
-      childrenByParent.set(c.parent, siblings);
+      // Build tree: group children under their parent
+      const parents = all.filter((c) => !c.parent);
+      const childrenByParent = new Map<number, Category[]>();
+      for (const c of all) {
+        if (c.parent) {
+          const siblings = childrenByParent.get(c.parent) || [];
+          siblings.push(c);
+          childrenByParent.set(c.parent, siblings);
+        }
+      }
+      return parents
+        .map((p) => ({ ...p, children: childrenByParent.get(p.id) || [] }))
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
     }
-  }
-  return parents
-    .map((p) => ({ ...p, children: childrenByParent.get(p.id) || [] }))
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name));
+  );
 }
 
 /** GET /api/v1/categories/ — single page (for lazy loading) */
@@ -67,16 +89,23 @@ export async function fetchCategoriesPage(page = 1): Promise<PaginatedResponse<C
   });
 }
 
-/** GET /api/v1/brands/ — list all brands in one request */
+/** GET /api/v1/brands/ — list all brands in one request.
+ *  Cached with a 30-minute TTL (stale-while-revalidate). */
 export async function fetchBrands(
   imageSize?: { width: number; height: number }
 ): Promise<Brand[]> {
-  const data = await apiRequest<PaginatedResponse<Brand>>({
-    method: 'GET',
-    url: '/brands/',
-    params: { page_size: 500, ...imageSize },
-  });
-  return data.results.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
+  return swr(
+    `catalog:brands:${imageKey('all', imageSize)}`,
+    BRANDS_TTL_MS,
+    async () => {
+      const data = await apiRequest<PaginatedResponse<Brand>>({
+        method: 'GET',
+        url: '/brands/',
+        params: { page_size: 500, ...imageSize },
+      });
+      return data.results.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
+    }
+  );
 }
 
 /** GET /api/v1/brands/ — top brands (with products) for homepage showcase */

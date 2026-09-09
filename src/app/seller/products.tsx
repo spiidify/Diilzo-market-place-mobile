@@ -193,6 +193,10 @@ export default function SellerProductsScreen() {
             keyExtractor={(item) => `${item.id}`}
             renderItem={renderItem}
             contentContainerStyle={styles.list}
+            maxToRenderPerBatch={8}
+            windowSize={9}
+            initialNumToRender={8}
+            removeClippedSubviews={true}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
           />
         )}

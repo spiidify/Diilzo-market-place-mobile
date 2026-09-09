@@ -223,10 +223,14 @@ export default function CategoriesScreen() {
           <View style={styles.leftPanel}>
             <FlatList
               data={filteredCategories}
-              keyExtractor={(item, index) => `parent-${item.id}-${item.slug}-${index}`}
+              keyExtractor={(item) => `parent-${item.id}-${item.slug}`}
               renderItem={renderParent}
               contentContainerStyle={styles.parentList}
               showsVerticalScrollIndicator={false}
+              maxToRenderPerBatch={10}
+              windowSize={11}
+              initialNumToRender={10}
+              removeClippedSubviews={true}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}

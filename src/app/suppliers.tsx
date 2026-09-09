@@ -400,7 +400,7 @@ export default function SuppliersScreen() {
           <FlatList
             ref={listRef}
             data={stores}
-            keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
+            keyExtractor={(item) => `${item.id}-${item.slug}`}
             renderItem={renderStore}
             contentContainerStyle={styles.list}
             maxToRenderPerBatch={4}

@@ -42,19 +42,54 @@ const TOKEN_TIMESTAMP_KEY = 'diilzo_token_timestamp';
 // ── Session timeout (30 minutes of inactivity) ───────────────────
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
+// ── In-memory token cache ─────────────────────────────────────────
+// SecureStore reads go through the native keychain/keystore, which is
+// slow relative to an in-memory read. The request interceptor calls
+// getAccessToken() on EVERY API call — with 10+ parallel requests on
+// home-screen mount, that's 10+ native keychain round-trips just to
+// read the same token. Cache it in memory after the first load and
+// keep it in sync on every write (setTokens/clearTokens/touchSession)
+// so behavior is identical, just without the repeated native calls.
+let memCache: { accessToken: string | null; refreshToken: string | null; timestamp: number | null } | null = null;
+let memCacheLoadPromise: Promise<void> | null = null;
+
+async function ensureMemCacheLoaded(): Promise<void> {
+  if (memCache) return;
+  if (!memCacheLoadPromise) {
+    memCacheLoadPromise = (async () => {
+      try {
+        const [accessToken, refreshToken, timestampStr] = await Promise.all([
+          SecureStore.getItemAsync(ACCESS_TOKEN_KEY),
+          SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
+          SecureStore.getItemAsync(TOKEN_TIMESTAMP_KEY),
+        ]);
+        memCache = {
+          accessToken,
+          refreshToken,
+          timestamp: timestampStr ? parseInt(timestampStr, 10) : null,
+        };
+      } catch {
+        memCache = { accessToken: null, refreshToken: null, timestamp: null };
+      }
+    })();
+  }
+  await memCacheLoadPromise;
+}
+
 export async function getAccessToken(): Promise<string | null> {
   try {
-    // Check session timeout
-    const timestamp = await SecureStore.getItemAsync(TOKEN_TIMESTAMP_KEY);
-    if (timestamp) {
-      const elapsed = Date.now() - parseInt(timestamp, 10);
+    await ensureMemCacheLoaded();
+    if (!memCache) return null;
+    // Check session timeout using the cached timestamp (no SecureStore read)
+    if (memCache.timestamp) {
+      const elapsed = Date.now() - memCache.timestamp;
       if (elapsed > SESSION_TIMEOUT_MS) {
         // Session expired — clear tokens
         await clearTokens();
         return null;
       }
     }
-    return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+    return memCache.accessToken;
   } catch {
     return null;
   }
@@ -62,13 +97,15 @@ export async function getAccessToken(): Promise<string | null> {
 
 export async function getRefreshToken(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    await ensureMemCacheLoaded();
+    return memCache?.refreshToken ?? null;
   } catch {
     return null;
   }
 }
 
 export async function setTokens(access: string, refresh: string): Promise<void> {
+  const timestamp = Date.now();
   // SECURITY: Require authentication for SecureStore on Android
   await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -76,21 +113,25 @@ export async function setTokens(access: string, refresh: string): Promise<void> 
   await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
-  await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, Date.now().toString());
+  await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, timestamp.toString());
+  memCache = { accessToken: access, refreshToken: refresh, timestamp };
 }
 
 export async function clearTokens(): Promise<void> {
   await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
   await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
   await SecureStore.deleteItemAsync(TOKEN_TIMESTAMP_KEY);
+  memCache = { accessToken: null, refreshToken: null, timestamp: null };
 }
 
 /** Update the session timestamp on activity (call from app state change). */
 export async function touchSession(): Promise<void> {
   try {
-    const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
-    if (token) {
-      await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, Date.now().toString());
+    await ensureMemCacheLoaded();
+    if (memCache?.accessToken) {
+      const timestamp = Date.now();
+      await SecureStore.setItemAsync(TOKEN_TIMESTAMP_KEY, timestamp.toString());
+      memCache.timestamp = timestamp;
     }
   } catch {
     // ignore

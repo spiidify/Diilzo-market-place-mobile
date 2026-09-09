@@ -93,7 +93,11 @@ export default function SellerEarningsScreen() {
         ) : (
           <FlatList
             data={data?.ledger || []}
-            keyExtractor={(item, idx) => `${item.id}-${idx}`}
+            keyExtractor={(item) => `${item.id}`}
+            maxToRenderPerBatch={10}
+            windowSize={11}
+            initialNumToRender={10}
+            removeClippedSubviews={true}
             renderItem={renderLedgerItem}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListHeaderComponent={

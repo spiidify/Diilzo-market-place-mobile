@@ -405,7 +405,7 @@ export default function VideosScreen() {
       <FlatList
         ref={listRef}
         data={products}
-        keyExtractor={(item, index) => `video-${item.id}-${item.slug}-${index}`}
+        keyExtractor={(item) => `video-${item.id}-${item.slug}`}
         renderItem={renderVideoItem}
         extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
         pagingEnabled
@@ -414,6 +414,10 @@ export default function VideosScreen() {
         viewabilityConfig={viewabilityConfig}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        initialNumToRender={3}
+        removeClippedSubviews={false}
         onScrollToIndexFailed={({ index, averageItemLength }) => {
           listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
         }}

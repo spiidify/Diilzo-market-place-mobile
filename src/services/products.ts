@@ -21,6 +21,8 @@ export interface ProductListParams {
   /** Cloudinary image optimization dimensions (physical pixels) */
   width?: number;
   height?: number;
+  /** Optional AbortSignal to cancel the underlying axios request. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -29,10 +31,12 @@ export interface ProductListParams {
  * Returns pinned, sponsored, and organic results sections.
  */
 export async function fetchProducts(params: ProductListParams = {}): Promise<ProductFeedResponse & PaginatedResponse<Product>> {
+  const { signal, ...queryParams } = params;
   const data = await apiRequest<ProductFeedResponse & PaginatedResponse<Product>>({
     method: 'GET',
     url: '/products/',
-    params,
+    params: queryParams,
+    signal,
   });
   // Ensure pinned/sponsored arrays exist (backward compat with older API)
   if (!data.pinned) data.pinned = [];
@@ -77,6 +81,8 @@ export interface ESSearchParams {
   page?: number;
   page_size?: number;
   ordering?: string;     // -created_at, price, -price, rating
+  /** Optional AbortSignal to cancel the underlying axios request. */
+  signal?: AbortSignal;
 }
 
 export interface ESSearchResult {
@@ -95,10 +101,12 @@ export interface ESSearchResult {
  * Falls back to ORM on the backend if Elasticsearch is unavailable.
  */
 export async function esSearchProducts(params: ESSearchParams = {}): Promise<ESSearchResult> {
+  const { signal, ...queryParams } = params;
   return apiRequest<ESSearchResult>({
     method: 'GET',
     url: '/search/',
-    params,
+    params: queryParams,
+    signal,
   });
 }
 

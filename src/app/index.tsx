@@ -671,12 +671,16 @@ export default function ProductFeedScreen() {
     }
   }, [isAuthenticated]);
 
-  // Refresh cart count every time the home screen gains focus (real-time)
+  // Refresh cart count, chat unread, and notification count every time
+  // the home screen gains focus. The three requests are independent so
+  // we fan them out in parallel via Promise.all — this avoids serial
+  // round-trips that add up on slow networks.
   useFocusEffect(
     useCallback(() => {
+      // refreshCartCount comes from useCart(); it's sync-ish but we still
+      // kick it off alongside the two async badge fetches.
       refreshCartCount();
-      loadChatUnread();
-      loadNotificationCount();
+      Promise.all([loadChatUnread(), loadNotificationCount()]).catch(() => { });
     }, [refreshCartCount, loadChatUnread, loadNotificationCount])
   );
 
@@ -1247,7 +1251,7 @@ export default function ProductFeedScreen() {
       <FlatList
         ref={flatListRef}
         data={products}
-        keyExtractor={(item, index) => `${item.id}-${item.slug}-${index}`}
+        keyExtractor={(item) => `${item.id}-${item.slug}`}
         renderItem={renderProduct}
         numColumns={2}
         columnWrapperStyle={styles.row}

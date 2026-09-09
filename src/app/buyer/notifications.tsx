@@ -203,6 +203,10 @@ export default function NotificationsScreen() {
             keyExtractor={(item) => `${item.id}`}
             renderItem={renderItem}
             contentContainerStyle={styles.list}
+            maxToRenderPerBatch={10}
+            windowSize={11}
+            initialNumToRender={10}
+            removeClippedSubviews={true}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
