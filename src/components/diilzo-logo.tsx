@@ -26,7 +26,7 @@ export function DiilzoLogo({ size = 22, variant = 'white', showSubtitle = true }
         />
       </View>
       {showSubtitle && (
-        <Text style={[styles.subtitle, { color: textColor, width: logoWidth }]} numberOfLines={1}>Marketplace</Text>
+        <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>Marketplace</Text>
       )}
     </View>
   );
