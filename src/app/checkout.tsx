@@ -835,7 +835,7 @@ export default function CheckoutScreen() {
                 style={({ pressed }) => [styles.summaryToggle, pressed && { opacity: 0.8 }]}
                 onPress={toggleSummary}
               >
-                <View style={styles.cardHeader}>
+                <View style={styles.summaryToggleLeft}>
                   <View style={styles.stepPill}>
                     <Text style={styles.stepPillText}>4</Text>
                   </View>
@@ -1099,6 +1099,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three - 2,
     borderWidth: 1,
     borderColor: Brand.borderLight,
+    overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1275,7 +1276,7 @@ const styles = StyleSheet.create({
   pickupRetryText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
 
   // Station cards
-  stationList: { gap: Spacing.one + 2, maxHeight: 300 },
+  stationList: { gap: Spacing.one + 2 },
   stationCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1387,6 +1388,7 @@ const styles = StyleSheet.create({
 
   // ── Summary ────────────────────────────────────────────────
   summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   summaryItemCount: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
 
