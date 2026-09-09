@@ -182,7 +182,7 @@ export default function CategoriesScreen() {
               {isAuthenticated && user ? (
                 <View style={styles.avatarWrap}>
                   {user.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
                   ) : (
                     <View style={styles.avatarFallback}>
                       <Text style={styles.avatarInitial}>
@@ -419,13 +419,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.4)',
+    padding: 1.5,
   },
-  avatar: { width: '100%', height: '100%' },
+  avatar: { width: '100%', height: '100%', borderRadius: 17 },
   avatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: '100%',
+    height: '100%',
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },

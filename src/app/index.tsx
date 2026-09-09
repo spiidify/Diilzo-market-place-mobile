@@ -1112,13 +1112,15 @@ export default function ProductFeedScreen() {
                 <Text style={styles.userName} numberOfLines={1}>
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
-                {isAuthenticated && user?.avatar_url ? (
-                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                  </View>
-                )}
+                <View style={styles.avatarRing}>
+                  {isAuthenticated && user?.avatar_url ? (
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
               </Pressable>
             </View>
           </SafeAreaView>
@@ -1175,13 +1177,15 @@ export default function ProductFeedScreen() {
                 <Text style={styles.userName} numberOfLines={1}>
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
-                {isAuthenticated && user?.avatar_url ? (
-                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                  </View>
-                )}
+                <View style={styles.avatarRing}>
+                  {isAuthenticated && user?.avatar_url ? (
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                    </View>
+                  )}
+                </View>
               </Pressable>
             </View>
           </SafeAreaView>
@@ -1246,13 +1250,15 @@ export default function ProductFeedScreen() {
               <Text style={styles.userName} numberOfLines={1}>
                 {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
               </Text>
-              {isAuthenticated && user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                </View>
-              )}
+              <View style={styles.avatarRing}>
+                {isAuthenticated && user?.avatar_url ? (
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <MaterialCommunityIcons name="account" size={18} color="#FFFFFF" />
+                  </View>
+                )}
+              </View>
             </Pressable>
           </View>
         </SafeAreaView >
@@ -1397,20 +1403,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  avatarRing: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: 'rgba(255,255,255,0.4)',
+    padding: 1.5,
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
   },
   avatarPlaceholder: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Brand.darkLight,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
