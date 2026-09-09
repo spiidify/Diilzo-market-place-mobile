@@ -44,24 +44,35 @@ export async function fetchSlides(
   return data.results || (data as any);
 }
 
-/** GET /api/v1/categories/ — fetch ALL categories in one request and build tree.
- *  Cached with a 30-minute TTL (stale-while-revalidate) so repeat mounts
- *  across screens and app launches don't re-hit the API. */
+/** GET /api/v1/categories/ — fetch ALL categories and build tree.
+ *  Paginates through every page to ensure the complete tree is built
+ *  regardless of the backend's max_page_size cap. Cached with a
+ *  30-minute TTL (stale-while-revalidate) so repeat mounts across
+ *  screens and app launches don't re-hit the API. */
 export async function fetchCategories(
   imageSize?: { width: number; height: number }
 ): Promise<Category[]> {
   return swr(
-    `catalog:categories:${imageKey('all', imageSize)}`,
+    `catalog:categories:v2:${imageKey('all', imageSize)}`,
     CATEGORIES_TTL_MS,
     async () => {
-      // Fetch all categories in a single request (page_size=500) to avoid
-      // making 15+ paginated calls that trigger rate limiting (429 errors)
-      const data = await apiRequest<PaginatedResponse<Category>>({
-        method: 'GET',
-        url: '/categories/',
-        params: { page_size: 500, ...imageSize },
-      });
-      const all = data.results;
+      // Fetch all categories, paginating until we've collected every page.
+      // The backend may cap page_size (e.g. at 100), so we follow the
+      // `next` cursor to ensure no parents or children are missed.
+      const all: Category[] = [];
+      let page = 1;
+      let next: string | null = null;
+      do {
+        const data = await apiRequest<PaginatedResponse<Category>>({
+          method: 'GET',
+          url: '/categories/',
+          params: { page_size: 500, page, ...imageSize },
+        });
+        all.push(...(data.results || []));
+        next = data.next;
+        page += 1;
+        // Safety guard: never loop more than 20 pages (10,000 categories)
+      } while (next && page < 20);
 
       // Build tree: group children under their parent
       const parents = all.filter((c) => !c.parent);
@@ -89,21 +100,29 @@ export async function fetchCategoriesPage(page = 1): Promise<PaginatedResponse<C
   });
 }
 
-/** GET /api/v1/brands/ — list all brands in one request.
+/** GET /api/v1/brands/ — list all brands, paginating through every page.
  *  Cached with a 30-minute TTL (stale-while-revalidate). */
 export async function fetchBrands(
   imageSize?: { width: number; height: number }
 ): Promise<Brand[]> {
   return swr(
-    `catalog:brands:${imageKey('all', imageSize)}`,
+    `catalog:brands:v2:${imageKey('all', imageSize)}`,
     BRANDS_TTL_MS,
     async () => {
-      const data = await apiRequest<PaginatedResponse<Brand>>({
-        method: 'GET',
-        url: '/brands/',
-        params: { page_size: 500, ...imageSize },
-      });
-      return data.results.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
+      const all: Brand[] = [];
+      let page = 1;
+      let next: string | null = null;
+      do {
+        const data = await apiRequest<PaginatedResponse<Brand>>({
+          method: 'GET',
+          url: '/brands/',
+          params: { page_size: 500, page, ...imageSize },
+        });
+        all.push(...(data.results || []));
+        next = data.next;
+        page += 1;
+      } while (next && page < 20);
+      return all.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
     }
   );
 }
