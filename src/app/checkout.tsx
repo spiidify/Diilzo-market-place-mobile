@@ -54,7 +54,7 @@ const PAYMENT_OPTIONS: {
       icon: 'cellphone',
       requiresPhone: true,
       color: '#FFCC00',
-      bgColor: '#FFCC0015',
+      bgColor: '#FFCC0012',
     },
     {
       method: 'airtel_money',
@@ -63,7 +63,7 @@ const PAYMENT_OPTIONS: {
       icon: 'cellphone-link',
       requiresPhone: true,
       color: '#E40000',
-      bgColor: '#E4000015',
+      bgColor: '#E4000012',
     },
     {
       method: 'paypal',
@@ -72,7 +72,7 @@ const PAYMENT_OPTIONS: {
       icon: 'credit-card-outline',
       requiresPhone: false,
       color: '#003087',
-      bgColor: '#00308715',
+      bgColor: '#00308712',
     },
     {
       method: 'cod',
@@ -81,12 +81,13 @@ const PAYMENT_OPTIONS: {
       icon: 'cash',
       requiresPhone: false,
       color: Brand.primary,
-      bgColor: Brand.primary + '15',
+      bgColor: Brand.primary + '12',
     },
   ];
 
 const SHIPPING_FEE = 5000;
 const TAX_RATE = 0.0;
+const REGIONS = ['Central', 'Northern', 'West Nile'];
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -121,8 +122,6 @@ export default function CheckoutScreen() {
   const [selectedRegion, setSelectedRegion] = useState<string>('Central');
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
 
-  const REGIONS = ['Central', 'Northern', 'West Nile'];
-
   const loadCheckout = useCallback(async () => {
     if (!isAuthenticated) {
       setLoading(false);
@@ -132,7 +131,6 @@ export default function CheckoutScreen() {
       setLoading(true);
       setError(null);
 
-      // Load cart independently - failure here shouldn't break the whole page
       try {
         const cartData = await getCart();
         setCart(cartData);
@@ -141,7 +139,6 @@ export default function CheckoutScreen() {
         setCart({ id: 0, items: [], total_items: 0, total_price: '0', created_at: '', updated_at: '' } as CartType);
       }
 
-      // Load addresses independently
       try {
         const raw = await apiRequest<{ results: Address[] } | Address[]>({ method: 'GET', url: '/auth/addresses/' });
         const addrData = Array.isArray(raw) ? raw : (raw.results || []);
@@ -155,7 +152,6 @@ export default function CheckoutScreen() {
 
       if (user?.phone) setPhoneNumber(user.phone);
 
-      // Payment methods are optional - fallback to hardcoded options
       try {
         const methods = await fetchPaymentMethods();
         setPaymentMethods(methods);
@@ -236,25 +232,25 @@ export default function CheckoutScreen() {
       if (result.min_order_amount && subtotal < result.min_order_amount) {
         setCouponMsg({
           type: 'error',
-          text: `Minimum order UGX ${result.min_order_amount.toLocaleString()} required`,
+          text: `Min order UGX ${result.min_order_amount.toLocaleString()}`,
         });
         setDiscount(0);
       } else {
         setDiscount(calcDiscount);
         setCouponMsg({
           type: 'success',
-          text: `Coupon applied - UGX ${calcDiscount.toLocaleString()} off`,
+          text: `−UGX ${calcDiscount.toLocaleString()} applied`,
         });
       }
     } catch (e: any) {
       setDiscount(0);
       const status = e?.response?.status;
       if (status === 401) {
-        setCouponMsg({ type: 'error', text: 'Please sign in again to use coupons' });
+        setCouponMsg({ type: 'error', text: 'Sign in again to use coupons' });
       } else if (status === 404) {
-        setCouponMsg({ type: 'error', text: 'Invalid or expired coupon code' });
+        setCouponMsg({ type: 'error', text: 'Invalid or expired code' });
       } else {
-        setCouponMsg({ type: 'error', text: e?.message || 'Failed to validate coupon' });
+        setCouponMsg({ type: 'error', text: e?.message || 'Failed to validate' });
       }
     } finally {
       setCouponLoading(false);
@@ -280,7 +276,6 @@ export default function CheckoutScreen() {
     setPlacing(true);
     setError(null);
     try {
-      // Send the full shipping_address dict — the backend expects this, not address_id
       const shippingAddress = {
         street: selectedAddr.street || '',
         city: selectedAddr.city || '',
@@ -299,7 +294,6 @@ export default function CheckoutScreen() {
         },
       });
 
-      // Initiate payment as a separate step
       try {
         const initResult = await initiatePayment({
           order_id: order.id,
@@ -327,7 +321,6 @@ export default function CheckoutScreen() {
           showSuccess(order);
         }
       } catch (payErr: any) {
-        // Order was created but payment failed — still clear cart and show order
         const payStatus = payErr?.response?.status;
         let payMsg = payErr?.response?.data?.detail || payErr?.message || 'Payment could not be initiated.';
         if (payStatus === 400) {
@@ -403,25 +396,31 @@ export default function CheckoutScreen() {
     setSummaryExpanded(!summaryExpanded);
   };
 
+  const selectedStation = pickupStations.find(s => s.id === selectedStationId);
+  const regionStations = pickupStations.filter(s => s.region === selectedRegion && s.is_active);
+
+  // ── Header ──────────────────────────────────────────────────────
   const renderHeader = () => (
     <LinearGradient
-      colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+      colors={[Brand.dark, Brand.accent, Brand.primary]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.header}
     >
       <Pressable onPress={() => router.back()} hitSlop={12}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+        <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
       </Pressable>
       <View style={styles.headerCenter}>
         <Text style={styles.headerTitle}>Checkout</Text>
-        <Text style={styles.headerSub}>{itemCount} {itemCount === 1 ? 'item' : 'items'}</Text>
+        <Text style={styles.headerSub}>{itemCount} {itemCount === 1 ? 'item' : 'items'} · {currency} {subtotal.toLocaleString()}</Text>
       </View>
-      <View style={{ width: 24 }} />
+      <View style={styles.headerBadge}>
+        <MaterialCommunityIcons name="shield-check-outline" size={16} color="#FFFFFF" />
+      </View>
     </LinearGradient>
   );
 
-  // Loading state
+  // ── Loading state ────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.screen}>
@@ -436,7 +435,7 @@ export default function CheckoutScreen() {
     );
   }
 
-  // Sign-in required state
+  // ── Sign-in required ─────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <View style={styles.screen}>
@@ -444,7 +443,7 @@ export default function CheckoutScreen() {
           {renderHeader()}
           <View style={styles.centerBody}>
             <View style={styles.lockCircle}>
-              <MaterialCommunityIcons name="lock-outline" size={48} color="#FFFFFF" />
+              <MaterialCommunityIcons name="lock-outline" size={40} color="#FFFFFF" />
             </View>
             <Text style={styles.errorText}>Sign In Required</Text>
             <Text style={styles.loadingText}>
@@ -454,7 +453,7 @@ export default function CheckoutScreen() {
               style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
               onPress={() => router.push('/(auth)/login' as any)}
             >
-              <MaterialCommunityIcons name="login" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="login" size={18} color="#FFFFFF" />
               <Text style={styles.primaryBtnText}>Sign In</Text>
             </Pressable>
             <Pressable
@@ -469,14 +468,14 @@ export default function CheckoutScreen() {
     );
   }
 
-  // Error state (only if everything failed)
+  // ── Error state ──────────────────────────────────────────────────
   if (error && !cart) {
     return (
       <View style={styles.screen}>
         <SafeAreaView edges={['top']} style={styles.safeArea}>
           {renderHeader()}
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={56} color={Brand.danger} />
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
             <Text style={styles.errorText}>{error}</Text>
             <Pressable
               style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
@@ -505,19 +504,19 @@ export default function CheckoutScreen() {
             contentContainerStyle={styles.bodyContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Step 1: Delivery Address */}
-            <View style={styles.stepSection}>
-              <View style={styles.stepHeader}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>1</Text>
+            {/* ── Section 1: Delivery Address + Notes ─────────────── */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.stepPill}>
+                  <Text style={styles.stepPillText}>1</Text>
                 </View>
-                <Text style={styles.stepTitle}>Delivery Address</Text>
+                <Text style={styles.cardTitle}>Delivery Address</Text>
                 {addresses.length > 0 && (
                   <Pressable
-                    style={styles.stepAddBtn}
+                    style={styles.cardAction}
                     onPress={() => router.push('/buyer/addresses' as any)}
                   >
-                    <MaterialCommunityIcons name="plus" size={18} color={Brand.primary} />
+                    <MaterialCommunityIcons name="plus" size={16} color={Brand.primary} />
                   </Pressable>
                 )}
               </View>
@@ -527,9 +526,7 @@ export default function CheckoutScreen() {
                   style={({ pressed }) => [styles.addAddressCard, pressed && { opacity: 0.7 }]}
                   onPress={() => router.push('/buyer/addresses' as any)}
                 >
-                  <View style={styles.addAddressIcon}>
-                    <MaterialCommunityIcons name="map-marker-plus" size={32} color={Brand.primary} />
-                  </View>
+                  <MaterialCommunityIcons name="map-marker-plus" size={28} color={Brand.primary} />
                   <Text style={styles.addAddressTitle}>Add a delivery address</Text>
                   <Text style={styles.addAddressSub}>Tap here to add your first address</Text>
                 </Pressable>
@@ -547,15 +544,14 @@ export default function CheckoutScreen() {
                         ]}
                         onPress={() => setSelectedAddressId(addr.id)}
                       >
-                        <View style={styles.addressRadio}>
-                          {selected && <View style={styles.addressRadioDot} />}
+                        <View style={[styles.radio, selected && styles.radioSelected]}>
+                          {selected && <View style={styles.radioDot} />}
                         </View>
                         <View style={styles.addressInfo}>
                           <View style={styles.addressLabelRow}>
                             <Text style={styles.addressLabel}>{addr.label}</Text>
                             {addr.is_default && (
                               <View style={styles.defaultBadge}>
-                                <MaterialCommunityIcons name="star" size={10} color="#FFFFFF" />
                                 <Text style={styles.defaultBadgeText}>Default</Text>
                               </View>
                             )}
@@ -563,9 +559,8 @@ export default function CheckoutScreen() {
                           <Text style={styles.addressText} numberOfLines={2}>
                             {addr.street}, {addr.city}, {addr.state}
                           </Text>
-                          <Text style={styles.addressCountry}>{addr.country}</Text>
                           <View style={styles.addressPhoneRow}>
-                            <MaterialCommunityIcons name="phone-outline" size={13} color={Brand.primary} />
+                            <MaterialCommunityIcons name="phone-outline" size={11} color={Brand.primary} />
                             <Text style={styles.addressPhone}>{addr.phone}</Text>
                           </View>
                         </View>
@@ -574,110 +569,74 @@ export default function CheckoutScreen() {
                   })}
                 </View>
               )}
+
+              {/* Inline delivery notes */}
+              <View style={styles.notesWrap}>
+                <MaterialCommunityIcons name="note-text-outline" size={16} color={Brand.textTertiary} />
+                <TextInput
+                  style={styles.notesInput}
+                  placeholder="Delivery notes (optional)..."
+                  placeholderTextColor={Brand.textTertiary}
+                  value={orderNote}
+                  onChangeText={setOrderNote}
+                  maxLength={200}
+                />
+              </View>
             </View>
 
-            {/* Delivery notes */}
-            <View style={styles.noteSection}>
-              <Text style={styles.noteLabel}>Delivery notes (optional)</Text>
-              <TextInput
-                style={styles.noteInput}
-                placeholder="e.g. Call me when you arrive, leave at the gate..."
-                placeholderTextColor={Brand.textTertiary}
-                value={orderNote}
-                onChangeText={setOrderNote}
-                multiline
-                maxLength={200}
-                textAlignVertical="top"
-              />
-            </View>
-
-            {/* Fulfillment Method: Home Delivery vs Pickup Station */}
-            <View style={styles.stepSection}>
-              <View style={styles.stepHeader}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>2</Text>
+            {/* ── Section 2: Delivery Method + Pickup Station ─────── */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.stepPill}>
+                  <Text style={styles.stepPillText}>2</Text>
                 </View>
-                <Text style={styles.stepTitle}>Delivery Method</Text>
+                <Text style={styles.cardTitle}>Delivery Method</Text>
               </View>
 
+              {/* Fulfillment toggle — compact horizontal pills */}
               <View style={styles.fulfillmentRow}>
                 <Pressable
                   style={({ pressed }) => [
-                    styles.fulfillmentCard,
-                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentCardSelected,
+                    styles.fulfillmentPill,
+                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillActive,
                     pressed && { opacity: 0.85 },
                   ]}
                   onPress={() => setFulfillmentMethod('home_delivery')}
                 >
-                  <View style={[
-                    styles.fulfillmentIcon,
-                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentIconSelected,
-                  ]}>
-                    <MaterialCommunityIcons
-                      name="truck"
-                      size={22}
-                      color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
-                    />
-                  </View>
-                  <View style={styles.fulfillmentInfo}>
-                    <Text style={[
-                      styles.fulfillmentLabel,
-                      fulfillmentMethod === 'home_delivery' && styles.fulfillmentLabelSelected,
-                    ]}>Home Delivery</Text>
-                    <Text style={styles.fulfillmentSub}>Delivered to your address</Text>
-                  </View>
-                  <View style={[
-                    styles.fulfillmentRadio,
-                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentRadioSelected,
-                  ]}>
-                    {fulfillmentMethod === 'home_delivery' && <View style={styles.fulfillmentRadioDot} />}
-                  </View>
+                  <MaterialCommunityIcons
+                    name="truck"
+                    size={18}
+                    color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
+                  />
+                  <Text style={[
+                    styles.fulfillmentPillText,
+                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillTextActive,
+                  ]}>Home Delivery</Text>
                 </Pressable>
 
                 <Pressable
                   style={({ pressed }) => [
-                    styles.fulfillmentCard,
-                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentCardSelected,
+                    styles.fulfillmentPill,
+                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillActive,
                     pressed && { opacity: 0.85 },
                   ]}
                   onPress={() => setFulfillmentMethod('pickup_station')}
                 >
-                  <View style={[
-                    styles.fulfillmentIcon,
-                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentIconSelected,
-                  ]}>
-                    <MaterialCommunityIcons
-                      name="store"
-                      size={22}
-                      color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
-                    />
-                  </View>
-                  <View style={styles.fulfillmentInfo}>
-                    <Text style={[
-                      styles.fulfillmentLabel,
-                      fulfillmentMethod === 'pickup_station' && styles.fulfillmentLabelSelected,
-                    ]}>Pickup Station</Text>
-                    <Text style={styles.fulfillmentSub}>Collect from a nearby hub</Text>
-                  </View>
-                  <View style={[
-                    styles.fulfillmentRadio,
-                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentRadioSelected,
-                  ]}>
-                    {fulfillmentMethod === 'pickup_station' && <View style={styles.fulfillmentRadioDot} />}
-                  </View>
+                  <MaterialCommunityIcons
+                    name="store"
+                    size={18}
+                    color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
+                  />
+                  <Text style={[
+                    styles.fulfillmentPillText,
+                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillTextActive,
+                  ]}>Pickup Station</Text>
                 </Pressable>
               </View>
 
               {/* Pickup Station Selector */}
               {fulfillmentMethod === 'pickup_station' && (
                 <View style={styles.pickupSection}>
-                  <View style={styles.pickupHeader}>
-                    <Text style={styles.pickupLabel}>Select Pickup Station</Text>
-                    <Text style={styles.pickupCount}>
-                      {pickupStations.filter(s => s.region === selectedRegion && s.is_active).length} stations
-                    </Text>
-                  </View>
-
                   {/* Region Tabs */}
                   <ScrollView
                     horizontal
@@ -697,8 +656,8 @@ export default function CheckoutScreen() {
                       >
                         <MaterialCommunityIcons
                           name="map-marker"
-                          size={14}
-                          color={selectedRegion === region ? Brand.primary : Brand.textTertiary}
+                          size={12}
+                          color={selectedRegion === region ? '#FFFFFF' : Brand.textTertiary}
                         />
                         <Text style={[
                           styles.regionTabText,
@@ -719,7 +678,7 @@ export default function CheckoutScreen() {
                   {/* Error state */}
                   {pickupError && !pickupLoading && (
                     <View style={styles.pickupError}>
-                      <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Brand.danger} />
+                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
                       <Text style={styles.pickupErrorText}>{pickupError}</Text>
                       <Pressable style={styles.pickupRetryBtn} onPress={loadPickupStations}>
                         <Text style={styles.pickupRetryText}>Retry</Text>
@@ -730,58 +689,47 @@ export default function CheckoutScreen() {
                   {/* Station Cards */}
                   {!pickupLoading && !pickupError && (
                     <View style={styles.stationList}>
-                      {pickupStations
-                        .filter(s => s.region === selectedRegion && s.is_active)
-                        .map((station) => {
-                          const selected = station.id === selectedStationId;
-                          return (
-                            <Pressable
-                              key={`station-${station.id}`}
-                              style={({ pressed }) => [
-                                styles.stationCard,
-                                selected && styles.stationCardSelected,
-                                pressed && { opacity: 0.85 },
-                              ]}
-                              onPress={() => setSelectedStationId(station.id)}
-                            >
-                              <View style={[
-                                styles.stationCardIcon,
-                                selected && styles.stationCardIconSelected,
-                              ]}>
-                                <MaterialCommunityIcons
-                                  name="store"
-                                  size={20}
-                                  color={selected ? '#FFFFFF' : Brand.primary}
-                                />
-                              </View>
-                              <View style={styles.stationCardBody}>
-                                <Text style={styles.stationCardName} numberOfLines={1}>
-                                  {station.name}
-                                </Text>
-                                <View style={styles.stationCardCityRow}>
-                                  <MaterialCommunityIcons name="map-marker-outline" size={11} color={Brand.textTertiary} />
-                                  <Text style={styles.stationCardCity} numberOfLines={1}>{station.city}</Text>
-                                </View>
-                                <View style={styles.stationCardHoursRow}>
-                                  <MaterialCommunityIcons name="clock-outline" size={11} color={Brand.textTertiary} />
-                                  <Text style={styles.stationCardHours} numberOfLines={1}>
-                                    {station.operating_hours || 'Hours not specified'}
-                                  </Text>
-                                </View>
-                              </View>
-                              {selected && (
-                                <View style={styles.stationCardCheck}>
-                                  <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
-                                </View>
-                              )}
-                            </Pressable>
-                          );
-                        })}
-                      {pickupStations.filter(s => s.region === selectedRegion && s.is_active).length === 0 && (
+                      {regionStations.map((station) => {
+                        const selected = station.id === selectedStationId;
+                        return (
+                          <Pressable
+                            key={`station-${station.id}`}
+                            style={({ pressed }) => [
+                              styles.stationCard,
+                              selected && styles.stationCardSelected,
+                              pressed && { opacity: 0.85 },
+                            ]}
+                            onPress={() => setSelectedStationId(station.id)}
+                          >
+                            <View style={[
+                              styles.stationCardIcon,
+                              selected && styles.stationCardIconSelected,
+                            ]}>
+                              <MaterialCommunityIcons
+                                name="store"
+                                size={16}
+                                color={selected ? '#FFFFFF' : Brand.primary}
+                              />
+                            </View>
+                            <View style={styles.stationCardBody}>
+                              <Text style={styles.stationCardName} numberOfLines={1}>
+                                {station.name}
+                              </Text>
+                              <Text style={styles.stationCardMeta} numberOfLines={1}>
+                                {station.city} · {station.operating_hours || 'Hours N/A'}
+                              </Text>
+                            </View>
+                            {selected && (
+                              <MaterialCommunityIcons name="check-circle" size={18} color={Brand.primary} />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                      {regionStations.length === 0 && (
                         <View style={styles.stationEmpty}>
-                          <MaterialCommunityIcons name="store-off-outline" size={32} color={Brand.textTertiary} />
+                          <MaterialCommunityIcons name="store-off-outline" size={28} color={Brand.textTertiary} />
                           <Text style={styles.stationEmptyText}>
-                            No pickup stations in this region yet.
+                            No pickup stations in this region
                           </Text>
                         </View>
                       )}
@@ -789,47 +737,31 @@ export default function CheckoutScreen() {
                   )}
 
                   {/* Selected station detail */}
-                  {selectedStationId && !pickupLoading && !pickupError && (
+                  {selectedStation && !pickupLoading && !pickupError && (
                     <View style={styles.stationDetail}>
                       <View style={styles.stationDetailHeader}>
-                        <View style={styles.stationDetailIcon}>
-                          <MaterialCommunityIcons name="store" size={20} color="#FFFFFF" />
-                        </View>
-                        <View style={styles.stationDetailInfo}>
-                          <Text style={styles.stationDetailName} numberOfLines={1}>
-                            {pickupStations.find(s => s.id === selectedStationId)?.name || ''}
-                          </Text>
-                          <Text style={styles.stationDetailCity}>
-                            {pickupStations.find(s => s.id === selectedStationId)?.city || ''}
-                          </Text>
-                        </View>
+                        <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
+                        <Text style={styles.stationDetailName} numberOfLines={1}>
+                          {selectedStation.name}
+                        </Text>
                         <Pressable
                           style={styles.stationDetailClose}
                           onPress={() => setSelectedStationId(null)}
                         >
-                          <MaterialCommunityIcons name="close" size={18} color={Brand.textSecondary} />
+                          <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
                         </Pressable>
                       </View>
                       <View style={styles.stationDetailBody}>
                         <View style={styles.stationDetailRow}>
-                          <MaterialCommunityIcons name="map-marker" size={14} color={Brand.primary} />
-                          <Text style={styles.stationDetailText}>
-                            {pickupStations.find(s => s.id === selectedStationId)?.full_address ||
-                              pickupStations.find(s => s.id === selectedStationId)?.address_line_1 || ''}
+                          <MaterialCommunityIcons name="map-marker" size={12} color={Brand.primary} />
+                          <Text style={styles.stationDetailText} numberOfLines={2}>
+                            {selectedStation.full_address || selectedStation.address_line_1}
                           </Text>
                         </View>
-                        <View style={styles.stationDetailRow}>
-                          <MaterialCommunityIcons name="clock-outline" size={14} color={Brand.primary} />
-                          <Text style={styles.stationDetailText}>
-                            {pickupStations.find(s => s.id === selectedStationId)?.operating_hours || 'Hours not specified'}
-                          </Text>
-                        </View>
-                        {pickupStations.find(s => s.id === selectedStationId)?.contact_number && (
+                        {selectedStation.contact_number && (
                           <View style={styles.stationDetailRow}>
-                            <MaterialCommunityIcons name="phone-outline" size={14} color={Brand.primary} />
-                            <Text style={styles.stationDetailText}>
-                              {pickupStations.find(s => s.id === selectedStationId)?.contact_number}
-                            </Text>
+                            <MaterialCommunityIcons name="phone-outline" size={12} color={Brand.primary} />
+                            <Text style={styles.stationDetailText}>{selectedStation.contact_number}</Text>
                           </View>
                         )}
                       </View>
@@ -839,13 +771,13 @@ export default function CheckoutScreen() {
               )}
             </View>
 
-            {/* Step 3: Payment Method */}
-            <View style={styles.stepSection}>
-              <View style={styles.stepHeader}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>3</Text>
+            {/* ── Section 3: Payment Method ──────────────────────── */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.stepPill}>
+                  <Text style={styles.stepPillText}>3</Text>
                 </View>
-                <Text style={styles.stepTitle}>Payment Method</Text>
+                <Text style={styles.cardTitle}>Payment Method</Text>
               </View>
 
               <View style={styles.paymentList}>
@@ -865,14 +797,14 @@ export default function CheckoutScreen() {
                       onPress={() => setSelectedMethod(opt.method)}
                     >
                       <View style={[styles.paymentIcon, { backgroundColor: opt.bgColor }]}>
-                        <MaterialCommunityIcons name={opt.icon} size={24} color={opt.color} />
+                        <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
                       </View>
                       <View style={styles.paymentInfo}>
                         <Text style={styles.paymentLabel}>{opt.label}</Text>
                         <Text style={styles.paymentSub}>{opt.subtitle}</Text>
                       </View>
-                      <View style={styles.paymentRadio}>
-                        {selected && <View style={styles.paymentRadioDot} />}
+                      <View style={[styles.radio, selected && styles.radioSelected]}>
+                        {selected && <View style={styles.radioDot} />}
                       </View>
                     </Pressable>
                   );
@@ -881,9 +813,8 @@ export default function CheckoutScreen() {
 
               {selectedOpt?.requiresPhone && (
                 <View style={styles.phoneSection}>
-                  <Text style={styles.phoneLabel}>MoMo Phone Number</Text>
                   <View style={styles.phoneInputWrap}>
-                    <MaterialCommunityIcons name="phone-outline" size={20} color={Brand.primary} />
+                    <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
                     <TextInput
                       style={styles.phoneInput}
                       placeholder="07XXXXXXXX"
@@ -898,17 +829,17 @@ export default function CheckoutScreen() {
               )}
             </View>
 
-            {/* Step 4: Order Summary (collapsible) */}
-            <View style={styles.stepSection}>
+            {/* ── Section 4: Order Summary + Coupon ──────────────── */}
+            <View style={styles.card}>
               <Pressable
                 style={({ pressed }) => [styles.summaryToggle, pressed && { opacity: 0.8 }]}
                 onPress={toggleSummary}
               >
-                <View style={styles.stepHeader}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>4</Text>
+                <View style={styles.cardHeader}>
+                  <View style={styles.stepPill}>
+                    <Text style={styles.stepPillText}>4</Text>
                   </View>
-                  <Text style={styles.stepTitle}>Order Summary</Text>
+                  <Text style={styles.cardTitle}>Order Summary</Text>
                 </View>
                 <View style={styles.summaryToggleRight}>
                   <Text style={styles.summaryItemCount}>
@@ -916,34 +847,36 @@ export default function CheckoutScreen() {
                   </Text>
                   <MaterialCommunityIcons
                     name={summaryExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={22}
+                    size={20}
                     color={Brand.textTertiary}
                   />
                 </View>
               </Pressable>
 
-              <View style={styles.summaryMiniCard}>
-                <View style={styles.summaryMiniRow}>
-                  <Text style={styles.summaryMiniLabel}>Subtotal</Text>
-                  <Text style={styles.summaryMiniValue}>{currency} {subtotal.toLocaleString()}</Text>
+              {/* Compact summary rows */}
+              <View style={styles.summaryRows}>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Subtotal</Text>
+                  <Text style={styles.summaryValue}>{currency} {subtotal.toLocaleString()}</Text>
                 </View>
-                <View style={styles.summaryMiniRow}>
-                  <Text style={styles.summaryMiniLabel}>Shipping</Text>
-                  <Text style={styles.summaryMiniValue}>{currency} {shipping.toLocaleString()}</Text>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Shipping</Text>
+                  <Text style={styles.summaryValue}>{currency} {shipping.toLocaleString()}</Text>
                 </View>
                 {discount > 0 && (
-                  <View style={styles.summaryMiniRow}>
-                    <Text style={[styles.summaryMiniLabel, { color: Brand.primary }]}>Discount</Text>
-                    <Text style={[styles.summaryMiniValue, { color: Brand.primary }]}>
-                      -{currency} {discount.toLocaleString()}
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: Brand.primary }]}>Discount</Text>
+                    <Text style={[styles.summaryValue, { color: Brand.primary }]}>
+                      −{currency} {discount.toLocaleString()}
                     </Text>
                   </View>
                 )}
               </View>
 
-              {summaryExpanded && (
-                <View style={styles.summaryExpandedCard}>
-                  {cart?.items.map((item) => (
+              {/* Expanded items */}
+              {summaryExpanded && cart && (
+                <View style={styles.summaryItems}>
+                  {cart.items.map((item) => (
                     <View key={`ci-${item.id}`} style={styles.summaryItem}>
                       {item.product.primary_image_url ? (
                         <Image
@@ -953,7 +886,7 @@ export default function CheckoutScreen() {
                         />
                       ) : (
                         <View style={[styles.summaryItemImage, styles.summaryNoImage]}>
-                          <MaterialCommunityIcons name="package-variant-closed" size={16} color="#ccc" />
+                          <MaterialCommunityIcons name="package-variant-closed" size={14} color="#ccc" />
                         </View>
                       )}
                       <View style={styles.summaryItemInfo}>
@@ -963,7 +896,7 @@ export default function CheckoutScreen() {
                         </Text>
                       </View>
                       <View style={styles.summaryItemRight}>
-                        <Text style={styles.summaryItemQty}>x{item.quantity}</Text>
+                        <Text style={styles.summaryItemQty}>×{item.quantity}</Text>
                         <Text style={styles.summaryItemPrice}>{currency} {Number(item.total_price).toLocaleString()}</Text>
                       </View>
                     </View>
@@ -971,50 +904,48 @@ export default function CheckoutScreen() {
                 </View>
               )}
 
-              {/* Coupon */}
-              <View style={styles.couponSection}>
-                <View style={styles.couponRow}>
-                  <View style={styles.couponInputWrap}>
-                    <MaterialCommunityIcons name="ticket-percent-outline" size={20} color={Brand.textTertiary} />
-                    <TextInput
-                      style={styles.couponInput}
-                      placeholder="Coupon code"
-                      placeholderTextColor={Brand.textTertiary}
-                      value={couponCode}
-                      onChangeText={setCouponCode}
-                      autoCapitalize="characters"
-                      autoCorrect={false}
-                    />
-                  </View>
-                  <Pressable
-                    style={({ pressed }) => [styles.couponBtn, pressed && { opacity: 0.85 }]}
-                    onPress={handleValidateCoupon}
-                    disabled={couponLoading}
-                  >
-                    {couponLoading ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.couponBtnText}>Apply</Text>
-                    )}
-                  </Pressable>
+              {/* Inline coupon */}
+              <View style={styles.couponRow}>
+                <View style={styles.couponInputWrap}>
+                  <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={Brand.textTertiary} />
+                  <TextInput
+                    style={styles.couponInput}
+                    placeholder="Coupon code"
+                    placeholderTextColor={Brand.textTertiary}
+                    value={couponCode}
+                    onChangeText={setCouponCode}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                  />
                 </View>
-                {couponMsg && (
-                  <View style={[styles.couponMsgWrap, couponMsg.type === 'error' && styles.couponMsgError]}>
-                    <MaterialCommunityIcons
-                      name={couponMsg.type === 'success' ? 'check-circle' : 'alert-circle'}
-                      size={16}
-                      color={couponMsg.type === 'success' ? Brand.primary : Brand.danger}
-                    />
-                    <Text style={[styles.couponMsg, couponMsg.type === 'error' && { color: Brand.danger }]}>
-                      {couponMsg.text}
-                    </Text>
-                  </View>
-                )}
+                <Pressable
+                  style={({ pressed }) => [styles.couponBtn, pressed && { opacity: 0.85 }]}
+                  onPress={handleValidateCoupon}
+                  disabled={couponLoading}
+                >
+                  {couponLoading ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.couponBtnText}>Apply</Text>
+                  )}
+                </Pressable>
               </View>
+              {couponMsg && (
+                <View style={[styles.couponMsgWrap, couponMsg.type === 'error' && styles.couponMsgError]}>
+                  <MaterialCommunityIcons
+                    name={couponMsg.type === 'success' ? 'check-circle' : 'alert-circle'}
+                    size={14}
+                    color={couponMsg.type === 'success' ? Brand.primary : Brand.danger}
+                  />
+                  <Text style={[styles.couponMsg, couponMsg.type === 'error' && { color: Brand.danger }]}>
+                    {couponMsg.text}
+                  </Text>
+                </View>
+              )}
             </View>
           </ScrollView>
 
-          {/* Sticky footer */}
+          {/* ── Sticky footer ──────────────────────────────────── */}
           <View style={styles.footer}>
             <View style={styles.footerLeft}>
               <Text style={styles.footerLabel}>Total</Text>
@@ -1037,7 +968,7 @@ export default function CheckoutScreen() {
               ) : (
                 <>
                   <Text style={styles.placeOrderBtnText}>Place Order</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={22} color="#FFFFFF" />
+                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
                 </>
               )}
             </Pressable>
@@ -1045,7 +976,7 @@ export default function CheckoutScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* Success overlay */}
+      {/* ── Success overlay ────────────────────────────────────── */}
       {successVisible && successOrder && (
         <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
           <View style={styles.successCard}>
@@ -1056,7 +987,7 @@ export default function CheckoutScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.successIconCircle}
               >
-                <MaterialCommunityIcons name="check" size={48} color="#FFFFFF" />
+                <MaterialCommunityIcons name="check" size={44} color="#FFFFFF" />
               </LinearGradient>
             </View>
             <Text style={styles.successTitle}>Order Placed!</Text>
@@ -1073,7 +1004,7 @@ export default function CheckoutScreen() {
               }}
             >
               <Text style={styles.successBtnText}>View Order</Text>
-              <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.successSecondary, pressed && { opacity: 0.7 }]}
@@ -1091,10 +1022,17 @@ export default function CheckoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F5F6F8' },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
+// ═══════════════════════════════════════════════════════════════════
+//  Styles — Compact Modern Design
+// ═══════════════════════════════════════════════════════════════════
+const RADIUS = 14;
+const RADIUS_SM = 10;
 
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: Brand.dark },
+
+  // ── Header ──────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1103,16 +1041,25 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two + Spacing.one,
   },
   headerCenter: { alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
+  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+  headerBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
+  // ── Center states ───────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
   loadingText: { marginTop: Spacing.two, fontSize: 14, color: Brand.textSecondary, textAlign: 'center', lineHeight: 20 },
-  errorText: { marginTop: Spacing.two, fontSize: 18, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
+  errorText: { marginTop: Spacing.two, fontSize: 17, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
   lockCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Brand.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1129,265 +1076,215 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
     backgroundColor: Brand.primary,
     paddingHorizontal: Spacing.four + Spacing.two,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 13,
+    borderRadius: RADIUS,
     elevation: 4,
     shadowColor: Brand.primary,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
-  primaryBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
+  primaryBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
   secondaryBtn: { marginTop: Spacing.two + 2 },
   secondaryBtnText: { color: Brand.primary, fontWeight: '700', fontSize: 15 },
 
+  // ── Body ────────────────────────────────────────────────────
   body: { flex: 1 },
-  bodyContent: { padding: Spacing.two + 2, paddingBottom: 120, gap: Spacing.two + 2 },
+  bodyContent: { padding: Spacing.two + 2, paddingBottom: 100, gap: Spacing.two + 2 },
 
-  stepSection: {
+  // ── Card (shared) ──────────────────────────────────────────
+  card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: Spacing.three,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: RADIUS,
+    padding: Spacing.three - 2,
+    borderWidth: 1,
+    borderColor: Brand.borderLight,
   },
-  stepHeader: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
     marginBottom: Spacing.two + 2,
   },
-  stepNumber: {
+  stepPill: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Brand.primary + '18',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepPillText: { color: Brand.primary, fontWeight: '800', fontSize: 12 },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '800', color: Brand.text },
+  cardAction: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Brand.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepNumberText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
-  stepTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: Brand.text },
-  stepAddBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Brand.primary + '15',
+    backgroundColor: Brand.primary + '12',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+  // ── Address ────────────────────────────────────────────────
   addAddressCard: {
     alignItems: 'center',
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.three,
     gap: Spacing.one + 2,
-    backgroundColor: Brand.primary + '08',
-    borderRadius: 14,
+    backgroundColor: Brand.primary + '06',
+    borderRadius: RADIUS_SM,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: Brand.primary + '40',
+    borderColor: Brand.primary + '30',
   },
-  addAddressIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Brand.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addAddressTitle: { fontSize: 15, fontWeight: '700', color: Brand.primary },
-  addAddressSub: { fontSize: 13, color: Brand.textTertiary },
+  addAddressTitle: { fontSize: 14, fontWeight: '700', color: Brand.primary },
+  addAddressSub: { fontSize: 12, color: Brand.textTertiary },
 
-  addressList: { gap: Spacing.two },
+  addressList: { gap: Spacing.one + 2 },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.two + Spacing.one,
-    backgroundColor: '#FAFBFC',
+    gap: Spacing.two + 2,
+    backgroundColor: Brand.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: '#E8E8E8',
+    borderColor: Brand.borderLight,
     padding: Spacing.two + 2,
-    borderRadius: 14,
+    borderRadius: RADIUS_SM,
   },
   addressCardSelected: {
     borderColor: Brand.primary,
-    backgroundColor: Brand.primary + '08',
+    backgroundColor: Brand.primary + '06',
     borderWidth: 2,
   },
-  addressRadio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: Brand.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  addressRadioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Brand.primary },
-  addressInfo: { flex: 1, gap: 3 },
-  addressLabelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  addressLabel: { fontSize: 15, fontWeight: '800', color: Brand.text },
-  addressText: { fontSize: 13, color: Brand.textSecondary, lineHeight: 18 },
-  addressCountry: { fontSize: 12, color: Brand.textTertiary },
-  addressPhoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  addressPhone: { fontSize: 13, color: Brand.primary, fontWeight: '600' },
-  defaultBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: Brand.primary,
-    paddingHorizontal: Spacing.one + 2,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  defaultBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-
-  noteSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: Spacing.three,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  noteLabel: { fontSize: 14, fontWeight: '700', color: Brand.text, marginBottom: Spacing.two },
-  noteInput: {
-    backgroundColor: '#F5F6F8',
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + 2,
-    fontSize: 14,
-    color: Brand.text,
-    minHeight: 60,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-
-  // ── Fulfillment Method Cards ──────────────────────────────────
-  fulfillmentRow: { gap: Spacing.two },
-  fulfillmentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two + Spacing.one,
-    backgroundColor: '#FAFBFC',
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    paddingVertical: Spacing.two + 2,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 14,
-  },
-  fulfillmentCardSelected: {
-    borderColor: Brand.primary,
-    backgroundColor: Brand.primary + '08',
-    borderWidth: 2,
-  },
-  fulfillmentIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fulfillmentIconSelected: {
-    backgroundColor: Brand.primary,
-  },
-  fulfillmentInfo: { flex: 1, gap: 2 },
-  fulfillmentLabel: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  fulfillmentLabelSelected: { color: Brand.primary },
-  fulfillmentSub: { fontSize: 12, color: Brand.textTertiary },
-  fulfillmentRadio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: '#D0D0D0',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 1,
   },
-  fulfillmentRadioSelected: { borderColor: Brand.primary },
-  fulfillmentRadioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Brand.primary },
+  radioSelected: { borderColor: Brand.primary },
+  radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Brand.primary },
+  addressInfo: { flex: 1, gap: 2 },
+  addressLabelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
+  addressLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  addressText: { fontSize: 12, color: Brand.textSecondary, lineHeight: 16 },
+  addressPhoneRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 },
+  addressPhone: { fontSize: 12, color: Brand.primary, fontWeight: '600' },
+  defaultBadge: {
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 5,
+  },
+  defaultBadgeText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
 
-  // ── Pickup Station Section ────────────────────────────────────
-  pickupSection: { marginTop: Spacing.three },
-  pickupHeader: {
+  // ── Inline notes ────────────────────────────────────────────
+  notesWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.two,
+    gap: Spacing.one + 2,
+    marginTop: Spacing.two + 2,
+    backgroundColor: Brand.surfaceAlt,
+    borderRadius: RADIUS_SM,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: Platform.select({ ios: 12, android: 10 }),
+    borderWidth: 1,
+    borderColor: Brand.borderLight,
   },
-  pickupLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  pickupCount: {
-    fontSize: 12,
-    color: Brand.textSecondary,
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 20,
-    fontWeight: '600',
+  notesInput: {
+    flex: 1,
+    fontSize: 13,
+    color: Brand.text,
+    padding: 0,
   },
-  regionTabsScroll: { marginBottom: Spacing.two + 2, flexGrow: 0 },
-  regionTabsContent: { gap: 8, paddingRight: Spacing.two },
+
+  // ── Fulfillment pills ──────────────────────────────────────
+  fulfillmentRow: { flexDirection: 'row', gap: Spacing.one + 2 },
+  fulfillmentPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one + 2,
+    paddingVertical: Spacing.two + 2,
+    borderRadius: RADIUS_SM,
+    borderWidth: 1.5,
+    borderColor: Brand.borderLight,
+    backgroundColor: Brand.surfaceAlt,
+  },
+  fulfillmentPillActive: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary,
+  },
+  fulfillmentPillText: { fontSize: 13, fontWeight: '700', color: Brand.textTertiary },
+  fulfillmentPillTextActive: { color: '#FFFFFF' },
+
+  // ── Pickup section ─────────────────────────────────────────
+  pickupSection: { marginTop: Spacing.two + 2 },
+
+  // Region tabs
+  regionTabsScroll: { marginBottom: Spacing.two, flexGrow: 0 },
+  regionTabsContent: { gap: 6, paddingRight: Spacing.two },
   regionTab: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E8E8E8',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Brand.borderLight,
     backgroundColor: '#FFFFFF',
   },
   regionTabActive: {
     borderColor: Brand.primary,
-    backgroundColor: Brand.primary + '10',
+    backgroundColor: Brand.primary,
   },
-  regionTabText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary },
-  regionTabTextActive: { color: Brand.primary },
+  regionTabText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  regionTabTextActive: { color: '#FFFFFF' },
+
+  // Loading / error
   pickupLoading: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 28,
+    paddingVertical: 24,
   },
-  pickupLoadingText: { fontSize: 14, color: Brand.textTertiary },
+  pickupLoadingText: { fontSize: 13, color: Brand.textTertiary },
   pickupError: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 14,
+    gap: 6,
+    padding: 12,
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 10,
+    borderRadius: RADIUS_SM,
   },
-  pickupErrorText: { flex: 1, fontSize: 13, color: '#B91C1C' },
+  pickupErrorText: { flex: 1, fontSize: 12, color: '#B91C1C' },
   pickupRetryBtn: {
     backgroundColor: '#B91C1C',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
-  pickupRetryText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  pickupRetryText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
 
-  // Station Cards
-  stationList: { gap: Spacing.two, maxHeight: 340 },
+  // Station cards
+  stationList: { gap: Spacing.one + 2, maxHeight: 300 },
   stationCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.two + 2,
-    backgroundColor: '#FAFBFC',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: Brand.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    padding: Spacing.two + 2,
-    borderRadius: 12,
+    borderColor: Brand.borderLight,
+    padding: Spacing.two,
+    borderRadius: RADIUS_SM,
   },
   stationCardSelected: {
     borderColor: Brand.primary,
@@ -1395,225 +1292,203 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   stationCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
     backgroundColor: Brand.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
   },
   stationCardIconSelected: { backgroundColor: Brand.primary },
-  stationCardBody: { flex: 1, gap: 3 },
-  stationCardName: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  stationCardCityRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  stationCardCity: { fontSize: 12, color: Brand.textSecondary },
-  stationCardHoursRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  stationCardHours: { fontSize: 11, color: Brand.textTertiary },
-  stationCardCheck: { position: 'absolute', top: 10, right: 10 },
-  stationEmpty: { alignItems: 'center', paddingVertical: 28, gap: 8 },
-  stationEmptyText: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
+  stationCardBody: { flex: 1, gap: 1 },
+  stationCardName: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  stationCardMeta: { fontSize: 11, color: Brand.textTertiary },
+  stationEmpty: { alignItems: 'center', paddingVertical: 24, gap: 6 },
+  stationEmptyText: { fontSize: 13, color: Brand.textTertiary, textAlign: 'center' },
 
-  // Station Detail
+  // Station detail
   stationDetail: {
-    marginTop: Spacing.two + 2,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: 12,
+    marginTop: Spacing.two,
+    borderRadius: RADIUS_SM,
     overflow: 'hidden',
+    backgroundColor: Brand.primary + '06',
+    borderWidth: 1,
+    borderColor: Brand.primary + '20',
   },
   stationDetailHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two + 2,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + 2,
-    backgroundColor: Brand.primary + '06',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  stationDetailIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    gap: Spacing.one + 2,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: Spacing.two - 2,
     backgroundColor: Brand.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  stationDetailInfo: { flex: 1 },
-  stationDetailName: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  stationDetailCity: { fontSize: 12, color: Brand.textSecondary, marginTop: 2 },
+  stationDetailName: { flex: 1, fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   stationDetailClose: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stationDetailBody: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, gap: 10 },
-  stationDetailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  stationDetailText: { flex: 1, fontSize: 13, color: Brand.textSecondary },
-
-  paymentList: { gap: Spacing.two },
-  paymentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two + Spacing.one,
-    backgroundColor: '#FAFBFC',
-    borderWidth: 1.5,
-    borderColor: '#E8E8E8',
-    paddingVertical: Spacing.two + 2,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 14,
-  },
-  paymentCardSelected: {
-    borderColor: Brand.primary,
-    backgroundColor: Brand.primary + '08',
-    borderWidth: 2,
-  },
-  paymentIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  paymentInfo: { flex: 1, gap: 2 },
-  paymentLabel: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  paymentSub: { fontSize: 12, color: Brand.textTertiary },
-  paymentRadio: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 2,
-    borderColor: Brand.primary,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  paymentRadioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: Brand.primary },
+  stationDetailBody: { paddingHorizontal: Spacing.two + 2, paddingVertical: Spacing.two, gap: 6 },
+  stationDetailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  stationDetailText: { flex: 1, fontSize: 12, color: Brand.textSecondary },
 
-  phoneSection: { marginTop: Spacing.two + 2 },
-  phoneLabel: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary, marginBottom: Spacing.one + 2 },
+  // ── Payment ────────────────────────────────────────────────
+  paymentList: { gap: Spacing.one + 2 },
+  paymentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + 2,
+    backgroundColor: Brand.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: Brand.borderLight,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two + 2,
+    borderRadius: RADIUS_SM,
+  },
+  paymentCardSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '06',
+    borderWidth: 2,
+  },
+  paymentIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS_SM,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paymentInfo: { flex: 1, gap: 1 },
+  paymentLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  paymentSub: { fontSize: 11, color: Brand.textTertiary },
+
+  // Phone input
+  phoneSection: { marginTop: Spacing.two },
   phoneInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    backgroundColor: '#F5F6F8',
+    gap: Spacing.one + 2,
+    backgroundColor: Brand.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
+    borderColor: Brand.borderLight,
+    borderRadius: RADIUS_SM,
+    paddingHorizontal: Spacing.two + 2,
   },
   phoneInput: {
     flex: 1,
-    paddingVertical: Platform.select({ ios: 14, android: 12 }),
-    fontSize: 15,
+    paddingVertical: Platform.select({ ios: 12, android: 10 }),
+    fontSize: 14,
     color: Brand.text,
     fontWeight: '600',
   },
 
+  // ── Summary ────────────────────────────────────────────────
   summaryToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryToggleRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  summaryItemCount: { fontSize: 13, color: Brand.textTertiary, fontWeight: '600' },
+  summaryItemCount: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
 
-  summaryMiniCard: {
-    backgroundColor: '#F5F6F8',
-    borderRadius: 12,
+  summaryRows: {
+    backgroundColor: Brand.surfaceAlt,
+    borderRadius: RADIUS_SM,
     padding: Spacing.two + 2,
-    gap: 6,
+    gap: 4,
   },
-  summaryMiniRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  summaryMiniLabel: { fontSize: 14, color: Brand.textSecondary },
-  summaryMiniValue: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryLabel: { fontSize: 13, color: Brand.textSecondary },
+  summaryValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
 
-  summaryExpandedCard: {
+  summaryItems: {
     marginTop: Spacing.two,
-    backgroundColor: '#FAFBFC',
-    borderRadius: 12,
-    padding: Spacing.two + 2,
+    backgroundColor: Brand.surfaceAlt,
+    borderRadius: RADIUS_SM,
+    padding: Spacing.two,
     gap: Spacing.one + 2,
   },
-  summaryItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
-  summaryItemImage: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F0F0F0' },
+  summaryItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
+  summaryItemImage: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#F0F0F0' },
   summaryNoImage: { justifyContent: 'center', alignItems: 'center' },
-  summaryItemInfo: { flex: 1, gap: 2 },
-  summaryItemName: { fontSize: 13, color: Brand.text, fontWeight: '600', lineHeight: 17 },
-  summaryItemStore: { fontSize: 11, color: Brand.textTertiary },
-  summaryItemRight: { alignItems: 'flex-end', gap: 2 },
-  summaryItemQty: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
-  summaryItemPrice: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  summaryItemInfo: { flex: 1, gap: 1 },
+  summaryItemName: { fontSize: 12, color: Brand.text, fontWeight: '600', lineHeight: 15 },
+  summaryItemStore: { fontSize: 10, color: Brand.textTertiary },
+  summaryItemRight: { alignItems: 'flex-end', gap: 1 },
+  summaryItemQty: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
+  summaryItemPrice: { fontSize: 12, fontWeight: '700', color: Brand.text },
 
-  couponSection: { marginTop: Spacing.two + 2 },
-  couponRow: { flexDirection: 'row', gap: Spacing.two },
+  // ── Coupon ─────────────────────────────────────────────────
+  couponRow: { flexDirection: 'row', gap: Spacing.one + 2, marginTop: Spacing.two },
   couponInputWrap: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    backgroundColor: '#F5F6F8',
+    gap: Spacing.one + 2,
+    backgroundColor: Brand.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    borderRadius: 12,
-    paddingHorizontal: Spacing.three,
+    borderColor: Brand.borderLight,
+    borderRadius: RADIUS_SM,
+    paddingHorizontal: Spacing.two + 2,
   },
   couponInput: {
     flex: 1,
-    paddingVertical: Platform.select({ ios: 14, android: 12 }),
-    fontSize: 15,
+    paddingVertical: Platform.select({ ios: 12, android: 10 }),
+    fontSize: 14,
     color: Brand.text,
     fontWeight: '600',
   },
   couponBtn: {
     backgroundColor: Brand.primary,
-    paddingHorizontal: Spacing.four,
-    borderRadius: 12,
+    paddingHorizontal: Spacing.three,
+    borderRadius: RADIUS_SM,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  couponBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  couponBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
   couponMsgWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: Spacing.two,
-    paddingHorizontal: Spacing.two + 2,
+    gap: 5,
+    marginTop: Spacing.one + 2,
+    paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one + 2,
-    backgroundColor: Brand.primary + '12',
-    borderRadius: 10,
+    backgroundColor: Brand.primary + '10',
+    borderRadius: 8,
   },
-  couponMsgError: { backgroundColor: Brand.danger + '12' },
-  couponMsg: { fontSize: 13, fontWeight: '600', color: Brand.primary, flex: 1 },
+  couponMsgError: { backgroundColor: Brand.danger + '10' },
+  couponMsg: { fontSize: 12, fontWeight: '600', color: Brand.primary, flex: 1 },
 
+  // ── Footer ─────────────────────────────────────────────────
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + 2,
-    paddingBottom: Platform.select({ ios: Spacing.two + 6, android: Spacing.two + 2 }),
+    paddingHorizontal: Spacing.three - 2,
+    paddingVertical: Spacing.two,
+    paddingBottom: Platform.select({ ios: Spacing.two + 4, android: Spacing.two }),
     borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
+    borderTopColor: Brand.borderLight,
     elevation: 8,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -3 },
   },
-  footerLeft: { gap: 2 },
-  footerLabel: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
-  footerTotalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  footerCurrency: { fontSize: 13, fontWeight: '700', color: Brand.primary },
-  footerTotalValue: { fontSize: 22, fontWeight: '900', color: Brand.primary },
+  footerLeft: { gap: 1 },
+  footerLabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
+  footerTotalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
+  footerCurrency: { fontSize: 12, fontWeight: '700', color: Brand.primary },
+  footerTotalValue: { fontSize: 20, fontWeight: '900', color: Brand.primary },
   placeOrderBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.two,
+    gap: Spacing.one + 2,
     backgroundColor: Brand.primary,
-    paddingVertical: Platform.select({ ios: 16, android: 14 }),
-    borderRadius: 14,
+    paddingVertical: Platform.select({ ios: 14, android: 12 }),
+    borderRadius: RADIUS,
     elevation: 4,
     shadowColor: Brand.primary,
     shadowOpacity: 0.25,
@@ -1621,8 +1496,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   placeOrderBtnDisabled: { opacity: 0.5 },
-  placeOrderBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
+  placeOrderBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
 
+  // ── Success overlay ────────────────────────────────────────
   successOverlay: {
     position: 'absolute',
     top: 0,
@@ -1636,42 +1512,42 @@ const styles = StyleSheet.create({
   },
   successCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: Spacing.four + Spacing.two,
+    borderRadius: 22,
+    padding: Spacing.four,
     alignItems: 'center',
-    marginHorizontal: Spacing.four + Spacing.two,
+    marginHorizontal: Spacing.four,
     elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
   },
-  successIconWrap: { marginBottom: Spacing.three },
+  successIconWrap: { marginBottom: Spacing.three - 2 },
   successIconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  successTitle: { fontSize: 22, fontWeight: '900', color: Brand.text },
+  successTitle: { fontSize: 21, fontWeight: '900', color: Brand.text },
   successSub: { fontSize: 14, color: Brand.textSecondary, marginTop: Spacing.one, textAlign: 'center' },
   successBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    marginTop: Spacing.four,
+    gap: Spacing.one + 2,
+    marginTop: Spacing.three + 2,
     backgroundColor: Brand.primary,
-    paddingHorizontal: Spacing.four + Spacing.two,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: 13,
+    borderRadius: RADIUS,
     elevation: 4,
     shadowColor: Brand.primary,
     shadowOpacity: 0.25,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
-  successBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
-  successSecondary: { marginTop: Spacing.two + 2 },
-  successSecondaryText: { color: Brand.textSecondary, fontWeight: '600', fontSize: 15 },
+  successBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  successSecondary: { marginTop: Spacing.two },
+  successSecondaryText: { color: Brand.textSecondary, fontWeight: '600', fontSize: 14 },
 });
