@@ -90,6 +90,9 @@ export default function AppTabs() {
       <Tabs.Screen name="seller/earnings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/analytics" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/settings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="adminops" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="merchant-studio" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="adpulse" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
     </Tabs>
   );
 }

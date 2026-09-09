@@ -2,8 +2,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -48,6 +49,9 @@ export default function SellerDashboardScreen() {
     { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings' as any },
     { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' as any },
     { icon: 'bullhorn-outline', label: 'Promotions', color: '#F59E0B', route: '/seller/promotions' as any },
+    { icon: 'store-cog', label: 'Merchant Studio', color: '#06B6D4', route: '/merchant-studio' as any },
+    { icon: 'rocket-launch', label: 'AdPulse Studio', color: '#EC4899', route: '/adpulse' as any },
+    { icon: 'shield-crown-outline', label: 'AdminOps Central', color: '#0A2E1A', route: '/adminops' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
     { icon: 'store-settings-outline', label: 'Store Settings', color: Brand.textSecondary, route: '/seller/settings' as any },
   ];
