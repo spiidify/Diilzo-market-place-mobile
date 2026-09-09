@@ -96,29 +96,38 @@ export default function BuyerDashboardScreen() {
         </LinearGradient>
 
         <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-          {/* Profile hero */}
+          {/* Profile hero — gradient card with avatar */}
           <View style={styles.profileCard}>
-            <View style={styles.avatarWrap}>
-              {isAuthenticated && user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="contain" />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <MaterialCommunityIcons name="account" size={32} color="#FFFFFF" />
+            <LinearGradient
+              colors={[Brand.primary, Brand.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.profileGradient}
+            >
+              <View style={styles.avatarRing}>
+                <View style={styles.avatarWrap}>
+                  {isAuthenticated && user?.avatar_url ? (
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                  ) : (
+                    <View style={styles.avatarFallback}>
+                      <MaterialCommunityIcons name="account" size={36} color="#FFFFFF" />
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {isAuthenticated ? (user?.full_name || user?.first_name || 'Buyer') : 'Guest User'}
-              </Text>
-              <Text style={styles.profileEmail} numberOfLines={1}>
-                {isAuthenticated ? user?.email : 'Sign in to access all features'}
-              </Text>
-              <View style={styles.buyerBadge}>
-                <MaterialCommunityIcons name="shopping" size={12} color="#FFFFFF" />
-                <Text style={styles.buyerBadgeText}>Buyer</Text>
               </View>
-            </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>
+                  {isAuthenticated ? (user?.full_name || user?.first_name || 'Buyer') : 'Guest User'}
+                </Text>
+                <Text style={styles.profileEmail} numberOfLines={1}>
+                  {isAuthenticated ? user?.email : 'Sign in to access all features'}
+                </Text>
+                <View style={styles.buyerBadge}>
+                  <MaterialCommunityIcons name="shopping" size={11} color="#FFFFFF" />
+                  <Text style={styles.buyerBadgeText}>Buyer</Text>
+                </View>
+              </View>
+            </LinearGradient>
           </View>
 
           {/* Become a seller CTA */}
@@ -229,22 +238,61 @@ const styles = StyleSheet.create({
   },
   logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
 
-  // Profile card
+  // Profile card — gradient hero
   profileCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 12,
-    padding: 18, borderRadius: 16,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 18,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  avatarWrap: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' },
+  profileGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 20,
+  },
+  avatarRing: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 2,
+  },
+  avatarWrap: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    overflow: 'hidden',
+  },
   avatar: { width: '100%', height: '100%' },
-  avatarFallback: { width: '100%', height: '100%', backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   profileInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 18, fontWeight: '700', color: Brand.text },
-  profileEmail: { fontSize: 13, color: Brand.textTertiary },
+  profileName: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  profileEmail: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
   buyerBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#3B82F6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: 2,
   },
   buyerBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
 
