@@ -188,7 +188,7 @@ export default function SuppliersScreen() {
             <Image source={{ uri: item.banner_url }} style={styles.banner} contentFit="cover" />
           ) : (
             <LinearGradient
-              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+              colors={[Brand.dark, Brand.accent, Brand.primary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.bannerFallback}
@@ -293,33 +293,33 @@ export default function SuppliersScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {/* ── Orange gradient header ──────────────────────────────── */}
+        {/* ── Gradient header ──────────────────────────────────────── */}
         <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+          colors={[Brand.dark, Brand.accent, Brand.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
           <View style={styles.headerTop}>
             <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+              <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
             </Pressable>
             <Text style={styles.headerTitle}>Suppliers & Manufacturers</Text>
-            <View style={{ width: 24 }} />
+            <View style={{ width: 22 }} />
           </View>
           <View style={styles.searchBar}>
-            <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="magnify" size={20} color="rgba(255,255,255,0.7)" />
             <TextInput
               style={styles.searchInput}
               value={search}
               onChangeText={setSearch}
               placeholder="Search suppliers, products..."
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor="rgba(255,255,255,0.6)"
               autoCapitalize="none"
             />
             {search.length > 0 && (
               <Pressable onPress={() => setSearch('')} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.7)" />
               </Pressable>
             )}
           </View>
@@ -520,8 +520,8 @@ export default function SuppliersScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+  safeArea: { flex: 1, backgroundColor: Brand.dark },
 
   // ── Header ──────────────────────────────────────────────────────
   header: { paddingHorizontal: 16, paddingVertical: 12 },
@@ -531,28 +531,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
     gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 0, height: '100%' },
+  searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF', paddingVertical: 0, height: '100%' },
 
   // ── Filter bar ──────────────────────────────────────────────────
   filterBar: {
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EDF0',
   },
   filterStats: {
     flexDirection: 'row',
@@ -574,25 +569,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterChipInactive: { backgroundColor: Brand.surfaceAlt, borderColor: Brand.border },
+  filterChipInactive: { backgroundColor: '#F8FAFB', borderColor: '#E8EDF0' },
   filterChipText: { fontSize: 13, fontWeight: '600' },
   filterChipTextActive: { color: '#FFFFFF' },
   filterChipTextInactive: { color: Brand.textSecondary },
 
   // ── List ────────────────────────────────────────────────────────
-  list: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 },
+  list: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 20 },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Brand.surfaceAlt,
+    borderColor: '#E8EDF0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 6,
-    elevation: 3,
+    elevation: 2,
   },
 
   // ── Banner ──────────────────────────────────────────────────────
@@ -613,7 +608,7 @@ const styles = StyleSheet.create({
     gap: 3,
     paddingHorizontal: 7,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   badgeGold: { backgroundColor: Brand.accent },
   badgeVerified: { backgroundColor: '#16A34A' },
@@ -626,7 +621,7 @@ const styles = StyleSheet.create({
   logoWrap: {
     width: 56,
     height: 56,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: Brand.primary,
     borderWidth: 3,
@@ -651,13 +646,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: Brand.surfaceAlt,
-    borderRadius: 8,
+    backgroundColor: '#F8FAFB',
+    borderRadius: 10,
   },
   statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
   statValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
   statSub: { fontSize: 11, color: Brand.textSecondary },
-  statDivider: { width: 1, height: 20, backgroundColor: Brand.border },
+  statDivider: { width: 1, height: 20, backgroundColor: '#E8EDF0' },
 
   // ── Footer ──────────────────────────────────────────────────────
   cardFooter: {
@@ -672,10 +667,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Brand.primary,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: '#F8FAFB',
   },
   contactText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   visitBtn: {
@@ -685,7 +680,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: Brand.primary,
   },
   visitText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
@@ -695,14 +690,14 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: Brand.surfaceAlt,
+    width: 80, height: 80, borderRadius: 40, backgroundColor: '#F8FAFB',
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
   emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
   emptyBtn: {
     marginTop: 20, backgroundColor: Brand.primary,
-    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8,
+    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10,
   },
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
@@ -721,8 +716,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 28,
     elevation: 6,
-    shadowColor: '#000000',
-    shadowOpacity: 0.25,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
@@ -748,27 +743,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: '#E8EDF0',
   },
   rfqModalTitle: { fontSize: 17, fontWeight: '800', color: Brand.text },
   rfqForm: { paddingHorizontal: 16, paddingTop: 12, gap: 4 },
   rfqLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary, marginTop: 8, marginBottom: 2 },
   rfqInput: {
     borderWidth: 1,
-    borderColor: Brand.border,
-    borderRadius: 8,
+    borderColor: '#E8EDF0',
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
     color: Brand.text,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFB',
   },
   rfqTextarea: { minHeight: 70 },
   rfqRow: { flexDirection: 'row' },
   rfqErrorText: { color: Brand.danger, fontSize: 12, marginTop: 8, fontWeight: '600' },
   rfqSubmitBtn: {
     backgroundColor: Brand.primary,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 16,
@@ -779,7 +774,7 @@ const styles = StyleSheet.create({
   rfqSuccessSub: { fontSize: 13, color: Brand.textSecondary, textAlign: 'center' },
   rfqCloseBtn: {
     backgroundColor: Brand.primary,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 32,
     paddingVertical: 12,
     marginTop: 16,
