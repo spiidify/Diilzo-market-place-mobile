@@ -489,6 +489,258 @@ const DualBannerTiles = memo(function DualBannerTiles({
   );
 });
 
+// ── Category carousel section (memoized) ───────────────────────────
+const CategorySection = memo(function CategorySection({
+  categories,
+  onPressCategory,
+}: {
+  categories: Category[];
+  onPressCategory: (cat: Category) => void;
+}) {
+  if (!categories.length) return null;
+  return (
+    <View style={styles.categoriesSection}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="apps" size={20} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>Shop by Category</Text>
+        </View>
+        <Pressable onPress={() => onPressCategory(null as any)}>
+          <Text style={styles.seeAllText}>View All ›</Text>
+        </Pressable>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryCarousel}
+        removeClippedSubviews={true}
+      >
+        {categories.slice(0, 12).map((cat) => (
+          <Pressable
+            key={`cat-${cat.id}-${cat.slug}`}
+            style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
+            onPress={() => onPressCategory(cat)}
+          >
+            <View style={styles.categoryCircle}>
+              {cat.display_image ? (
+                <Image
+                  source={{ uri: cat.display_image }}
+                  style={styles.categoryCircleImage}
+                  contentFit="contain"
+                  transition={200}
+                />
+              ) : (
+                <View style={styles.categoryCircleFallback}>
+                  <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
+                </View>
+              )}
+            </View>
+            <Text style={styles.categoryItemName} numberOfLines={1}>{cat.name}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ── Horizontal product carousel section (memoized) ──────────────────
+const ProductCarouselSection = memo(function ProductCarouselSection({
+  icon,
+  title,
+  data,
+  onPress,
+}: {
+  icon: string;
+  title: string;
+  data: Product[];
+  onPress: (slug: string) => void;
+}) {
+  if (!data || data.length === 0) return null;
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name={icon as any} size={22} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>{title}</Text>
+        </View>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselTrack}
+        decelerationRate="fast"
+        snapToInterval={160}
+        snapToAlignment="start"
+        removeClippedSubviews={true}
+      >
+        {data.map((item) => (
+          <Pressable
+            key={`${title}-${item.id}`}
+            style={({ pressed }) => [styles.carouselCard, pressed && styles.cardPressed]}
+            onPress={() => onPress(item.slug)}
+          >
+            <View style={styles.carouselImageWrap}>
+              {item.primary_image_url ? (
+                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} contentFit="contain" transition={200} />
+              ) : (
+                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
+              )}
+              {item.is_on_sale && (
+                <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>-{item.discount_percentage}%</Text></View>
+              )}
+            </View>
+            <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
+            <View style={styles.carouselPriceRow}>
+              <Text style={styles.currency}>{item.currency}</Text>
+              <Text style={styles.carouselPrice}>{Number(item.final_price).toLocaleString()}</Text>
+            </View>
+            {item.is_on_sale && (
+              <Text style={styles.carouselOrigPrice}>{item.currency} {Number(item.price).toLocaleString()}</Text>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ── Top Stores section (memoized) ───────────────────────────────────
+const TopStoresSection = memo(function TopStoresSection({
+  stores,
+  onPressStore,
+  onPressSeeAll,
+}: {
+  stores: Store[];
+  onPressStore: (slug: string) => void;
+  onPressSeeAll: () => void;
+}) {
+  if (!stores.length) return null;
+  return (
+    <View style={styles.storesSection}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="store" size={20} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>Top Stores</Text>
+        </View>
+        <Pressable onPress={onPressSeeAll}>
+          <Text style={styles.seeAllText}>View All ›</Text>
+        </Pressable>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.storesCarousel}
+        removeClippedSubviews={true}
+      >
+        {stores.map((s) => (
+          <Pressable
+            key={s.id}
+            style={styles.storeCard}
+            onPress={() => onPressStore(s.slug)}
+          >
+            <View style={styles.storeLogoWrap}>
+              {s.logo_url ? (
+                <Image source={{ uri: s.logo_url }} style={styles.storeLogo} contentFit="contain" />
+              ) : (
+                <View style={styles.storeLogoFallback}>
+                  <MaterialCommunityIcons name={s.is_wholesaler ? 'factory' : 'store'} size={24} color="#FFFFFF" />
+                </View>
+              )}
+            </View>
+            <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
+            <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
+            <View style={styles.storeMetaRow}>
+              <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.textSecondary} />
+              <Text style={styles.storeMetaText}>{s.product_count || 0} products</Text>
+            </View>
+            {s.is_wholesaler && (
+              <View style={styles.storeWholesaleBadge}>
+                <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
+                <Text style={styles.storeWholesaleText}>Supplier</Text>
+              </View>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ── Top Brands section (memoized) ───────────────────────────────────
+const TopBrandsSection = memo(function TopBrandsSection({
+  brands,
+  onPressBrand,
+}: {
+  brands: BrandType[];
+  onPressBrand: (slug: string, name: string) => void;
+}) {
+  if (!brands.length) return null;
+  return (
+    <View style={styles.brandsSection}>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <MaterialCommunityIcons name="certificate" size={20} color={Brand.primary} />
+          <Text style={styles.sectionTitle}>Popular Brands</Text>
+        </View>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.brandsScroll}
+        removeClippedSubviews={true}
+      >
+        {brands.map((b) => (
+          <Pressable
+            key={`brand-${b.id}`}
+            style={({ pressed }) => [styles.brandCard, pressed && { opacity: 0.85 }]}
+            onPress={() => onPressBrand(b.slug, b.name)}
+          >
+            <View style={styles.brandLogoWrap}>
+              {b.logo_url ? (
+                <Image
+                  source={{ uri: b.logo_url }}
+                  style={styles.brandLogo}
+                  contentFit="contain"
+                  transition={150}
+                />
+              ) : (
+                <View style={styles.brandLogoFallback}>
+                  <MaterialCommunityIcons name="tag" size={22} color={Brand.primary} />
+                </View>
+              )}
+            </View>
+            <Text style={styles.brandName} numberOfLines={1}>{b.name}</Text>
+            <Text style={styles.brandCount}>{b.product_count} products</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+});
+
+// ── Supplier banner (memoized) ──────────────────────────────────────
+const SupplierBanner = memo(function SupplierBanner({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.supplierBanner, pressed && { opacity: 0.9 }]}
+      onPress={onPress}
+    >
+      <View style={styles.supplierBannerContent}>
+        <View style={styles.supplierBannerIcon}>
+          <MaterialCommunityIcons name="factory" size={32} color="#FFFFFF" />
+        </View>
+        <View style={styles.supplierBannerText}>
+          <Text style={styles.supplierBannerTitle}>Source from Manufacturers</Text>
+          <Text style={styles.supplierBannerSub}>
+            Verified suppliers • Trade Assurance • Factory prices
+          </Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color="#FFFFFF" />
+      </View>
+    </Pressable>
+  );
+});
+
 export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -702,106 +954,26 @@ export default function ProductFeedScreen() {
     loadProducts(false);
   }, [hasMore, loadingMore, refreshing, loadProducts]);
 
-  // ── Scroll tracking + scroll-to-top ─────────────────────────────
+  // ── Scroll tracking + scroll-to-top (throttled to avoid re-renders) ─
+  const scrollTopRef = useRef(false);
+  const lastScrollUpdate = useRef(0);
   const handleScroll = useCallback((event: any) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    setShowScrollTop(offsetY > 300);
+    const shouldShow = offsetY > 300;
+    const now = Date.now();
+    if (now - lastScrollUpdate.current < 150 && scrollTopRef.current === shouldShow) return;
+    lastScrollUpdate.current = now;
+    if (scrollTopRef.current !== shouldShow) {
+      scrollTopRef.current = shouldShow;
+      setShowScrollTop(shouldShow);
+    }
   }, []);
 
   const scrollToTop = useCallback(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
 
-  const renderStars = (rating: string) => {
-    const value = parseFloat(rating) || 0;
-    const full = Math.floor(value);
-    const stars: React.ReactNode[] = [];
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <MaterialCommunityIcons
-          key={i}
-          name={i < full ? 'star' : 'star-outline'}
-          size={12}
-          color={Brand.rating}
-        />
-      );
-    }
-    return <View style={styles.starsRow}>{stars}</View>;
-  };
-
   // ── Horizontal carousel card (compact) ───────────────────────────
-  const renderCarouselCard = (item: Product) => (
-    <Pressable
-      key={item.id}
-      style={({ pressed }) => [styles.carouselCard, pressed && styles.cardPressed]}
-      onPress={() => router.push(`/product/${item.slug}`)}
-    >
-      <View style={styles.carouselImageWrap}>
-        {item.primary_image_url ? (
-          <Image
-            source={{ uri: item.primary_image_url }}
-            style={styles.carouselImage}
-            contentFit="contain"
-            transition={200}
-          />
-        ) : (
-          <View style={styles.noImage}>
-            <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
-          </View>
-        )}
-        {item.is_on_sale && (
-          <View style={styles.saleBadge}>
-            <Text style={styles.saleBadgeText}>-{item.discount_percentage}%</Text>
-          </View>
-        )}
-      </View>
-      <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
-      <View style={styles.carouselPriceRow}>
-        <Text style={styles.currency}>{item.currency}</Text>
-        <Text style={styles.carouselPrice}>{Number(item.final_price).toLocaleString()}</Text>
-      </View>
-      {item.is_on_sale && (
-        <Text style={styles.carouselOrigPrice}>
-          {item.currency} {Number(item.price).toLocaleString()}
-        </Text>
-      )}
-    </Pressable>
-  );
-
-  // ── Section header with title + "See all" ────────────────────────
-  const renderSectionHeader = (icon: string, title: string, onSeeAll: () => void) => (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionTitleRow}>
-        <MaterialCommunityIcons name={icon as any} size={22} color={Brand.primary} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      <Pressable style={styles.seeAllBtn} onPress={onSeeAll}>
-        <Text style={styles.seeAllText}>See all</Text>
-        <MaterialCommunityIcons name="chevron-right" size={18} color={Brand.primary} />
-      </Pressable>
-    </View>
-  );
-
-  // ── Horizontal sliding section ───────────────────────────────────
-  const renderSection = (icon: string, title: string, data: Product[], onSeeAll: () => void) => {
-    if (!data || data.length === 0) return null;
-    return (
-      <View style={styles.section}>
-        {renderSectionHeader(icon, title, onSeeAll)}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.carouselTrack}
-          decelerationRate="fast"
-          snapToInterval={160}
-          snapToAlignment="start"
-        >
-          {data.map((item) => renderCarouselCard(item))}
-        </ScrollView>
-      </View>
-    );
-  };
-
   const handleProductPress = useCallback((slug: string) => {
     router.push(`/product/${slug}`);
   }, [router]);
@@ -837,6 +1009,30 @@ export default function ProductFeedScreen() {
     }
   }, [router]);
 
+  const handleCategoryPress = useCallback((cat: Category | null) => {
+    if (cat) {
+      router.push({ pathname: '/search', params: { category: cat.slug, categoryName: cat.name } } as any);
+    } else {
+      router.push('/categories' as any);
+    }
+  }, [router]);
+
+  const handleStorePress = useCallback((slug: string) => {
+    router.push(`/store/${slug}` as any);
+  }, [router]);
+
+  const handleBrandPress = useCallback((slug: string, name: string) => {
+    router.push({ pathname: '/search', params: { brand: slug, brandName: name } } as any);
+  }, [router]);
+
+  const handleSearchPress = useCallback(() => {
+    router.push('/search');
+  }, [router]);
+
+  const handleSuppliersPress = useCallback(() => {
+    router.push('/suppliers');
+  }, [router]);
+
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
       <ProductCard item={item} onPress={handleProductPress} onChat={handleChat} />
@@ -844,12 +1040,12 @@ export default function ProductFeedScreen() {
     [handleProductPress, handleChat]
   );
 
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View>
       {/* Search bar */}
       <Pressable
         style={({ pressed }) => [styles.searchBar, pressed && styles.searchBarPressed]}
-        onPress={() => router.push('/search')}
+        onPress={handleSearchPress}
       >
         <MaterialCommunityIcons name="magnify" size={26} color={Brand.textTertiary} />
         <Text style={styles.searchPlaceholder}>Search Diilzo</Text>
@@ -864,53 +1060,11 @@ export default function ProductFeedScreen() {
       {/* ── Flash Sale shelf with live countdown ─────────────────── */}
       <FlashSaleShelf products={flashSale} endsAt={flashEndsAt} onPress={handleProductPress} />
 
-      {/* ── Shop by Category — horizontal round carousel ─────────────── */}
-      <View style={styles.categoriesSection}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <MaterialCommunityIcons name="apps" size={20} color={Brand.primary} />
-            <Text style={styles.sectionTitle}>Shop by Category</Text>
-          </View>
-          <Pressable onPress={() => router.push('/categories' as any)}>
-            <Text style={styles.seeAllText}>View All ›</Text>
-          </Pressable>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryCarousel}
-        >
-          {categories.slice(0, 12).map((cat) => (
-            <Pressable
-              key={`cat-${cat.id}-${cat.slug}`}
-              style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
-              onPress={() => router.push({
-                pathname: '/search',
-                params: { category: cat.slug, categoryName: cat.name },
-              } as any)}
-            >
-              <View style={styles.categoryCircle}>
-                {cat.display_image ? (
-                  <Image
-                    source={{ uri: cat.display_image }}
-                    style={styles.categoryCircleImage}
-                    contentFit="contain"
-                    transition={200}
-                  />
-                ) : (
-                  <View style={styles.categoryCircleFallback}>
-                    <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.categoryItemName} numberOfLines={1}>{cat.name}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+      {/* ── Shop by Category ────────────────────────────────────────── */}
+      <CategorySection categories={categories} onPressCategory={handleCategoryPress} />
 
-      {/* ── Today's Deals — horizontal sliding carousel ──────────── */}
-      {renderSection('fire', "Today's Deals", deals, () => router.push('/search'))}
+      {/* ── Today's Deals ─────────────────────────────────────────── */}
+      <ProductCarouselSection icon="fire" title="Today's Deals" data={deals} onPress={handleProductPress} />
 
       {/* ── Voucher banner (claimable coupons) ───────────────────── */}
       <VoucherBanner vouchers={vouchers} />
@@ -918,132 +1072,26 @@ export default function ProductFeedScreen() {
       {/* ── Dual promo banner tiles ──────────────────────────────── */}
       <DualBannerTiles tileA={tileA} tileB={tileB} onPress={handleSlidePress} />
 
-      {/* ── New Arrivals — horizontal sliding carousel ───────────── */}
-      {renderSection('package-variant-closed', 'New Arrivals', newArrivals, () => router.push('/search'))}
+      {/* ── New Arrivals ─────────────────────────────────────────── */}
+      <ProductCarouselSection icon="package-variant-closed" title="New Arrivals" data={newArrivals} onPress={handleProductPress} />
 
-      {/* ── Recommended for You — horizontal sliding carousel ────── */}
-      {renderSection('thumb-up-outline', 'Recommended for You', recommended, () => router.push('/search'))}
+      {/* ── Recommended for You ──────────────────────────────────── */}
+      <ProductCarouselSection icon="thumb-up-outline" title="Recommended for You" data={recommended} onPress={handleProductPress} />
 
-      {/* ── Because You Viewed — server-backed recommendations ──── */}
-      {becauseYouViewed.length > 0 &&
-        renderSection('lightbulb-on-outline', 'Because You Viewed', becauseYouViewed, () => router.push('/search'))}
+      {/* ── Because You Viewed ───────────────────────────────────── */}
+      <ProductCarouselSection icon="lightbulb-on-outline" title="Because You Viewed" data={becauseYouViewed} onPress={handleProductPress} />
 
-      {/* ── Recently Viewed — from local storage ─────────────────── */}
-      {recentlyViewed.length > 0 && renderSection('history', 'Recently Viewed', recentlyViewed, () => { })}
+      {/* ── Recently Viewed ──────────────────────────────────────── */}
+      <ProductCarouselSection icon="history" title="Recently Viewed" data={recentlyViewed} onPress={handleProductPress} />
 
-      {/* ── Top Stores — horizontal carousel ──────────────────────── */}
-      {topStores.length > 0 && (
-        <View style={styles.storesSection}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <MaterialCommunityIcons name="store" size={20} color={Brand.primary} />
-              <Text style={styles.sectionTitle}>Top Stores</Text>
-            </View>
-            <Pressable onPress={() => router.push('/suppliers')}>
-              <Text style={styles.seeAllText}>View All ›</Text>
-            </Pressable>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storesCarousel}
-          >
-            {topStores.map((s) => (
-              <Pressable
-                key={s.id}
-                style={styles.storeCard}
-                onPress={() => router.push(`/store/${s.slug}` as any)}
-              >
-                <View style={styles.storeLogoWrap}>
-                  {s.logo_url ? (
-                    <Image source={{ uri: s.logo_url }} style={styles.storeLogo} contentFit="contain" />
-                  ) : (
-                    <View style={styles.storeLogoFallback}>
-                      <MaterialCommunityIcons name={s.is_wholesaler ? 'factory' : 'store'} size={24} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
-                <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
-                <View style={styles.storeMetaRow}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.textSecondary} />
-                  <Text style={styles.storeMetaText}>{s.product_count || 0} products</Text>
-                </View>
-                {s.is_wholesaler && (
-                  <View style={styles.storeWholesaleBadge}>
-                    <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
-                    <Text style={styles.storeWholesaleText}>Supplier</Text>
-                  </View>
-                )}
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+      {/* ── Top Stores ───────────────────────────────────────────── */}
+      <TopStoresSection stores={topStores} onPressStore={handleStorePress} onPressSeeAll={handleSuppliersPress} />
 
       {/* ── Supplier banner ──────────────────────────────────────── */}
-      <Pressable
-        style={({ pressed }) => [styles.supplierBanner, pressed && { opacity: 0.9 }]}
-        onPress={() => router.push('/suppliers')}
-      >
-        <View style={styles.supplierBannerContent}>
-          <View style={styles.supplierBannerIcon}>
-            <MaterialCommunityIcons name="factory" size={32} color="#FFFFFF" />
-          </View>
-          <View style={styles.supplierBannerText}>
-            <Text style={styles.supplierBannerTitle}>Source from Manufacturers</Text>
-            <Text style={styles.supplierBannerSub}>
-              Verified suppliers • Trade Assurance • Factory prices
-            </Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#FFFFFF" />
-        </View>
-      </Pressable>
+      <SupplierBanner onPress={handleSuppliersPress} />
 
-      {/* ── Top Brands — horizontal carousel with logos ──────────────── */}
-      {topBrands.length > 0 && (
-        <View style={styles.brandsSection}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <MaterialCommunityIcons name="certificate" size={20} color={Brand.primary} />
-              <Text style={styles.sectionTitle}>Popular Brands</Text>
-            </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.brandsScroll}
-          >
-            {topBrands.map((b) => (
-              <Pressable
-                key={`brand-${b.id}`}
-                style={({ pressed }) => [styles.brandCard, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push({
-                  pathname: '/search',
-                  params: { brand: b.slug, brandName: b.name },
-                } as any)}
-              >
-                <View style={styles.brandLogoWrap}>
-                  {b.logo_url ? (
-                    <Image
-                      source={{ uri: b.logo_url }}
-                      style={styles.brandLogo}
-                      contentFit="contain"
-                      transition={150}
-                    />
-                  ) : (
-                    <View style={styles.brandLogoFallback}>
-                      <MaterialCommunityIcons name="tag" size={22} color={Brand.primary} />
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.brandName} numberOfLines={1}>{b.name}</Text>
-                <Text style={styles.brandCount}>{b.product_count} products</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      )}
+      {/* ── Top Brands ───────────────────────────────────────────── */}
+      <TopBrandsSection brands={topBrands} onPressBrand={handleBrandPress} />
 
       {/* ── Category-filtered section title ──────────────────────── */}
       {activeCategory ? (
@@ -1055,7 +1103,10 @@ export default function ProductFeedScreen() {
         </View>
       ) : null}
     </View>
-  );
+  ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
+    deals, newArrivals, recommended, becauseYouViewed, recentlyViewed,
+    vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
+    handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory]);
 
   if (loading && products.length === 0) {
     return (
@@ -1228,12 +1279,13 @@ export default function ProductFeedScreen() {
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.list}
         ListHeaderComponent={renderHeader}
-        maxToRenderPerBatch={6}
-        windowSize={7}
-        initialNumToRender={8}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        initialNumToRender={6}
         removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
+        scrollEventThrottle={32}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
