@@ -1,8 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {Image, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
@@ -107,7 +106,7 @@ export default function BuyerDashboardScreen() {
               <View style={styles.avatarRing}>
                 <View style={styles.avatarWrap}>
                   {isAuthenticated && user?.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} contentFit="cover" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarFallback}>
                       <MaterialCommunityIcons name="account" size={36} color="#FFFFFF" />

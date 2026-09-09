@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   Platform,
@@ -311,7 +310,7 @@ export default function OrderDetailScreen() {
                         <Image
                           source={{ uri: item.product_image_url || item.product_image || '' }}
                           style={styles.itemImage}
-                          contentFit="contain"
+                          resizeMode="contain"
                         />
                       ) : (
                         <View style={[styles.itemImage, styles.itemImageFallback]}>

@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   FlatList,
@@ -101,7 +100,7 @@ export default function SellerProductsScreen() {
         onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
       >
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="contain" />
+          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="contain" />
         ) : (
           <View style={styles.productImageFallback}>
             <MaterialCommunityIcons name="package-variant" size={28} color={Brand.textTertiary} />

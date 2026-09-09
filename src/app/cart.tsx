@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   FlatList,
@@ -295,8 +294,7 @@ export default function CartScreen() {
             <Image
               source={{ uri: item.product.primary_image_url }}
               style={styles.itemImage}
-              contentFit="contain"
-              transition={200}
+              resizeMode="contain"
             />
           ) : (
             <View style={[styles.itemImage, styles.noImage]}>

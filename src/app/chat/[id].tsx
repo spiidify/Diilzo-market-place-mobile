@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -243,7 +242,7 @@ export default function ChatThreadScreen() {
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatarWrap}>
               {storeLogo ? (
-                <Image source={{ uri: storeLogo }} style={styles.headerAvatar} contentFit="contain" />
+                <Image source={{ uri: storeLogo }} style={styles.headerAvatar} resizeMode="contain" />
               ) : (
                 <View style={styles.headerAvatarFallback}>
                   <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />

@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Pressable,
@@ -57,7 +56,7 @@ export default function BuyerWishlistScreen() {
     >
       <View style={styles.imageWrap}>
         {item.product.primary_image_url ? (
-          <Image source={{ uri: item.product.primary_image_url }} style={styles.image} contentFit="contain" />
+          <Image source={{ uri: item.product.primary_image_url }} style={styles.image} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
             <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />

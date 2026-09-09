@@ -2,7 +2,7 @@ import { Brand } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { Image as RNImage, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   Keyframe
@@ -124,7 +124,7 @@ export function DiilzoSplash() {
           entering={logoKeyframe.duration(DURATION)}
           style={styles.logoWrap}
         >
-          <RNImage
+          <Image
             source={WHITE_LOGO}
             style={styles.logoImage}
             resizeMode="contain"
@@ -158,7 +158,7 @@ export function DiilzoSplash() {
         style={styles.gradient}
       >
         <View style={styles.logoWrap}>
-          <RNImage
+          <Image
             source={WHITE_LOGO}
             style={styles.logoImage}
             resizeMode="contain"

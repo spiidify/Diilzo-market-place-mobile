@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  Image as RNImage,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -138,7 +138,7 @@ export default function CategoriesScreen() {
           {active && <View style={styles.activeBar} />}
           <View style={[styles.parentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
-              <RNImage source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="contain" />
+              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="contain" />
             ) : (
               <View style={styles.parentCircleFallback}>
                 <MaterialCommunityIcons name="tag" size={18} color="#FFFFFF" />
@@ -192,7 +192,7 @@ export default function CategoriesScreen() {
               {isAuthenticated && user ? (
                 <View style={styles.avatarWrap}>
                   {user.avatar_url ? (
-                    <RNImage source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarFallback}>
                       <Text style={styles.avatarInitial}>
@@ -286,7 +286,7 @@ export default function CategoriesScreen() {
                   {/* Category hero banner */}
                   <View style={styles.heroBanner}>
                     {selectedCategory.display_image ? (
-                      <RNImage
+                      <Image
                         source={{ uri: selectedCategory.display_image }}
                         style={styles.heroBg}
                         resizeMode="contain"
@@ -324,7 +324,7 @@ export default function CategoriesScreen() {
                         >
                           <View style={styles.subCardIcon}>
                             {child.display_image ? (
-                              <RNImage
+                              <Image
                                 source={{ uri: child.display_image }}
                                 style={styles.subCardImg}
                                 resizeMode="contain"
@@ -368,7 +368,7 @@ export default function CategoriesScreen() {
                           >
                             <View style={styles.productImageWrap}>
                               {item.primary_image_url ? (
-                                <RNImage
+                                <Image
                                   source={{ uri: item.primary_image_url }}
                                   style={styles.productImage}
                                   resizeMode="contain"

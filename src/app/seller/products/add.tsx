@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -209,7 +208,7 @@ export default function AddProductScreen() {
               <View style={styles.imageRow}>
                 {images.map((img, idx) => (
                   <View key={`img-${idx}`} style={styles.thumbWrap}>
-                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="contain" />
+                    <Image source={{ uri: img.uri }} style={styles.thumb} resizeMode="contain" />
                     <Pressable
                       style={styles.thumbRemove}
                       onPress={() => removeImage(idx)}

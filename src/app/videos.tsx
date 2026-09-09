@@ -1,8 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Pressable,
@@ -219,7 +218,7 @@ export default function VideosScreen() {
           <>
             {/* Thumbnail for non-active items */}
             {thumb ? (
-              <Image source={{ uri: thumb }} style={styles.thumbnail} contentFit="cover" transition={200} />
+              <Image source={{ uri: thumb }} style={styles.thumbnail} resizeMode="cover" />
             ) : (
               <View style={styles.thumbnailFallback} />
             )}
@@ -254,7 +253,7 @@ export default function VideosScreen() {
         <View style={styles.actionBar}>
           <View style={styles.actionAvatar}>
             {item.store?.logo_url ? (
-              <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} contentFit="contain" />
+              <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} resizeMode="contain" />
             ) : (
               <View style={styles.storeAvatarFallback}>
                 <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />

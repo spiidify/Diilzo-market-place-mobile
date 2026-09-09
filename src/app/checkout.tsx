@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   Animated,
@@ -847,7 +846,7 @@ export default function CheckoutScreen() {
                         <Image
                           source={{ uri: item.product.primary_image_url }}
                           style={styles.productItemImage}
-                          contentFit="cover"
+                          resizeMode="cover"
                         />
                       ) : (
                         <View style={[styles.productItemImage, styles.productNoImage]}>

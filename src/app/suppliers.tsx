@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Modal,
@@ -185,7 +184,7 @@ export default function SuppliersScreen() {
         {/* ── Banner ──────────────────────────────────────────────── */}
         <View style={styles.bannerWrap}>
           {item.banner_url ? (
-            <Image source={{ uri: item.banner_url }} style={styles.banner} contentFit="cover" />
+            <Image source={{ uri: item.banner_url }} style={styles.banner} resizeMode="cover" />
           ) : (
             <LinearGradient
               colors={[Brand.dark, Brand.accent, Brand.primary]}
@@ -224,7 +223,7 @@ export default function SuppliersScreen() {
           <View style={styles.logoRow}>
             <View style={styles.logoWrap}>
               {item.logo_url ? (
-                <Image source={{ uri: item.logo_url }} style={styles.logo} contentFit="contain" />
+                <Image source={{ uri: item.logo_url }} style={styles.logo} resizeMode="contain" />
               ) : (
                 <View style={styles.logoFallback}>
                   <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={22} color="#FFFFFF" />

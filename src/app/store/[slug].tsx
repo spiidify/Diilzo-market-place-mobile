@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Pressable,
@@ -182,7 +181,7 @@ export default function StoreDetailScreen() {
     >
       <View style={styles.productImageWrap}>
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} contentFit="contain" />
+          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
             <MaterialCommunityIcons name="package-variant-closed" size={32} color={Brand.textTertiary} />
@@ -256,7 +255,7 @@ export default function StoreDetailScreen() {
                 <View style={styles.heroContent}>
                   <View style={styles.heroLogoWrap}>
                     {store.logo_url ? (
-                      <Image source={{ uri: store.logo_url }} style={styles.heroLogo} contentFit="contain" />
+                      <Image source={{ uri: store.logo_url }} style={styles.heroLogo} resizeMode="contain" />
                     ) : (
                       <View style={styles.heroLogoFallback}>
                         <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={36} color="#FFFFFF" />

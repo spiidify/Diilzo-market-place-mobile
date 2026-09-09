@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Keyboard,
@@ -81,7 +80,7 @@ const SponsoredProductCard = memo(function SponsoredProductCard({
     >
       <View style={styles.sponsoredImgWrap}>
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.sponsoredImg} contentFit="contain" />
+          <Image source={{ uri: item.primary_image_url }} style={styles.sponsoredImg} resizeMode="contain" />
         ) : (
           <View style={[styles.sponsoredImg, { backgroundColor: Brand.surfaceAlt }]}>
             <MaterialCommunityIcons name="image-off-outline" size={28} color={Brand.textTertiary} />
@@ -114,7 +113,7 @@ const SearchProductCard = memo(function SearchProductCard({
     >
       <View style={styles.imageWrap}>
         {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.image} contentFit="contain" transition={200} />
+          <Image source={{ uri: item.primary_image_url }} style={styles.image} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
             <MaterialCommunityIcons name="package-variant-closed" size={36} color={Brand.textTertiary} />
@@ -556,7 +555,7 @@ export default function SearchScreen() {
                 onPress={() => setQuery(item.term)}
               >
                 {img ? (
-                  <Image source={{ uri: img }} style={styles.trendingImg} contentFit="contain" transition={200} />
+                  <Image source={{ uri: img }} style={styles.trendingImg} resizeMode="contain" />
                 ) : (
                   <View style={[styles.trendingImg, styles.trendingImgFallback]}>
                     <MaterialCommunityIcons name={item.icon as any} size={24} color={Brand.primary} />

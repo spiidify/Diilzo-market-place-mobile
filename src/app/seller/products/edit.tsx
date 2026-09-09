@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -254,7 +253,7 @@ export default function EditProductScreen() {
                   <View style={styles.imageRow}>
                     {existingImages.map((uri, idx) => (
                       <View key={`ex-${idx}`} style={styles.thumbWrap}>
-                        <Image source={{ uri }} style={styles.thumb} contentFit="contain" />
+                        <Image source={{ uri }} style={styles.thumb} resizeMode="contain" />
                         <Pressable
                           style={styles.thumbRemove}
                           onPress={() => removeExistingImage(idx)}
@@ -273,7 +272,7 @@ export default function EditProductScreen() {
               <View style={styles.imageRow}>
                 {images.map((img, idx) => (
                   <View key={`new-${idx}`} style={styles.thumbWrap}>
-                    <Image source={{ uri: img.uri }} style={styles.thumb} contentFit="contain" />
+                    <Image source={{ uri: img.uri }} style={styles.thumb} resizeMode="contain" />
                     <Pressable
                       style={styles.thumbRemove}
                       onPress={() => removeNewImage(idx)}

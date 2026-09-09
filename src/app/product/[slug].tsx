@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   Animated,
@@ -487,8 +486,7 @@ export default function ProductDetailScreen() {
                       <Image
                         source={{ uri: item }}
                         style={styles.mainImage}
-                        contentFit="contain"
-                        transition={150}
+                        resizeMode="contain"
                       />
                     </Pressable>
                   )}
@@ -547,7 +545,7 @@ export default function ProductDetailScreen() {
                     onPress={() => setActiveImage(idx)}
                     style={[styles.thumb, activeImage === idx && styles.thumbActive]}
                   >
-                    <Image source={{ uri: img }} style={styles.thumbImg} contentFit="contain" />
+                    <Image source={{ uri: img }} style={styles.thumbImg} resizeMode="contain" />
                   </Pressable>
                 ))}
               </ScrollView>
@@ -938,7 +936,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} resizeMode="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -983,7 +981,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} resizeMode="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1037,7 +1035,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} resizeMode="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1078,7 +1076,7 @@ export default function ProductDetailScreen() {
                   >
                     <View style={styles.hImgWrap}>
                       {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} contentFit="contain" />
+                        <Image source={{ uri: item.primary_image_url }} style={styles.hImg} resizeMode="contain" />
                       ) : (
                         <View style={[styles.hImg, { backgroundColor: Brand.surfaceAlt }]}>
                           <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
@@ -1191,7 +1189,7 @@ export default function ProductDetailScreen() {
                   <Image
                     source={{ uri: item }}
                     style={styles.fsImage}
-                    contentFit="contain"
+                    resizeMode="contain"
                   />
                 </View>
               )}
@@ -1208,7 +1206,7 @@ export default function ProductDetailScreen() {
                     onPress={() => setFullscreenIndex(idx)}
                     style={[styles.fsThumb, fullscreenIndex === idx && styles.fsThumbActive]}
                   >
-                    <Image source={{ uri: img }} style={styles.fsThumbImg} contentFit="contain" />
+                    <Image source={{ uri: img }} style={styles.fsThumbImg} resizeMode="contain" />
                   </Pressable>
                 ))}
               </ScrollView>

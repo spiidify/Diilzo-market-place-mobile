@@ -8,7 +8,7 @@ import {
   FlatList,
   Linking,
   Pressable,
-  Image as RNImage,
+  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -66,7 +66,7 @@ const ProductCard = memo(function ProductCard({
     >
       <View style={styles.imageWrap}>
         {item.primary_image_url ? (
-          <RNImage
+          <Image
             source={{ uri: item.primary_image_url }}
             style={styles.image}
             resizeMode="contain"
@@ -259,7 +259,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
             >
               <View style={styles.slideImageWrap}>
                 {slide.display_image ? (
-                  <RNImage
+                  <Image
                     source={{ uri: slide.display_image }}
                     style={styles.slideImage}
                     resizeMode="cover"
@@ -379,7 +379,7 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
           >
             <View style={styles.carouselImageWrap}>
               {item.primary_image_url ? (
-                <RNImage source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
+                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
               ) : (
                 <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
               )}
@@ -463,7 +463,7 @@ const DualBannerTiles = memo(function DualBannerTiles({
         {tileA[0] && (
           <Pressable style={({ pressed }) => [styles.dualTile, pressed && { opacity: 0.9 }]} onPress={() => onPress(tileA[0])}>
             {tileA[0].display_image ? (
-              <RNImage source={{ uri: tileA[0].display_image }} style={styles.dualTileImage} resizeMode="cover" />
+              <Image source={{ uri: tileA[0].display_image }} style={styles.dualTileImage} resizeMode="cover" />
             ) : (
               <LinearGradient colors={[Brand.primary, Brand.accent]} style={styles.dualTileFallback}>
                 <Text style={styles.dualTileText} numberOfLines={2}>{tileA[0].headline || tileA[0].title}</Text>
@@ -474,7 +474,7 @@ const DualBannerTiles = memo(function DualBannerTiles({
         {tileB[0] && (
           <Pressable style={({ pressed }) => [styles.dualTile, pressed && { opacity: 0.9 }]} onPress={() => onPress(tileB[0])}>
             {tileB[0].display_image ? (
-              <RNImage source={{ uri: tileB[0].display_image }} style={styles.dualTileImage} resizeMode="cover" />
+              <Image source={{ uri: tileB[0].display_image }} style={styles.dualTileImage} resizeMode="cover" />
             ) : (
               <LinearGradient colors={['#F97316', '#EF4444']} style={styles.dualTileFallback}>
                 <Text style={styles.dualTileText} numberOfLines={2}>{tileB[0].headline || tileB[0].title}</Text>
@@ -521,7 +521,7 @@ const CategorySection = memo(function CategorySection({
           >
             <View style={styles.categoryCircle}>
               {cat.display_image ? (
-                <RNImage
+                <Image
                   source={{ uri: cat.display_image }}
                   style={styles.categoryCircleImage}
                   resizeMode="contain"
@@ -578,7 +578,7 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
           >
             <View style={styles.carouselImageWrap}>
               {item.primary_image_url ? (
-                <RNImage source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
+                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
               ) : (
                 <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
               )}
@@ -637,7 +637,7 @@ const TopStoresSection = memo(function TopStoresSection({
           >
             <View style={styles.storeLogoWrap}>
               {s.logo_url ? (
-                <RNImage source={{ uri: s.logo_url }} style={styles.storeLogo} resizeMode="contain" />
+                <Image source={{ uri: s.logo_url }} style={styles.storeLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.storeLogoFallback}>
                   <MaterialCommunityIcons name={s.is_wholesaler ? 'factory' : 'store'} size={24} color="#FFFFFF" />
@@ -694,7 +694,7 @@ const TopBrandsSection = memo(function TopBrandsSection({
           >
             <View style={styles.brandLogoWrap}>
               {b.logo_url ? (
-                <RNImage
+                <Image
                   source={{ uri: b.logo_url }}
                   style={styles.brandLogo}
                   resizeMode="contain"
@@ -1139,7 +1139,7 @@ export default function ProductFeedScreen() {
                 </Text>
                 <View style={styles.avatarRing}>
                   {isAuthenticated && user?.avatar_url ? (
-                    <RNImage source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
@@ -1193,7 +1193,7 @@ export default function ProductFeedScreen() {
                 </Text>
                 <View style={styles.avatarRing}>
                   {isAuthenticated && user?.avatar_url ? (
-                    <RNImage source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
+                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
@@ -1254,7 +1254,7 @@ export default function ProductFeedScreen() {
               </Text>
               <View style={styles.avatarRing}>
                 {isAuthenticated && user?.avatar_url ? (
-                  <RNImage source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
                     <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />

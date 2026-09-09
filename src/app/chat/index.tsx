@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   FlatList,
   Pressable,
@@ -75,7 +74,7 @@ export default function ChatListScreen() {
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
           ) : item.store_logo ? (
-            <Image source={{ uri: item.store_logo }} style={styles.avatar} contentFit="contain" />
+            <Image source={{ uri: item.store_logo }} style={styles.avatar} resizeMode="contain" />
           ) : (
             <View style={styles.avatarFallback}>
               <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />

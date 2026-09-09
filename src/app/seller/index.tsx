@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Pressable,
   RefreshControl,
@@ -108,7 +107,7 @@ export default function SellerDashboardScreen() {
           <View style={styles.storeCard}>
             <View style={styles.storeLogoWrap}>
               {store?.logo_url ? (
-                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} contentFit="contain" />
+                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} resizeMode="contain" />
               ) : (
                 <View style={styles.storeLogoFallback}>
                   <MaterialCommunityIcons name="store" size={28} color="#FFFFFF" />

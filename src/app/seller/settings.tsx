@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
+import {Image,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
@@ -237,7 +236,7 @@ export default function SellerSettingsScreen() {
               <View style={styles.card}>
                 <Pressable onPress={pickBanner}>
                   {bannerUri ? (
-                    <Image source={{ uri: bannerUri }} style={styles.banner} contentFit="cover" />
+                    <Image source={{ uri: bannerUri }} style={styles.banner} resizeMode="cover" />
                   ) : (
                     <View style={[styles.banner, styles.bannerFallback]}>
                       <MaterialCommunityIcons name="image-plus" size={28} color={Brand.textTertiary} />
@@ -248,7 +247,7 @@ export default function SellerSettingsScreen() {
 
                 <Pressable onPress={pickLogo} style={styles.logoWrap}>
                   {logoUri ? (
-                    <Image source={{ uri: logoUri }} style={styles.logo} contentFit="cover" />
+                    <Image source={{ uri: logoUri }} style={styles.logo} resizeMode="cover" />
                   ) : (
                     <View style={[styles.logo, styles.logoFallback]}>
                       <MaterialCommunityIcons name="store" size={26} color="#FFFFFF" />
