@@ -15,10 +15,11 @@ const COLOR_LOGO = require('@/assets/logos/DIILZO-LOGO-COLOR.png');
 export function DiilzoLogo({ size = 28, variant = 'white', showSubtitle = true }: DiilzoLogoProps) {
   const source = variant === 'white' ? WHITE_LOGO : COLOR_LOGO;
   const textColor = variant === 'white' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.55)';
+  const logoWidth = size * 3.2;
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.logoBox, { height: size }]}>
+      <View style={[styles.logoBox, { height: size, width: logoWidth }]}>
         <Image
           source={source}
           style={{ width: '100%', height: '100%' }}
@@ -27,7 +28,7 @@ export function DiilzoLogo({ size = 28, variant = 'white', showSubtitle = true }
         />
       </View>
       {showSubtitle && (
-        <Text style={[styles.subtitle, { color: textColor }]}>Marketplace</Text>
+        <Text style={[styles.subtitle, { color: textColor, width: logoWidth }]}>Marketplace</Text>
       )}
     </View>
   );
@@ -49,5 +50,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
 });
