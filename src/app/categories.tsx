@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Pressable,
   RefreshControl,
@@ -14,6 +13,7 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,19 +25,12 @@ import { fetchCategories } from '@/services/catalog';
 import { fetchProducts } from '@/services/products';
 import type { Category, Product } from '@/types';
 
-// Right panel = screen width - left panel (100) - padding
-const SCREEN_WIDTH = Dimensions.get('window').width;
 const LEFT_PANEL_WIDTH = 100;
-const SUB_GRID_PADDING = 24; // 12px each side
-const SUB_GRID_GAP = 10;
-const SUB_COLUMNS = 3;
-const SUB_CARD_WIDTH = Math.floor(
-  (SCREEN_WIDTH - LEFT_PANEL_WIDTH - SUB_GRID_PADDING - SUB_GRID_GAP * (SUB_COLUMNS - 1)) / SUB_COLUMNS
-);
 
 export default function CategoriesScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { width: screenWidth } = useWindowDimensions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,11 +39,20 @@ export default function CategoriesScreen() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const leftListRef = useRef<FlatList>(null);
   const rightScrollRef = useRef<ScrollView>(null);
   const productCardSize = useImageDimensions('productCard');
   const categorySize = useImageDimensions('category');
   const selectedSlugRef = useRef<string | null>(null);
+
+  // Subcategory card width — responsive to actual screen width
+  const subGridPadding = 20;
+  const subGridGap = 10;
+  const subColumns = 3;
+  const subCardWidth = Math.floor(
+    (screenWidth - LEFT_PANEL_WIDTH - subGridPadding - subGridGap * (subColumns - 1)) / subColumns
+  );
 
   // Filter categories by search query
   const filteredCategories = searchQuery.trim()
@@ -62,6 +64,7 @@ export default function CategoriesScreen() {
 
   const load = useCallback(async () => {
     try {
+      setLoadError(null);
       const cats = await fetchCategories(categorySize);
       setCategories(cats);
       if (cats.length > 0 && !selectedSlugRef.current) {
@@ -70,6 +73,7 @@ export default function CategoriesScreen() {
       }
     } catch (e: any) {
       console.error('Categories load error:', e?.message);
+      setLoadError(e?.message || 'Failed to load categories');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,12 +104,12 @@ export default function CategoriesScreen() {
       .finally(() => setProductsLoading(false));
   }, [selectedSlug, productCardSize]);
 
-  const handleCategoryPress = (cat: Category) => {
+  const handleCategoryPress = useCallback((cat: Category) => {
     router.push({
       pathname: '/search',
       params: { category: cat.slug, categoryName: cat.name },
     } as any);
-  };
+  }, [router]);
 
   const handleScroll = useCallback((event: any) => {
     setShowScrollTop(event.nativeEvent.contentOffset.y > 300);
@@ -116,11 +120,11 @@ export default function CategoriesScreen() {
   }, []);
 
   // Reset right panel scroll when switching parent
-  const handleParentSelect = (slug: string) => {
+  const handleParentSelect = useCallback((slug: string) => {
     selectedSlugRef.current = slug;
     setSelectedSlug(slug);
     rightScrollRef.current?.scrollTo({ y: 0, animated: false });
-  };
+  }, []);
 
   // ── Left panel: parent categories ──────────────────────────────
   const renderParent = useCallback(
@@ -150,7 +154,7 @@ export default function CategoriesScreen() {
         </Pressable>
       );
     },
-    [selectedSlug]
+    [selectedSlug, handleParentSelect]
   );
 
   if (loading) {
@@ -161,19 +165,19 @@ export default function CategoriesScreen() {
             <Text style={styles.headerTitle}>Categories</Text>
             <Text style={styles.headerSub}>Browse all product categories</Text>
           </LinearGradient>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading categories...</Text>
-          </View>
         </SafeAreaView>
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading categories...</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
+      {/* Header — SafeAreaView only wraps the header */}
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header with gradient + profile + search */}
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
           {/* Title row with profile on the right */}
           <View style={styles.titleRow}>
@@ -223,180 +227,200 @@ export default function CategoriesScreen() {
             )}
           </View>
         </LinearGradient>
+      </SafeAreaView>
 
-        {/* Body: left menu + right content */}
-        <View style={styles.body}>
-          {/* Left panel — parent categories */}
-          <View style={styles.leftPanel}>
-            <FlatList
-              data={filteredCategories}
-              keyExtractor={(item) => `parent-${item.id}-${item.slug}`}
-              renderItem={renderParent}
-              contentContainerStyle={styles.parentList}
-              showsVerticalScrollIndicator={false}
-              maxToRenderPerBatch={10}
-              windowSize={11}
-              initialNumToRender={10}
-              removeClippedSubviews={true}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={() => { setRefreshing(true); load(); }}
-                  colors={[Brand.primary]}
-                  tintColor={Brand.primary}
-                />
-              }
-            />
+      {/* Body: left menu + right content — direct child of screen, fills remaining space */}
+      <View style={styles.body}>
+        {loadError ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{loadError}</Text>
+            <Pressable style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
           </View>
+        ) : categories.length === 0 ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="package-variant-closed" size={48} color={Brand.textTertiary} />
+            <Text style={styles.emptyText}>No categories found</Text>
+            <Pressable style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
+              <Text style={styles.retryBtnText}>Reload</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            {/* Left panel — parent categories */}
+            <View style={styles.leftPanel}>
+              <FlatList
+                data={filteredCategories}
+                keyExtractor={(item) => `parent-${item.id}-${item.slug}`}
+                renderItem={renderParent}
+                contentContainerStyle={styles.parentList}
+                showsVerticalScrollIndicator={false}
+                maxToRenderPerBatch={10}
+                windowSize={11}
+                initialNumToRender={10}
+                removeClippedSubviews={true}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => { setRefreshing(true); load(); }}
+                    colors={[Brand.primary]}
+                    tintColor={Brand.primary}
+                  />
+                }
+              />
+            </View>
 
-          {/* Right panel — modern children view */}
-          <ScrollView
-            ref={rightScrollRef}
-            style={styles.rightPanel}
-            contentContainerStyle={styles.rightContent}
-            showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-          >
-            {selectedCategory && (
-              <>
-                {/* Category hero banner */}
-                <View style={styles.heroBanner}>
-                  {selectedCategory.display_image ? (
-                    <Image
-                      source={{ uri: selectedCategory.display_image }}
-                      style={styles.heroBg}
-                      contentFit="contain"
-                      transition={200}
-                    />
-                  ) : (
-                    <View style={[styles.heroBg, styles.heroBgFallback]} />
-                  )}
-                  <View style={styles.heroOverlay} />
-                  <View style={styles.heroContent}>
-                    <Text style={styles.heroTitle}>{selectedCategory.name}</Text>
-                    <Text style={styles.heroCount}>
-                      {(selectedCategory.children || []).length} subcategories
-                    </Text>
+            {/* Right panel — modern children view */}
+            <ScrollView
+              ref={rightScrollRef}
+              style={styles.rightPanel}
+              contentContainerStyle={styles.rightContent}
+              showsVerticalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              {selectedCategory && (
+                <>
+                  {/* Category hero banner */}
+                  <View style={styles.heroBanner}>
+                    {selectedCategory.display_image ? (
+                      <Image
+                        source={{ uri: selectedCategory.display_image }}
+                        style={styles.heroBg}
+                        contentFit="contain"
+                        transition={200}
+                      />
+                    ) : (
+                      <View style={[styles.heroBg, styles.heroBgFallback]} />
+                    )}
+                    <View style={styles.heroOverlay} />
+                    <View style={styles.heroContent}>
+                      <Text style={styles.heroTitle}>{selectedCategory.name}</Text>
+                      <Text style={styles.heroCount}>
+                        {(selectedCategory.children || []).length} subcategories
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Browse all button — pill style */}
-                <Pressable
-                  style={({ pressed }) => [styles.browseAllPill, pressed && { opacity: 0.88 }]}
-                  onPress={() => handleCategoryPress(selectedCategory)}
-                >
-                  <MaterialCommunityIcons name="view-grid" size={18} color="#FFFFFF" />
-                  <Text style={styles.browseAllText}>Browse all {selectedCategory.name}</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
-                </Pressable>
+                  {/* Browse all button — pill style */}
+                  <Pressable
+                    style={({ pressed }) => [styles.browseAllPill, pressed && { opacity: 0.88 }]}
+                    onPress={() => handleCategoryPress(selectedCategory)}
+                  >
+                    <MaterialCommunityIcons name="view-grid" size={18} color="#FFFFFF" />
+                    <Text style={styles.browseAllText}>Browse all {selectedCategory.name}</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
+                  </Pressable>
 
-                {/* Subcategories — modern card grid */}
-                {selectedCategory.children && selectedCategory.children.length > 0 ? (
-                  <View style={styles.subGrid}>
-                    {selectedCategory.children.map((child) => (
-                      <Pressable
-                        key={`sub-${child.id}-${child.slug}`}
-                        style={({ pressed }) => [styles.subCard, pressed && { opacity: 0.85 }]}
-                        onPress={() => handleCategoryPress(child)}
-                      >
-                        <View style={styles.subCardIcon}>
-                          {child.display_image ? (
-                            <Image
-                              source={{ uri: child.display_image }}
-                              style={styles.subCardImg}
-                              contentFit="contain"
-                              transition={150}
-                            />
-                          ) : (
-                            <View style={styles.subCardFallback}>
-                              <MaterialCommunityIcons name="tag" size={22} color="#FFFFFF" />
-                            </View>
-                          )}
-                        </View>
-                        <Text style={styles.subCardName} numberOfLines={2}>{child.name}</Text>
-                        {child.product_count !== undefined && child.product_count > 0 && (
-                          <Text style={styles.subCardCount}>{child.product_count} items</Text>
-                        )}
-                      </Pressable>
-                    ))}
-                  </View>
-                ) : (
-                  <View style={styles.emptySubs}>
-                    <MaterialCommunityIcons name="package-variant-closed" size={44} color={Brand.textTertiary} />
-                    <Text style={styles.emptySubsText}>No subcategories yet</Text>
-                    <Pressable
-                      style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.85 }]}
-                      onPress={() => handleCategoryPress(selectedCategory)}
-                    >
-                      <Text style={styles.browseBtnText}>Browse {selectedCategory.name}</Text>
-                    </Pressable>
-                  </View>
-                )}
-
-                {/* Products from this category — 2 per row */}
-                {categoryProducts.length > 0 && (
-                  <View style={styles.productsSection}>
-                    <Text style={styles.productsSectionTitle}>Products in {selectedCategory.name}</Text>
-                    <View style={styles.productGrid}>
-                      {categoryProducts.map((item) => (
+                  {/* Subcategories — modern card grid */}
+                  {selectedCategory.children && selectedCategory.children.length > 0 ? (
+                    <View style={styles.subGrid}>
+                      {selectedCategory.children.map((child) => (
                         <Pressable
-                          key={`cat-prod-${item.id}-${item.slug}`}
-                          style={({ pressed }) => [styles.productCard, pressed && { opacity: 0.9 }]}
-                          onPress={() => router.push(`/product/${item.slug}` as any)}
+                          key={`sub-${child.id}-${child.slug}`}
+                          style={({ pressed }) => [styles.subCard, { width: subCardWidth }, pressed && { opacity: 0.85 }]}
+                          onPress={() => handleCategoryPress(child)}
                         >
-                          <View style={styles.productImageWrap}>
-                            {item.primary_image_url ? (
+                          <View style={styles.subCardIcon}>
+                            {child.display_image ? (
                               <Image
-                                source={{ uri: item.primary_image_url }}
-                                style={styles.productImage}
+                                source={{ uri: child.display_image }}
+                                style={styles.subCardImg}
                                 contentFit="contain"
-                                transition={200}
+                                transition={150}
                               />
                             ) : (
-                              <View style={styles.productNoImage}>
-                                <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
-                              </View>
-                            )}
-                            {item.is_on_sale && (
-                              <View style={styles.productSaleBadge}>
-                                <Text style={styles.productSaleBadgeText}>{item.discount_percentage}% OFF</Text>
+                              <View style={styles.subCardFallback}>
+                                <MaterialCommunityIcons name="tag" size={22} color="#FFFFFF" />
                               </View>
                             )}
                           </View>
-                          <View style={styles.productCardBody}>
-                            <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-                            <View style={styles.productPriceRow}>
-                              <Text style={styles.productCurrency}>{item.currency}</Text>
-                              <Text style={styles.productPrice}>
-                                {Number(item.final_price).toLocaleString()}
-                              </Text>
-                            </View>
-                          </View>
+                          <Text style={styles.subCardName} numberOfLines={2}>{child.name}</Text>
+                          {child.product_count !== undefined && child.product_count > 0 && (
+                            <Text style={styles.subCardCount}>{child.product_count} items</Text>
+                          )}
                         </Pressable>
                       ))}
                     </View>
-                  </View>
-                )}
-                {productsLoading && (
-                  <View style={styles.productsLoading}>
-                    <ActivityIndicator size="small" color={Brand.primary} />
-                    <Text style={styles.productsLoadingText}>Loading products...</Text>
-                  </View>
-                )}
-              </>
-            )}
-          </ScrollView>
-        </View>
-        <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
-      </SafeAreaView>
+                  ) : (
+                    <View style={styles.emptySubs}>
+                      <MaterialCommunityIcons name="package-variant-closed" size={44} color={Brand.textTertiary} />
+                      <Text style={styles.emptySubsText}>No subcategories yet</Text>
+                      <Pressable
+                        style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.85 }]}
+                        onPress={() => handleCategoryPress(selectedCategory)}
+                      >
+                        <Text style={styles.browseBtnText}>Browse {selectedCategory.name}</Text>
+                      </Pressable>
+                    </View>
+                  )}
+
+                  {/* Products from this category — 2 per row */}
+                  {categoryProducts.length > 0 && (
+                    <View style={styles.productsSection}>
+                      <Text style={styles.productsSectionTitle}>Products in {selectedCategory.name}</Text>
+                      <View style={styles.productGrid}>
+                        {categoryProducts.map((item) => (
+                          <Pressable
+                            key={`cat-prod-${item.id}-${item.slug}`}
+                            style={({ pressed }) => [styles.productCard, pressed && { opacity: 0.9 }]}
+                            onPress={() => router.push(`/product/${item.slug}` as any)}
+                          >
+                            <View style={styles.productImageWrap}>
+                              {item.primary_image_url ? (
+                                <Image
+                                  source={{ uri: item.primary_image_url }}
+                                  style={styles.productImage}
+                                  contentFit="contain"
+                                  transition={200}
+                                />
+                              ) : (
+                                <View style={styles.productNoImage}>
+                                  <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
+                                </View>
+                              )}
+                              {item.is_on_sale && (
+                                <View style={styles.productSaleBadge}>
+                                  <Text style={styles.productSaleBadgeText}>{item.discount_percentage}% OFF</Text>
+                                </View>
+                              )}
+                            </View>
+                            <View style={styles.productCardBody}>
+                              <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+                              <View style={styles.productPriceRow}>
+                                <Text style={styles.productCurrency}>{item.currency}</Text>
+                                <Text style={styles.productPrice}>
+                                  {Number(item.final_price).toLocaleString()}
+                                </Text>
+                              </View>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                  {productsLoading && (
+                    <View style={styles.productsLoading}>
+                      <ActivityIndicator size="small" color={Brand.primary} />
+                      <Text style={styles.productsLoadingText}>Loading products...</Text>
+                    </View>
+                  )}
+                </>
+              )}
+            </ScrollView>
+          </>
+        )}
+      </View>
+      <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F2F4F6' },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
+  safeArea: { backgroundColor: Brand.dark },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -455,8 +479,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     padding: 0,
   },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F4F6' },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F4F6', gap: 10 },
   loadingText: { marginTop: 8, color: Brand.primary, fontSize: 14 },
+  errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', paddingHorizontal: 20 },
+  emptyText: { fontSize: 14, color: Brand.textTertiary },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
   // ── Body split layout ──────────────────────────────────────────
   body: { flex: 1, flexDirection: 'row' },
@@ -620,7 +654,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   subCard: {
-    width: SUB_CARD_WIDTH,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 8,
