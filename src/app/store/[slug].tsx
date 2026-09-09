@@ -61,9 +61,14 @@ export default function StoreDetailScreen() {
         setLoadingMore(true);
       }
       const data: PaginatedResponse<Product> = await fetchStoreProducts(slug, targetPage);
-      setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+      setProducts((prev) => {
+        if (reset) return data.results;
+        const existingIds = new Set(prev.map((p) => p.id));
+        const fresh = data.results.filter((p) => !existingIds.has(p.id));
+        return [...prev, ...fresh];
+      });
       setHasMore(data.next !== null);
-      if (!reset) setPage(targetPage + 1);
+      setPage(targetPage + 1);
     } catch (e: any) {
       setError(e?.message || 'Failed to load store');
     } finally {

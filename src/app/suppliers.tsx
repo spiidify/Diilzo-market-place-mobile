@@ -123,10 +123,15 @@ export default function SuppliersScreen() {
         results = results.filter((s) => s.business_type === activeType);
       }
 
-      setStores((prev) => (reset ? results : [...prev, ...results]));
+      setStores((prev) => {
+        if (reset) return results;
+        const existingIds = new Set(prev.map((s) => s.id));
+        const fresh = results.filter((s) => !existingIds.has(s.id));
+        return [...prev, ...fresh];
+      });
       setCount(data.count);
       setHasMore(data.next !== null);
-      if (!reset) setPage(targetPage + 1);
+      setPage(targetPage + 1);
     } catch (e: any) {
       console.error('Suppliers load error:', e?.message);
     } finally {

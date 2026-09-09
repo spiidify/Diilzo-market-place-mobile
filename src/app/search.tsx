@@ -230,10 +230,21 @@ export default function SearchScreen() {
           setPinned([]);
           setSponsored([]);
         }
-        setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+        setProducts((prev) => {
+          if (reset) return data.results;
+          // Defensive dedup: if the same page is fetched twice (e.g. a
+          // race between loadMore calls), drop items already present.
+          const existingIds = new Set(prev.map((p) => p.id));
+          const fresh = data.results.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...fresh];
+        });
         setCount(data.count);
         setHasMore(data.has_next);
-        if (!reset) setPage(targetPage + 1);
+        // Always advance page — for reset, targetPage is 1 so next is 2.
+        // Previously this was guarded by `if (!reset)`, which left page
+        // at 1 after a reset and caused loadMore to re-fetch page 1,
+        // appending duplicate items.
+        setPage(targetPage + 1);
       } else if (query && query.trim().length > 0 && query.trim().length < 3) {
         // Below 3-char threshold — instantly clear the UI list
         if (reset) {
@@ -251,10 +262,15 @@ export default function SearchScreen() {
           setPinned(data.pinned || []);
           setSponsored(data.sponsored || []);
         }
-        setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+        setProducts((prev) => {
+          if (reset) return data.results;
+          const existingIds = new Set(prev.map((p) => p.id));
+          const fresh = data.results.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...fresh];
+        });
         setCount(data.count);
         setHasMore(data.next !== null);
-        if (!reset) setPage(targetPage + 1);
+        setPage(targetPage + 1);
       }
     } catch (e: any) {
       // axios throws a CanceledError when the AbortController fires —

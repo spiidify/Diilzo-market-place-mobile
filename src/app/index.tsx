@@ -614,9 +614,19 @@ export default function ProductFeedScreen() {
       const params: Record<string, any> = { page: targetPage, ...productCardSize };
       if (activeCategory) params.category = activeCategory;
       const data = await fetchProducts(params);
-      setProducts((prev) => (reset ? data.results : [...prev, ...data.results]));
+      setProducts((prev) => {
+        if (reset) return data.results;
+        // Defensive dedup: drop items already present to avoid duplicate
+        // keys when loadMore fires before page state has advanced.
+        const existingIds = new Set(prev.map((p) => p.id));
+        const fresh = data.results.filter((p) => !existingIds.has(p.id));
+        return [...prev, ...fresh];
+      });
       setHasMore(data.next !== null);
-      if (!reset) setPage(targetPage + 1);
+      // Always advance page — for reset, targetPage is 1 so next is 2.
+      // Previously guarded by `if (!reset)`, which left page at 1 after
+      // reset and caused loadMore to re-fetch page 1 (duplicate items).
+      setPage(targetPage + 1);
     } catch (e: any) {
       // Only show error screen if we have no products at all
       // If we already have products, keep showing them (transient error)
