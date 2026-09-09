@@ -1,52 +1,26 @@
-import { StyleSheet, Text, View } from 'react-native';
-
-import { Brand } from '@/constants/theme';
+import { Image } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 
 type DiilzoLogoProps = {
   size?: number;
-  showText?: boolean;
-  showSubtitle?: boolean;
+  variant?: 'white' | 'color';
 };
 
-/** Reusable Diilzo logo — circular "D" badge + wordmark. */
-export function DiilzoLogo({ size = 36, showText = true, showSubtitle = true }: DiilzoLogoProps) {
-  const fontSize = Math.round(size * 0.55);
-  const dotSize = Math.round(size * 0.18);
+const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
+const COLOR_LOGO = require('@/assets/logos/DIILZO-LOGO-COLOR.png');
+
+/** Reusable Diilzo logo — renders the actual logo image file. */
+export function DiilzoLogo({ size = 36, variant = 'white' }: DiilzoLogoProps) {
+  const source = variant === 'white' ? WHITE_LOGO : COLOR_LOGO;
 
   return (
-    <View style={styles.wrap}>
-      <View
-        style={[
-          styles.circle,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: Math.max(2, size * 0.06),
-          },
-        ]}
-      >
-        <Text style={[styles.letter, { fontSize }]}>D</Text>
-        <View
-          style={[
-            styles.dot,
-            {
-              width: dotSize,
-              height: dotSize,
-              borderRadius: dotSize / 2,
-              bottom: Math.max(2, size * 0.08),
-              right: Math.max(2, size * 0.08),
-              borderColor: Brand.primary,
-            },
-          ]}
-        />
-      </View>
-      {showText && (
-        <View style={styles.textWrap}>
-          <Text style={styles.wordmark}>Diilzo</Text>
-          {showSubtitle && <Text style={styles.subtitle}>Marketplace</Text>}
-        </View>
-      )}
+    <View style={[styles.wrap, { height: size }]}>
+      <Image
+        source={source}
+        style={{ width: '100%', height: '100%' }}
+        contentFit="contain"
+        transition={150}
+      />
     </View>
   );
 }
@@ -55,37 +29,6 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  circle: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  letter: {
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  dot: {
-    position: 'absolute',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-  },
-  textWrap: {
-    gap: 0,
-  },
-  wordmark: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 2,
+    aspectRatio: 3.2,
   },
 });

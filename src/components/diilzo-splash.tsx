@@ -1,3 +1,5 @@
+import { Brand } from '@/constants/theme';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
@@ -7,7 +9,8 @@ import Animated, {
   Keyframe
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { Brand } from '@/constants/theme';
+
+const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
 
 const DURATION = 1800;
 
@@ -122,11 +125,12 @@ export function DiilzoSplash() {
           entering={logoKeyframe.duration(DURATION)}
           style={styles.logoWrap}
         >
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoD}>D</Text>
-            <Animated.View entering={dotKeyframe.duration(DURATION)} style={styles.dot} />
-          </View>
-          <Text style={styles.logoText}>Diilzo</Text>
+          <Image
+            source={WHITE_LOGO}
+            style={styles.logoImage}
+            contentFit="contain"
+            transition={200}
+          />
         </Animated.View>
 
         {/* Subtitle */}
@@ -156,10 +160,11 @@ export function DiilzoSplash() {
         style={styles.gradient}
       >
         <View style={styles.logoWrap}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoD}>D</Text>
-          </View>
-          <Text style={styles.logoText}>Diilzo</Text>
+          <Image
+            source={WHITE_LOGO}
+            style={styles.logoImage}
+            contentFit="contain"
+          />
         </View>
         <Text style={styles.subtitle}>MARKETPLACE</Text>
       </LinearGradient>
@@ -180,40 +185,10 @@ const styles = StyleSheet.create({
   },
   logoWrap: {
     alignItems: 'center',
-    gap: 16,
   },
-  logoCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  logoD: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  dot: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: Brand.primary,
-  },
-  logoText: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 2,
+  logoImage: {
+    width: 220,
+    height: 70,
   },
   subtitle: {
     fontSize: 13,
