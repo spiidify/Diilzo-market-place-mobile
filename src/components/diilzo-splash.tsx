@@ -1,9 +1,8 @@
 import { Brand } from '@/constants/theme';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image as RNImage, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   Keyframe
@@ -125,11 +124,10 @@ export function DiilzoSplash() {
           entering={logoKeyframe.duration(DURATION)}
           style={styles.logoWrap}
         >
-          <Image
+          <RNImage
             source={WHITE_LOGO}
             style={styles.logoImage}
-            contentFit="contain"
-            transition={200}
+            resizeMode="contain"
           />
         </Animated.View>
 
@@ -160,10 +158,10 @@ export function DiilzoSplash() {
         style={styles.gradient}
       >
         <View style={styles.logoWrap}>
-          <Image
+          <RNImage
             source={WHITE_LOGO}
             style={styles.logoImage}
-            contentFit="contain"
+            resizeMode="contain"
           />
         </View>
         <Text style={styles.subtitle}>MARKETPLACE</Text>

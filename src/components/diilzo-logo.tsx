@@ -1,5 +1,4 @@
-import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image as RNImage, StyleSheet, Text, View } from 'react-native';
 
 type DiilzoLogoProps = {
   size?: number;
@@ -20,11 +19,10 @@ export function DiilzoLogo({ size = 22, variant = 'white', showSubtitle = true }
   return (
     <View style={styles.wrap}>
       <View style={[styles.logoBox, { height: size, width: logoWidth }]}>
-        <Image
+        <RNImage
           source={source}
           style={{ width: '100%', height: '100%' }}
-          contentFit="contain"
-          transition={150}
+          resizeMode="contain"
         />
       </View>
       {showSubtitle && (
