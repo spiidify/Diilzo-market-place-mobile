@@ -193,6 +193,19 @@ function processQueue(error: unknown, token: string | null) {
   failedQueue = [];
 }
 
+/**
+ * Retry a request as anonymous (no Authorization header). Used when the
+ * access token is stale and cannot be refreshed. Public (AllowAny)
+ * endpoints succeed on the retry; authenticated endpoints fail with 401
+ * and the caller's .catch() handles it.
+ */
+function retryAnonymous(config: InternalAxiosRequestConfig): Promise<unknown> {
+  if (config.headers) {
+    delete config.headers.Authorization;
+  }
+  return api(config);
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -201,15 +214,19 @@ api.interceptors.response.use(
     // 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Queue this request until refresh completes
+        // Queue this request until refresh completes. If refresh fails,
+        // the queue is resolved with null (not rejected) so each queued
+        // request is retried as anonymous — public endpoints then succeed.
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            if (originalRequest.headers) {
+            if (token && originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
+              return api(originalRequest);
             }
-            return api(originalRequest);
+            // No token — retry as anonymous (refresh failed / no refresh token)
+            return retryAnonymous(originalRequest);
           })
           .catch((err) => Promise.reject(err));
       }
@@ -224,15 +241,12 @@ api.interceptors.response.use(
           // cannot be renewed. SimpleJWT raises AuthenticationFailed for
           // expired/invalid tokens during authentication (before the
           // permission check), so even AllowAny endpoints return 401 when
-          // a stale Bearer token is sent. Clear the tokens and retry the
-          // request as anonymous so public endpoints succeed; authenticated
-          // endpoints will still fail and the caller can handle it.
+          // a stale Bearer token is sent. Clear the tokens, resolve the
+          // queue with null so queued requests retry as anonymous, and
+          // retry this request as anonymous too.
           await clearTokens();
-          processQueue(new Error('No refresh token'), null);
-          if (originalRequest.headers) {
-            delete originalRequest.headers.Authorization;
-          }
-          return api(originalRequest);
+          processQueue(null, null);
+          return retryAnonymous(originalRequest);
         }
 
         // Call refresh endpoint directly (no interceptors to avoid loops)
@@ -248,14 +262,13 @@ api.interceptors.response.use(
         }
         return api(originalRequest);
       } catch (refreshError) {
+        // Refresh failed (expired/invalid/blacklisted refresh token).
+        // Clear tokens and retry as anonymous so public endpoints still
+        // work. Resolve (not reject) the queue with null so queued
+        // requests also retry as anonymous instead of failing hard.
         await clearTokens();
-        processQueue(refreshError, null);
-        // If refresh failed, retry as anonymous so public endpoints
-        // still work (the stale token that caused the 401 is gone).
-        if (originalRequest.headers) {
-          delete originalRequest.headers.Authorization;
-        }
-        return api(originalRequest);
+        processQueue(null, null);
+        return retryAnonymous(originalRequest);
       } finally {
         isRefreshing = false;
       }
