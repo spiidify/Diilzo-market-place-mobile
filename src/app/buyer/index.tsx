@@ -219,6 +219,19 @@ export default function BuyerDashboardScreen() {
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
               </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/admin' as any)}
+              >
+                <View style={[styles.adminCtaIcon, { backgroundColor: '#8B5CF6' }]}>
+                  <MaterialCommunityIcons name="view-dashboard" size={20} color="#FFFFFF" />
+                </View>
+                <View style={styles.adminCtaInfo}>
+                  <Text style={styles.adminCtaTitle}>Admin Dashboard</Text>
+                  <Text style={styles.adminCtaSub}>Full platform management</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
             </View>
           )}
 
