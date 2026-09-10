@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -12,8 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   getAdminVerificationLogs,
@@ -77,15 +76,8 @@ export default function AdminVerificationLogsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.dark, Brand.darkLight, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Verification Logs</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
-
+      <ModernHeader title="Verification Logs" />
+      <View style={styles.body}>
         <View style={styles.searchContainer}>
           <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
           <TextInput
@@ -122,16 +114,14 @@ export default function AdminVerificationLogsScreen() {
             }
           />
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
+  body: { flex: 1 },
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
   searchInput: { flex: 1, fontSize: 14, color: Brand.text, marginLeft: 8, paddingVertical: 0 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },

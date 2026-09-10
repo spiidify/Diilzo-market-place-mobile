@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -12,8 +11,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
@@ -65,12 +64,11 @@ export default function SellerDashboardScreen() {
   if (loading && !data) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading dashboard...</Text>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="Seller Dashboard" subtitle="Manage your store" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
       </View>
     );
   }
@@ -78,140 +76,117 @@ export default function SellerDashboardScreen() {
   if (error) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Seller Dashboard</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={load}>
-              <Text style={styles.retryText}>Retry</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="Seller Dashboard" subtitle="Manage your store" />
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Seller Dashboard</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <ModernHeader title="Seller Dashboard" subtitle="Manage your store" />
 
-        <ScrollView
-          style={styles.body}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-        >
-          {/* ── Store info card ────────────────────────────────────── */}
-          <View style={styles.storeCard}>
-            <View style={styles.storeLogoWrap}>
-              {store?.logo_url ? (
-                <Image source={{ uri: store.logo_url }} style={styles.storeLogo} resizeMode="contain" />
-              ) : (
-                <View style={styles.storeLogoFallback}>
-                  <MaterialCommunityIcons name="store" size={28} color="#FFFFFF" />
+      <ScrollView
+        style={styles.body}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+      >
+        {/* ── Store info card ────────────────────────────────────── */}
+        <View style={styles.storeCard}>
+          <View style={styles.storeLogoWrap}>
+            {store?.logo_url ? (
+              <Image source={{ uri: store.logo_url }} style={styles.storeLogo} resizeMode="contain" />
+            ) : (
+              <View style={styles.storeLogoFallback}>
+                <MaterialCommunityIcons name="store" size={28} color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+          <View style={styles.storeInfo}>
+            <Text style={styles.storeName} numberOfLines={1}>{store?.name || 'My Store'}</Text>
+            <Text style={styles.storeStatus}>
+              {store?.status === 'approved' ? '✓ Active' : store?.status === 'pending' ? '⏳ Pending Review' : store?.status}
+            </Text>
+            {store?.is_wholesaler && (
+              <View style={styles.supplierBadge}>
+                <MaterialCommunityIcons name="factory" size={10} color="#FFFFFF" />
+                <Text style={styles.supplierBadgeText}>Supplier</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* ── Stats grid ─────────────────────────────────────────── */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <MaterialCommunityIcons name="package-variant-closed" size={24} color={Brand.primary} />
+            <Text style={styles.statValue}>{stats?.total_products || 0}</Text>
+            <Text style={styles.statLabel}>Products</Text>
+          </View>
+          <View style={styles.statCard}>
+            <MaterialCommunityIcons name="clipboard-list-outline" size={24} color="#16A34A" />
+            <Text style={styles.statValue}>{stats?.pending_orders || 0}</Text>
+            <Text style={styles.statLabel}>Pending Orders</Text>
+          </View>
+          <View style={styles.statCard}>
+            <MaterialCommunityIcons name="cash-multiple" size={24} color="#8B5CF6" />
+            <Text style={styles.statValue}>{Number(stats?.available_balance || 0).toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Available (UGX)</Text>
+          </View>
+          <View style={styles.statCard}>
+            <MaterialCommunityIcons name="clock-outline" size={24} color={Brand.rating} />
+            <Text style={styles.statValue}>{Number(stats?.pending_balance || 0).toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Pending (UGX)</Text>
+          </View>
+        </View>
+
+        {/* ── Lifetime sales banner ──────────────────────────────── */}
+        <View style={styles.salesBanner}>
+          <View>
+            <Text style={styles.salesLabel}>Lifetime Sales</Text>
+            <Text style={styles.salesValue}>UGX {Number(stats?.lifetime_sales || 0).toLocaleString()}</Text>
+          </View>
+          <View style={styles.salesRight}>
+            <MaterialCommunityIcons name="star" size={18} color={Brand.rating} />
+            <Text style={styles.ratingText}>{stats?.rating ? parseFloat(stats.rating).toFixed(1) : '0.0'}</Text>
+            <Text style={styles.reviewText}>({stats?.review_count || 0})</Text>
+          </View>
+        </View>
+
+        {/* ── Menu items ─────────────────────────────────────────── */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuTitle}>Manage Store</Text>
+          {menuItems.map((item, index) => (
+            <Pressable
+              key={`seller-menu-${index}`}
+              style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: Brand.surfaceAlt }]}
+              onPress={() => router.push(item.route)}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
+                <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
+              </View>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              {item.count !== undefined && item.count > 0 && (
+                <View style={styles.menuBadge}>
+                  <Text style={styles.menuBadgeText}>{item.count}</Text>
                 </View>
               )}
-            </View>
-            <View style={styles.storeInfo}>
-              <Text style={styles.storeName} numberOfLines={1}>{store?.name || 'My Store'}</Text>
-              <Text style={styles.storeStatus}>
-                {store?.status === 'approved' ? '✓ Active' : store?.status === 'pending' ? '⏳ Pending Review' : store?.status}
-              </Text>
-              {store?.is_wholesaler && (
-                <View style={styles.supplierBadge}>
-                  <MaterialCommunityIcons name="factory" size={10} color="#FFFFFF" />
-                  <Text style={styles.supplierBadgeText}>Supplier</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* ── Stats grid ─────────────────────────────────────────── */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="package-variant-closed" size={24} color={Brand.primary} />
-              <Text style={styles.statValue}>{stats?.total_products || 0}</Text>
-              <Text style={styles.statLabel}>Products</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="clipboard-list-outline" size={24} color="#16A34A" />
-              <Text style={styles.statValue}>{stats?.pending_orders || 0}</Text>
-              <Text style={styles.statLabel}>Pending Orders</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="cash-multiple" size={24} color="#8B5CF6" />
-              <Text style={styles.statValue}>{Number(stats?.available_balance || 0).toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Available (UGX)</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="clock-outline" size={24} color={Brand.rating} />
-              <Text style={styles.statValue}>{Number(stats?.pending_balance || 0).toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Pending (UGX)</Text>
-            </View>
-          </View>
-
-          {/* ── Lifetime sales banner ──────────────────────────────── */}
-          <View style={styles.salesBanner}>
-            <View>
-              <Text style={styles.salesLabel}>Lifetime Sales</Text>
-              <Text style={styles.salesValue}>UGX {Number(stats?.lifetime_sales || 0).toLocaleString()}</Text>
-            </View>
-            <View style={styles.salesRight}>
-              <MaterialCommunityIcons name="star" size={18} color={Brand.rating} />
-              <Text style={styles.ratingText}>{stats?.rating ? parseFloat(stats.rating).toFixed(1) : '0.0'}</Text>
-              <Text style={styles.reviewText}>({stats?.review_count || 0})</Text>
-            </View>
-          </View>
-
-          {/* ── Menu items ─────────────────────────────────────────── */}
-          <View style={styles.menuSection}>
-            <Text style={styles.menuTitle}>Manage Store</Text>
-            {menuItems.map((item, index) => (
-              <Pressable
-                key={`seller-menu-${index}`}
-                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: Brand.surfaceAlt }]}
-                onPress={() => router.push(item.route)}
-              >
-                <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
-                </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                {item.count !== undefined && item.count > 0 && (
-                  <View style={styles.menuBadge}>
-                    <Text style={styles.menuBadgeText}>{item.count}</Text>
-                  </View>
-                )}
-                <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
 
   body: { flex: 1 },
 

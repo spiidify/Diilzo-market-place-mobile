@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -14,8 +13,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   acceptOrder,
@@ -158,226 +157,210 @@ export default function SellerOrdersScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+      <ModernHeader title="Orders" />
+
+      {/* Status filter tabs */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
+        {STATUS_FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            style={[styles.filterTab, statusFilter === f.key && styles.filterTabActive]}
+            onPress={() => setStatusFilter(f.key)}
+          >
+            <Text style={[styles.filterText, statusFilter === f.key && styles.filterTextActive]}>{f.label}</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Orders</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+        ))}
+      </ScrollView>
 
-        {/* Status filter tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
-          {STATUS_FILTERS.map((f) => (
-            <Pressable
-              key={f.key}
-              style={[styles.filterTab, statusFilter === f.key && styles.filterTabActive]}
-              onPress={() => setStatusFilter(f.key)}
-            >
-              <Text style={[styles.filterText, statusFilter === f.key && styles.filterTextActive]}>{f.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {loading ? (
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-          </View>
-        ) : orders.length === 0 ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="clipboard-list-outline" size={56} color={Brand.textTertiary} />
-            <Text style={styles.emptyText}>No orders yet</Text>
-            <Text style={styles.emptySub}>Orders from buyers will appear here</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={orders}
-            keyExtractor={(item) => `${item.id}`}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={10}
-            windowSize={11}
-            initialNumToRender={10}
-            removeClippedSubviews={true}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-          />
-        )}
-      </SafeAreaView>
+      {loading ? (
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
+      ) : orders.length === 0 ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="clipboard-list-outline" size={56} color={Brand.textTertiary} />
+          <Text style={styles.emptyText}>No orders yet</Text>
+          <Text style={styles.emptySub}>Orders from buyers will appear here</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => `${item.id}`}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          maxToRenderPerBatch={10}
+          windowSize={11}
+          initialNumToRender={10}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+        />
+      )}
 
       {/* ── Order Detail Modal ─────────────────────────────────────── */}
       <Modal visible={detailVisible} animationType="slide" onRequestClose={() => setDetailVisible(false)}>
         <View style={styles.modalScreen}>
-          <SafeAreaView edges={['top']} style={styles.modalSafeArea}>
-            <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.modalHeader}>
-              <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-              </Pressable>
-              <Text style={styles.modalTitle}>Order Details</Text>
-              <View style={{ width: 24 }} />
-            </LinearGradient>
+          <ModernHeader title="Order Details" onBack={() => setDetailVisible(false)} />
 
-            {detailLoading ? (
-              <View style={styles.centerBody}>
-                <ActivityIndicator size="large" color={Brand.primary} />
+          {detailLoading ? (
+            <View style={styles.centerBody}>
+              <ActivityIndicator size="large" color={Brand.primary} />
+            </View>
+          ) : detail ? (
+            <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalBodyContent}>
+              {/* Order header */}
+              <View style={styles.detailCard}>
+                <View style={styles.detailHeaderRow}>
+                  <Text style={styles.detailOrderNum}>#{detail.order_number}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20' }]}>
+                    <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[detail.status] || Brand.textTertiary }]} />
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status}</Text>
+                  </View>
+                </View>
+                <Text style={styles.detailDate}>{new Date(detail.created_at).toLocaleString()}</Text>
               </View>
-            ) : detail ? (
-              <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalBodyContent}>
-                {/* Order header */}
-                <View style={styles.detailCard}>
-                  <View style={styles.detailHeaderRow}>
-                    <Text style={styles.detailOrderNum}>#{detail.order_number}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20' }]}>
-                      <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[detail.status] || Brand.textTertiary }]} />
-                      <Text style={[styles.statusText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.detailDate}>{new Date(detail.created_at).toLocaleString()}</Text>
-                </View>
 
-                {/* Customer info */}
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailSectionTitle}>Customer</Text>
+              {/* Customer info */}
+              <View style={styles.detailCard}>
+                <Text style={styles.detailSectionTitle}>Customer</Text>
+                <View style={styles.detailRow}>
+                  <MaterialCommunityIcons name="account-outline" size={18} color={Brand.textSecondary} />
+                  <Text style={styles.detailRowText}>{detail.customer_name}</Text>
+                </View>
+                {detail.customer_email ? (
                   <View style={styles.detailRow}>
-                    <MaterialCommunityIcons name="account-outline" size={18} color={Brand.textSecondary} />
-                    <Text style={styles.detailRowText}>{detail.customer_name}</Text>
+                    <MaterialCommunityIcons name="email-outline" size={18} color={Brand.textSecondary} />
+                    <Text style={styles.detailRowText}>{detail.customer_email}</Text>
                   </View>
-                  {detail.customer_email ? (
-                    <View style={styles.detailRow}>
-                      <MaterialCommunityIcons name="email-outline" size={18} color={Brand.textSecondary} />
-                      <Text style={styles.detailRowText}>{detail.customer_email}</Text>
-                    </View>
-                  ) : null}
-                </View>
+                ) : null}
+              </View>
 
-                {/* Shipping address */}
-                {detail.shipping_address && Object.keys(detail.shipping_address).length > 0 && (
-                  <View style={styles.detailCard}>
-                    <Text style={styles.detailSectionTitle}>Shipping Address</Text>
-                    <Text style={styles.detailAddrText}>
-                      {detail.shipping_address.street || ''}{'\n'}
-                      {detail.shipping_address.city || ''}, {detail.shipping_address.state || ''}{'\n'}
-                      {detail.shipping_address.country || ''}
-                    </Text>
-                    {detail.shipping_address.phone && (
-                      <View style={styles.detailRow}>
-                        <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
-                        <Text style={[styles.detailRowText, { color: Brand.primary, fontWeight: '600' }]}>{detail.shipping_address.phone}</Text>
-                      </View>
+              {/* Shipping address */}
+              {detail.shipping_address && Object.keys(detail.shipping_address).length > 0 && (
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailSectionTitle}>Shipping Address</Text>
+                  <Text style={styles.detailAddrText}>
+                    {detail.shipping_address.street || ''}{'\n'}
+                    {detail.shipping_address.city || ''}, {detail.shipping_address.state || ''}{'\n'}
+                    {detail.shipping_address.country || ''}
+                  </Text>
+                  {detail.shipping_address.phone && (
+                    <View style={styles.detailRow}>
+                      <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
+                      <Text style={[styles.detailRowText, { color: Brand.primary, fontWeight: '600' }]}>{detail.shipping_address.phone}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Items */}
+              <View style={styles.detailCard}>
+                <Text style={styles.detailSectionTitle}>Items ({detail.items.length})</Text>
+                {detail.items.map((item, idx) => (
+                  <View key={`item-${idx}`} style={styles.itemRow}>
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName} numberOfLines={2}>{item.product_name}</Text>
+                      <Text style={styles.itemQty}>{item.quantity} x UGX {Number(item.unit_price).toLocaleString()}</Text>
+                    </View>
+                    <Text style={styles.itemTotal}>UGX {Number(item.total_price).toLocaleString()}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Earnings breakdown */}
+              <View style={styles.detailCard}>
+                <Text style={styles.detailSectionTitle}>Earnings</Text>
+                <View style={styles.earnRow}>
+                  <Text style={styles.earnLabel}>Subtotal</Text>
+                  <Text style={styles.earnValue}>UGX {Number(detail.subtotal).toLocaleString()}</Text>
+                </View>
+                <View style={styles.earnRow}>
+                  <Text style={styles.earnLabel}>Commission</Text>
+                  <Text style={[styles.earnValue, { color: Brand.danger }]}>-UGX {Number(detail.commission_amount).toLocaleString()}</Text>
+                </View>
+                <View style={[styles.earnRow, styles.earnTotalRow]}>
+                  <Text style={styles.earnTotalLabel}>Your earnings</Text>
+                  <Text style={styles.earnTotalValue}>UGX {Number(detail.seller_amount).toLocaleString()}</Text>
+                </View>
+              </View>
+
+              {/* Action buttons */}
+              <View style={styles.actionSection}>
+                {detail.status === 'pending' && (
+                  <Pressable
+                    style={({ pressed }) => [styles.actionButton, styles.acceptBtn, pressed && { opacity: 0.85 }]}
+                    onPress={() => handleAction('accept', detail.id)}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
+                      <>
+                        <MaterialCommunityIcons name="check" size={20} color="#FFFFFF" />
+                        <Text style={styles.actionBtnText}>Accept Order</Text>
+                      </>
                     )}
+                  </Pressable>
+                )}
+                {detail.status === 'accepted' && (
+                  <Pressable
+                    style={({ pressed }) => [styles.actionButton, styles.shipBtn, pressed && { opacity: 0.85 }]}
+                    onPress={() => handleAction('ship', detail.id)}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
+                      <>
+                        <MaterialCommunityIcons name="truck-fast-outline" size={20} color="#FFFFFF" />
+                        <Text style={styles.actionBtnText}>Mark as Shipped</Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+                {detail.status === 'shipped' && (
+                  <Pressable
+                    style={({ pressed }) => [styles.actionButton, styles.deliverBtn, pressed && { opacity: 0.85 }]}
+                    onPress={() => handleAction('deliver', detail.id)}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
+                      <>
+                        <MaterialCommunityIcons name="package-check" size={20} color="#FFFFFF" />
+                        <Text style={styles.actionBtnText}>Mark as Delivered</Text>
+                      </>
+                    )}
+                  </Pressable>
+                )}
+                {['pending', 'accepted'].includes(detail.status) && (
+                  <Pressable
+                    style={({ pressed }) => [styles.actionButton, styles.cancelBtn, pressed && { opacity: 0.85 }]}
+                    onPress={() => {
+                      Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
+                        { text: 'No', style: 'cancel' },
+                        { text: 'Yes, Cancel', style: 'destructive', onPress: () => handleAction('cancel', detail.id) },
+                      ]);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <MaterialCommunityIcons name="close" size={20} color={Brand.danger} />
+                    <Text style={[styles.actionBtnText, { color: Brand.danger }]}>Cancel Order</Text>
+                  </Pressable>
+                )}
+                {detail.status === 'delivered' && (
+                  <View style={styles.deliveredBanner}>
+                    <MaterialCommunityIcons name="check-circle" size={24} color="#16A34A" />
+                    <Text style={styles.deliveredText}>Order delivered and earnings settled</Text>
                   </View>
                 )}
-
-                {/* Items */}
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailSectionTitle}>Items ({detail.items.length})</Text>
-                  {detail.items.map((item, idx) => (
-                    <View key={`item-${idx}`} style={styles.itemRow}>
-                      <View style={styles.itemInfo}>
-                        <Text style={styles.itemName} numberOfLines={2}>{item.product_name}</Text>
-                        <Text style={styles.itemQty}>{item.quantity} x UGX {Number(item.unit_price).toLocaleString()}</Text>
-                      </View>
-                      <Text style={styles.itemTotal}>UGX {Number(item.total_price).toLocaleString()}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Earnings breakdown */}
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailSectionTitle}>Earnings</Text>
-                  <View style={styles.earnRow}>
-                    <Text style={styles.earnLabel}>Subtotal</Text>
-                    <Text style={styles.earnValue}>UGX {Number(detail.subtotal).toLocaleString()}</Text>
+                {detail.status === 'cancelled' && (
+                  <View style={styles.cancelledBanner}>
+                    <MaterialCommunityIcons name="cancel" size={24} color={Brand.danger} />
+                    <Text style={styles.cancelledText}>This order was cancelled</Text>
                   </View>
-                  <View style={styles.earnRow}>
-                    <Text style={styles.earnLabel}>Commission</Text>
-                    <Text style={[styles.earnValue, { color: Brand.danger }]}>-UGX {Number(detail.commission_amount).toLocaleString()}</Text>
-                  </View>
-                  <View style={[styles.earnRow, styles.earnTotalRow]}>
-                    <Text style={styles.earnTotalLabel}>Your earnings</Text>
-                    <Text style={styles.earnTotalValue}>UGX {Number(detail.seller_amount).toLocaleString()}</Text>
-                  </View>
-                </View>
-
-                {/* Action buttons */}
-                <View style={styles.actionSection}>
-                  {detail.status === 'pending' && (
-                    <Pressable
-                      style={({ pressed }) => [styles.actionButton, styles.acceptBtn, pressed && { opacity: 0.85 }]}
-                      onPress={() => handleAction('accept', detail.id)}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                        <>
-                          <MaterialCommunityIcons name="check" size={20} color="#FFFFFF" />
-                          <Text style={styles.actionBtnText}>Accept Order</Text>
-                        </>
-                      )}
-                    </Pressable>
-                  )}
-                  {detail.status === 'accepted' && (
-                    <Pressable
-                      style={({ pressed }) => [styles.actionButton, styles.shipBtn, pressed && { opacity: 0.85 }]}
-                      onPress={() => handleAction('ship', detail.id)}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                        <>
-                          <MaterialCommunityIcons name="truck-fast-outline" size={20} color="#FFFFFF" />
-                          <Text style={styles.actionBtnText}>Mark as Shipped</Text>
-                        </>
-                      )}
-                    </Pressable>
-                  )}
-                  {detail.status === 'shipped' && (
-                    <Pressable
-                      style={({ pressed }) => [styles.actionButton, styles.deliverBtn, pressed && { opacity: 0.85 }]}
-                      onPress={() => handleAction('deliver', detail.id)}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                        <>
-                          <MaterialCommunityIcons name="package-check" size={20} color="#FFFFFF" />
-                          <Text style={styles.actionBtnText}>Mark as Delivered</Text>
-                        </>
-                      )}
-                    </Pressable>
-                  )}
-                  {['pending', 'accepted'].includes(detail.status) && (
-                    <Pressable
-                      style={({ pressed }) => [styles.actionButton, styles.cancelBtn, pressed && { opacity: 0.85 }]}
-                      onPress={() => {
-                        Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
-                          { text: 'No', style: 'cancel' },
-                          { text: 'Yes, Cancel', style: 'destructive', onPress: () => handleAction('cancel', detail.id) },
-                        ]);
-                      }}
-                      disabled={actionLoading}
-                    >
-                      <MaterialCommunityIcons name="close" size={20} color={Brand.danger} />
-                      <Text style={[styles.actionBtnText, { color: Brand.danger }]}>Cancel Order</Text>
-                    </Pressable>
-                  )}
-                  {detail.status === 'delivered' && (
-                    <View style={styles.deliveredBanner}>
-                      <MaterialCommunityIcons name="check-circle" size={24} color="#16A34A" />
-                      <Text style={styles.deliveredText}>Order delivered and earnings settled</Text>
-                    </View>
-                  )}
-                  {detail.status === 'cancelled' && (
-                    <View style={styles.cancelledBanner}>
-                      <MaterialCommunityIcons name="cancel" size={24} color={Brand.danger} />
-                      <Text style={styles.cancelledText}>This order was cancelled</Text>
-                    </View>
-                  )}
-                </View>
-              </ScrollView>
-            ) : (
-              <View style={styles.centerBody}>
-                <Text style={styles.emptyText}>Failed to load order</Text>
+                )}
               </View>
-            )}
-          </SafeAreaView>
+            </ScrollView>
+          ) : (
+            <View style={styles.centerBody}>
+              <Text style={styles.emptyText}>Failed to load order</Text>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -386,9 +369,6 @@ export default function SellerOrdersScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
   emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
@@ -425,9 +405,6 @@ const styles = StyleSheet.create({
 
   // ── Modal ──────────────────────────────────────────────────────
   modalScreen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  modalSafeArea: { flex: 1, backgroundColor: Brand.primary },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   modalBody: { flex: 1 },
   modalBodyContent: { padding: 12, paddingBottom: 32, gap: 10 },
 

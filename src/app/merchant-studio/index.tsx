@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -13,8 +12,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   confirmPackagedItem,
@@ -96,12 +95,11 @@ export default function MerchantStudioScreen() {
   if (loading && products.length === 0 && orders.length === 0) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading Merchant Studio...</Text>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="Merchant Studio" subtitle="Inventory & Dispatch" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading Merchant Studio...</Text>
+        </View>
       </View>
     );
   }
@@ -183,115 +181,95 @@ export default function MerchantStudioScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerTitle}>Merchant Studio</Text>
-            <Text style={styles.headerSub}>Inventory & Order Dispatch</Text>
-          </View>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <ModernHeader title="Merchant Studio" subtitle="Inventory & Dispatch" />
 
-        {/* ── Tab bar ────────────────────────────────────────────── */}
-        <View style={styles.tabBar}>
-          <Pressable
-            style={[styles.tab, tab === 'inventory' && styles.tabActive]}
-            onPress={() => setTab('inventory')}
-          >
-            <MaterialCommunityIcons name="package-variant-closed" size={20} color={tab === 'inventory' ? Brand.primary : Brand.textTertiary} />
-            <Text style={[styles.tabText, tab === 'inventory' && styles.tabTextActive]}>
-              Inventory ({products.length})
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.tab, tab === 'orders' && styles.tabActive]}
-            onPress={() => setTab('orders')}
-          >
-            <MaterialCommunityIcons name="clipboard-list-outline" size={20} color={tab === 'orders' ? Brand.primary : Brand.textTertiary} />
-            <Text style={[styles.tabText, tab === 'orders' && styles.tabTextActive]}>
-              Orders ({orders.length})
-            </Text>
-          </Pressable>
+      {/* ── Tab bar ────────────────────────────────────────────── */}
+      <View style={styles.tabBar}>
+        <Pressable
+          style={[styles.tab, tab === 'inventory' && styles.tabActive]}
+          onPress={() => setTab('inventory')}
+        >
+          <MaterialCommunityIcons name="package-variant-closed" size={20} color={tab === 'inventory' ? Brand.primary : Brand.textTertiary} />
+          <Text style={[styles.tabText, tab === 'inventory' && styles.tabTextActive]}>
+            Inventory ({products.length})
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tab, tab === 'orders' && styles.tabActive]}
+          onPress={() => setTab('orders')}
+        >
+          <MaterialCommunityIcons name="clipboard-list-outline" size={20} color={tab === 'orders' ? Brand.primary : Brand.textTertiary} />
+          <Text style={[styles.tabText, tab === 'orders' && styles.tabTextActive]}>
+            Orders ({orders.length})
+          </Text>
+        </Pressable>
+      </View>
+
+      {error ? (
+        <View style={styles.errorBanner}>
+          <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
+          <Text style={styles.errorBannerText}>{error}</Text>
         </View>
+      ) : null}
 
-        {error ? (
-          <View style={styles.errorBanner}>
-            <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
-            <Text style={styles.errorBannerText}>{error}</Text>
-          </View>
-        ) : null}
-
-        {/* ── Stats row ──────────────────────────────────────────── */}
-        <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{activeProducts.length}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{products.length - activeProducts.length}</Text>
-            <Text style={styles.statLabel}>Inactive</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{orders.filter((o) => o.status === 'pending').length}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </View>
-          <View style={styles.statPill}>
-            <Text style={styles.statValue}>{orders.filter((o) => o.status === 'processing').length}</Text>
-            <Text style={styles.statLabel}>Processing</Text>
-          </View>
+      {/* ── Stats row ──────────────────────────────────────────── */}
+      <View style={styles.statsRow}>
+        <View style={styles.statPill}>
+          <Text style={styles.statValue}>{activeProducts.length}</Text>
+          <Text style={styles.statLabel}>Active</Text>
         </View>
+        <View style={styles.statPill}>
+          <Text style={styles.statValue}>{products.length - activeProducts.length}</Text>
+          <Text style={styles.statLabel}>Inactive</Text>
+        </View>
+        <View style={styles.statPill}>
+          <Text style={styles.statValue}>{orders.filter((o) => o.status === 'pending').length}</Text>
+          <Text style={styles.statLabel}>Pending</Text>
+        </View>
+        <View style={styles.statPill}>
+          <Text style={styles.statValue}>{orders.filter((o) => o.status === 'processing').length}</Text>
+          <Text style={styles.statLabel}>Processing</Text>
+        </View>
+      </View>
 
-        {/* ── Content ────────────────────────────────────────────── */}
-        {tab === 'inventory' ? (
-          <FlatList
-            data={products}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderProduct}
-            contentContainerStyle={styles.listContent}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="package-variant" size={48} color={Brand.textTertiary} />
-                <Text style={styles.emptyText}>No products yet</Text>
-                <Text style={styles.emptySub}>Use the web dashboard to add products</Text>
-              </View>
-            }
-          />
-        ) : (
-          <FlatList
-            data={orders}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderOrder}
-            contentContainerStyle={styles.listContent}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="clipboard-check-outline" size={48} color={Brand.textTertiary} />
-                <Text style={styles.emptyText}>No pending orders</Text>
-                <Text style={styles.emptySub}>All caught up!</Text>
-              </View>
-            }
-          />
-        )}
-      </SafeAreaView>
+      {/* ── Content ────────────────────────────────────────────── */}
+      {tab === 'inventory' ? (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderProduct}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="package-variant" size={48} color={Brand.textTertiary} />
+              <Text style={styles.emptyText}>No products yet</Text>
+              <Text style={styles.emptySub}>Use the web dashboard to add products</Text>
+            </View>
+          }
+        />
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderOrder}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="clipboard-check-outline" size={48} color={Brand.textTertiary} />
+              <Text style={styles.emptyText}>No pending orders</Text>
+              <Text style={styles.emptySub}>All caught up!</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, gap: 12,
-  },
-  headerTitleWrap: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },

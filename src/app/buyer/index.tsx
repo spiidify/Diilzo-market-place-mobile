@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 
@@ -26,17 +25,11 @@ export default function BuyerDashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <View style={{ width: 24 }} />
-            <Text style={styles.headerTitle}>My Account</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.loadingBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading...</Text>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="My Dashboard" subtitle="Welcome back" />
+        <View style={styles.loadingBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
       </View>
     );
   }
@@ -45,15 +38,7 @@ export default function BuyerDashboardScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>My Account</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-        </SafeAreaView>
+        <ModernHeader title="My Dashboard" subtitle="Welcome back" />
         <View style={styles.loginPromptBody}>
           <View style={styles.loginPromptIcon}>
             <MaterialCommunityIcons name="account-lock-outline" size={44} color={Brand.primary} />
@@ -85,195 +70,179 @@ export default function BuyerDashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>My Account</Text>
-          <View style={{ width: 22 }} />
-        </LinearGradient>
+      <ModernHeader title="My Dashboard" subtitle="Welcome back" />
 
-        <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
-          {/* Profile hero — gradient card with avatar */}
-          <View style={styles.profileCard}>
-            <LinearGradient
-              colors={[Brand.primary, Brand.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.profileGradient}
-            >
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarWrap}>
-                  {isAuthenticated && user?.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.avatarFallback}>
-                      <MaterialCommunityIcons name="account" size={36} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
+      <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
+        {/* Profile hero — card with avatar */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileGradient}>
+            <View style={styles.avatarRing}>
+              <View style={styles.avatarWrap}>
+                {isAuthenticated && user?.avatar_url ? (
+                  <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <MaterialCommunityIcons name="account" size={36} color="#FFFFFF" />
+                  </View>
+                )}
               </View>
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>
-                  {isAuthenticated ? (user?.full_name || user?.first_name || 'Buyer') : 'Guest User'}
-                </Text>
-                <Text style={styles.profileEmail} numberOfLines={1}>
-                  {isAuthenticated ? user?.email : 'Sign in to access all features'}
-                </Text>
-                <View style={styles.buyerBadge}>
-                  <MaterialCommunityIcons name="shopping" size={11} color="#FFFFFF" />
-                  <Text style={styles.buyerBadgeText}>Buyer</Text>
-                </View>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>
+                {isAuthenticated ? (user?.full_name || user?.first_name || 'Buyer') : 'Guest User'}
+              </Text>
+              <Text style={styles.profileEmail} numberOfLines={1}>
+                {isAuthenticated ? user?.email : 'Sign in to access all features'}
+              </Text>
+              <View style={styles.buyerBadge}>
+                <MaterialCommunityIcons name="shopping" size={11} color="#FFFFFF" />
+                <Text style={styles.buyerBadgeText}>Buyer</Text>
               </View>
-            </LinearGradient>
+            </View>
           </View>
+        </View>
 
-          {/* Become a seller CTA */}
-          {!user?.has_store && (
+        {/* Become a seller CTA */}
+        {!user?.has_store && (
+          <Pressable
+            style={({ pressed }) => [styles.sellerCta, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/seller' as any)}
+          >
+            <View style={styles.sellerCtaIcon}>
+              <MaterialCommunityIcons name="store-plus" size={24} color="#FFFFFF" />
+            </View>
+            <View style={styles.sellerCtaInfo}>
+              <Text style={styles.sellerCtaTitle}>Become a Seller</Text>
+              <Text style={styles.sellerCtaSub}>Start selling on Diilzo today</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={22} color="#FFFFFF" />
+          </Pressable>
+        )}
+
+        {/* Switch to seller dashboard */}
+        {user?.has_store && (
+          <Pressable
+            style={({ pressed }) => [styles.switchCta, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/seller' as any)}
+          >
+            <View style={styles.switchCtaIcon}>
+              <MaterialCommunityIcons name="store" size={22} color={Brand.primary} />
+            </View>
+            <View style={styles.switchCtaInfo}>
+              <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
+              <Text style={styles.switchCtaSub}>Manage your store and products</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+          </Pressable>
+        )}
+
+        {/* Super Admin — all dashboards */}
+        {user?.is_superuser && (
+          <View style={styles.adminSection}>
+            <Text style={styles.adminSectionTitle}>Admin Access</Text>
             <Pressable
-              style={({ pressed }) => [styles.sellerCta, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
               onPress={() => router.push('/seller' as any)}
             >
-              <View style={styles.sellerCtaIcon}>
-                <MaterialCommunityIcons name="store-plus" size={24} color="#FFFFFF" />
+              <View style={[styles.adminCtaIcon, { backgroundColor: '#3B82F6' }]}>
+                <MaterialCommunityIcons name="store-cog" size={20} color="#FFFFFF" />
               </View>
-              <View style={styles.sellerCtaInfo}>
-                <Text style={styles.sellerCtaTitle}>Become a Seller</Text>
-                <Text style={styles.sellerCtaSub}>Start selling on Diilzo today</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={22} color="#FFFFFF" />
-            </Pressable>
-          )}
-
-          {/* Switch to seller dashboard */}
-          {user?.has_store && (
-            <Pressable
-              style={({ pressed }) => [styles.switchCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/seller' as any)}
-            >
-              <View style={styles.switchCtaIcon}>
-                <MaterialCommunityIcons name="store" size={22} color={Brand.primary} />
-              </View>
-              <View style={styles.switchCtaInfo}>
-                <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
-                <Text style={styles.switchCtaSub}>Manage your store and products</Text>
+              <View style={styles.adminCtaInfo}>
+                <Text style={styles.adminCtaTitle}>Seller Dashboard</Text>
+                <Text style={styles.adminCtaSub}>Manage all stores and products</Text>
               </View>
               <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
             </Pressable>
-          )}
-
-          {/* Super Admin — all dashboards */}
-          {user?.is_superuser && (
-            <View style={styles.adminSection}>
-              <Text style={styles.adminSectionTitle}>Admin Access</Text>
-              <Pressable
-                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/seller' as any)}
-              >
-                <View style={[styles.adminCtaIcon, { backgroundColor: '#3B82F6' }]}>
-                  <MaterialCommunityIcons name="store-cog" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.adminCtaInfo}>
-                  <Text style={styles.adminCtaTitle}>Seller Dashboard</Text>
-                  <Text style={styles.adminCtaSub}>Manage all stores and products</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/merchant-studio' as any)}
-              >
-                <View style={[styles.adminCtaIcon, { backgroundColor: '#06B6D4' }]}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.adminCtaInfo}>
-                  <Text style={styles.adminCtaTitle}>Merchant Studio</Text>
-                  <Text style={styles.adminCtaSub}>Inventory & order dispatch</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/adpulse' as any)}
-              >
-                <View style={[styles.adminCtaIcon, { backgroundColor: '#EC4899' }]}>
-                  <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.adminCtaInfo}>
-                  <Text style={styles.adminCtaTitle}>AdPulse Studio</Text>
-                  <Text style={styles.adminCtaSub}>Marketing & promotions</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/adminops' as any)}
-              >
-                <View style={[styles.adminCtaIcon, { backgroundColor: Brand.dark }]}>
-                  <MaterialCommunityIcons name="shield-crown-outline" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.adminCtaInfo}>
-                  <Text style={styles.adminCtaTitle}>AdminOps Central</Text>
-                  <Text style={styles.adminCtaSub}>Operations dashboard</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/admin' as any)}
-              >
-                <View style={[styles.adminCtaIcon, { backgroundColor: '#8B5CF6' }]}>
-                  <MaterialCommunityIcons name="view-dashboard" size={20} color="#FFFFFF" />
-                </View>
-                <View style={styles.adminCtaInfo}>
-                  <Text style={styles.adminCtaTitle}>Admin Dashboard</Text>
-                  <Text style={styles.adminCtaSub}>Full platform management</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-            </View>
-          )}
-
-          {/* Menu items — grouped in a single card with dividers */}
-          <View style={styles.menuCard}>
-            {menuItems.map((item, index) => (
-              <Pressable
-                key={`buyer-menu-${index}`}
-                style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: '#F8FAFB' }]}
-                onPress={() => router.push(item.route)}
-              >
-                <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
-                  <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
-                </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
-              </Pressable>
-            ))}
+            <Pressable
+              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/merchant-studio' as any)}
+            >
+              <View style={[styles.adminCtaIcon, { backgroundColor: '#06B6D4' }]}>
+                <MaterialCommunityIcons name="package-variant-closed" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.adminCtaInfo}>
+                <Text style={styles.adminCtaTitle}>Merchant Studio</Text>
+                <Text style={styles.adminCtaSub}>Inventory & order dispatch</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/adpulse' as any)}
+            >
+              <View style={[styles.adminCtaIcon, { backgroundColor: '#EC4899' }]}>
+                <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.adminCtaInfo}>
+                <Text style={styles.adminCtaTitle}>AdPulse Studio</Text>
+                <Text style={styles.adminCtaSub}>Marketing & promotions</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/adminops' as any)}
+            >
+              <View style={[styles.adminCtaIcon, { backgroundColor: Brand.dark }]}>
+                <MaterialCommunityIcons name="shield-crown-outline" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.adminCtaInfo}>
+                <Text style={styles.adminCtaTitle}>AdminOps Central</Text>
+                <Text style={styles.adminCtaSub}>Operations dashboard</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/admin' as any)}
+            >
+              <View style={[styles.adminCtaIcon, { backgroundColor: '#8B5CF6' }]}>
+                <MaterialCommunityIcons name="view-dashboard" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.adminCtaInfo}>
+                <Text style={styles.adminCtaTitle}>Admin Dashboard</Text>
+                <Text style={styles.adminCtaSub}>Full platform management</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            </Pressable>
           </View>
+        )}
 
-          {/* Logout */}
-          <Pressable
-            style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
-            onPress={async () => {
-              await logout();
-              router.replace('/');
-            }}
-          >
-            <MaterialCommunityIcons name="logout" size={20} color={Brand.danger} />
-            <Text style={styles.logoutText}>Sign Out</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
+        {/* Menu items — grouped in a single card with dividers */}
+        <View style={styles.menuCard}>
+          {menuItems.map((item, index) => (
+            <Pressable
+              key={`buyer-menu-${index}`}
+              style={({ pressed }) => [styles.menuItem, pressed && { backgroundColor: '#F8FAFB' }]}
+              onPress={() => router.push(item.route)}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
+                <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
+              </View>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Logout */}
+        <Pressable
+          style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
+          onPress={async () => {
+            await logout();
+            router.replace('/');
+          }}
+        >
+          <MaterialCommunityIcons name="logout" size={20} color={Brand.danger} />
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </Pressable>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F2F4F6' },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
   body: { flex: 1 },
   bodyContent: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 40 },
 
@@ -302,7 +271,7 @@ const styles = StyleSheet.create({
   registerBtnText: { color: Brand.primary, fontSize: 15, fontWeight: '700' },
   guestText: { color: Brand.textTertiary, fontSize: 13, marginTop: 20 },
 
-  // Profile card — gradient hero
+  // Profile card — hero
   profileCard: {
     borderRadius: 18,
     overflow: 'hidden',
@@ -317,6 +286,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     padding: 20,
+    backgroundColor: Brand.primary,
   },
   avatarRing: {
     width: 72,

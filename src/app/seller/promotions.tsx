@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -10,14 +9,13 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { ModernHeader } from '@/components/ModernHeader';
+import { Brand } from '@/constants/theme';
 import {
   activatePromotion,
   fetchMyPromotions,
@@ -27,7 +25,7 @@ import {
   purchasePromotion,
   resumePromotion,
 } from '@/services/promotions';
-import type { PromotionAnalytics, PromotionPackage, ProductPromotion } from '@/types';
+import type { ProductPromotion, PromotionAnalytics, PromotionPackage } from '@/types';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
@@ -246,22 +244,11 @@ export default function SellerPromotionsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Promotions</Text>
-          <Pressable onPress={() => setShowPurchaseModal(true)} hitSlop={12}>
-            <MaterialCommunityIcons name="plus" size={28} color="#FFFFFF" />
-          </Pressable>
-        </LinearGradient>
-      </SafeAreaView>
+      <ModernHeader
+        title="Promotions"
+        rightIcon="plus"
+        onRightPress={() => setShowPurchaseModal(true)}
+      />
 
       {loading ? (
         <View style={styles.centerBody}>
@@ -477,15 +464,6 @@ export default function SellerPromotionsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F8FAF9' },
-  safeArea: { backgroundColor: Brand.primaryDark },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
   body: { flex: 1 },
   bodyContent: { padding: 16, paddingBottom: 40 },
   centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },

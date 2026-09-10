@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -13,10 +12,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   createAdCampaign,
@@ -127,12 +126,11 @@ export default function AdPulseStudioScreen() {
   if (loading && campaigns.length === 0) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading AdPulse Studio...</Text>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="AdPulse Studio" subtitle="Marketing & Promotions" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading AdPulse Studio...</Text>
+        </View>
       </View>
     );
   }
@@ -186,172 +184,155 @@ export default function AdPulseStudioScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+      <ModernHeader
+        title="AdPulse Studio"
+        subtitle="Marketing & Promotions"
+        rightIcon="plus-circle"
+        onRightPress={() => setShowCreateModal(true)}
+      />
+
+      {error ? (
+        <View style={styles.errorBanner}>
+          <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
+          <Text style={styles.errorBannerText}>{error}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView
+        style={styles.body}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+      >
+        {/* ── Analytics cards ─────────────────────────────────────── */}
+        <View style={styles.analyticsGrid}>
+          {analyticsCards.map((card, index) => (
+            <View key={`analytics-${index}`} style={styles.analyticsCard}>
+              <View style={[styles.analyticsIconWrap, { backgroundColor: card.color + '20' }]}>
+                <MaterialCommunityIcons name={card.icon as any} size={20} color={card.color} />
+              </View>
+              <Text style={styles.analyticsValue}>{card.value ?? '—'}</Text>
+              <Text style={styles.analyticsLabel}>{card.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Campaigns list ──────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Campaigns ({campaigns.length})</Text>
+          <Pressable style={styles.createBtn} onPress={() => setShowCreateModal(true)}>
+            <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
+            <Text style={styles.createBtnText}>Create</Text>
           </Pressable>
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerTitle}>AdPulse Studio</Text>
-            <Text style={styles.headerSub}>Marketing & Promotions</Text>
-          </View>
-          <Pressable onPress={() => setShowCreateModal(true)} hitSlop={12}>
-            <MaterialCommunityIcons name="plus-circle" size={26} color="#FFFFFF" />
-          </Pressable>
-        </LinearGradient>
+        </View>
 
-        {error ? (
-          <View style={styles.errorBanner}>
-            <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
-            <Text style={styles.errorBannerText}>{error}</Text>
-          </View>
-        ) : null}
+        <FlatList
+          data={campaigns}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={renderCampaign}
+          scrollEnabled={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="bullhorn-outline" size={48} color={Brand.textTertiary} />
+              <Text style={styles.emptyText}>No campaigns yet</Text>
+              <Text style={styles.emptySub}>Tap "Create" to launch your first ad</Text>
+            </View>
+          }
+        />
+      </ScrollView>
 
-        <ScrollView
-          style={styles.body}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-        >
-          {/* ── Analytics cards ─────────────────────────────────────── */}
-          <View style={styles.analyticsGrid}>
-            {analyticsCards.map((card, index) => (
-              <View key={`analytics-${index}`} style={styles.analyticsCard}>
-                <View style={[styles.analyticsIconWrap, { backgroundColor: card.color + '20' }]}>
-                  <MaterialCommunityIcons name={card.icon as any} size={20} color={card.color} />
-                </View>
-                <Text style={styles.analyticsValue}>{card.value ?? '—'}</Text>
-                <Text style={styles.analyticsLabel}>{card.label}</Text>
-              </View>
-            ))}
-          </View>
+      {/* ── Create Campaign Modal ────────────────────────────────── */}
+      <Modal visible={showCreateModal} animationType="slide" transparent onRequestClose={() => setShowCreateModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New Campaign</Text>
+              <Pressable onPress={() => setShowCreateModal(false)} hitSlop={12}>
+                <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+              </Pressable>
+            </View>
 
-          {/* ── Campaigns list ──────────────────────────────────────── */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Campaigns ({campaigns.length})</Text>
-            <Pressable style={styles.createBtn} onPress={() => setShowCreateModal(true)}>
-              <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-              <Text style={styles.createBtnText}>Create</Text>
-            </Pressable>
-          </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Campaign Name *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={formName}
+                onChangeText={setFormName}
+                placeholder="e.g. Summer Boost 2026"
+                placeholderTextColor={Brand.textTertiary}
+              />
+            </View>
 
-          <FlatList
-            data={campaigns}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderCampaign}
-            scrollEnabled={false}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="bullhorn-outline" size={48} color={Brand.textTertiary} />
-                <Text style={styles.emptyText}>No campaigns yet</Text>
-                <Text style={styles.emptySub}>Tap "Create" to launch your first ad</Text>
-              </View>
-            }
-          />
-        </ScrollView>
-
-        {/* ── Create Campaign Modal ────────────────────────────────── */}
-        <Modal visible={showCreateModal} animationType="slide" transparent onRequestClose={() => setShowCreateModal(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Create New Campaign</Text>
-                <Pressable onPress={() => setShowCreateModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
-                </Pressable>
-              </View>
-
+            <View style={styles.formRow}>
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Campaign Name *</Text>
+                <Text style={styles.formLabel}>Target Product ID</Text>
                 <TextInput
                   style={styles.formInput}
-                  value={formName}
-                  onChangeText={setFormName}
-                  placeholder="e.g. Summer Boost 2026"
+                  value={formProductId}
+                  onChangeText={setFormProductId}
+                  placeholder="optional"
+                  placeholderTextColor={Brand.textTertiary}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Keywords</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={formKeywords}
+                  onChangeText={setFormKeywords}
+                  placeholder="e.g. audio, tech"
                   placeholderTextColor={Brand.textTertiary}
                 />
               </View>
-
-              <View style={styles.formRow}>
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Target Product ID</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formProductId}
-                    onChangeText={setFormProductId}
-                    placeholder="optional"
-                    placeholderTextColor={Brand.textTertiary}
-                    keyboardType="numeric"
-                  />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Keywords</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formKeywords}
-                    onChangeText={setFormKeywords}
-                    placeholder="e.g. audio, tech"
-                    placeholderTextColor={Brand.textTertiary}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Daily Budget (UGX) *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formDailyBudget}
-                    onChangeText={setFormDailyBudget}
-                    placeholder="e.g. 50000"
-                    placeholderTextColor={Brand.textTertiary}
-                    keyboardType="numeric"
-                  />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Bid Per Click (UGX)</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={formBidPerClick}
-                    onChangeText={setFormBidPerClick}
-                    placeholder="50"
-                    placeholderTextColor={Brand.textTertiary}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-
-              <Pressable
-                style={({ pressed }) => [styles.launchBtn, (creating || pressed) && { opacity: 0.85 }]}
-                onPress={handleCreateCampaign}
-                disabled={creating}
-              >
-                {creating ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="rocket-launch" size={18} color="#FFFFFF" />
-                    <Text style={styles.launchBtnText}>Launch Campaign</Text>
-                  </>
-                )}
-              </Pressable>
             </View>
+
+            <View style={styles.formRow}>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Daily Budget (UGX) *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={formDailyBudget}
+                  onChangeText={setFormDailyBudget}
+                  placeholder="e.g. 50000"
+                  placeholderTextColor={Brand.textTertiary}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Bid Per Click (UGX)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={formBidPerClick}
+                  onChangeText={setFormBidPerClick}
+                  placeholder="50"
+                  placeholderTextColor={Brand.textTertiary}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.launchBtn, (creating || pressed) && { opacity: 0.85 }]}
+              onPress={handleCreateCampaign}
+              disabled={creating}
+            >
+              {creating ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="rocket-launch" size={18} color="#FFFFFF" />
+                  <Text style={styles.launchBtnText}>Launch Campaign</Text>
+                </>
+              )}
+            </Pressable>
           </View>
-        </Modal>
-      </SafeAreaView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, gap: 12,
-  },
-  headerTitleWrap: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },

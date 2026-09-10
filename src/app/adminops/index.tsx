@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -11,8 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getDashboardMetrics, type DashboardMetrics } from '@/services/dashboardApi';
 
@@ -60,12 +59,11 @@ export default function AdminOpsCentralScreen() {
   if (loading && !metrics) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading AdminOps Central...</Text>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="AdminOps Central" subtitle="Operations Dashboard" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading AdminOps Central...</Text>
+        </View>
       </View>
     );
   }
@@ -73,104 +71,66 @@ export default function AdminOpsCentralScreen() {
   if (error && !metrics) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient colors={[Brand.dark, Brand.darkLight, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>AdminOps Central</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={load}>
-              <Text style={styles.retryText}>Retry</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <ModernHeader title="AdminOps Central" subtitle="Operations Dashboard" />
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.dark, Brand.darkLight, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerTitle}>AdminOps Central</Text>
-            <Text style={styles.headerSub}>Operations Dashboard</Text>
+      <ModernHeader title="AdminOps Central" subtitle="Operations Dashboard" />
+
+      <ScrollView
+        style={styles.body}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+      >
+        {error ? (
+          <View style={styles.errorBanner}>
+            <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
+            <Text style={styles.errorBannerText}>{error}</Text>
           </View>
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Live</Text>
-          </View>
-        </LinearGradient>
+        ) : null}
 
-        <ScrollView
-          style={styles.body}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-        >
-          {error ? (
-            <View style={styles.errorBanner}>
-              <MaterialCommunityIcons name="alert-circle" size={16} color={Brand.danger} />
-              <Text style={styles.errorBannerText}>{error}</Text>
-            </View>
-          ) : null}
+        <Text style={styles.lastUpdated}>Last updated: {lastUpdated} · Auto-refresh 30s</Text>
 
-          <Text style={styles.lastUpdated}>Last updated: {lastUpdated} · Auto-refresh 30s</Text>
-
-          <View style={styles.metricsGrid}>
-            {metricCards.map((card, index) => (
-              <View key={`metric-${index}`} style={styles.metricCard}>
-                <View style={[styles.metricIconWrap, { backgroundColor: card.color + '20' }]}>
-                  <MaterialCommunityIcons name={card.icon as any} size={24} color={card.color} />
-                </View>
-                <Text style={styles.metricValue}>{card.value ?? '—'}</Text>
-                <Text style={styles.metricLabel}>{card.label}</Text>
+        <View style={styles.metricsGrid}>
+          {metricCards.map((card, index) => (
+            <View key={`metric-${index}`} style={styles.metricCard}>
+              <View style={[styles.metricIconWrap, { backgroundColor: card.color + '20' }]}>
+                <MaterialCommunityIcons name={card.icon as any} size={24} color={card.color} />
               </View>
-            ))}
-          </View>
-
-          <View style={styles.infoCard}>
-            <View style={styles.infoHeader}>
-              <MaterialCommunityIcons name="information-outline" size={20} color={Brand.textSecondary} />
-              <Text style={styles.infoTitle}>About AdminOps Central</Text>
+              <Text style={styles.metricValue}>{card.value ?? '—'}</Text>
+              <Text style={styles.metricLabel}>{card.label}</Text>
             </View>
-            <Text style={styles.infoText}>
-              This read-only mobile dashboard displays real-time operations metrics for
-              logistics staff and super admins. Metrics auto-refresh every 30 seconds.
-              Use the web dashboard at /admin-ops/ for full management capabilities including
-              bulk actions, order editing, and pickup station management.
-            </Text>
+          ))}
+        </View>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <MaterialCommunityIcons name="information-outline" size={20} color={Brand.textSecondary} />
+            <Text style={styles.infoTitle}>About AdminOps Central</Text>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+          <Text style={styles.infoText}>
+            This read-only mobile dashboard displays real-time operations metrics for
+            logistics staff and super admins. Metrics auto-refresh every 30 seconds.
+            Use the web dashboard at /admin-ops/ for full management capabilities including
+            bulk actions, order editing, and pickup station management.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, gap: 12,
-  },
-  headerTitleWrap: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-
-  liveBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(50,199,0,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
-  },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Brand.primary },
-  liveText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
 
   body: { flex: 1 },
 

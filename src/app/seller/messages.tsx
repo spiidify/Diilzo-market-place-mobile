@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -13,8 +12,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   getSellerThreadDetail,
@@ -118,15 +117,12 @@ export default function SellerMessagesScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => activeThread ? setActiveThread(null) : router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>{activeThread ? activeThread.buyer_name : 'Messages'}</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <ModernHeader
+        title={activeThread ? activeThread.buyer_name : 'Messages'}
+        onBack={() => activeThread ? setActiveThread(null) : router.back()}
+      />
 
+      <View style={{ flex: 1 }}>
         {activeThread ? (
           <View style={styles.chatContainer}>
             {activeThread.product_name && (
@@ -180,7 +176,7 @@ export default function SellerMessagesScreen() {
             }
           />
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -188,9 +184,6 @@ export default function SellerMessagesScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
   threadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },

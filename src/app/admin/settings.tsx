@@ -1,5 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -13,8 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import {
   getAdminSettings,
@@ -72,15 +70,8 @@ export default function AdminSettingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.dark, Brand.darkLight, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Platform Settings</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
-
+      <ModernHeader title="Platform Settings" />
+      <View style={styles.body}>
         {loading ? (
           <View style={styles.centerBody}><ActivityIndicator size="large" color={Brand.primary} /></View>
         ) : (
@@ -124,18 +115,15 @@ export default function AdminSettingsScreen() {
             </Pressable>
           </ScrollView>
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   body: { flex: 1 },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 12, paddingBottom: 40 },
   section: { marginBottom: 16 },
   sectionTitle: { fontSize: 14, fontWeight: '800', color: Brand.textSecondary, marginBottom: 8, textTransform: 'uppercase' },

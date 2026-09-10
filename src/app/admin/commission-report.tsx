@@ -1,18 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getCommissionReport } from '@/services/adminApi';
 
@@ -49,15 +47,8 @@ export default function AdminCommissionReportScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.dark, Brand.darkLight, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Commission Report</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
-
+      <ModernHeader title="Commission Report" />
+      <View style={styles.body}>
         {loading ? (
           <View style={styles.centerBody}><ActivityIndicator size="large" color={Brand.primary} /></View>
         ) : (
@@ -123,18 +114,15 @@ export default function AdminCommissionReportScreen() {
             </View>
           </ScrollView>
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   body: { flex: 1 },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 12, paddingBottom: 40 },
   summaryContainer: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   summaryCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },

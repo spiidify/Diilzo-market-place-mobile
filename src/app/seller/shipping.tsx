@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,8 +14,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { createShippingMethod, deleteShippingMethod, getShippingMethods, type ShippingMethod } from '@/services/seller';
 
@@ -72,10 +71,12 @@ export default function SellerShippingScreen() {
   const handleDelete = (item: ShippingMethod) => {
     Alert.alert('Delete', `Delete "${item.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        try { await deleteShippingMethod(item.id); setMethods(prev => prev.filter(m => m.id !== item.id)); }
-        catch { Alert.alert('Error', 'Failed to delete'); }
-      }},
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          try { await deleteShippingMethod(item.id); setMethods(prev => prev.filter(m => m.id !== item.id)); }
+          catch { Alert.alert('Error', 'Failed to delete'); }
+        }
+      },
     ]);
   };
 
@@ -107,13 +108,13 @@ export default function SellerShippingScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}><MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" /></Pressable>
-          <Text style={styles.headerTitle}>Shipping</Text>
-          <Pressable onPress={() => setShowModal(true)} hitSlop={12}><MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" /></Pressable>
-        </LinearGradient>
+      <ModernHeader
+        title="Shipping"
+        rightIcon="plus"
+        onRightPress={() => setShowModal(true)}
+      />
 
+      <View style={{ flex: 1 }}>
         {loading ? (
           <View style={styles.centerBody}><ActivityIndicator size="large" color={Brand.primary} /></View>
         ) : (
@@ -156,16 +157,13 @@ export default function SellerShippingScreen() {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '900', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },

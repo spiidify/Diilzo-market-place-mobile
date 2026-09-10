@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -12,8 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import { getMyEarnings, requestPayout, type SellerEarnings } from '@/services/seller';
@@ -77,15 +76,9 @@ export default function SellerEarningsScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Earnings</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <ModernHeader title="Earnings" />
 
+      <View style={{ flex: 1 }}>
         {loading ? (
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
@@ -162,16 +155,13 @@ export default function SellerEarningsScreen() {
             contentContainerStyle={styles.list}
           />
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
   list: { padding: 12, paddingBottom: 32 },
