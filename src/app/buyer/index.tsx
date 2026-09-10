@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { ModernHeader } from '@/components/ModernHeader';
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 
@@ -25,7 +25,7 @@ export default function BuyerDashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.screen}>
-        <ModernHeader title="My Dashboard" subtitle="Welcome back" />
+        <GradientHeader title="My Dashboard" subtitle="Welcome back" showBack={false} />
         <View style={styles.loadingBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
           <Text style={styles.loadingText}>Loading...</Text>
@@ -38,7 +38,7 @@ export default function BuyerDashboardScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.screen}>
-        <ModernHeader title="My Dashboard" subtitle="Welcome back" />
+        <GradientHeader title="My Dashboard" subtitle="Welcome back" showBack={false} />
         <View style={styles.loginPromptBody}>
           <View style={styles.loginPromptIcon}>
             <MaterialCommunityIcons name="account-lock-outline" size={44} color={Brand.primary} />
@@ -70,7 +70,7 @@ export default function BuyerDashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <ModernHeader title="My Dashboard" subtitle="Welcome back" />
+      <GradientHeader title="My Dashboard" subtitle="Welcome back" showBack={false} />
 
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
         {/* Profile hero — card with avatar */}

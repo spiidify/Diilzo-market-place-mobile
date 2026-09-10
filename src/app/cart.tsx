@@ -2,18 +2,19 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -176,24 +177,11 @@ export default function CartScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Shopping Cart</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading your cart...</Text>
-          </View>
-        </SafeAreaView>
+        <GradientHeader title="Shopping Cart" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading your cart...</Text>
+        </View>
       </View>
     );
   }
@@ -202,39 +190,26 @@ export default function CartScreen() {
   if (connectionError && (!cart || cart.items.length === 0)) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Shopping Cart</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <View style={styles.errorIconCircle}>
-              <MaterialCommunityIcons name="wifi-off" size={48} color="#FFFFFF" />
-            </View>
-            <Text style={styles.errorTitle}>Connection Error</Text>
-            <Text style={styles.emptySub}>
-              We couldn't load your cart. Check your internet connection and try again.
-            </Text>
-            <Pressable
-              style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => {
-                setLoading(true);
-                loadCart();
-              }}
-            >
-              <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
-              <Text style={styles.shopBtnText}>Retry</Text>
-            </Pressable>
+        <GradientHeader title="Shopping Cart" />
+        <View style={styles.centerBody}>
+          <View style={styles.errorIconCircle}>
+            <MaterialCommunityIcons name="wifi-off" size={48} color="#FFFFFF" />
           </View>
-        </SafeAreaView>
+          <Text style={styles.errorTitle}>Connection Error</Text>
+          <Text style={styles.emptySub}>
+            We couldn't load your cart. Check your internet connection and try again.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => {
+              setLoading(true);
+              loadCart();
+            }}
+          >
+            <MaterialCommunityIcons name="refresh" size={20} color="#FFFFFF" />
+            <Text style={styles.shopBtnText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -243,43 +218,30 @@ export default function CartScreen() {
   if (!cart || cart.items.length === 0) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Shopping Cart</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <View style={styles.emptyIconWrap}>
-              <LinearGradient
-                colors={[Brand.primaryDark, Brand.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.emptyIconCircle}
-              >
-                <MaterialCommunityIcons name="cart-outline" size={56} color="#FFFFFF" />
-              </LinearGradient>
-            </View>
-            <Text style={styles.emptyTitle}>Your cart is empty</Text>
-            <Text style={styles.emptySub}>
-              Discover great deals and products from top sellers on Diilzo.
-            </Text>
-            <Pressable
-              style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/')}
+        <GradientHeader title="Shopping Cart" />
+        <View style={styles.centerBody}>
+          <View style={styles.emptyIconWrap}>
+            <LinearGradient
+              colors={[Brand.primaryDark, Brand.primary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.emptyIconCircle}
             >
-              <MaterialCommunityIcons name="store" size={20} color="#FFFFFF" />
-              <Text style={styles.shopBtnText}>Start Shopping</Text>
-            </Pressable>
+              <MaterialCommunityIcons name="cart-outline" size={56} color="#FFFFFF" />
+            </LinearGradient>
           </View>
-        </SafeAreaView>
+          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text style={styles.emptySub}>
+            Discover great deals and products from top sellers on Diilzo.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/')}
+          >
+            <MaterialCommunityIcons name="store" size={20} color="#FFFFFF" />
+            <Text style={styles.shopBtnText}>Start Shopping</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -354,74 +316,47 @@ export default function CartScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Shopping Cart</Text>
-            <Text style={styles.headerSub}>
-              {cart.total_items} {cart.total_items === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
-          <Pressable onPress={handleClear} hitSlop={12}>
-            <MaterialCommunityIcons name="delete-sweep-outline" size={24} color="#FFFFFF" />
-          </Pressable>
-        </LinearGradient>
+      <GradientHeader
+        title="Shopping Cart"
+        subtitle={`${cart.total_items} ${cart.total_items === 1 ? 'item' : 'items'}`}
+        rightIcon="delete-sweep-outline"
+        onRightPress={handleClear}
+      />
 
-        <FlatList
-          data={cart.items}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          onRefresh={loadCart}
-          refreshing={false}
-        />
+      <FlatList
+        data={cart.items}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        onRefresh={loadCart}
+        refreshing={false}
+      />
 
-        <View style={styles.bottomBar}>
-          <View style={styles.bottomBarTop}>
-            <View style={styles.subtotalCol}>
-              <Text style={styles.subtotalLabel}>Subtotal</Text>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalCurrency}>{currency}</Text>
-                <Text style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</Text>
-              </View>
+      <View style={styles.bottomBar}>
+        <View style={styles.bottomBarTop}>
+          <View style={styles.subtotalCol}>
+            <Text style={styles.subtotalLabel}>Subtotal</Text>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalCurrency}>{currency}</Text>
+              <Text style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</Text>
             </View>
-            <Pressable
-              style={({ pressed }) => [styles.checkoutBtn, pressed && { opacity: 0.85 }]}
-              onPress={handleCheckout}
-            >
-              <MaterialCommunityIcons name="cart-arrow-right" size={22} color="#FFFFFF" />
-              <Text style={styles.checkoutBtnText}>Checkout</Text>
-            </Pressable>
           </View>
+          <Pressable
+            style={({ pressed }) => [styles.checkoutBtn, pressed && { opacity: 0.85 }]}
+            onPress={handleCheckout}
+          >
+            <MaterialCommunityIcons name="cart-arrow-right" size={22} color="#FFFFFF" />
+            <Text style={styles.checkoutBtnText}>Checkout</Text>
+          </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F5F6F8' },
-  safeArea: { flex: 1 },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerCenter: { alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
   loadingText: { marginTop: Spacing.two, fontSize: 14, color: Brand.textSecondary },

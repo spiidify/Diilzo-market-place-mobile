@@ -3,10 +3,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,8 +17,8 @@ import {Image,
   TextInput,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -395,36 +396,22 @@ export default function CheckoutScreen() {
 
   // ── Header ──────────────────────────────────────────────────────
   const renderHeader = () => (
-    <LinearGradient
-      colors={[Brand.dark, Brand.accent, Brand.primary]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.header}
-    >
-      <Pressable onPress={() => router.back()} hitSlop={12}>
-        <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
-      </Pressable>
-      <View style={styles.headerCenter}>
-        <Text style={styles.headerTitle}>Checkout</Text>
-        <Text style={styles.headerSub}>{itemCount} {itemCount === 1 ? 'item' : 'items'} · {currency} {subtotal.toLocaleString()}</Text>
-      </View>
-      <View style={styles.headerBadge}>
-        <MaterialCommunityIcons name="shield-check-outline" size={16} color="#FFFFFF" />
-      </View>
-    </LinearGradient>
+    <GradientHeader
+      title="Checkout"
+      subtitle={`${itemCount} ${itemCount === 1 ? 'item' : 'items'} · ${currency} ${subtotal.toLocaleString()}`}
+      rightIcon="shield-check-outline"
+    />
   );
 
   // ── Loading state ────────────────────────────────────────────────
   if (loading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          {renderHeader()}
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading checkout...</Text>
-          </View>
-        </SafeAreaView>
+        {renderHeader()}
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading checkout...</Text>
+        </View>
       </View>
     );
   }
@@ -433,31 +420,29 @@ export default function CheckoutScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          {renderHeader()}
-          <View style={styles.centerBody}>
-            <View style={styles.lockCircle}>
-              <MaterialCommunityIcons name="lock-outline" size={40} color="#FFFFFF" />
-            </View>
-            <Text style={styles.errorText}>Sign In Required</Text>
-            <Text style={styles.loadingText}>
-              You need an account to place an order.{'\n'}Your cart items will be saved.
-            </Text>
-            <Pressable
-              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/(auth)/login' as any)}
-            >
-              <MaterialCommunityIcons name="login" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryBtnText}>Sign In</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
-              onPress={() => router.push('/(auth)/register' as any)}
-            >
-              <Text style={styles.secondaryBtnText}>Create Account</Text>
-            </Pressable>
+        {renderHeader()}
+        <View style={styles.centerBody}>
+          <View style={styles.lockCircle}>
+            <MaterialCommunityIcons name="lock-outline" size={40} color="#FFFFFF" />
           </View>
-        </SafeAreaView>
+          <Text style={styles.errorText}>Sign In Required</Text>
+          <Text style={styles.loadingText}>
+            You need an account to place an order.{'\n'}Your cart items will be saved.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/(auth)/login' as any)}
+          >
+            <MaterialCommunityIcons name="login" size={18} color="#FFFFFF" />
+            <Text style={styles.primaryBtnText}>Sign In</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+            onPress={() => router.push('/(auth)/register' as any)}
+          >
+            <Text style={styles.secondaryBtnText}>Create Account</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -466,507 +451,503 @@ export default function CheckoutScreen() {
   if (error && !cart) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          {renderHeader()}
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
-              onPress={loadCheckout}
-            >
-              <Text style={styles.primaryBtnText}>Retry</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        {renderHeader()}
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}
+            onPress={loadCheckout}
+          >
+            <Text style={styles.primaryBtnText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {renderHeader()}
+      {renderHeader()}
 
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={0}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* ── Section 1: Delivery Address + Notes ─────────────── */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.stepPill}>
-                  <Text style={styles.stepPillText}>1</Text>
-                </View>
-                <Text style={styles.cardTitle}>Delivery Address</Text>
-                {addresses.length > 0 && (
-                  <Pressable
-                    style={styles.cardAction}
-                    onPress={() => router.push('/buyer/addresses' as any)}
-                  >
-                    <MaterialCommunityIcons name="plus" size={16} color={Brand.primary} />
-                  </Pressable>
-                )}
+          {/* ── Section 1: Delivery Address + Notes ─────────────── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.stepPill}>
+                <Text style={styles.stepPillText}>1</Text>
               </View>
-
-              {addresses.length === 0 ? (
+              <Text style={styles.cardTitle}>Delivery Address</Text>
+              {addresses.length > 0 && (
                 <Pressable
-                  style={({ pressed }) => [styles.addAddressCard, pressed && { opacity: 0.7 }]}
+                  style={styles.cardAction}
                   onPress={() => router.push('/buyer/addresses' as any)}
                 >
-                  <MaterialCommunityIcons name="map-marker-plus" size={28} color={Brand.primary} />
-                  <Text style={styles.addAddressTitle}>Add a delivery address</Text>
-                  <Text style={styles.addAddressSub}>Tap here to add your first address</Text>
+                  <MaterialCommunityIcons name="plus" size={16} color={Brand.primary} />
                 </Pressable>
-              ) : (
-                <View style={styles.addressList}>
-                  {addresses.map((addr) => {
-                    const selected = addr.id === selectedAddressId;
-                    return (
-                      <Pressable
-                        key={`addr-${addr.id}`}
-                        style={({ pressed }) => [
-                          styles.addressCard,
-                          selected && styles.addressCardSelected,
-                          pressed && { opacity: 0.85 },
-                        ]}
-                        onPress={() => setSelectedAddressId(addr.id)}
-                      >
-                        <View style={[styles.radio, selected && styles.radioSelected]}>
-                          {selected && <View style={styles.radioDot} />}
-                        </View>
-                        <View style={styles.addressInfo}>
-                          <View style={styles.addressLabelRow}>
-                            <Text style={styles.addressLabel}>{addr.label}</Text>
-                            {addr.is_default && (
-                              <View style={styles.defaultBadge}>
-                                <Text style={styles.defaultBadgeText}>Default</Text>
-                              </View>
-                            )}
-                          </View>
-                          <Text style={styles.addressText} numberOfLines={2}>
-                            {addr.street}, {addr.city}, {addr.state}
-                          </Text>
-                          <View style={styles.addressPhoneRow}>
-                            <MaterialCommunityIcons name="phone-outline" size={11} color={Brand.primary} />
-                            <Text style={styles.addressPhone}>{addr.phone}</Text>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
-
-              {/* Inline delivery notes */}
-              <View style={styles.notesWrap}>
-                <MaterialCommunityIcons name="note-text-outline" size={16} color={Brand.textTertiary} />
-                <TextInput
-                  style={styles.notesInput}
-                  placeholder="Delivery notes (optional)..."
-                  placeholderTextColor={Brand.textTertiary}
-                  value={orderNote}
-                  onChangeText={setOrderNote}
-                  maxLength={200}
-                />
-              </View>
-            </View>
-
-            {/* ── Section 2: Delivery Method + Pickup Station ─────── */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.stepPill}>
-                  <Text style={styles.stepPillText}>2</Text>
-                </View>
-                <Text style={styles.cardTitle}>Delivery Method</Text>
-              </View>
-
-              {/* Fulfillment toggle — compact horizontal pills */}
-              <View style={styles.fulfillmentRow}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.fulfillmentPill,
-                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillActive,
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  onPress={() => setFulfillmentMethod('home_delivery')}
-                >
-                  <MaterialCommunityIcons
-                    name="truck"
-                    size={18}
-                    color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
-                  />
-                  <Text style={[
-                    styles.fulfillmentPillText,
-                    fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillTextActive,
-                  ]}>Home Delivery</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.fulfillmentPill,
-                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillActive,
-                    pressed && { opacity: 0.85 },
-                  ]}
-                  onPress={() => setFulfillmentMethod('pickup_station')}
-                >
-                  <MaterialCommunityIcons
-                    name="store"
-                    size={18}
-                    color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
-                  />
-                  <Text style={[
-                    styles.fulfillmentPillText,
-                    fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillTextActive,
-                  ]}>Pickup Station</Text>
-                </Pressable>
-              </View>
-
-              {/* Pickup Station Selector */}
-              {fulfillmentMethod === 'pickup_station' && (
-                <View style={styles.pickupSection}>
-                  {/* Region Tabs */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.regionTabsScroll}
-                    contentContainerStyle={styles.regionTabsContent}
-                  >
-                    {REGIONS.map((region) => (
-                      <Pressable
-                        key={`region-${region}`}
-                        style={({ pressed }) => [
-                          styles.regionTab,
-                          selectedRegion === region && styles.regionTabActive,
-                          pressed && { opacity: 0.85 },
-                        ]}
-                        onPress={() => setSelectedRegion(region)}
-                      >
-                        <MaterialCommunityIcons
-                          name="map-marker"
-                          size={12}
-                          color={selectedRegion === region ? '#FFFFFF' : Brand.textTertiary}
-                        />
-                        <Text style={[
-                          styles.regionTabText,
-                          selectedRegion === region && styles.regionTabTextActive,
-                        ]}>{region}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-
-                  {/* Loading state */}
-                  {pickupLoading && (
-                    <View style={styles.pickupLoading}>
-                      <ActivityIndicator size="small" color={Brand.primary} />
-                      <Text style={styles.pickupLoadingText}>Loading stations...</Text>
-                    </View>
-                  )}
-
-                  {/* Error state */}
-                  {pickupError && !pickupLoading && (
-                    <View style={styles.pickupError}>
-                      <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
-                      <Text style={styles.pickupErrorText}>{pickupError}</Text>
-                      <Pressable style={styles.pickupRetryBtn} onPress={loadPickupStations}>
-                        <Text style={styles.pickupRetryText}>Retry</Text>
-                      </Pressable>
-                    </View>
-                  )}
-
-                  {/* Station Cards */}
-                  {!pickupLoading && !pickupError && (
-                    <View style={styles.stationList}>
-                      {regionStations.map((station) => {
-                        const selected = station.id === selectedStationId;
-                        return (
-                          <Pressable
-                            key={`station-${station.id}`}
-                            style={({ pressed }) => [
-                              styles.stationCard,
-                              selected && styles.stationCardSelected,
-                              pressed && { opacity: 0.85 },
-                            ]}
-                            onPress={() => setSelectedStationId(station.id)}
-                          >
-                            <View style={[
-                              styles.stationCardIcon,
-                              selected && styles.stationCardIconSelected,
-                            ]}>
-                              <MaterialCommunityIcons
-                                name="store"
-                                size={16}
-                                color={selected ? '#FFFFFF' : Brand.primary}
-                              />
-                            </View>
-                            <View style={styles.stationCardBody}>
-                              <Text style={styles.stationCardName} numberOfLines={1}>
-                                {station.name}
-                              </Text>
-                              <Text style={styles.stationCardMeta} numberOfLines={1}>
-                                {station.city} · {station.operating_hours || 'Hours N/A'}
-                              </Text>
-                            </View>
-                            {selected && (
-                              <MaterialCommunityIcons name="check-circle" size={18} color={Brand.primary} />
-                            )}
-                          </Pressable>
-                        );
-                      })}
-                      {regionStations.length === 0 && (
-                        <View style={styles.stationEmpty}>
-                          <MaterialCommunityIcons name="store-off-outline" size={28} color={Brand.textTertiary} />
-                          <Text style={styles.stationEmptyText}>
-                            No pickup stations in this region
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Selected station detail */}
-                  {selectedStation && !pickupLoading && !pickupError && (
-                    <View style={styles.stationDetail}>
-                      <View style={styles.stationDetailHeader}>
-                        <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
-                        <Text style={styles.stationDetailName} numberOfLines={1}>
-                          {selectedStation.name}
-                        </Text>
-                        <Pressable
-                          style={styles.stationDetailClose}
-                          onPress={() => setSelectedStationId(null)}
-                        >
-                          <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
-                        </Pressable>
-                      </View>
-                      <View style={styles.stationDetailBody}>
-                        <View style={styles.stationDetailRow}>
-                          <MaterialCommunityIcons name="map-marker" size={12} color={Brand.primary} />
-                          <Text style={styles.stationDetailText} numberOfLines={2}>
-                            {selectedStation.full_address || selectedStation.address_line_1}
-                          </Text>
-                        </View>
-                        {selectedStation.contact_number && (
-                          <View style={styles.stationDetailRow}>
-                            <MaterialCommunityIcons name="phone-outline" size={12} color={Brand.primary} />
-                            <Text style={styles.stationDetailText}>{selectedStation.contact_number}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  )}
-                </View>
               )}
             </View>
 
-            {/* ── Section 3: Payment Method ──────────────────────── */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.stepPill}>
-                  <Text style={styles.stepPillText}>3</Text>
-                </View>
-                <Text style={styles.cardTitle}>Payment Method</Text>
-              </View>
-
-              <View style={styles.paymentList}>
-                {PAYMENT_OPTIONS.map((opt) => {
-                  const selected = opt.method === selectedMethod;
-                  const isAvailable =
-                    paymentMethods.length === 0 || paymentMethods.some((m) => m.method === opt.method);
-                  if (!isAvailable) return null;
+            {addresses.length === 0 ? (
+              <Pressable
+                style={({ pressed }) => [styles.addAddressCard, pressed && { opacity: 0.7 }]}
+                onPress={() => router.push('/buyer/addresses' as any)}
+              >
+                <MaterialCommunityIcons name="map-marker-plus" size={28} color={Brand.primary} />
+                <Text style={styles.addAddressTitle}>Add a delivery address</Text>
+                <Text style={styles.addAddressSub}>Tap here to add your first address</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.addressList}>
+                {addresses.map((addr) => {
+                  const selected = addr.id === selectedAddressId;
                   return (
                     <Pressable
-                      key={`pm-${opt.method}`}
+                      key={`addr-${addr.id}`}
                       style={({ pressed }) => [
-                        styles.paymentCard,
-                        selected && styles.paymentCardSelected,
+                        styles.addressCard,
+                        selected && styles.addressCardSelected,
                         pressed && { opacity: 0.85 },
                       ]}
-                      onPress={() => setSelectedMethod(opt.method)}
+                      onPress={() => setSelectedAddressId(addr.id)}
                     >
-                      <View style={[styles.paymentIcon, { backgroundColor: opt.bgColor }]}>
-                        <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
-                      </View>
-                      <View style={styles.paymentInfo}>
-                        <Text style={styles.paymentLabel}>{opt.label}</Text>
-                        <Text style={styles.paymentSub}>{opt.subtitle}</Text>
-                      </View>
                       <View style={[styles.radio, selected && styles.radioSelected]}>
                         {selected && <View style={styles.radioDot} />}
+                      </View>
+                      <View style={styles.addressInfo}>
+                        <View style={styles.addressLabelRow}>
+                          <Text style={styles.addressLabel}>{addr.label}</Text>
+                          {addr.is_default && (
+                            <View style={styles.defaultBadge}>
+                              <Text style={styles.defaultBadgeText}>Default</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.addressText} numberOfLines={2}>
+                          {addr.street}, {addr.city}, {addr.state}
+                        </Text>
+                        <View style={styles.addressPhoneRow}>
+                          <MaterialCommunityIcons name="phone-outline" size={11} color={Brand.primary} />
+                          <Text style={styles.addressPhone}>{addr.phone}</Text>
+                        </View>
                       </View>
                     </Pressable>
                   );
                 })}
               </View>
+            )}
 
-              {selectedOpt?.requiresPhone && (
-                <View style={styles.phoneSection}>
-                  <View style={styles.phoneInputWrap}>
-                    <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
-                    <TextInput
-                      style={styles.phoneInput}
-                      placeholder="07XXXXXXXX"
-                      placeholderTextColor={Brand.textTertiary}
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                      keyboardType="phone-pad"
-                      autoCorrect={false}
-                    />
-                  </View>
-                </View>
-              )}
+            {/* Inline delivery notes */}
+            <View style={styles.notesWrap}>
+              <MaterialCommunityIcons name="note-text-outline" size={16} color={Brand.textTertiary} />
+              <TextInput
+                style={styles.notesInput}
+                placeholder="Delivery notes (optional)..."
+                placeholderTextColor={Brand.textTertiary}
+                value={orderNote}
+                onChangeText={setOrderNote}
+                maxLength={200}
+              />
+            </View>
+          </View>
+
+          {/* ── Section 2: Delivery Method + Pickup Station ─────── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.stepPill}>
+                <Text style={styles.stepPillText}>2</Text>
+              </View>
+              <Text style={styles.cardTitle}>Delivery Method</Text>
             </View>
 
-            {/* ── Section 4: Order Summary ─────────────────────── */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.stepPill}>
-                  <Text style={styles.stepPillText}>4</Text>
-                </View>
-                <Text style={styles.cardTitle}>Order Summary</Text>
-                <View style={styles.itemCountBadge}>
-                  <Text style={styles.itemCountBadgeText}>
-                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
-                  </Text>
-                </View>
-              </View>
+            {/* Fulfillment toggle — compact horizontal pills */}
+            <View style={styles.fulfillmentRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.fulfillmentPill,
+                  fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillActive,
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={() => setFulfillmentMethod('home_delivery')}
+              >
+                <MaterialCommunityIcons
+                  name="truck"
+                  size={18}
+                  color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
+                />
+                <Text style={[
+                  styles.fulfillmentPillText,
+                  fulfillmentMethod === 'home_delivery' && styles.fulfillmentPillTextActive,
+                ]}>Home Delivery</Text>
+              </Pressable>
 
-              {/* Product list — always visible */}
-              {cart && cart.items.length > 0 && (
-                <View style={styles.productList}>
-                  {cart.items.map((item) => (
-                    <View key={`ci-${item.id}`} style={styles.productItem}>
-                      {item.product.primary_image_url ? (
-                        <Image
-                          source={{ uri: item.product.primary_image_url }}
-                          style={styles.productItemImage}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={[styles.productItemImage, styles.productNoImage]}>
-                          <MaterialCommunityIcons name="package-variant-closed" size={16} color="#bbb" />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.fulfillmentPill,
+                  fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillActive,
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={() => setFulfillmentMethod('pickup_station')}
+              >
+                <MaterialCommunityIcons
+                  name="store"
+                  size={18}
+                  color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
+                />
+                <Text style={[
+                  styles.fulfillmentPillText,
+                  fulfillmentMethod === 'pickup_station' && styles.fulfillmentPillTextActive,
+                ]}>Pickup Station</Text>
+              </Pressable>
+            </View>
+
+            {/* Pickup Station Selector */}
+            {fulfillmentMethod === 'pickup_station' && (
+              <View style={styles.pickupSection}>
+                {/* Region Tabs */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.regionTabsScroll}
+                  contentContainerStyle={styles.regionTabsContent}
+                >
+                  {REGIONS.map((region) => (
+                    <Pressable
+                      key={`region-${region}`}
+                      style={({ pressed }) => [
+                        styles.regionTab,
+                        selectedRegion === region && styles.regionTabActive,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      onPress={() => setSelectedRegion(region)}
+                    >
+                      <MaterialCommunityIcons
+                        name="map-marker"
+                        size={12}
+                        color={selectedRegion === region ? '#FFFFFF' : Brand.textTertiary}
+                      />
+                      <Text style={[
+                        styles.regionTabText,
+                        selectedRegion === region && styles.regionTabTextActive,
+                      ]}>{region}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+
+                {/* Loading state */}
+                {pickupLoading && (
+                  <View style={styles.pickupLoading}>
+                    <ActivityIndicator size="small" color={Brand.primary} />
+                    <Text style={styles.pickupLoadingText}>Loading stations...</Text>
+                  </View>
+                )}
+
+                {/* Error state */}
+                {pickupError && !pickupLoading && (
+                  <View style={styles.pickupError}>
+                    <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
+                    <Text style={styles.pickupErrorText}>{pickupError}</Text>
+                    <Pressable style={styles.pickupRetryBtn} onPress={loadPickupStations}>
+                      <Text style={styles.pickupRetryText}>Retry</Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {/* Station Cards */}
+                {!pickupLoading && !pickupError && (
+                  <View style={styles.stationList}>
+                    {regionStations.map((station) => {
+                      const selected = station.id === selectedStationId;
+                      return (
+                        <Pressable
+                          key={`station-${station.id}`}
+                          style={({ pressed }) => [
+                            styles.stationCard,
+                            selected && styles.stationCardSelected,
+                            pressed && { opacity: 0.85 },
+                          ]}
+                          onPress={() => setSelectedStationId(station.id)}
+                        >
+                          <View style={[
+                            styles.stationCardIcon,
+                            selected && styles.stationCardIconSelected,
+                          ]}>
+                            <MaterialCommunityIcons
+                              name="store"
+                              size={16}
+                              color={selected ? '#FFFFFF' : Brand.primary}
+                            />
+                          </View>
+                          <View style={styles.stationCardBody}>
+                            <Text style={styles.stationCardName} numberOfLines={1}>
+                              {station.name}
+                            </Text>
+                            <Text style={styles.stationCardMeta} numberOfLines={1}>
+                              {station.city} · {station.operating_hours || 'Hours N/A'}
+                            </Text>
+                          </View>
+                          {selected && (
+                            <MaterialCommunityIcons name="check-circle" size={18} color={Brand.primary} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                    {regionStations.length === 0 && (
+                      <View style={styles.stationEmpty}>
+                        <MaterialCommunityIcons name="store-off-outline" size={28} color={Brand.textTertiary} />
+                        <Text style={styles.stationEmptyText}>
+                          No pickup stations in this region
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Selected station detail */}
+                {selectedStation && !pickupLoading && !pickupError && (
+                  <View style={styles.stationDetail}>
+                    <View style={styles.stationDetailHeader}>
+                      <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
+                      <Text style={styles.stationDetailName} numberOfLines={1}>
+                        {selectedStation.name}
+                      </Text>
+                      <Pressable
+                        style={styles.stationDetailClose}
+                        onPress={() => setSelectedStationId(null)}
+                      >
+                        <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
+                      </Pressable>
+                    </View>
+                    <View style={styles.stationDetailBody}>
+                      <View style={styles.stationDetailRow}>
+                        <MaterialCommunityIcons name="map-marker" size={12} color={Brand.primary} />
+                        <Text style={styles.stationDetailText} numberOfLines={2}>
+                          {selectedStation.full_address || selectedStation.address_line_1}
+                        </Text>
+                      </View>
+                      {selectedStation.contact_number && (
+                        <View style={styles.stationDetailRow}>
+                          <MaterialCommunityIcons name="phone-outline" size={12} color={Brand.primary} />
+                          <Text style={styles.stationDetailText}>{selectedStation.contact_number}</Text>
                         </View>
                       )}
-                      <View style={styles.productItemInfo}>
-                        <Text style={styles.productItemName} numberOfLines={2}>{item.product.name}</Text>
-                        {item.product.store?.name ? (
-                          <Text style={styles.productItemStore} numberOfLines={1}>
-                            {item.product.store.name}
-                          </Text>
-                        ) : null}
-                        <View style={styles.productItemBottom}>
-                          <Text style={styles.productItemQty}>Qty {item.quantity}</Text>
-                          <Text style={styles.productItemPrice}>{currency} {Number(item.total_price).toLocaleString()}</Text>
-                        </View>
-                      </View>
                     </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Cost breakdown */}
-              <View style={styles.costBreakdown}>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Subtotal</Text>
-                  <Text style={styles.costValue}>{currency} {subtotal.toLocaleString()}</Text>
-                </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Shipping</Text>
-                  <Text style={styles.costValue}>{currency} {shipping.toLocaleString()}</Text>
-                </View>
-                {discount > 0 && (
-                  <View style={styles.costRow}>
-                    <Text style={[styles.costLabel, { color: Brand.primary }]}>Discount</Text>
-                    <Text style={[styles.costValue, { color: Brand.primary }]}>
-                      −{currency} {discount.toLocaleString()}
-                    </Text>
                   </View>
                 )}
               </View>
+            )}
+          </View>
 
-              {/* Total bar */}
-              <View style={styles.totalBar}>
-                <Text style={styles.totalBarLabel}>Total</Text>
-                <Text style={styles.totalBarValue}>{currency} {total.toLocaleString()}</Text>
+          {/* ── Section 3: Payment Method ──────────────────────── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.stepPill}>
+                <Text style={styles.stepPillText}>3</Text>
               </View>
+              <Text style={styles.cardTitle}>Payment Method</Text>
+            </View>
 
-              {/* Coupon */}
-              <View style={styles.couponRow}>
-                <View style={styles.couponInputWrap}>
-                  <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={Brand.textTertiary} />
+            <View style={styles.paymentList}>
+              {PAYMENT_OPTIONS.map((opt) => {
+                const selected = opt.method === selectedMethod;
+                const isAvailable =
+                  paymentMethods.length === 0 || paymentMethods.some((m) => m.method === opt.method);
+                if (!isAvailable) return null;
+                return (
+                  <Pressable
+                    key={`pm-${opt.method}`}
+                    style={({ pressed }) => [
+                      styles.paymentCard,
+                      selected && styles.paymentCardSelected,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                    onPress={() => setSelectedMethod(opt.method)}
+                  >
+                    <View style={[styles.paymentIcon, { backgroundColor: opt.bgColor }]}>
+                      <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
+                    </View>
+                    <View style={styles.paymentInfo}>
+                      <Text style={styles.paymentLabel}>{opt.label}</Text>
+                      <Text style={styles.paymentSub}>{opt.subtitle}</Text>
+                    </View>
+                    <View style={[styles.radio, selected && styles.radioSelected]}>
+                      {selected && <View style={styles.radioDot} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {selectedOpt?.requiresPhone && (
+              <View style={styles.phoneSection}>
+                <View style={styles.phoneInputWrap}>
+                  <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
                   <TextInput
-                    style={styles.couponInput}
-                    placeholder="Coupon code"
+                    style={styles.phoneInput}
+                    placeholder="07XXXXXXXX"
                     placeholderTextColor={Brand.textTertiary}
-                    value={couponCode}
-                    onChangeText={setCouponCode}
-                    autoCapitalize="characters"
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    keyboardType="phone-pad"
                     autoCorrect={false}
                   />
                 </View>
-                <Pressable
-                  style={({ pressed }) => [styles.couponBtn, pressed && { opacity: 0.85 }]}
-                  onPress={handleValidateCoupon}
-                  disabled={couponLoading}
-                >
-                  {couponLoading ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.couponBtnText}>Apply</Text>
-                  )}
-                </Pressable>
               </View>
-              {couponMsg && (
-                <View style={[styles.couponMsgWrap, couponMsg.type === 'error' && styles.couponMsgError]}>
-                  <MaterialCommunityIcons
-                    name={couponMsg.type === 'success' ? 'check-circle' : 'alert-circle'}
-                    size={14}
-                    color={couponMsg.type === 'success' ? Brand.primary : Brand.danger}
-                  />
-                  <Text style={[styles.couponMsg, couponMsg.type === 'error' && { color: Brand.danger }]}>
-                    {couponMsg.text}
+            )}
+          </View>
+
+          {/* ── Section 4: Order Summary ─────────────────────── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.stepPill}>
+                <Text style={styles.stepPillText}>4</Text>
+              </View>
+              <Text style={styles.cardTitle}>Order Summary</Text>
+              <View style={styles.itemCountBadge}>
+                <Text style={styles.itemCountBadgeText}>
+                  {itemCount} {itemCount === 1 ? 'item' : 'items'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Product list — always visible */}
+            {cart && cart.items.length > 0 && (
+              <View style={styles.productList}>
+                {cart.items.map((item) => (
+                  <View key={`ci-${item.id}`} style={styles.productItem}>
+                    {item.product.primary_image_url ? (
+                      <Image
+                        source={{ uri: item.product.primary_image_url }}
+                        style={styles.productItemImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.productItemImage, styles.productNoImage]}>
+                        <MaterialCommunityIcons name="package-variant-closed" size={16} color="#bbb" />
+                      </View>
+                    )}
+                    <View style={styles.productItemInfo}>
+                      <Text style={styles.productItemName} numberOfLines={2}>{item.product.name}</Text>
+                      {item.product.store?.name ? (
+                        <Text style={styles.productItemStore} numberOfLines={1}>
+                          {item.product.store.name}
+                        </Text>
+                      ) : null}
+                      <View style={styles.productItemBottom}>
+                        <Text style={styles.productItemQty}>Qty {item.quantity}</Text>
+                        <Text style={styles.productItemPrice}>{currency} {Number(item.total_price).toLocaleString()}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Cost breakdown */}
+            <View style={styles.costBreakdown}>
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Subtotal</Text>
+                <Text style={styles.costValue}>{currency} {subtotal.toLocaleString()}</Text>
+              </View>
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Shipping</Text>
+                <Text style={styles.costValue}>{currency} {shipping.toLocaleString()}</Text>
+              </View>
+              {discount > 0 && (
+                <View style={styles.costRow}>
+                  <Text style={[styles.costLabel, { color: Brand.primary }]}>Discount</Text>
+                  <Text style={[styles.costValue, { color: Brand.primary }]}>
+                    −{currency} {discount.toLocaleString()}
                   </Text>
                 </View>
               )}
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
 
-        {/* ── Sticky footer (outside KeyboardAvoidingView) ──── */}
-        <View style={styles.footer}>
-          <View style={styles.footerLeft}>
-            <Text style={styles.footerLabel}>Total</Text>
-            <View style={styles.footerTotalRow}>
-              <Text style={styles.footerCurrency}>{currency}</Text>
-              <Text style={styles.footerTotalValue}>{total.toLocaleString()}</Text>
+            {/* Total bar */}
+            <View style={styles.totalBar}>
+              <Text style={styles.totalBarLabel}>Total</Text>
+              <Text style={styles.totalBarValue}>{currency} {total.toLocaleString()}</Text>
             </View>
-          </View>
-          <Pressable
-            style={({ pressed }) => [
-              styles.placeOrderBtn,
-              (placing || !cart || cart.items.length === 0 || !selectedAddressId) && styles.placeOrderBtnDisabled,
-              pressed && { opacity: 0.85 },
-            ]}
-            onPress={handlePlaceOrder}
-            disabled={placing || !cart || cart.items.length === 0 || !selectedAddressId}
-          >
-            {placing ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.placeOrderBtnText}>Place Order</Text>
-                <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
-              </>
+
+            {/* Coupon */}
+            <View style={styles.couponRow}>
+              <View style={styles.couponInputWrap}>
+                <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={Brand.textTertiary} />
+                <TextInput
+                  style={styles.couponInput}
+                  placeholder="Coupon code"
+                  placeholderTextColor={Brand.textTertiary}
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+              </View>
+              <Pressable
+                style={({ pressed }) => [styles.couponBtn, pressed && { opacity: 0.85 }]}
+                onPress={handleValidateCoupon}
+                disabled={couponLoading}
+              >
+                {couponLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.couponBtnText}>Apply</Text>
+                )}
+              </Pressable>
+            </View>
+            {couponMsg && (
+              <View style={[styles.couponMsgWrap, couponMsg.type === 'error' && styles.couponMsgError]}>
+                <MaterialCommunityIcons
+                  name={couponMsg.type === 'success' ? 'check-circle' : 'alert-circle'}
+                  size={14}
+                  color={couponMsg.type === 'success' ? Brand.primary : Brand.danger}
+                />
+                <Text style={[styles.couponMsg, couponMsg.type === 'error' && { color: Brand.danger }]}>
+                  {couponMsg.text}
+                </Text>
+              </View>
             )}
-          </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* ── Sticky footer (outside KeyboardAvoidingView) ──── */}
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.footerLabel}>Total</Text>
+          <View style={styles.footerTotalRow}>
+            <Text style={styles.footerCurrency}>{currency}</Text>
+            <Text style={styles.footerTotalValue}>{total.toLocaleString()}</Text>
+          </View>
         </View>
-      </SafeAreaView>
+        <Pressable
+          style={({ pressed }) => [
+            styles.placeOrderBtn,
+            (placing || !cart || cart.items.length === 0 || !selectedAddressId) && styles.placeOrderBtnDisabled,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={handlePlaceOrder}
+          disabled={placing || !cart || cart.items.length === 0 || !selectedAddressId}
+        >
+          {placing ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.placeOrderBtnText}>Place Order</Text>
+              <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+            </>
+          )}
+        </Pressable>
+      </View>
 
       {/* ── Success overlay ────────────────────────────────────── */}
       {
@@ -1023,28 +1004,7 @@ const RADIUS = 14;
 const RADIUS_SM = 10;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
-
-  // ── Header ──────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerCenter: { alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
-  headerBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
 
   // ── Center states ───────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
