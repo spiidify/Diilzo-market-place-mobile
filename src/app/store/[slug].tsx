@@ -2,17 +2,18 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchStoreBySlug, fetchStoreProducts, followStore, unfollowStore } from '@/services/catalog';
@@ -118,24 +119,11 @@ export default function StoreDetailScreen() {
   if (loading && !store) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.topBar}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.topBarTitle}>Store</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.centerText}>Loading store...</Text>
-          </View>
-        </SafeAreaView>
+        <GradientHeader title="Store" />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.centerText}>Loading store...</Text>
+        </View>
       </View>
     );
   }
@@ -144,27 +132,14 @@ export default function StoreDetailScreen() {
   if (error || !store) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.topBar}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.topBarTitle}>Store</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.center}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorTitle}>{error || 'Store not found'}</Text>
-            <Pressable style={styles.retryBtn} onPress={() => router.back()}>
-              <Text style={styles.retryText}>Go Back</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <GradientHeader title="Store" />
+        <View style={styles.center}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorTitle}>{error || 'Store not found'}</Text>
+          <Pressable style={styles.retryBtn} onPress={() => router.back()}>
+            <Text style={styles.retryText}>Go Back</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -205,200 +180,176 @@ export default function StoreDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {/* ── Top bar ─────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.topBar}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>{isSupplier ? 'Supplier' : 'Store'}</Text>
-          <Pressable hitSlop={12}>
-            <MaterialCommunityIcons name="share-variant-outline" size={22} color="#FFFFFF" />
-          </Pressable>
-        </LinearGradient>
+      <GradientHeader
+        title={isSupplier ? 'Supplier' : 'Store'}
+        rightIcon="share-variant-outline"
+      />
 
-        <FlatList
-          data={products}
-          keyExtractor={(item) => `${item.id}-${item.slug}`}
-          renderItem={renderProduct}
-          numColumns={2}
-          columnWrapperStyle={styles.productRow}
-          contentContainerStyle={styles.list}
-          maxToRenderPerBatch={6}
-          windowSize={7}
-          initialNumToRender={8}
-          removeClippedSubviews={true}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[Brand.primary]}
-              tintColor={Brand.primary}
-            />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          ListHeaderComponent={
-            <View>
-              {/* ── Hero banner ────────────────────────────────────── */}
-              <LinearGradient
-                colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroBanner}
-              >
-                <View style={styles.heroContent}>
-                  <View style={styles.heroLogoWrap}>
-                    {store.logo_url ? (
-                      <Image source={{ uri: store.logo_url }} style={styles.heroLogo} resizeMode="contain" />
-                    ) : (
-                      <View style={styles.heroLogoFallback}>
-                        <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={36} color="#FFFFFF" />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.heroInfo}>
-                    <Text style={styles.heroName}>{store.name}</Text>
-                    {store.tagline ? (
-                      <Text style={styles.heroTagline} numberOfLines={2}>{store.tagline}</Text>
-                    ) : null}
-                    <View style={styles.heroMetaRow}>
-                      <MaterialCommunityIcons name="star" size={14} color={Brand.accent} />
-                      <Text style={styles.heroMetaText}>{rating.toFixed(1)}</Text>
-                      <Text style={styles.heroMetaSub}>({store.review_count || 0})</Text>
-                      <Text style={styles.heroMetaDot}>•</Text>
-                      <MaterialCommunityIcons name="package-variant-closed" size={14} color="#FFFFFF" />
-                      <Text style={styles.heroMetaText}>{store.product_count} products</Text>
-                    </View>
-                    <View style={styles.heroMetaRow}>
-                      <MaterialCommunityIcons name="map-marker" size={14} color="#FFFFFF" />
-                      <Text style={styles.heroMetaText}>{store.city}, {store.country}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Badges */}
-                <View style={styles.heroBadges}>
-                  {store.verification_status === 'gold' && (
-                    <View style={[styles.heroBadge, styles.heroBadgeGold]}>
-                      <MaterialCommunityIcons name="crown" size={12} color="#FFFFFF" />
-                      <Text style={styles.heroBadgeText}>Gold Supplier</Text>
-                    </View>
-                  )}
-                  {store.verification_status === 'verified' && (
-                    <View style={[styles.heroBadge, styles.heroBadgeVerified]}>
-                      <MaterialCommunityIcons name="check-circle" size={12} color="#FFFFFF" />
-                      <Text style={styles.heroBadgeText}>Verified</Text>
-                    </View>
-                  )}
-                  {isSupplier && (
-                    <View style={[styles.heroBadge, styles.heroBadgeType]}>
-                      <MaterialCommunityIcons name={iconName} size={12} color="#FFFFFF" />
-                      <Text style={styles.heroBadgeText}>
-                        {store.business_type ? store.business_type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Wholesaler'}
-                      </Text>
-                    </View>
-                  )}
-                  {isSupplier && (
-                    <View style={[styles.heroBadge, styles.heroBadgeTA]}>
-                      <MaterialCommunityIcons name="shield-check" size={12} color="#FFFFFF" />
-                      <Text style={styles.heroBadgeText}>Trade Assurance</Text>
+      <FlatList
+        data={products}
+        keyExtractor={(item) => `${item.id}-${item.slug}`}
+        renderItem={renderProduct}
+        numColumns={2}
+        columnWrapperStyle={styles.productRow}
+        contentContainerStyle={styles.list}
+        maxToRenderPerBatch={6}
+        windowSize={7}
+        initialNumToRender={8}
+        removeClippedSubviews={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Brand.primary]}
+            tintColor={Brand.primary}
+          />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          <View>
+            {/* ── Hero banner ────────────────────────────────────── */}
+            <LinearGradient
+              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroBanner}
+            >
+              <View style={styles.heroContent}>
+                <View style={styles.heroLogoWrap}>
+                  {store.logo_url ? (
+                    <Image source={{ uri: store.logo_url }} style={styles.heroLogo} resizeMode="contain" />
+                  ) : (
+                    <View style={styles.heroLogoFallback}>
+                      <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={36} color="#FFFFFF" />
                     </View>
                   )}
                 </View>
-              </LinearGradient>
-
-              {/* ── Action buttons ─────────────────────────────────── */}
-              <View style={styles.actionsRow}>
-                <Pressable style={styles.actionBtn} onPress={handleContact}>
-                  <MaterialCommunityIcons name="chat-outline" size={20} color={Brand.primary} />
-                  <Text style={styles.actionBtnText}>Contact</Text>
-                </Pressable>
-                {isSupplier && (
-                  <Pressable style={styles.actionBtn}>
-                    <MaterialCommunityIcons name="file-document-outline" size={20} color={Brand.primary} />
-                    <Text style={styles.actionBtnText}>Request Quote</Text>
-                  </Pressable>
-                )}
-                <Pressable style={styles.actionBtn} onPress={handleFollow}>
-                  <MaterialCommunityIcons name={isFollowing ? 'heart' : 'heart-outline'} size={20} color={Brand.danger} />
-                  <Text style={styles.actionBtnText}>{isFollowing ? 'Following' : 'Follow'}</Text>
-                </Pressable>
+                <View style={styles.heroInfo}>
+                  <Text style={styles.heroName}>{store.name}</Text>
+                  {store.tagline ? (
+                    <Text style={styles.heroTagline} numberOfLines={2}>{store.tagline}</Text>
+                  ) : null}
+                  <View style={styles.heroMetaRow}>
+                    <MaterialCommunityIcons name="star" size={14} color={Brand.accent} />
+                    <Text style={styles.heroMetaText}>{rating.toFixed(1)}</Text>
+                    <Text style={styles.heroMetaSub}>({store.review_count || 0})</Text>
+                    <Text style={styles.heroMetaDot}>•</Text>
+                    <MaterialCommunityIcons name="package-variant-closed" size={14} color="#FFFFFF" />
+                    <Text style={styles.heroMetaText}>{store.product_count} products</Text>
+                  </View>
+                  <View style={styles.heroMetaRow}>
+                    <MaterialCommunityIcons name="map-marker" size={14} color="#FFFFFF" />
+                    <Text style={styles.heroMetaText}>{store.city}, {store.country}</Text>
+                  </View>
+                </View>
               </View>
 
-              {/* ── About section ──────────────────────────────────── */}
-              {store.description ? (
-                <View style={styles.sectionCard}>
-                  <Text style={styles.sectionTitle}>About {store.name}</Text>
-                  <Text style={styles.descText}>{store.description}</Text>
+              {/* Badges */}
+              <View style={styles.heroBadges}>
+                {store.verification_status === 'gold' && (
+                  <View style={[styles.heroBadge, styles.heroBadgeGold]}>
+                    <MaterialCommunityIcons name="crown" size={12} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>Gold Supplier</Text>
+                  </View>
+                )}
+                {store.verification_status === 'verified' && (
+                  <View style={[styles.heroBadge, styles.heroBadgeVerified]}>
+                    <MaterialCommunityIcons name="check-circle" size={12} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>Verified</Text>
+                  </View>
+                )}
+                {isSupplier && (
+                  <View style={[styles.heroBadge, styles.heroBadgeType]}>
+                    <MaterialCommunityIcons name={iconName} size={12} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>
+                      {store.business_type ? store.business_type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Wholesaler'}
+                    </Text>
+                  </View>
+                )}
+                {isSupplier && (
+                  <View style={[styles.heroBadge, styles.heroBadgeTA]}>
+                    <MaterialCommunityIcons name="shield-check" size={12} color="#FFFFFF" />
+                    <Text style={styles.heroBadgeText}>Trade Assurance</Text>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+
+            {/* ── Action buttons ─────────────────────────────────── */}
+            <View style={styles.actionsRow}>
+              <Pressable style={styles.actionBtn} onPress={handleContact}>
+                <MaterialCommunityIcons name="chat-outline" size={20} color={Brand.primary} />
+                <Text style={styles.actionBtnText}>Contact</Text>
+              </Pressable>
+              {isSupplier && (
+                <Pressable style={styles.actionBtn}>
+                  <MaterialCommunityIcons name="file-document-outline" size={20} color={Brand.primary} />
+                  <Text style={styles.actionBtnText}>Request Quote</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.actionBtn} onPress={handleFollow}>
+                <MaterialCommunityIcons name={isFollowing ? 'heart' : 'heart-outline'} size={20} color={Brand.danger} />
+                <Text style={styles.actionBtnText}>{isFollowing ? 'Following' : 'Follow'}</Text>
+              </Pressable>
+            </View>
+
+            {/* ── About section ──────────────────────────────────── */}
+            {store.description ? (
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>About {store.name}</Text>
+                <Text style={styles.descText}>{store.description}</Text>
+              </View>
+            ) : null}
+
+            {/* ── Store info ─────────────────────────────────────── */}
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionTitle}>Store Information</Text>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="map-marker" size={16} color={Brand.textSecondary} />
+                <Text style={styles.infoText}>{store.city}, {store.country}</Text>
+              </View>
+              {store.phone ? (
+                <View style={styles.infoRow}>
+                  <MaterialCommunityIcons name="phone" size={16} color={Brand.textSecondary} />
+                  <Text style={styles.infoText}>{store.phone}</Text>
                 </View>
               ) : null}
-
-              {/* ── Store info ─────────────────────────────────────── */}
-              <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>Store Information</Text>
+              {store.email ? (
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="map-marker" size={16} color={Brand.textSecondary} />
-                  <Text style={styles.infoText}>{store.city}, {store.country}</Text>
+                  <MaterialCommunityIcons name="email" size={16} color={Brand.textSecondary} />
+                  <Text style={styles.infoText}>{store.email}</Text>
                 </View>
-                {store.phone ? (
-                  <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="phone" size={16} color={Brand.textSecondary} />
-                    <Text style={styles.infoText}>{store.phone}</Text>
-                  </View>
-                ) : null}
-                {store.email ? (
-                  <View style={styles.infoRow}>
-                    <MaterialCommunityIcons name="email" size={16} color={Brand.textSecondary} />
-                    <Text style={styles.infoText}>{store.email}</Text>
-                  </View>
-                ) : null}
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="calendar" size={16} color={Brand.textSecondary} />
-                  <Text style={styles.infoText}>
-                    Member since {new Date(store.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                  </Text>
-                </View>
-              </View>
-
-              {/* ── Products header ────────────────────────────────── */}
-              <View style={styles.productsHeader}>
-                <MaterialCommunityIcons name="view-grid" size={20} color={Brand.primary} />
-                <Text style={styles.productsTitle}>Products ({store.product_count})</Text>
+              ) : null}
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="calendar" size={16} color={Brand.textSecondary} />
+                <Text style={styles.infoText}>
+                  Member since {new Date(store.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </Text>
               </View>
             </View>
-          }
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
-            ) : !hasMore ? (
-              <Text style={styles.endText}>No more products</Text>
-            ) : null
-          }
-        />
-      </SafeAreaView>
+
+            {/* ── Products header ────────────────────────────────── */}
+            <View style={styles.productsHeader}>
+              <MaterialCommunityIcons name="view-grid" size={20} color={Brand.primary} />
+              <Text style={styles.productsTitle}>Products ({store.product_count})</Text>
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
+          ) : !hasMore ? (
+            <Text style={styles.endText}>No more products</Text>
+          ) : null
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
-
-  // ── Top bar ─────────────────────────────────────────────────────
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  topBarTitle: { fontSize: 16, fontWeight: '600', color: '#FFFFFF', flex: 1, textAlign: 'center' },
+  screen: { flex: 1, backgroundColor: '#F2F4F6' },
 
   // ── Hero ────────────────────────────────────────────────────────
   heroBanner: {

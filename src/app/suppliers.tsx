@@ -15,8 +15,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
 import { fetchStoresPage, submitRFQ } from '@/services/catalog';
@@ -292,256 +292,242 @@ export default function SuppliersScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        {/* ── Gradient header ──────────────────────────────────────── */}
-        <LinearGradient
-          colors={[Brand.dark, Brand.accent, Brand.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <View style={styles.headerTop}>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Suppliers & Manufacturers</Text>
-            <View style={{ width: 22 }} />
-          </View>
-          <View style={styles.searchBar}>
-            <MaterialCommunityIcons name="magnify" size={20} color="rgba(255,255,255,0.7)" />
-            <TextInput
-              style={styles.searchInput}
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search suppliers, products..."
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              autoCapitalize="none"
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch('')} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.7)" />
-              </Pressable>
-            )}
-          </View>
-        </LinearGradient>
+      <GradientHeader title="Suppliers & Manufacturers" />
 
-        {/* ── Filter bar (white) ──────────────────────────────────── */}
-        <View style={styles.filterBar}>
-          {/* Stats inline */}
-          <View style={styles.filterStats}>
-            <Text style={styles.filterStatNum}>{count}</Text>
-            <Text style={styles.filterStatLabel}>suppliers found</Text>
-          </View>
-          {/* Business type chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterChips}
-          >
-            {BUSINESS_TYPES.map((type) => (
-              <Pressable
-                key={type.value}
-                style={[
-                  styles.filterChip,
-                  activeType === type.value ? styles.filterChipActive : styles.filterChipInactive,
-                ]}
-                onPress={() => setActiveType(type.value)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    activeType === type.value ? styles.filterChipTextActive : styles.filterChipTextInactive,
-                  ]}
-                >
-                  {type.label}
-                </Text>
-              </Pressable>
-            ))}
+      {/* ── Search bar (white) ──────────────────────────────────── */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <TextInput
+            style={styles.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search suppliers, products..."
+            placeholderTextColor={Brand.textTertiary}
+            autoCapitalize="none"
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {/* ── Filter bar (white) ──────────────────────────────────── */}
+      <View style={styles.filterBar}>
+        {/* Stats inline */}
+        <View style={styles.filterStats}>
+          <Text style={styles.filterStatNum}>{count}</Text>
+          <Text style={styles.filterStatLabel}>suppliers found</Text>
+        </View>
+        {/* Business type chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterChips}
+        >
+          {BUSINESS_TYPES.map((type) => (
             <Pressable
+              key={type.value}
               style={[
                 styles.filterChip,
-                wholesalerOnly ? styles.filterChipActive : styles.filterChipInactive,
+                activeType === type.value ? styles.filterChipActive : styles.filterChipInactive,
               ]}
-              onPress={() => setWholesalerOnly((v) => !v)}
+              onPress={() => setActiveType(type.value)}
             >
-              <MaterialCommunityIcons
-                name="shield-check"
-                size={14}
-                color={wholesalerOnly ? '#FFFFFF' : Brand.primary}
-              />
               <Text
                 style={[
                   styles.filterChipText,
-                  wholesalerOnly ? styles.filterChipTextActive : styles.filterChipTextInactive,
+                  activeType === type.value ? styles.filterChipTextActive : styles.filterChipTextInactive,
                 ]}
               >
-                Trade Assurance
+                {type.label}
               </Text>
             </Pressable>
-          </ScrollView>
-        </View>
-
-        {/* ── Loading ─────────────────────────────────────────────── */}
-        {loading && stores.length === 0 ? (
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Loading suppliers...</Text>
-          </View>
-        ) : stores.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="store-off-outline" size={48} color={Brand.textTertiary} />
-            </View>
-            <Text style={styles.emptyTitle}>No suppliers found</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your filters or search</Text>
-            <Pressable
-              style={styles.emptyBtn}
-              onPress={() => { setSearch(''); setActiveType(''); setWholesalerOnly(false); }}
+          ))}
+          <Pressable
+            style={[
+              styles.filterChip,
+              wholesalerOnly ? styles.filterChipActive : styles.filterChipInactive,
+            ]}
+            onPress={() => setWholesalerOnly((v) => !v)}
+          >
+            <MaterialCommunityIcons
+              name="shield-check"
+              size={14}
+              color={wholesalerOnly ? '#FFFFFF' : Brand.primary}
+            />
+            <Text
+              style={[
+                styles.filterChipText,
+                wholesalerOnly ? styles.filterChipTextActive : styles.filterChipTextInactive,
+              ]}
             >
-              <Text style={styles.emptyBtnText}>Clear Filters</Text>
-            </Pressable>
+              Trade Assurance
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </View>
+
+      {/* ── Loading ─────────────────────────────────────────────── */}
+      {loading && stores.length === 0 ? (
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+          <Text style={styles.loadingText}>Loading suppliers...</Text>
+        </View>
+      ) : stores.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconWrap}>
+            <MaterialCommunityIcons name="store-off-outline" size={48} color={Brand.textTertiary} />
           </View>
-        ) : (
-          <FlatList
-            ref={listRef}
-            data={stores}
-            keyExtractor={(item) => `${item.id}-${item.slug}`}
-            renderItem={renderStore}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={4}
-            windowSize={7}
-            initialNumToRender={6}
-            removeClippedSubviews={true}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[Brand.primary]}
-                tintColor={Brand.primary}
-              />
-            }
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              loadingMore ? (
-                <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
-              ) : !hasMore ? (
-                <Text style={styles.endText}>You've seen all {count} suppliers</Text>
-              ) : null
-            }
-          />
-        )}
-        <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
+          <Text style={styles.emptyTitle}>No suppliers found</Text>
+          <Text style={styles.emptySubtext}>Try adjusting your filters or search</Text>
+          <Pressable
+            style={styles.emptyBtn}
+            onPress={() => { setSearch(''); setActiveType(''); setWholesalerOnly(false); }}
+          >
+            <Text style={styles.emptyBtnText}>Clear Filters</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={stores}
+          keyExtractor={(item) => `${item.id}-${item.slug}`}
+          renderItem={renderStore}
+          contentContainerStyle={styles.list}
+          maxToRenderPerBatch={4}
+          windowSize={7}
+          initialNumToRender={6}
+          removeClippedSubviews={true}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Brand.primary]}
+              tintColor={Brand.primary}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
+            ) : !hasMore ? (
+              <Text style={styles.endText}>You've seen all {count} suppliers</Text>
+            ) : null
+          }
+        />
+      )}
+      <ScrollToTopButton visible={showScrollTop} onPress={scrollToTop} />
 
-        {/* ── Floating RFQ button ─────────────────────────────────── */}
-        <Pressable
-          style={({ pressed }) => [styles.rfqFab, pressed && { opacity: 0.9 }]}
-          onPress={() => setRfqOpen(true)}
-        >
-          <MaterialCommunityIcons name="file-document-edit-outline" size={22} color="#FFFFFF" />
-          <Text style={styles.rfqFabText}>RFQ</Text>
-        </Pressable>
+      {/* ── Floating RFQ button ─────────────────────────────────── */}
+      <Pressable
+        style={({ pressed }) => [styles.rfqFab, pressed && { opacity: 0.9 }]}
+        onPress={() => setRfqOpen(true)}
+      >
+        <MaterialCommunityIcons name="file-document-edit-outline" size={22} color="#FFFFFF" />
+        <Text style={styles.rfqFabText}>RFQ</Text>
+      </Pressable>
 
-        {/* ── RFQ Modal ───────────────────────────────────────────── */}
-        <Modal visible={rfqOpen} animationType="slide" transparent onRequestClose={closeRfq}>
-          <View style={styles.rfqModalOverlay}>
-            <View style={styles.rfqModalCard}>
-              {rfqSuccess ? (
-                <View style={styles.rfqSuccessWrap}>
-                  <MaterialCommunityIcons name="check-circle" size={56} color={Brand.success} />
-                  <Text style={styles.rfqSuccessTitle}>Request Submitted!</Text>
-                  <Text style={styles.rfqSuccessSub}>
-                    Suppliers will contact you with quotes shortly.
-                  </Text>
-                  <Pressable style={styles.rfqCloseBtn} onPress={closeRfq}>
-                    <Text style={styles.rfqCloseBtnText}>Done</Text>
+      {/* ── RFQ Modal ───────────────────────────────────────────── */}
+      <Modal visible={rfqOpen} animationType="slide" transparent onRequestClose={closeRfq}>
+        <View style={styles.rfqModalOverlay}>
+          <View style={styles.rfqModalCard}>
+            {rfqSuccess ? (
+              <View style={styles.rfqSuccessWrap}>
+                <MaterialCommunityIcons name="check-circle" size={56} color={Brand.success} />
+                <Text style={styles.rfqSuccessTitle}>Request Submitted!</Text>
+                <Text style={styles.rfqSuccessSub}>
+                  Suppliers will contact you with quotes shortly.
+                </Text>
+                <Pressable style={styles.rfqCloseBtn} onPress={closeRfq}>
+                  <Text style={styles.rfqCloseBtnText}>Done</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <>
+                <View style={styles.rfqModalHeader}>
+                  <Text style={styles.rfqModalTitle}>Request for Quotation</Text>
+                  <Pressable onPress={closeRfq} hitSlop={8}>
+                    <MaterialCommunityIcons name="close" size={22} color={Brand.textSecondary} />
                   </Pressable>
                 </View>
-              ) : (
-                <>
-                  <View style={styles.rfqModalHeader}>
-                    <Text style={styles.rfqModalTitle}>Request for Quotation</Text>
-                    <Pressable onPress={closeRfq} hitSlop={8}>
-                      <MaterialCommunityIcons name="close" size={22} color={Brand.textSecondary} />
-                    </Pressable>
-                  </View>
-                  <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rfqForm}>
-                    <Text style={styles.rfqLabel}>Your Name *</Text>
-                    <TextInput style={styles.rfqInput} value={rfqName} onChangeText={setRfqName} placeholder="John Doe" />
-                    <Text style={styles.rfqLabel}>Email</Text>
-                    <TextInput style={styles.rfqInput} value={rfqEmail} onChangeText={setRfqEmail} placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
-                    <Text style={styles.rfqLabel}>Phone</Text>
-                    <TextInput style={styles.rfqInput} value={rfqPhone} onChangeText={setRfqPhone} placeholder="+254 7XX XXX XXX" keyboardType="phone-pad" />
-                    <Text style={styles.rfqLabel}>Product Name *</Text>
-                    <TextInput style={styles.rfqInput} value={rfqProduct} onChangeText={setRfqProduct} placeholder="What are you sourcing?" />
-                    <View style={styles.rfqRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.rfqLabel}>Quantity</Text>
-                        <TextInput style={styles.rfqInput} value={rfqQty} onChangeText={setRfqQty} placeholder="100" keyboardType="numeric" />
-                      </View>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={styles.rfqLabel}>Target Price</Text>
-                        <TextInput style={styles.rfqInput} value={rfqTarget} onChangeText={setRfqTarget} placeholder="Optional" keyboardType="numeric" />
-                      </View>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rfqForm}>
+                  <Text style={styles.rfqLabel}>Your Name *</Text>
+                  <TextInput style={styles.rfqInput} value={rfqName} onChangeText={setRfqName} placeholder="John Doe" />
+                  <Text style={styles.rfqLabel}>Email</Text>
+                  <TextInput style={styles.rfqInput} value={rfqEmail} onChangeText={setRfqEmail} placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
+                  <Text style={styles.rfqLabel}>Phone</Text>
+                  <TextInput style={styles.rfqInput} value={rfqPhone} onChangeText={setRfqPhone} placeholder="+254 7XX XXX XXX" keyboardType="phone-pad" />
+                  <Text style={styles.rfqLabel}>Product Name *</Text>
+                  <TextInput style={styles.rfqInput} value={rfqProduct} onChangeText={setRfqProduct} placeholder="What are you sourcing?" />
+                  <View style={styles.rfqRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rfqLabel}>Quantity</Text>
+                      <TextInput style={styles.rfqInput} value={rfqQty} onChangeText={setRfqQty} placeholder="100" keyboardType="numeric" />
                     </View>
-                    <Text style={styles.rfqLabel}>Message</Text>
-                    <TextInput
-                      style={[styles.rfqInput, styles.rfqTextarea]}
-                      value={rfqMessage}
-                      onChangeText={setRfqMessage}
-                      placeholder="Specifications, delivery timeline, etc."
-                      multiline
-                      numberOfLines={3}
-                      textAlignVertical="top"
-                    />
-                    {rfqError && <Text style={styles.rfqErrorText}>{rfqError}</Text>}
-                    <Pressable
-                      style={({ pressed }) => [styles.rfqSubmitBtn, pressed && { opacity: 0.9 }]}
-                      onPress={submitRfqForm}
-                      disabled={rfqSubmitting}
-                    >
-                      {rfqSubmitting ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
-                      ) : (
-                        <Text style={styles.rfqSubmitBtnText}>Submit Request</Text>
-                      )}
-                    </Pressable>
-                  </ScrollView>
-                </>
-              )}
-            </View>
+                    <View style={{ flex: 1, marginLeft: 8 }}>
+                      <Text style={styles.rfqLabel}>Target Price</Text>
+                      <TextInput style={styles.rfqInput} value={rfqTarget} onChangeText={setRfqTarget} placeholder="Optional" keyboardType="numeric" />
+                    </View>
+                  </View>
+                  <Text style={styles.rfqLabel}>Message</Text>
+                  <TextInput
+                    style={[styles.rfqInput, styles.rfqTextarea]}
+                    value={rfqMessage}
+                    onChangeText={setRfqMessage}
+                    placeholder="Specifications, delivery timeline, etc."
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                  {rfqError && <Text style={styles.rfqErrorText}>{rfqError}</Text>}
+                  <Pressable
+                    style={({ pressed }) => [styles.rfqSubmitBtn, pressed && { opacity: 0.9 }]}
+                    onPress={submitRfqForm}
+                    disabled={rfqSubmitting}
+                  >
+                    {rfqSubmitting ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.rfqSubmitBtnText}>Submit Request</Text>
+                    )}
+                  </Pressable>
+                </ScrollView>
+              </>
+            )}
           </View>
-        </Modal>
-      </SafeAreaView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F2F4F6' },
-  safeArea: { flex: 1, backgroundColor: Brand.dark },
 
-  // ── Header ──────────────────────────────────────────────────────
-  header: { paddingHorizontal: 16, paddingVertical: 12 },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  // ── Search bar (white, below gradient header) ───────────────────
+  searchWrap: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EDF0',
   },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#F2F4F6',
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
     gap: 8,
   },
-  searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF', paddingVertical: 0, height: '100%' },
+  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 0, height: '100%' },
 
   // ── Filter bar ──────────────────────────────────────────────────
   filterBar: {
