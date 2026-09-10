@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -15,8 +14,8 @@ import {
   View,
   useWindowDimensions
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -160,12 +159,7 @@ export default function CategoriesScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-            <Text style={styles.headerTitle}>Categories</Text>
-            <Text style={styles.headerSub}>Browse all product categories</Text>
-          </LinearGradient>
-        </SafeAreaView>
+        <GradientHeader title="Categories" subtitle="Browse all product categories" showBack={false} />
         <View style={styles.centerBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
           <Text style={styles.loadingText}>Loading categories...</Text>
@@ -176,60 +170,33 @@ export default function CategoriesScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Header — SafeAreaView only wraps the header */}
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          {/* Title row with profile on the right */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleTextWrap}>
-              <Text style={styles.headerTitle}>Categories</Text>
-              <Text style={styles.headerSub}>Browse all product categories</Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [styles.profileBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/buyer' as any)}
-            >
-              {isAuthenticated && user ? (
-                <View style={styles.avatarWrap}>
-                  {user.avatar_url ? (
-                    <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
-                  ) : (
-                    <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitial}>
-                        {(user.first_name || user.email || '?')[0].toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <View style={styles.avatarWrap}>
-                  <View style={styles.avatarFallback}>
-                    <MaterialCommunityIcons name="account" size={20} color="#FFFFFF" />
-                  </View>
-                </View>
-              )}
+      <GradientHeader
+        title="Categories"
+        subtitle="Browse all product categories"
+        showBack={false}
+        rightIcon={isAuthenticated && user ? undefined : undefined}
+      />
+
+      {/* ── Search bar (white, below gradient header) ──────────────── */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search categories..."
+            placeholderTextColor={Brand.textTertiary}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
             </Pressable>
-          </View>
-          {/* Search bar */}
-          <View style={styles.searchBar}>
-            <MaterialCommunityIcons name="magnify" size={20} color="rgba(255,255,255,0.7)" />
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search categories..."
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.7)" />
-              </Pressable>
-            )}
-          </View>
-        </LinearGradient>
-      </SafeAreaView>
+          )}
+        </View>
+      </View>
 
       {/* Body: left menu + right content — direct child of screen, fills remaining space */}
       <View style={styles.body}>
@@ -419,63 +386,28 @@ export default function CategoriesScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F2F4F6' },
-  safeArea: { backgroundColor: Brand.dark },
-  header: {
+
+  // ── Search bar (white, below gradient header) ───────────────────
+  searchWrap: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EDF0',
   },
-  // Title row with profile on the right
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 12,
-  },
-  titleTextWrap: {
-    flex: 1,
-  },
-  profileBtn: {
-    padding: 2,
-    flexShrink: 0,
-  },
-  avatarWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
-    padding: 1.5,
-  },
-  avatar: { width: '100%', height: '100%', borderRadius: 17 },
-  avatarFallback: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarInitial: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
-  headerTitle: { fontSize: 21, fontWeight: '900', color: '#FFFFFF' },
-  headerSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#F2F4F6',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    marginTop: 10,
+    gap: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: Brand.text,
     padding: 0,
   },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F4F6', gap: 10 },
