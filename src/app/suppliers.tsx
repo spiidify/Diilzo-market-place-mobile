@@ -2,9 +2,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -117,7 +118,7 @@ export default function SuppliersScreen() {
       if (wholesalerOnly) params.wholesaler = 'true';
 
       const data: PaginatedResponse<Store> = await fetchStoresPage(params);
-      let results = data.results;
+      let results = data.results || (Array.isArray(data) ? data : []);
       if (activeType) {
         results = results.filter((s) => s.business_type === activeType);
       }

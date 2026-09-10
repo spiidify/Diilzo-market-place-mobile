@@ -159,7 +159,7 @@ export async function fetchStores(
     url: '/stores/',
     params,
   });
-  return data.results;
+  return data.results || (Array.isArray(data) ? data : []);
 }
 
 /** GET /api/v1/stores/ — paginated stores (for directory with infinite scroll) */
@@ -194,13 +194,13 @@ export async function fetchTopStores(
     url: '/stores/',
     params: { is_featured: 'true', ...imageSize },
   });
-  // Sort by featured first, then by product count
-  const stores = data.results.sort((a, b) => {
+  // Handle both paginated ({ results: [...] }) and non-paginated ([...]) responses
+  const stores = Array.isArray(data) ? data : (data.results || []);
+  return stores.sort((a, b) => {
     if (a.is_featured && !b.is_featured) return -1;
     if (!a.is_featured && b.is_featured) return 1;
     return (b.product_count || 0) - (a.product_count || 0);
   });
-  return stores;
 }
 
 /** GET /api/v1/stores/<slug>/ — store detail */
@@ -223,7 +223,7 @@ export async function fetchProductReviews(slug: string): Promise<Review[]> {
     method: 'GET',
     url: `/products/${slug}/reviews/`,
   });
-  return data.results;
+  return data.results || (Array.isArray(data) ? data : []);
 }
 
 /** POST /api/v1/products/<slug>/reviews/ — create a review */
