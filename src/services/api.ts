@@ -89,6 +89,15 @@ export async function getAccessToken(): Promise<string | null> {
         return null;
       }
     }
+    // If an access token exists but no refresh token is present, the
+    // access token cannot be renewed once it expires. Sending it risks
+    // a 401 from SimpleJWT (which rejects expired tokens during
+    // authentication, before the AllowAny permission check). Clear the
+    // stale access token so requests go out as anonymous instead.
+    if (memCache.accessToken && !memCache.refreshToken) {
+      await clearTokens();
+      return null;
+    }
     return memCache.accessToken;
   } catch {
     return null;
@@ -211,9 +220,19 @@ api.interceptors.response.use(
       try {
         const refreshToken = await getRefreshToken();
         if (!refreshToken) {
+          // No refresh token available — the access token is stale and
+          // cannot be renewed. SimpleJWT raises AuthenticationFailed for
+          // expired/invalid tokens during authentication (before the
+          // permission check), so even AllowAny endpoints return 401 when
+          // a stale Bearer token is sent. Clear the tokens and retry the
+          // request as anonymous so public endpoints succeed; authenticated
+          // endpoints will still fail and the caller can handle it.
           await clearTokens();
           processQueue(new Error('No refresh token'), null);
-          return Promise.reject(error);
+          if (originalRequest.headers) {
+            delete originalRequest.headers.Authorization;
+          }
+          return api(originalRequest);
         }
 
         // Call refresh endpoint directly (no interceptors to avoid loops)
@@ -231,7 +250,12 @@ api.interceptors.response.use(
       } catch (refreshError) {
         await clearTokens();
         processQueue(refreshError, null);
-        return Promise.reject(refreshError);
+        // If refresh failed, retry as anonymous so public endpoints
+        // still work (the stale token that caused the 401 is gone).
+        if (originalRequest.headers) {
+          delete originalRequest.headers.Authorization;
+        }
+        return api(originalRequest);
       } finally {
         isRefreshing = false;
       }
