@@ -33,6 +33,10 @@ const TYPE_CONFIG: Record<string, {
   review: { icon: 'star-outline', color: Brand.rating },
   system: { icon: 'bell-outline', color: Brand.textSecondary },
   message: { icon: 'chat-outline', color: '#EC4899' },
+  chat: { icon: 'chat-outline', color: '#EC4899' },
+  dispute: { icon: 'alert-circle-outline', color: '#EF4444' },
+  payout: { icon: 'wallet-outline', color: '#10B981' },
+  rfq: { icon: 'file-document-outline', color: '#F59E0B' },
   default: { icon: 'bell-outline', color: Brand.primary },
 };
 
