@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Image,
   Linking,
@@ -508,29 +509,41 @@ const CategorySection = memo(function CategorySection({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryCarousel}
         removeClippedSubviews={true}
+        pagingEnabled
       >
-        {categories.slice(0, 12).map((cat) => (
-          <Pressable
-            key={`cat-${cat.id}-${cat.slug}`}
-            style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
-            onPress={() => onPressCategory(cat)}
-          >
-            <View style={styles.categorySquare}>
-              {cat.display_image ? (
-                <Image
-                  source={{ uri: cat.display_image }}
-                  style={styles.categorySquareImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.categorySquareFallback}>
-                  <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
-                </View>
-              )}
+        {(() => {
+          const PER_PAGE = 8;
+          const pages: Category[][] = [];
+          for (let i = 0; i < categories.length; i += PER_PAGE) {
+            pages.push(categories.slice(i, i + PER_PAGE));
+          }
+          return pages.map((pageCats, pageIdx) => (
+            <View key={`cat-page-${pageIdx}`} style={styles.categoryPage}>
+              {pageCats.map((cat) => (
+                <Pressable
+                  key={`cat-${cat.id}-${cat.slug}`}
+                  style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
+                  onPress={() => onPressCategory(cat)}
+                >
+                  <View style={styles.categorySquare}>
+                    {cat.display_image ? (
+                      <Image
+                        source={{ uri: cat.display_image }}
+                        style={styles.categorySquareImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.categorySquareFallback}>
+                        <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.categoryItemName} numberOfLines={1}>{cat.name}</Text>
+                </Pressable>
+              ))}
             </View>
-            <Text style={styles.categoryItemName} numberOfLines={1}>{cat.name}</Text>
-          </Pressable>
-        ))}
+          ));
+        })()}
       </ScrollView>
     </View>
   );
@@ -1710,11 +1723,17 @@ const styles = StyleSheet.create({
   },
   categoryCarousel: {
     paddingHorizontal: 4,
-    gap: 14,
+  },
+  categoryPage: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: Dimensions.get('window').width - 2 * Spacing.two - 8,
+    justifyContent: 'space-between',
   },
   categoryItem: {
     alignItems: 'center',
-    width: 76,
+    width: '24%',
+    marginBottom: 12,
   },
   categorySquare: {
     width: 68,
