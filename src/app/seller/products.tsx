@@ -23,14 +23,16 @@ export default function SellerProductsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const data = await getMyProducts();
       setProducts(data);
     } catch (e: any) {
-      console.error('Seller products error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -166,6 +168,14 @@ export default function SellerProductsScreen() {
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
           </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : products.length === 0 ? (
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="package-variant" size={56} color={Brand.textTertiary} />
@@ -202,6 +212,9 @@ const styles = StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
   emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 12,

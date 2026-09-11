@@ -50,6 +50,7 @@ export default function BuyerAddressesScreen() {
   const [editing, setEditing] = useState<Address | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) {
@@ -57,13 +58,14 @@ export default function BuyerAddressesScreen() {
       return;
     }
     try {
+      setError(null);
       const data = await apiRequest<{ results: Address[] } | Address[]>({
         method: 'GET',
         url: '/auth/addresses/',
       });
       setAddresses(Array.isArray(data) ? data : data.results);
     } catch (e: any) {
-      console.error('Addresses error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -200,6 +202,14 @@ export default function BuyerAddressesScreen() {
         {loading ? (
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
           </View>
         ) : addresses.length === 0 ? (
           <View style={styles.centerBody}>
@@ -397,6 +407,9 @@ const styles = StyleSheet.create({
   headerBtn: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   emptyIconWrap: {
     width: 88,
     height: 88,

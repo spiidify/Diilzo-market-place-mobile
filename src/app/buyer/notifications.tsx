@@ -61,14 +61,16 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const data = await fetchNotifications();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      console.error('Notifications load error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -191,6 +193,14 @@ export default function NotificationsScreen() {
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
           </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : notifications.length === 0 ? (
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="bell-off-outline" size={56} color={Brand.textTertiary} />
@@ -241,6 +251,9 @@ const styles = StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
   emptyText: { marginTop: Spacing.three, fontSize: 16, fontWeight: '700', color: Brand.text },
   emptySubtext: { marginTop: Spacing.one + 2, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   list: { padding: Spacing.three, paddingBottom: Spacing.six },
 

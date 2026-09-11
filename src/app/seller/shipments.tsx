@@ -34,14 +34,16 @@ export default function SellerShipmentsScreen() {
   const [detail, setDetail] = useState<SellerShipmentDetail | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const data = await getShipments();
       setShipments(data);
     } catch (e: any) {
-      console.error('Shipments error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,6 +102,14 @@ export default function SellerShipmentsScreen() {
       <View style={{ flex: 1 }}>
         {loading ? (
           <View style={styles.centerBody}><ActivityIndicator size="large" color={Brand.primary} /></View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : (
           <FlatList
             data={shipments}
@@ -181,6 +191,9 @@ export default function SellerShipmentsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },

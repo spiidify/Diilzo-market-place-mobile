@@ -482,3 +482,15 @@ export const getAdminVerificationLogs = (storeId?: number) => apiRequest<AdminVe
 // Warehouses
 export const getAdminWarehouses = () => apiRequest<AdminWarehouse[]>({ method: 'GET', url: `${ADMIN_BASE}/warehouses/` });
 export const getWarehouseInventory = (warehouseId: number) => apiRequest<AdminWarehouseInventory[]>({ method: 'GET', url: `${ADMIN_BASE}/warehouses/${warehouseId}/inventory/` });
+
+// Broadcast Notification
+export const broadcastNotification = (data: {
+  title: string;
+  message: string;
+  type?: string;
+  target?: 'all' | 'buyers' | 'sellers';
+}) => apiRequest<{ detail: string; recipients: number; title: string }>({
+  method: 'POST',
+  url: `${ADMIN_BASE}/broadcast/`,
+  data,
+});

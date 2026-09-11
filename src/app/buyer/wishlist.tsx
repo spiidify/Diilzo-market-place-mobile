@@ -2,9 +2,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -24,14 +25,16 @@ export default function BuyerWishlistScreen() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return; }
     try {
+      setError(null);
       const data = await fetchWishlist();
       setItems(data);
     } catch (e: any) {
-      console.error('Wishlist error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -88,6 +91,14 @@ export default function BuyerWishlistScreen() {
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
           </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : items.length === 0 ? (
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="heart-outline" size={56} color={Brand.textTertiary} />
@@ -123,6 +134,9 @@ const styles = StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: Brand.text },
   subtitle: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   shopBtn: { marginTop: 20, backgroundColor: Brand.primary, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   list: { padding: Spacing.two, gap: Spacing.two },

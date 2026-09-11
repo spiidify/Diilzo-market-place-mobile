@@ -25,14 +25,16 @@ export default function SellerEarningsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [requesting, setRequesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const result = await getMyEarnings();
       setData(result);
     } catch (e: any) {
-      console.error('Seller earnings error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -82,6 +84,14 @@ export default function SellerEarningsScreen() {
         {loading ? (
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
           </View>
         ) : (
           <FlatList
@@ -164,6 +174,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   list: { padding: 12, paddingBottom: 32 },
 
   balanceRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },

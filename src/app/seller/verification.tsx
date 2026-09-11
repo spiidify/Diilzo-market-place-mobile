@@ -31,6 +31,7 @@ export default function SellerVerificationScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('individual');
@@ -39,6 +40,7 @@ export default function SellerVerificationScreen() {
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const [kycData, logsData] = await Promise.all([getKYC(), getVerificationLogs()]);
       setKyc(kycData);
@@ -50,7 +52,7 @@ export default function SellerVerificationScreen() {
         setTaxId(kycData.tax_id);
       }
     } catch (e: any) {
-      console.error('KYC error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,6 +91,14 @@ export default function SellerVerificationScreen() {
       <View style={{ flex: 1 }}>
         {loading ? (
           <View style={styles.centerBody}><ActivityIndicator size="large" color={Brand.primary} /></View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : (
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}>
             {/* Status card */}
@@ -183,6 +193,9 @@ export default function SellerVerificationScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   body: { flex: 1 },
   bodyContent: { padding: 12, paddingBottom: 40 },
   statusCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 12, borderLeftWidth: 4, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },

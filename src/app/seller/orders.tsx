@@ -56,14 +56,16 @@ export default function SellerOrdersScreen() {
   const [detail, setDetail] = useState<SellerOrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
+      setError(null);
       setRefreshing(true);
       const data = await getMyOrders(statusFilter ? { status: statusFilter } : undefined);
       setOrders(data);
     } catch (e: any) {
-      console.error('Seller orders error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -175,6 +177,14 @@ export default function SellerOrdersScreen() {
       {loading ? (
         <View style={styles.centerBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </Pressable>
         </View>
       ) : orders.length === 0 ? (
         <View style={styles.centerBody}>
@@ -372,6 +382,9 @@ const styles = StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
   emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   // Filters
   filterRow: { backgroundColor: '#FFFFFF', maxHeight: 50, borderBottomWidth: 1, borderBottomColor: Brand.border },

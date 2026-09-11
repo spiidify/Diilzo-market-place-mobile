@@ -13,6 +13,8 @@ export default function BuyerDashboardScreen() {
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
     { icon: 'heart-outline', label: 'Wishlist', color: Brand.danger, route: '/buyer/wishlist' as any },
+    { icon: 'star-outline', label: 'My Reviews', color: Brand.rating, route: '/buyer/reviews' as any },
+    { icon: 'ticket-outline', label: 'My Coupons', color: '#06B6D4', route: '/buyer/coupons' as any },
     { icon: 'map-marker-outline', label: 'Addresses', color: '#16A34A', route: '/buyer/addresses' as any },
     { icon: 'credit-card-outline', label: 'Payment Methods', color: '#8B5CF6', route: '/buyer/payments' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },

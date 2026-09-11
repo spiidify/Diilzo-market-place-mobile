@@ -70,3 +70,45 @@ export async function confirmReceipt(id: number): Promise<{
 export async function reorder(id: number): Promise<{ detail: string; added: number }> {
   return apiRequest({ method: 'POST', url: `/orders/${id}/reorder/` });
 }
+
+// ── Shipping Calculator ───────────────────────────────────────────
+
+/** POST /api/v1/shipping/calculate/ — estimate shipping cost */
+export async function calculateShipping(params: {
+  items: Array<{ product_id: number; quantity: number }>;
+  address: { city: string; country?: string };
+}): Promise<{
+  shipping_cost: string;
+  estimated_days: number;
+  method_name: string;
+  available: boolean;
+  currency: string;
+}> {
+  return apiRequest({ method: 'POST', url: '/shipping/calculate/', data: params });
+}
+
+// ── Reviews ───────────────────────────────────────────────────────
+
+/** PATCH /api/v1/reviews/<id>/ — update own review */
+export async function updateReview(reviewId: number, data: {
+  rating?: number;
+  comment?: string;
+}): Promise<{ id: number; rating: number; comment: string; updated_at: string }> {
+  return apiRequest({ method: 'PATCH', url: `/reviews/${reviewId}/`, data });
+}
+
+/** DELETE /api/v1/reviews/<id>/ — delete own review */
+export async function deleteReview(reviewId: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `/reviews/${reviewId}/` });
+}
+
+// ── Address Set Default ───────────────────────────────────────────
+
+/** POST /api/v1/auth/addresses/<id>/set-default/ — set address as default */
+export async function setDefaultAddress(id: number): Promise<{
+  detail: string;
+  id: number;
+  is_default: boolean;
+}> {
+  return apiRequest({ method: 'POST', url: `/auth/addresses/${id}/set-default/` });
+}

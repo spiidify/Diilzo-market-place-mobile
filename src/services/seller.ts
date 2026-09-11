@@ -696,3 +696,75 @@ export async function createServiceArea(payload: any): Promise<any> {
 export async function deleteServiceArea(id: number): Promise<void> {
   await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/service_area_detail/` });
 }
+
+// ── Product Variants ───────────────────────────────────────────────
+
+export interface ProductVariantData {
+  id: number;
+  name: string;
+  sku: string;
+  price: string;
+  stock_quantity: number;
+  is_active: boolean;
+  is_in_stock?: boolean;
+}
+
+export async function getProductVariants(productId: number): Promise<ProductVariantData[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/${productId}/variants/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createProductVariant(productId: number, payload: {
+  name: string;
+  sku?: string;
+  price: number;
+  stock_quantity?: number;
+  is_active?: boolean;
+}): Promise<ProductVariantData> {
+  return apiRequest<ProductVariantData>({ method: 'POST', url: `${SELLER_BASE}/${productId}/variants/`, data: payload });
+}
+
+export async function updateProductVariant(productId: number, variantId: number, data: Partial<ProductVariantData>): Promise<ProductVariantData> {
+  return apiRequest<ProductVariantData>({
+    method: 'PATCH',
+    url: `${SELLER_BASE}/${productId}/variant_detail/`,
+    params: { variant_id: variantId },
+    data: { ...data, variant_id: variantId },
+  });
+}
+
+export async function deleteProductVariant(productId: number, variantId: number): Promise<void> {
+  await apiRequest({
+    method: 'DELETE',
+    url: `${SELLER_BASE}/${productId}/variant_detail/`,
+    params: { variant_id: variantId },
+  });
+}
+
+// ── Wholesale Tiers ────────────────────────────────────────────────
+
+export interface WholesaleTierData {
+  id: number;
+  min_quantity: number;
+  price: string;
+}
+
+export async function getWholesaleTiers(productId: number): Promise<WholesaleTierData[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/${productId}/wholesale_tiers/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createWholesaleTier(productId: number, payload: {
+  min_quantity: number;
+  price: number;
+}): Promise<WholesaleTierData> {
+  return apiRequest<WholesaleTierData>({ method: 'POST', url: `${SELLER_BASE}/${productId}/wholesale_tiers/`, data: payload });
+}
+
+export async function deleteWholesaleTier(productId: number, tierId: number): Promise<void> {
+  await apiRequest({
+    method: 'DELETE',
+    url: `${SELLER_BASE}/${productId}/wholesale_tier_delete/`,
+    params: { tier_id: tierId },
+  });
+}

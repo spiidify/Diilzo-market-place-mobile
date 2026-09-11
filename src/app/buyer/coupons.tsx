@@ -1,11 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -23,22 +22,12 @@ interface CouponsResponse {
 }
 
 /**
- * Copy text to the clipboard. Uses the Web Clipboard API on web. On native,
- * expo-clipboard is the recommended SDK 57 approach but is not installed in
- * this project, so we fall back to an alert that surfaces the code for the
- * user to copy manually.
+ * Copy text to the clipboard using expo-clipboard (SDK 57).
+ * `setStringAsync` works across Android, iOS, and web, returning a boolean
+ * indicating whether the string was saved.
  */
 async function copyToClipboard(text: string): Promise<boolean> {
-  if (Platform.OS === 'web') {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  Alert.alert('Coupon Code', text, [{ text: 'OK' }]);
-  return true;
+  return Clipboard.setStringAsync(text);
 }
 
 export default function BuyerCouponsScreen() {

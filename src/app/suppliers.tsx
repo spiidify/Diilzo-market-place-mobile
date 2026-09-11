@@ -52,6 +52,7 @@ export default function SuppliersScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [count, setCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   // ── RFQ modal state ──────────────────────────────────────────────
   const [rfqOpen, setRfqOpen] = useState(false);
@@ -110,8 +111,12 @@ export default function SuppliersScreen() {
       setHasMore(true);
     }
     try {
-      if (reset) setRefreshing(true);
-      else setLoadingMore(true);
+      if (reset) {
+        setError(null);
+        setRefreshing(true);
+      } else {
+        setLoadingMore(true);
+      }
 
       const params: Record<string, any> = { page: targetPage };
       if (search) params.search = search;
@@ -133,7 +138,7 @@ export default function SuppliersScreen() {
       setHasMore(data.next !== null);
       setPage(targetPage + 1);
     } catch (e: any) {
-      console.error('Suppliers load error:', e?.message);
+      setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -375,6 +380,14 @@ export default function SuppliersScreen() {
         <View style={styles.centerBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
           <Text style={styles.loadingText}>Loading suppliers...</Text>
+        </View>
+      ) : error && stores.length === 0 ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={() => load(true)}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </Pressable>
         </View>
       ) : stores.length === 0 ? (
         <View style={styles.emptyState}>
@@ -674,6 +687,9 @@ const styles = StyleSheet.create({
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
     width: 80, height: 80, borderRadius: 40, backgroundColor: '#F8FAFB',
