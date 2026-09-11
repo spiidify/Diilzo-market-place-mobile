@@ -655,6 +655,7 @@ export default function SearchScreen() {
           </Pressable>
         </View>
         {/* ── Local / International toggle row ─────────────────── */}
+        <Text style={styles.filterLabel}>Location</Text>
         <View style={styles.locationToggleRow}>
           <Pressable
             style={[styles.locChip, localOnly && styles.locChipActive]}
@@ -680,23 +681,25 @@ export default function SearchScreen() {
           </Pressable>
         </View>
         {(sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly || localOnly || internationalOnly) ? (
-          <Pressable
-            onPress={() => {
-              setSortBy('');
-              setMinPrice('');
-              setMaxPrice('');
-              setOnSaleOnly(false);
-              setInStockOnly(false);
-              setVerifiedOnly(false);
-              setLocalOnly(false);
-              setInternationalOnly(false);
-              setShowFilters(false);
-              setTimeout(() => load(true), 0);
-            }}
-            hitSlop={8}
-          >
-            <Text style={styles.clearFiltersText}>Clear all</Text>
-          </Pressable>
+          <View style={styles.clearFiltersRow}>
+            <Pressable
+              onPress={() => {
+                setSortBy('');
+                setMinPrice('');
+                setMaxPrice('');
+                setOnSaleOnly(false);
+                setInStockOnly(false);
+                setVerifiedOnly(false);
+                setLocalOnly(false);
+                setInternationalOnly(false);
+                setShowFilters(false);
+                setTimeout(() => load(true), 0);
+              }}
+              hitSlop={8}
+            >
+              <Text style={styles.clearFiltersText}>Clear all</Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
     </View>
@@ -1082,8 +1085,7 @@ const styles = StyleSheet.create({
   filterTogglesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    flex: 1,
+    gap: 14,
     flexWrap: 'wrap',
   },
   contextBar: {
@@ -1183,23 +1185,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   filterFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    gap: 12,
   },
   saleToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   saleToggleText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Brand.text,
+    fontWeight: '500',
   },
   clearFiltersText: {
     fontSize: 13,
     fontWeight: '700',
     color: Brand.danger,
+  },
+  clearFiltersRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Brand.surfaceAlt,
   },
 
   // ── Idle state sections ─────────────────────────────────────────
