@@ -6,9 +6,9 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Linking,
   Pressable,
-  Image,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -519,15 +519,15 @@ const CategorySection = memo(function CategorySection({
             style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
             onPress={() => onPressCategory(cat)}
           >
-            <View style={styles.categoryCircle}>
+            <View style={styles.categorySquare}>
               {cat.display_image ? (
                 <Image
                   source={{ uri: cat.display_image }}
-                  style={styles.categoryCircleImage}
-                  resizeMode="contain"
+                  style={styles.categorySquareImage}
+                  resizeMode="cover"
                 />
               ) : (
-                <View style={styles.categoryCircleFallback}>
+                <View style={styles.categorySquareFallback}>
                   <MaterialCommunityIcons name="tag" size={26} color="#FFFFFF" />
                 </View>
               )}
@@ -1720,10 +1720,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 76,
   },
-  categoryCircle: {
+  categorySquare: {
     width: 68,
     height: 68,
-    borderRadius: 34,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: Brand.surfaceAlt,
@@ -1733,11 +1733,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  categoryCircleImage: {
+  categorySquareImage: {
     width: '100%',
     height: '100%',
   },
-  categoryCircleFallback: {
+  categorySquareFallback: {
     width: '100%',
     height: '100%',
     backgroundColor: Brand.primary,
