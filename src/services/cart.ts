@@ -52,12 +52,12 @@ export async function getCartCount(): Promise<number> {
 }
 
 /** POST /api/v1/cart/items/ — add product to cart */
-export async function addToCart(productId: number, quantity = 1): Promise<CartItem> {
+export async function addToCart(productId: number, quantity = 1, variantId?: number): Promise<CartItem> {
   const headers = await guestCartHeaders();
   return apiRequest<CartItem>({
     method: 'POST',
     url: '/cart/items/',
-    data: { product_id: productId, quantity },
+    data: { product_id: productId, quantity, ...(variantId ? { variant_id: variantId } : {}) },
     headers,
   });
 }

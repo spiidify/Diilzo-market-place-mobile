@@ -3,12 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
   FlatList,
+  Image,
   Linking,
   Modal,
   Pressable,
@@ -59,6 +60,8 @@ export default function ProductDetailScreen() {
   const [showCallModal, setShowCallModal] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const toastAnim = useRef(new Animated.Value(-100)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -148,6 +151,24 @@ export default function ProductDetailScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Derived variant state ──────────────────────────────────────
+  // When product loads, auto-select the first in-stock variant (if any)
+  useEffect(() => {
+    if (product?.variants?.length) {
+      const firstInStock = product.variants.find((v) => v.is_in_stock && v.is_active);
+      setSelectedVariantId(firstInStock?.id ?? product.variants[0]?.id ?? null);
+    } else {
+      setSelectedVariantId(null);
+    }
+  }, [product]);
+
+  const selectedVariant = product?.variants?.find((v) => v.id === selectedVariantId) || null;
+  // Effective price/stock: use variant values if a variant is selected, else product values
+  const effectivePrice = selectedVariant ? Number(selectedVariant.price) : Number(product?.final_price ?? 0);
+  const effectiveStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0);
+  const effectiveInStock = selectedVariant ? selectedVariant.is_in_stock : (product?.is_in_stock ?? false);
+  const effectiveSku = selectedVariant?.sku || product?.sku || '';
+
   const handleWishlist = useCallback(async () => {
     if (!product) return;
     if (!isAuthenticated) { router.push('/login'); return; }
@@ -194,9 +215,18 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
+    // Validate variant selection if product has variants
+    if (product.variants?.length > 0 && !selectedVariantId) {
+      showToast('error', 'Please select a variant first.');
+      return;
+    }
+    if (product.variants?.length > 0 && selectedVariant && !selectedVariant.is_in_stock) {
+      showToast('error', 'This variant is out of stock.');
+      return;
+    }
     setAddingToCart(true);
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariantId ?? undefined);
       incrementCartCount(quantity);
       showToast('success', `${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart`);
     } catch (e: any) {
@@ -211,13 +241,21 @@ export default function ProductDetailScreen() {
     } finally {
       setAddingToCart(false);
     }
-  }, [product, quantity, incrementCartCount, showToast]);
+  }, [product, quantity, selectedVariantId, selectedVariant, incrementCartCount, showToast]);
 
   const handleBuyNow = useCallback(async () => {
     if (!product) return;
+    if (product.variants?.length > 0 && !selectedVariantId) {
+      showToast('error', 'Please select a variant first.');
+      return;
+    }
+    if (product.variants?.length > 0 && selectedVariant && !selectedVariant.is_in_stock) {
+      showToast('error', 'This variant is out of stock.');
+      return;
+    }
     setBuyingNow(true);
     try {
-      await addToCart(product.id, quantity);
+      await addToCart(product.id, quantity, selectedVariantId ?? undefined);
       incrementCartCount(quantity);
       // Navigate directly to checkout
       router.push('/checkout');
@@ -233,7 +271,7 @@ export default function ProductDetailScreen() {
     } finally {
       setBuyingNow(false);
     }
-  }, [product, quantity, incrementCartCount, showToast, router]);
+  }, [product, quantity, selectedVariantId, selectedVariant, incrementCartCount, showToast, router]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;
@@ -372,6 +410,10 @@ export default function ProductDetailScreen() {
     ? product.images.map((img) => img.image_url).filter(Boolean) as string[]
     : product.primary_image_url ? [product.primary_image_url] : [];
   const savings = product.is_on_sale ? Number(product.price) - Number(product.final_price) : 0;
+  const isLowStock = effectiveInStock && effectiveStock > 0 && effectiveStock <= 5;
+  const storeCountry = product.store?.country || '';
+  const isLocalSeller = storeCountry.toLowerCase() === 'uganda';
+  const isInternationalSeller = storeCountry !== '' && !isLocalSeller;
 
   return (
     <View style={styles.screen}>
@@ -554,28 +596,46 @@ export default function ProductDetailScreen() {
 
           {/* ── Title + price section (compact, Alibaba-style) ─────── */}
           <View style={styles.titleSection}>
-            {/* Price — prominent, Alibaba-style */}
+            {/* Local / International badge */}
+            {(isLocalSeller || isInternationalSeller) && (
+              <View style={[styles.locBadgeRow, isLocalSeller ? styles.locBadgeLocal : styles.locBadgeIntl]}>
+                <MaterialCommunityIcons
+                  name={isLocalSeller ? 'map-marker-radius' : 'earth'}
+                  size={12}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.locBadgeText}>
+                  {isLocalSeller ? 'LOCAL SELLER' : 'INTERNATIONAL SELLER'}
+                  {product.store?.city ? ` · ${product.store.city}` : ''}
+                </Text>
+              </View>
+            )}
+
+            {/* Price — prominent, Alibaba-style (updates with variant) */}
             <View style={styles.priceBlock}>
-              {product.is_on_sale && (
+              {product.is_on_sale && !selectedVariant && (
                 <Text style={styles.oldPrice}>
                   {product.currency} {Number(product.price).toLocaleString()}
                 </Text>
               )}
               <View style={styles.priceMainRow}>
                 <Text style={styles.priceCurrency}>{product.currency}</Text>
-                <Text style={[styles.priceAmount, product.is_on_sale && { color: Brand.danger }]}>
-                  {Number(product.final_price).toLocaleString()}
+                <Text style={[styles.priceAmount, product.is_on_sale && !selectedVariant && { color: Brand.danger }]}>
+                  {effectivePrice.toLocaleString()}
                 </Text>
-                {product.is_on_sale && product.discount_percentage > 0 && (
+                {product.is_on_sale && !selectedVariant && product.discount_percentage > 0 && (
                   <View style={styles.discountTag}>
                     <Text style={styles.discountTagText}>-{Math.round(product.discount_percentage)}%</Text>
                   </View>
                 )}
               </View>
-              {product.is_on_sale && savings > 0 && (
+              {product.is_on_sale && !selectedVariant && savings > 0 && (
                 <Text style={styles.saveLine}>
                   Save {product.currency} {savings.toLocaleString()}
                 </Text>
+              )}
+              {selectedVariant && (
+                <Text style={styles.variantPriceNote}>Variant price</Text>
               )}
             </View>
 
@@ -598,12 +658,12 @@ export default function ProductDetailScreen() {
               <Text style={styles.reviewText}>({reviewCount})</Text>
               <View style={styles.dividerDot} />
               <MaterialCommunityIcons
-                name={product.is_in_stock ? 'check-circle' : 'close-circle'}
+                name={effectiveInStock ? 'check-circle' : 'close-circle'}
                 size={14}
-                color={product.is_in_stock ? Brand.success : Brand.danger}
+                color={effectiveInStock ? Brand.success : Brand.danger}
               />
-              <Text style={[styles.stockText, { color: product.is_in_stock ? Brand.success : Brand.danger }]}>
-                {product.is_in_stock ? 'In Stock' : 'Out of Stock'}
+              <Text style={[styles.stockText, { color: effectiveInStock ? Brand.success : Brand.danger }]}>
+                {effectiveInStock ? (isLowStock ? `Only ${effectiveStock} left` : 'In Stock') : 'Out of Stock'}
               </Text>
             </View>
 
@@ -620,6 +680,45 @@ export default function ProductDetailScreen() {
               )}
             </View>
           </View>
+
+          {/* ── Variant selector ────────────────────────────────────── */}
+          {product.variants && product.variants.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Select Variant</Text>
+              {product.variants.filter((v) => v.is_active).map((variant) => {
+                const isSelected = selectedVariantId === variant.id;
+                const isOos = !variant.is_in_stock;
+                return (
+                  <Pressable
+                    key={variant.id}
+                    style={[
+                      styles.variantItem,
+                      isSelected && styles.variantItemSelected,
+                      isOos && styles.variantItemOos,
+                    ]}
+                    onPress={() => !isOos && setSelectedVariantId(variant.id)}
+                    disabled={isOos}
+                  >
+                    <View style={styles.variantRadio}>
+                      {isSelected && <View style={styles.variantRadioInner} />}
+                    </View>
+                    <View style={styles.variantInfo}>
+                      <Text style={[styles.variantName, isOos && { opacity: 0.5 }]}>{variant.name}</Text>
+                      <Text style={styles.variantPrice}>
+                        {product.currency} {Number(variant.price).toLocaleString()}
+                      </Text>
+                    </View>
+                    <Text style={[styles.variantStock, isOos ? { color: Brand.danger } : { color: Brand.success }]}>
+                      {isOos ? 'Out of stock' : `${variant.stock_quantity} in stock`}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+              {selectedVariant && !selectedVariant.is_in_stock && (
+                <Text style={styles.variantUnavailable}>This combination is currently unavailable.</Text>
+              )}
+            </View>
+          )}
 
           {/* ── Wishlist + Chat actions ─────────────────────────────── */}
           <View style={styles.actionsRow}>
@@ -647,12 +746,33 @@ export default function ProductDetailScreen() {
                 <Text style={styles.qtyValue}>{quantity}</Text>
                 <Pressable
                   style={styles.qtyBtn}
-                  onPress={() => setQuantity((q) => Math.min(product.stock_quantity, q + 1))}
+                  onPress={() => setQuantity((q) => Math.min(effectiveStock || 1, q + 1))}
                 >
                   <MaterialCommunityIcons name="plus" size={16} color={Brand.textSecondary} />
                 </Pressable>
               </View>
             </View>
+            {/* Delivery info from store data */}
+            {product.store?.supports_local_delivery && isLocalSeller && (
+              <View style={styles.deliveryMiniRow}>
+                <MaterialCommunityIcons name="truck-fast" size={16} color={Brand.success} />
+                <Text style={styles.deliveryMiniText}>
+                  Local delivery available{product.store.delivery_radius_km ? ` (within ${product.store.delivery_radius_km}km)` : ''}
+                </Text>
+              </View>
+            )}
+            {product.store?.supports_pickup && (
+              <View style={styles.deliveryMiniRow}>
+                <MaterialCommunityIcons name="store-marker" size={16} color={Brand.primary} />
+                <Text style={styles.deliveryMiniText}>Pickup available in {product.store.city}</Text>
+              </View>
+            )}
+            {product.store?.supports_international_shipping && isInternationalSeller && (
+              <View style={styles.deliveryMiniRow}>
+                <MaterialCommunityIcons name="earth" size={16} color="#3B82F6" />
+                <Text style={styles.deliveryMiniText}>International shipping to Uganda</Text>
+              </View>
+            )}
             <View style={styles.deliveryMiniRow}>
               <MaterialCommunityIcons name="truck-fast" size={16} color={Brand.success} />
               <Text style={styles.deliveryMiniText}>Free delivery over 100K</Text>
@@ -679,12 +799,17 @@ export default function ProductDetailScreen() {
             </View>
           )}
 
-          {/* ── Description (compact) ──────────────────────────────── */}
+          {/* ── Description (expandable) ───────────────────────────── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Description</Text>
-            <Text style={styles.descText} numberOfLines={6}>
+            <Text style={styles.descText} numberOfLines={showFullDesc ? undefined : 6}>
               {product.description || product.short_description || 'Description coming soon.'}
             </Text>
+            {product.description && product.description.length > 200 && (
+              <Pressable onPress={() => setShowFullDesc((v) => !v)} hitSlop={8}>
+                <Text style={styles.seeMoreText}>{showFullDesc ? 'Show less' : 'See more'}</Text>
+              </Pressable>
+            )}
           </View>
 
           {/* ── Key features (compact list) ─────────────────────────── */}
@@ -710,10 +835,12 @@ export default function ProductDetailScreen() {
             {[
               ['Brand', product.brand?.name],
               ['Category', product.category?.name],
-              ['SKU', product.sku],
+              ['SKU', effectiveSku || product.sku],
+              ['Origin', product.country_of_origin || null],
+              ['Seller Location', product.store ? `${product.store.city}, ${product.store.country}` : null],
               ['Weight', product.weight ? `${product.weight} kg` : null],
               ['Min Order', `${product.min_order_quantity} unit(s)`],
-              ['Stock', `${product.stock_quantity} units`],
+              ['Stock', `${effectiveStock} units`],
               ['Listed', new Date(product.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })],
             ].filter(([, v]) => v).map(([k, v], idx, arr) => (
               <View key={idx} style={[styles.specRow, idx === arr.length - 1 && styles.specRowLast]}>
@@ -885,16 +1012,52 @@ export default function ProductDetailScreen() {
                 <View style={styles.sellerInfo}>
                   <View style={styles.sellerNameRow}>
                     <Text style={styles.sellerName}>{product.store.name}</Text>
-                    {product.store.verification_status === 'verified' && (
-                      <MaterialCommunityIcons name="check-decagram" size={14} color={Brand.primary} />
+                    {(product.store.verification_status === 'verified' || product.store.verification_status === 'gold') && (
+                      <MaterialCommunityIcons
+                        name={product.store.verification_status === 'gold' ? 'crown' : 'check-decagram'}
+                        size={14}
+                        color={product.store.verification_status === 'gold' ? '#F59E0B' : Brand.primary}
+                      />
                     )}
                   </View>
                   <Text style={styles.sellerLoc}>{product.store.city}, {product.store.country}</Text>
+                  {product.store.rating && Number(product.store.rating) > 0 && (
+                    <View style={styles.sellerRatingRow}>
+                      <MaterialCommunityIcons name="star" size={10} color={Brand.rating} />
+                      <Text style={styles.sellerRatingText}>
+                        {Number(product.store.rating).toFixed(1)} ({product.store.review_count ?? 0} reviews)
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 {product.store.is_wholesaler && (
                   <View style={styles.wholeTag}><Text style={styles.wholeText}>Wholesale</Text></View>
                 )}
               </View>
+              {/* Delivery capabilities */}
+              {(product.store.supports_local_delivery || product.store.supports_pickup || product.store.supports_international_shipping) && (
+                <View style={styles.sellerCapsRow}>
+                  {product.store.supports_local_delivery && (
+                    <View style={styles.capChip}><MaterialCommunityIcons name="truck-fast" size={10} color={Brand.success} /><Text style={styles.capChipText}>Local Delivery</Text></View>
+                  )}
+                  {product.store.supports_pickup && (
+                    <View style={styles.capChip}><MaterialCommunityIcons name="store-marker" size={10} color={Brand.primary} /><Text style={styles.capChipText}>Pickup</Text></View>
+                  )}
+                  {product.store.supports_national_shipping && (
+                    <View style={styles.capChip}><MaterialCommunityIcons name="truck" size={10} color={Brand.link} /><Text style={styles.capChipText}>National</Text></View>
+                  )}
+                  {product.store.supports_international_shipping && (
+                    <View style={styles.capChip}><MaterialCommunityIcons name="earth" size={10} color="#3B82F6" /><Text style={styles.capChipText}>International</Text></View>
+                  )}
+                </View>
+              )}
+              <Pressable
+                style={styles.visitStoreBtn}
+                onPress={() => product.store?.slug && router.push(`/store/${product.store.slug}` as any)}
+              >
+                <MaterialCommunityIcons name="storefront-outline" size={16} color={Brand.primary} />
+                <Text style={styles.visitStoreText}>Visit Store</Text>
+              </Pressable>
               {product.store.is_wholesaler && (
                 <Pressable
                   style={({ pressed }) => [styles.rfqBtn, pressed && styles.rfqBtnPressed]}
@@ -1997,4 +2160,150 @@ const styles = StyleSheet.create({
   hPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary, marginTop: 4 },
   hStockRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
   hStockText: { fontSize: 10, color: Brand.success, fontWeight: '500' },
+
+  // ── Variant selector ──────────────────────────────────────────
+  variantItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.border,
+    marginBottom: 8,
+    gap: 10,
+  },
+  variantItemSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: `${Brand.primary}08`,
+  },
+  variantItemOos: {
+    opacity: 0.6,
+    backgroundColor: '#F8F8F8',
+  },
+  variantRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: Brand.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  variantRadioInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Brand.primary,
+  },
+  variantInfo: {
+    flex: 1,
+  },
+  variantName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Brand.text,
+  },
+  variantPrice: {
+    fontSize: 12,
+    color: Brand.textSecondary,
+    marginTop: 2,
+  },
+  variantStock: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  variantUnavailable: {
+    fontSize: 12,
+    color: Brand.danger,
+    fontWeight: '600',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  variantPriceNote: {
+    fontSize: 10,
+    color: Brand.textTertiary,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+
+  // ── Local / International badge ────────────────────────────────
+  locBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  locBadgeLocal: {
+    backgroundColor: Brand.primary,
+  },
+  locBadgeIntl: {
+    backgroundColor: '#3B82F6',
+  },
+  locBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  // ── Expandable description ─────────────────────────────────────
+  seeMoreText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Brand.primary,
+    marginTop: 4,
+  },
+
+  // ── Seller enhancements ────────────────────────────────────────
+  sellerRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  sellerRatingText: {
+    fontSize: 10,
+    color: Brand.textTertiary,
+    fontWeight: '500',
+  },
+  sellerCapsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  capChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#F1F3F4',
+  },
+  capChipText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Brand.textSecondary,
+  },
+  visitStoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.primary,
+    marginTop: 10,
+  },
+  visitStoreText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Brand.primary,
+  },
 });

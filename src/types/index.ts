@@ -32,6 +32,7 @@ export interface Store {
   logo_url: string | null;
   city: string;
   country: string;
+  country_code?: string;
   is_wholesaler: boolean;
   phone?: string;
   tagline?: string;
@@ -42,6 +43,14 @@ export interface Store {
   rating?: string;
   review_count?: number;
   banner_url?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  delivery_radius_km?: number;
+  supports_local_delivery?: boolean;
+  supports_pickup?: boolean;
+  supports_national_shipping?: boolean;
+  supports_international_shipping?: boolean;
+  operating_status?: string;
 }
 
 export interface StoreDetail extends Store {
