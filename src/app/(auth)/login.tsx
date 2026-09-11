@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
@@ -15,8 +14,8 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -116,194 +115,159 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+      <GradientHeader title="Sign In" subtitle="Welcome back" showBack={false} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kav}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Orange gradient header */}
-            <LinearGradient
-              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.header}
+          {/* White form card */}
+          <View style={styles.card}>
+            {/* Social login grid */}
+            <View style={styles.socialGrid}>
+              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('google')}>
+                <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
+                <Text style={styles.socialText}>Google</Text>
+              </Pressable>
+              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('facebook')}>
+                <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+                <Text style={styles.socialText}>Facebook</Text>
+              </Pressable>
+              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('instagram')}>
+                <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
+                <Text style={styles.socialText}>Instagram</Text>
+              </Pressable>
+              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('tiktok')}>
+                <MaterialCommunityIcons name="music-note" size={22} color="#000" />
+                <Text style={styles.socialText}>TikTok</Text>
+              </Pressable>
+            </View>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or sign in with email</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Error box */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {/* Email input */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons name="email-outline" size={20} color={Brand.textTertiary} />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor={Brand.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Password input */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons name="lock-outline" size={20} color={Brand.textTertiary} />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                placeholderTextColor={Brand.textTertiary}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <Pressable onPress={() => setShowPassword((s) => !s)} hitSlop={8}>
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                  size={20}
+                  color={Brand.textTertiary}
+                />
+              </Pressable>
+            </View>
+
+            {/* Forgot password */}
+            <Pressable style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </Pressable>
+
+            {/* Sign In button */}
+            <Pressable
+              style={[styles.signInBtn, loading && styles.signInBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.logo}>Diilzo</Text>
-              <Text style={styles.welcome}>Welcome back</Text>
-              <Text style={styles.subtitle}>Sign in to continue shopping</Text>
-            </LinearGradient>
-
-            {/* White form card */}
-            <View style={styles.card}>
-              {/* Social login grid */}
-              <View style={styles.socialGrid}>
-                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('google')}>
-                  <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
-                  <Text style={styles.socialText}>Google</Text>
-                </Pressable>
-                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('facebook')}>
-                  <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
-                  <Text style={styles.socialText}>Facebook</Text>
-                </Pressable>
-                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('instagram')}>
-                  <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
-                  <Text style={styles.socialText}>Instagram</Text>
-                </Pressable>
-                <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('tiktok')}>
-                  <MaterialCommunityIcons name="music-note" size={22} color="#000" />
-                  <Text style={styles.socialText}>TikTok</Text>
-                </Pressable>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or sign in with email</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Error box */}
-              {error && (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.signInText}>Sign In</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
+                </>
               )}
+            </Pressable>
 
-              {/* Email input */}
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="email-outline" size={20} color={Brand.textTertiary} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={Brand.textTertiary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+            {/* Biometric login */}
+            {bioAvailable && bioEnabled && (
+              <Pressable style={styles.biometricBtn} onPress={handleBiometricLogin}>
+                <MaterialCommunityIcons
+                  name={bioType === 'FaceID' ? 'face-recognition' : 'fingerprint'}
+                  size={22}
+                  color={Brand.primary}
                 />
-              </View>
-
-              {/* Password input */}
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="lock-outline" size={20} color={Brand.textTertiary} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor={Brand.textTertiary}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <Pressable onPress={() => setShowPassword((s) => !s)} hitSlop={8}>
-                  <MaterialCommunityIcons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={20}
-                    color={Brand.textTertiary}
-                  />
-                </Pressable>
-              </View>
-
-              {/* Forgot password */}
-              <Pressable style={styles.forgotBtn}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.biometricText}>Sign in with {bioType || 'Biometrics'}</Text>
               </Pressable>
-
-              {/* Sign In button */}
-              <Pressable
-                style={[styles.signInBtn, loading && styles.signInBtnDisabled]}
-                onPress={handleLogin}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Text style={styles.signInText}>Sign In</Text>
-                    <MaterialCommunityIcons name="arrow-right" size={20} color="#FFFFFF" />
-                  </>
-                )}
+            )}
+          </View>
+          <View style={styles.bottomSection}>
+            <Text style={styles.newText}>New to Diilzo?</Text>
+            <Link href="/(auth)/register" asChild>
+              <Pressable>
+                <Text style={styles.createAccountText}>Create a Free Account</Text>
               </Pressable>
+            </Link>
+            <Pressable onPress={() => router.replace('/')}>
+              <Text style={styles.guestText}>Continue as guest</Text>
+            </Pressable>
+          </View>
 
-              {/* Biometric login */}
-              {bioAvailable && bioEnabled && (
-                <Pressable style={styles.biometricBtn} onPress={handleBiometricLogin}>
-                  <MaterialCommunityIcons
-                    name={bioType === 'FaceID' ? 'face-recognition' : 'fingerprint'}
-                    size={22}
-                    color={Brand.primary}
-                  />
-                  <Text style={styles.biometricText}>Sign in with {bioType || 'Biometrics'}</Text>
-                </Pressable>
-              )}
+          {/* Trust badges */}
+          <View style={styles.trustRow}>
+            <View style={styles.trustItem}>
+              <MaterialCommunityIcons name="shield-check-outline" size={14} color={Brand.textTertiary} />
+              <Text style={styles.trustText}>SSL Secured</Text>
             </View>
-            <View style={styles.bottomSection}>
-              <Text style={styles.newText}>New to Diilzo?</Text>
-              <Link href="/(auth)/register" asChild>
-                <Pressable>
-                  <Text style={styles.createAccountText}>Create a Free Account</Text>
-                </Pressable>
-              </Link>
-              <Pressable onPress={() => router.replace('/')}>
-                <Text style={styles.guestText}>Continue as guest</Text>
-              </Pressable>
+            <View style={styles.trustItem}>
+              <MaterialCommunityIcons name="handshake-outline" size={14} color={Brand.textTertiary} />
+              <Text style={styles.trustText}>Buyer Protection</Text>
             </View>
-
-            {/* Trust badges */}
-            <View style={styles.trustRow}>
-              <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="shield-check-outline" size={14} color={Brand.textTertiary} />
-                <Text style={styles.trustText}>SSL Secured</Text>
-              </View>
-              <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="handshake-outline" size={14} color={Brand.textTertiary} />
-                <Text style={styles.trustText}>Buyer Protection</Text>
-              </View>
-              <View style={styles.trustItem}>
-                <MaterialCommunityIcons name="headset" size={14} color={Brand.textTertiary} />
-                <Text style={styles.trustText}>24/7 Support</Text>
-              </View>
+            <View style={styles.trustItem}>
+              <MaterialCommunityIcons name="headset" size={14} color={Brand.textTertiary} />
+              <Text style={styles.trustText}>24/7 Support</Text>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View >
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#F2F4F6' },
   kav: { flex: 1 },
-  scroll: { flexGrow: 1 },
-  header: {
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  welcome: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
-  },
+  scroll: { flexGrow: 1, paddingTop: 16 },
   card: {
-    marginTop: -20,
     marginHorizontal: 16,
     padding: 20,
     borderRadius: 20,

@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -13,8 +12,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { getSafeErrorMessage } from '@/utils/errors';
@@ -74,274 +73,237 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.kav}
+      <GradientHeader title="Create Account" subtitle="Join Diilzo" showBack={false} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.kav}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Orange gradient header */}
-            <LinearGradient
-              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.header}
-            >
-              <Text style={styles.logo}>Diilzo</Text>
-              <Text style={styles.heading}>Join Diilzo</Text>
-              <Text style={styles.subtitle}>Create your account in less than a minute</Text>
-            </LinearGradient>
-
-            {/* White form card overlapping the gradient */}
-            <View style={styles.card}>
-              {/* Social login buttons — 2x2 grid */}
-              <View style={styles.socialRow}>
-                <Pressable style={styles.socialBtn}>
-                  <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
-                  <Text style={styles.socialText}>Google</Text>
-                </Pressable>
-                <Pressable style={styles.socialBtn}>
-                  <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
-                  <Text style={styles.socialText}>Facebook</Text>
-                </Pressable>
-              </View>
-              <View style={styles.socialRow}>
-                <Pressable style={styles.socialBtn}>
-                  <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
-                  <Text style={styles.socialText}>Instagram</Text>
-                </Pressable>
-                <Pressable style={styles.socialBtn}>
-                  <MaterialCommunityIcons name="music-note" size={22} color="#000" />
-                  <Text style={styles.socialText}>TikTok</Text>
-                </Pressable>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or sign up with email</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Error box */}
-              {error && (
-                <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              )}
-
-              {/* First Name + Last Name */}
-              <View style={styles.nameRow}>
-                <View style={styles.inputWrap}>
-                  <MaterialCommunityIcons
-                    name="account-outline"
-                    size={20}
-                    color={Brand.textTertiary}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    placeholder="First name"
-                    placeholderTextColor={Brand.textTertiary}
-                  />
-                </View>
-                <View style={styles.inputWrap}>
-                  <MaterialCommunityIcons
-                    name="account-outline"
-                    size={20}
-                    color={Brand.textTertiary}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={lastName}
-                    onChangeText={setLastName}
-                    placeholder="Last name"
-                    placeholderTextColor={Brand.textTertiary}
-                  />
-                </View>
-              </View>
-
-              {/* Email */}
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons
-                  name="email-outline"
-                  size={20}
-                  color={Brand.textTertiary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={Brand.textTertiary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              {/* Phone */}
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons
-                  name="phone-outline"
-                  size={20}
-                  color={Brand.textTertiary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="+256 700 000 000"
-                  placeholderTextColor={Brand.textTertiary}
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              {/* Password */}
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons
-                  name="lock-outline"
-                  size={20}
-                  color={Brand.textTertiary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Create a password"
-                  placeholderTextColor={Brand.textTertiary}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <Pressable
-                  onPress={() => setShowPassword((v) => !v)}
-                  style={styles.eyeBtn}
-                  hitSlop={8}
-                >
-                  <MaterialCommunityIcons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={Brand.textTertiary}
-                  />
-                </Pressable>
-              </View>
-              {/* Password strength indicator */}
-              {password.length > 0 && (
-                <View style={styles.strengthWrap}>
-                  <View style={styles.strengthBars}>
-                    {[0, 1, 2, 3].map((i) => (
-                      <View
-                        key={`strength-${i}`}
-                        style={[
-                          styles.strengthBar,
-                          {
-                            backgroundColor:
-                              passwordStrength.score > i
-                                ? passwordStrength.score <= 1
-                                  ? Brand.danger
-                                  : passwordStrength.score <= 2
-                                    ? Brand.rating
-                                    : passwordStrength.score <= 3
-                                      ? '#3B82F6'
-                                      : '#16A34A'
-                                : Brand.border,
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                  <Text
-                    style={[
-                      styles.strengthLabel,
-                      {
-                        color:
-                          passwordStrength.score <= 1 ? Brand.danger
-                            : passwordStrength.score <= 2 ? Brand.rating
-                              : passwordStrength.score <= 3 ? '#3B82F6'
-                                : '#16A34A',
-                      },
-                    ]}
-                  >
-                    {passwordStrength.label}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.hint}>Minimum 8 characters with letters and numbers</Text>
-
-              {/* Sign Up button */}
-              <Pressable
-                style={[styles.btn, loading && styles.btnDisabled]}
-                onPress={handleRegister}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <>
-                    <Text style={styles.btnText}>Create Account</Text>
-                    <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
-                  </>
-                )}
+          {/* White form card */}
+          <View style={styles.card}>
+            {/* Social login buttons — 2x2 grid */}
+            <View style={styles.socialRow}>
+              <Pressable style={styles.socialBtn}>
+                <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
+                <Text style={styles.socialText}>Google</Text>
+              </Pressable>
+              <Pressable style={styles.socialBtn}>
+                <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+                <Text style={styles.socialText}>Facebook</Text>
+              </Pressable>
+            </View>
+            <View style={styles.socialRow}>
+              <Pressable style={styles.socialBtn}>
+                <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
+                <Text style={styles.socialText}>Instagram</Text>
+              </Pressable>
+              <Pressable style={styles.socialBtn}>
+                <MaterialCommunityIcons name="music-note" size={22} color="#000" />
+                <Text style={styles.socialText}>TikTok</Text>
               </Pressable>
             </View>
 
-            {/* Bottom section */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account?</Text>
-              <Link href="/(auth)/login" asChild>
-                <Pressable>
-                  <Text style={styles.linkText}>Sign In</Text>
-                </Pressable>
-              </Link>
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or sign up with email</Text>
+              <View style={styles.dividerLine} />
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+
+            {/* Error box */}
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {/* First Name + Last Name */}
+            <View style={styles.nameRow}>
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color={Brand.textTertiary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="First name"
+                  placeholderTextColor={Brand.textTertiary}
+                />
+              </View>
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color={Brand.textTertiary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Last name"
+                  placeholderTextColor={Brand.textTertiary}
+                />
+              </View>
+            </View>
+
+            {/* Email */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color={Brand.textTertiary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor={Brand.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            {/* Phone */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons
+                name="phone-outline"
+                size={20}
+                color={Brand.textTertiary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="+256 700 000 000"
+                placeholderTextColor={Brand.textTertiary}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            {/* Password */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color={Brand.textTertiary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Create a password"
+                placeholderTextColor={Brand.textTertiary}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                style={styles.eyeBtn}
+                hitSlop={8}
+              >
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={Brand.textTertiary}
+                />
+              </Pressable>
+            </View>
+            {/* Password strength indicator */}
+            {password.length > 0 && (
+              <View style={styles.strengthWrap}>
+                <View style={styles.strengthBars}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <View
+                      key={`strength-${i}`}
+                      style={[
+                        styles.strengthBar,
+                        {
+                          backgroundColor:
+                            passwordStrength.score > i
+                              ? passwordStrength.score <= 1
+                                ? Brand.danger
+                                : passwordStrength.score <= 2
+                                  ? Brand.rating
+                                  : passwordStrength.score <= 3
+                                    ? '#3B82F6'
+                                    : '#16A34A'
+                              : Brand.border,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Text
+                  style={[
+                    styles.strengthLabel,
+                    {
+                      color:
+                        passwordStrength.score <= 1 ? Brand.danger
+                          : passwordStrength.score <= 2 ? Brand.rating
+                            : passwordStrength.score <= 3 ? '#3B82F6'
+                              : '#16A34A',
+                    },
+                  ]}
+                >
+                  {passwordStrength.label}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.hint}>Minimum 8 characters with letters and numbers</Text>
+
+            {/* Sign Up button */}
+            <Pressable
+              style={[styles.btn, loading && styles.btnDisabled]}
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <Text style={styles.btnText}>Create Account</Text>
+                  <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
+                </>
+              )}
+            </Pressable>
+          </View>
+
+          {/* Bottom section */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account?</Text>
+            <Link href="/(auth)/login" asChild>
+              <Pressable>
+                <Text style={styles.linkText}>Sign In</Text>
+              </Pressable>
+            </Link>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View >
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#F2F4F6' },
   kav: { flex: 1 },
-  scroll: { flexGrow: 1 },
-
-  // Orange gradient header
-  header: {
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
-  },
+  scroll: { flexGrow: 1, paddingTop: 16 },
 
   // White form card
   card: {
-    marginTop: -20,
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 20,
