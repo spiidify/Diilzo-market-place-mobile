@@ -111,12 +111,19 @@ const SponsoredProductCard = memo(function SponsoredProductCard({
 const SearchProductCard = memo(function SearchProductCard({
   item,
   onPress,
+  buyerCountry,
 }: {
   item: Product;
   onPress: (slug: string) => void;
+  buyerCountry?: string;
 }) {
   const onSale = item.is_on_sale && item.sale_price;
   const rating = parseFloat(item.rating) || 0;
+  // Determine if product is local or international based on store country
+  const storeCountry = (item.store_country || item.store?.country || '').toLowerCase();
+  const isLocal = buyerCountry ? storeCountry.includes(buyerCountry.toLowerCase()) : false;
+  const isInternational = buyerCountry ? !isLocal && storeCountry !== '' : false;
+  const isWholesale = item.is_wholesale || (item.min_order_quantity && item.min_order_quantity > 1);
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -135,6 +142,26 @@ const SearchProductCard = memo(function SearchProductCard({
             <Text style={styles.saleBadgeText}>-{Math.round(item.discount_percentage || 0)}%</Text>
           </View>
         )}
+        {/* Local / International badge */}
+        {isLocal && (
+          <View style={styles.localBadge}>
+            <MaterialCommunityIcons name="map-marker-radius" size={9} color="#FFFFFF" />
+            <Text style={styles.localBadgeText}>LOCAL</Text>
+          </View>
+        )}
+        {isInternational && (
+          <View style={styles.intlBadge}>
+            <MaterialCommunityIcons name="earth" size={9} color="#FFFFFF" />
+            <Text style={styles.intlBadgeText}>INT'L</Text>
+          </View>
+        )}
+        {/* Wholesale badge */}
+        {isWholesale && (
+          <View style={styles.wholesaleBadge}>
+            <MaterialCommunityIcons name="factory" size={9} color="#FFFFFF" />
+            <Text style={styles.wholesaleBadgeText}>B2B</Text>
+          </View>
+        )}
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
@@ -148,6 +175,19 @@ const SearchProductCard = memo(function SearchProductCard({
           <Text style={styles.currency}>{item.currency}</Text>
           <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
         </View>
+        {/* Store location line */}
+        {storeCountry && (
+          <View style={styles.storeLocationRow}>
+            <MaterialCommunityIcons
+              name={isLocal ? 'map-marker-radius' : 'earth'}
+              size={10}
+              color={isLocal ? Brand.primary : Brand.textTertiary}
+            />
+            <Text style={styles.storeLocationText} numberOfLines={1}>
+              {item.store_city || item.store?.city || ''}{item.store_city || item.store?.city ? ', ' : ''}{storeCountry}
+            </Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -180,6 +220,11 @@ export default function SearchScreen() {
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [localOnly, setLocalOnly] = useState(false);
+  const [internationalOnly, setInternationalOnly] = useState(false);
+  // Buyer country for local/international search — defaults to Uganda
+  // (DIILZO's primary market). In future, read from user profile/device locale.
+  const buyerCountry = 'Uganda';
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [autocompleteItems, setAutocompleteItems] = useState<string[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -260,6 +305,10 @@ export default function SearchScreen() {
           ...(onSaleOnly ? { on_sale: 'true' } : {}),
           ...(inStockOnly ? { in_stock: 'true' } : {}),
           ...(verifiedOnly ? { verified: 'true' } : {}),
+          ...(localOnly ? { local: 'true', buyer_country: buyerCountry } : {}),
+          ...(internationalOnly ? { international: 'true', buyer_country: buyerCountry } : {}),
+          // Always pass buyer_country for local ranking boost (even without filter)
+          ...(!localOnly && !internationalOnly ? { buyer_country: buyerCountry } : {}),
           signal: controller.signal,
         });
         // If a newer request superseded this one, drop the stale result.
@@ -323,7 +372,7 @@ export default function SearchScreen() {
         setLoadingMore(false);
       }
     }
-  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly]);
+  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly, localOnly, internationalOnly, buyerCountry]);
 
   useEffect(() => {
     load(true);
@@ -456,9 +505,9 @@ export default function SearchScreen() {
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
-      <SearchProductCard item={item} onPress={handleProductPress} />
+      <SearchProductCard item={item} onPress={handleProductPress} buyerCountry={buyerCountry} />
     ),
-    [handleProductPress]
+    [handleProductPress, buyerCountry]
   );
 
   const showEmpty = !loading && !refreshing && products.length === 0 && query.trim().length >= 2;
@@ -605,7 +654,32 @@ export default function SearchScreen() {
             <Text style={styles.saleToggleText}>Verified</Text>
           </Pressable>
         </View>
-        {(sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly) ? (
+        {/* ── Local / International toggle row ─────────────────── */}
+        <View style={styles.locationToggleRow}>
+          <Pressable
+            style={[styles.locChip, localOnly && styles.locChipActive]}
+            onPress={() => {
+              setLocalOnly(!localOnly);
+              if (internationalOnly) setInternationalOnly(false);
+              load(true);
+            }}
+          >
+            <MaterialCommunityIcons name="map-marker-radius" size={16} color={localOnly ? '#FFFFFF' : Brand.textSecondary} />
+            <Text style={[styles.locChipText, localOnly && styles.locChipTextActive]}>Local ({buyerCountry})</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.locChip, internationalOnly && styles.locChipActiveIntl]}
+            onPress={() => {
+              setInternationalOnly(!internationalOnly);
+              if (localOnly) setLocalOnly(false);
+              load(true);
+            }}
+          >
+            <MaterialCommunityIcons name="earth" size={16} color={internationalOnly ? '#FFFFFF' : Brand.textSecondary} />
+            <Text style={[styles.locChipText, internationalOnly && styles.locChipTextActive]}>International</Text>
+          </Pressable>
+        </View>
+        {(sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly || localOnly || internationalOnly) ? (
           <Pressable
             onPress={() => {
               setSortBy('');
@@ -614,6 +688,8 @@ export default function SearchScreen() {
               setOnSaleOnly(false);
               setInStockOnly(false);
               setVerifiedOnly(false);
+              setLocalOnly(false);
+              setInternationalOnly(false);
               setShowFilters(false);
               setTimeout(() => load(true), 0);
             }}
@@ -1264,6 +1340,90 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   saleBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  // ── Local / International / Wholesale badges ────────────────────
+  localBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: Brand.primary,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  localBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  intlBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  intlBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  wholesaleBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#8B5CF6',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  wholesaleBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  // ── Store location row in card body ─────────────────────────────
+  storeLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 2,
+  },
+  storeLocationText: {
+    fontSize: 10,
+    color: Brand.textTertiary,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  // ── Local / International filter chips ──────────────────────────
+  locationToggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  locChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F1F3F4',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  locChipActive: {
+    backgroundColor: Brand.primary,
+  },
+  locChipActiveIntl: {
+    backgroundColor: '#3B82F6',
+  },
+  locChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Brand.textSecondary,
+  },
+  locChipTextActive: {
+    color: '#FFFFFF',
+  },
   cardBody: { padding: 10, gap: 4 },
   name: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: Brand.text },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },

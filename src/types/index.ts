@@ -135,6 +135,10 @@ export interface Product {
   variants: ProductVariant[];
   wholesale_tiers: WholesaleTier[];
   country_of_origin: string;
+  // Extended search result fields (returned by /api/v1/search/)
+  store_country?: string;
+  store_city?: string;
+  store_is_verified?: boolean;
   weight: string | null;
   length: string | null;
   width: string | null;
