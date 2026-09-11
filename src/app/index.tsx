@@ -411,11 +411,7 @@ const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: Clai
           <Text style={styles.sectionTitle}>Grab a Voucher</Text>
         </View>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.voucherTrack}
-      >
+      <View style={styles.voucherGrid}>
         {vouchers.map((v) => (
           <View key={`v-${v.code}`} style={styles.voucherCard}>
             <View style={styles.voucherIconWrap}>
@@ -435,7 +431,7 @@ const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: Clai
             </View>
           </View>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 });
@@ -2157,7 +2153,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
-  voucherTrack: { paddingHorizontal: Spacing.two, gap: Spacing.two, paddingVertical: Spacing.one },
+  voucherGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.two,
+    gap: Spacing.two,
+    paddingVertical: Spacing.one,
+  },
   voucherCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2165,7 +2167,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     gap: 10,
-    minWidth: 240,
+    flexBasis: '48%',
+    flexGrow: 0,
     elevation: 2,
     shadowColor: '#000000',
     shadowOpacity: 0.1,
