@@ -1,5 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  Accuracy,
+  getCurrentPositionAsync,
+  getLastKnownPositionAsync,
+  requestForegroundPermissionsAsync,
+} from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -49,6 +55,7 @@ const SORT_OPTIONS = [
   { label: 'Price ↑', value: 'price' },
   { label: 'Price ↓', value: '-price' },
   { label: 'Top Rated', value: '-rating' },
+  { label: 'Nearest', value: 'nearest' },
 ];
 
 // ── Fetch a thumbnail image for each trending term from the backend ──
@@ -175,7 +182,7 @@ const SearchProductCard = memo(function SearchProductCard({
           <Text style={styles.currency}>{item.currency}</Text>
           <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
         </View>
-        {/* Store location line */}
+        {/* Store location line + distance */}
         {storeCountry && (
           <View style={styles.storeLocationRow}>
             <MaterialCommunityIcons
@@ -186,6 +193,13 @@ const SearchProductCard = memo(function SearchProductCard({
             <Text style={styles.storeLocationText} numberOfLines={1}>
               {item.store_city || item.store?.city || ''}{item.store_city || item.store?.city ? ', ' : ''}{storeCountry}
             </Text>
+            {item.distance_km != null && item.distance_km !== undefined && (
+              <Text style={styles.distanceText}>
+                {' '}· {item.distance_km < 1
+                  ? `${Math.round(item.distance_km * 1000)}m`
+                  : `${Math.round(item.distance_km)}km`}
+              </Text>
+            )}
           </View>
         )}
       </View>
@@ -225,6 +239,10 @@ export default function SearchScreen() {
   // Buyer country for local/international search — defaults to Uganda
   // (DIILZO's primary market). In future, read from user profile/device locale.
   const buyerCountry = 'Uganda';
+  // Buyer GPS coordinates for distance calculation ("near me" search)
+  const [buyerLat, setBuyerLat] = useState<number | null>(null);
+  const [buyerLng, setBuyerLng] = useState<number | null>(null);
+  const [locationGranted, setLocationGranted] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [autocompleteItems, setAutocompleteItems] = useState<string[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -240,6 +258,29 @@ export default function SearchScreen() {
 
   // Load trending searches from API + trending images + recent searches on mount
   useEffect(() => {
+    // Request location permission and fetch coordinates for "near me" search
+    (async () => {
+      try {
+        const { status } = await requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          setLocationGranted(true);
+          const loc = await getLastKnownPositionAsync({});
+          if (loc) {
+            setBuyerLat(loc.coords.latitude);
+            setBuyerLng(loc.coords.longitude);
+          } else {
+            const fresh = await getCurrentPositionAsync({
+              accuracy: Accuracy.Balanced,
+            });
+            setBuyerLat(fresh.coords.latitude);
+            setBuyerLng(fresh.coords.longitude);
+          }
+        }
+      } catch {
+        // Location is optional — search still works without it
+      }
+    })();
+
     // Fetch trending searches from the backend API
     getTrendingSearches(8).then((terms) => {
       if (terms.length > 0) {
@@ -309,6 +350,8 @@ export default function SearchScreen() {
           ...(internationalOnly ? { international: 'true', buyer_country: buyerCountry } : {}),
           // Always pass buyer_country for local ranking boost (even without filter)
           ...(!localOnly && !internationalOnly ? { buyer_country: buyerCountry } : {}),
+          // Pass GPS coordinates for distance calculation if available
+          ...(buyerLat != null && buyerLng != null ? { buyer_lat: buyerLat, buyer_lng: buyerLng } : {}),
           signal: controller.signal,
         });
         // If a newer request superseded this one, drop the stale result.
@@ -372,7 +415,7 @@ export default function SearchScreen() {
         setLoadingMore(false);
       }
     }
-  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly, localOnly, internationalOnly, buyerCountry]);
+  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly, localOnly, internationalOnly, buyerCountry, buyerLat, buyerLng]);
 
   useEffect(() => {
     load(true);
@@ -1401,6 +1444,11 @@ const styles = StyleSheet.create({
     color: Brand.textTertiary,
     fontWeight: '500',
     flexShrink: 1,
+  },
+  distanceText: {
+    fontSize: 10,
+    color: Brand.primary,
+    fontWeight: '700',
   },
   // ── Local / International filter chips ──────────────────────────
   locationToggleRow: {

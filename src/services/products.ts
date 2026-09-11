@@ -94,6 +94,8 @@ export interface SearchParams {
   international?: string;  // "true" for international sellers
   buyer_country?: string;  // buyer's country for local ranking
   buyer_city?: string;     // buyer's city for local ranking
+  buyer_lat?: number;      // buyer's latitude for distance calculation
+  buyer_lng?: number;      // buyer's longitude for distance calculation
   page?: number;
   page_size?: number;
   ordering?: string;       // -created_at, price, -price, rating, popularity, best_selling, relevance

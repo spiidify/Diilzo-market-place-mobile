@@ -139,6 +139,10 @@ export interface Product {
   store_country?: string;
   store_city?: string;
   store_is_verified?: boolean;
+  distance_km?: number | null;
+  store_latitude?: number | null;
+  store_longitude?: number | null;
+  delivery_radius_km?: number;
   weight: string | null;
   length: string | null;
   width: string | null;
