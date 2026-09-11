@@ -524,3 +524,175 @@ export async function sendSellerMessage(threadId: number, message: string): Prom
     data: { message },
   });
 }
+
+// ── Staff Management ───────────────────────────────────────────────
+
+export interface SellerStaffMember {
+  id: number;
+  store: number;
+  user: number;
+  user_email: string;
+  user_name: string;
+  role: number | null;
+  role_name: string;
+  is_owner: boolean;
+  is_active: boolean;
+  has_full_access: boolean;
+  invited_by: number | null;
+  invited_at: string;
+  accepted_at: string | null;
+}
+
+export interface SellerStaffRole {
+  id: number;
+  store: number;
+  name: string;
+  role_type: string;
+  can_view_orders: boolean;
+  can_create_orders: boolean;
+  can_edit_orders: boolean;
+  can_manage_products: boolean;
+  can_manage_inventory: boolean;
+  can_view_finances: boolean;
+  can_manage_staff: boolean;
+  can_handle_disputes: boolean;
+  can_view_analytics: boolean;
+  can_manage_shipping: boolean;
+  can_manage_promotions: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getStaff(): Promise<SellerStaffMember[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/staff/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function inviteStaff(payload: {
+  user: number;
+  role?: number;
+  is_active?: boolean;
+}): Promise<SellerStaffMember> {
+  return apiRequest<SellerStaffMember>({ method: 'POST', url: `${SELLER_BASE}/staff/`, data: payload });
+}
+
+export async function updateStaff(id: number, data: Partial<SellerStaffMember>): Promise<SellerStaffMember> {
+  return apiRequest<SellerStaffMember>({ method: 'PATCH', url: `${SELLER_BASE}/${id}/staff_detail/`, data });
+}
+
+export async function removeStaff(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/staff_detail/` });
+}
+
+export async function getStaffRoles(): Promise<SellerStaffRole[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/staff_roles/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createStaffRole(payload: {
+  name: string;
+  role_type?: string;
+  can_view_orders?: boolean;
+  can_create_orders?: boolean;
+  can_edit_orders?: boolean;
+  can_manage_products?: boolean;
+  can_manage_inventory?: boolean;
+  can_view_finances?: boolean;
+  can_manage_staff?: boolean;
+  can_handle_disputes?: boolean;
+  can_view_analytics?: boolean;
+  can_manage_shipping?: boolean;
+  can_manage_promotions?: boolean;
+}): Promise<SellerStaffRole> {
+  return apiRequest<SellerStaffRole>({ method: 'POST', url: `${SELLER_BASE}/staff_roles/`, data: payload });
+}
+
+export async function getPermissions(): Promise<{
+  permissions: string[];
+  is_owner: boolean;
+  is_staff: boolean;
+}> {
+  return apiRequest<{ permissions: string[]; is_owner: boolean; is_staff: boolean }>({
+    method: 'GET',
+    url: `${SELLER_BASE}/permissions/`,
+  });
+}
+
+// ── Inventory ──────────────────────────────────────────────────────
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  stock_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  price: number;
+  final_price: number;
+  is_active: boolean;
+  is_on_sale: boolean;
+  category_name: string;
+  brand_name: string;
+  primary_image_url: string;
+}
+
+export interface InventoryResponse {
+  results: InventoryItem[];
+  count: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
+}
+
+export async function getInventory(params?: {
+  q?: string;
+  low_stock?: string;
+  out_of_stock?: string;
+  threshold?: number;
+  page?: number;
+  page_size?: number;
+}): Promise<InventoryResponse> {
+  return apiRequest<InventoryResponse>({ method: 'GET', url: `${SELLER_BASE}/inventory/`, params });
+}
+
+export async function updateStock(productId: number, stockQuantity: number): Promise<{
+  id: number;
+  name: string;
+  old_stock_quantity: number;
+  new_stock_quantity: number;
+}> {
+  return apiRequest<any>({
+    method: 'PATCH',
+    url: `${SELLER_BASE}/${productId}/update_stock/`,
+    data: { stock_quantity: stockQuantity },
+  });
+}
+
+// ── Delivery Areas & Service Areas ─────────────────────────────────
+
+export async function getDeliveryAreas(): Promise<any[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/delivery_areas/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createDeliveryArea(payload: any): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/delivery_areas/`, data: payload });
+}
+
+export async function deleteDeliveryArea(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/delivery_area_detail/` });
+}
+
+export async function getServiceAreas(): Promise<any[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/service_areas/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
+export async function createServiceArea(payload: any): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/service_areas/`, data: payload });
+}
+
+export async function deleteServiceArea(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/service_area_detail/` });
+}

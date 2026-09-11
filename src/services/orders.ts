@@ -45,7 +45,7 @@ export async function fetchOrderTracking(id: number): Promise<{
 }
 
 /** POST /api/v1/orders/<id>/return/ — request a return */
-export async function requestReturn(id: number, reason: string, items?: string): Promise<{
+export async function requestReturn(id: number, reason: string, description?: string, suborderId?: number): Promise<{
   id: number;
   status: string;
   detail: string;
@@ -53,8 +53,17 @@ export async function requestReturn(id: number, reason: string, items?: string):
   return apiRequest({
     method: 'POST',
     url: `/orders/${id}/return/`,
-    data: { reason, items: items || '' },
+    data: { reason, description: description || '', suborder_id: suborderId },
   });
+}
+
+/** POST /api/v1/orders/<id>/confirm-receipt/ — buyer confirms receipt */
+export async function confirmReceipt(id: number): Promise<{
+  detail: string;
+  order_id: number;
+  status: string;
+}> {
+  return apiRequest({ method: 'POST', url: `/orders/${id}/confirm-receipt/` });
 }
 
 /** POST /api/v1/orders/<id>/reorder/ — add all items to cart */

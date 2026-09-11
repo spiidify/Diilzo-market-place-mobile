@@ -420,19 +420,19 @@ export const supplierAction = (storeId: number, action: string) => apiRequest<an
 
 // Categories
 export const getAdminCategories = (q?: string) => apiRequest<AdminCategory[]>({ method: 'GET', url: `${ADMIN_BASE}/categories/`, params: q ? { q } : undefined });
-export const createCategory = (data: { name: string; parent_id?: number; sort_order?: number; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/categories/`, data });
+export const createCategory = (data: { name: string; parent_id?: number; sort_order?: number; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/categories/create/`, data });
 export const updateCategory = (id: number, data: any) => apiRequest<any>({ method: 'PATCH', url: `${ADMIN_BASE}/categories/${id}/`, data });
 export const deleteCategory = (id: number) => apiRequest<any>({ method: 'DELETE', url: `${ADMIN_BASE}/categories/${id}/` });
 
 // Brands
 export const getAdminBrands = (q?: string) => apiRequest<AdminBrand[]>({ method: 'GET', url: `${ADMIN_BASE}/brands/`, params: q ? { q } : undefined });
-export const createBrand = (data: { name: string; description?: string; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/brands/`, data });
+export const createBrand = (data: { name: string; description?: string; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/brands/create/`, data });
 export const updateBrand = (id: number, data: any) => apiRequest<any>({ method: 'PATCH', url: `${ADMIN_BASE}/brands/${id}/`, data });
 export const deleteBrand = (id: number) => apiRequest<any>({ method: 'DELETE', url: `${ADMIN_BASE}/brands/${id}/` });
 
 // Tax
 export const getAdminTax = () => apiRequest<AdminTax[]>({ method: 'GET', url: `${ADMIN_BASE}/tax/` });
-export const createTax = (data: { name: string; country: string; rate: number; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/tax/`, data });
+export const createTax = (data: { name: string; country: string; rate: number; is_active?: boolean }) => apiRequest<any>({ method: 'POST', url: `${ADMIN_BASE}/tax/create/`, data });
 export const updateTax = (id: number, data: any) => apiRequest<any>({ method: 'PATCH', url: `${ADMIN_BASE}/tax/${id}/`, data });
 export const deleteTax = (id: number) => apiRequest<any>({ method: 'DELETE', url: `${ADMIN_BASE}/tax/${id}/` });
 

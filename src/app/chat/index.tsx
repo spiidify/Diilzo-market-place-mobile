@@ -2,9 +2,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -25,15 +26,17 @@ export default function ChatListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [startingSupport, setStartingSupport] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return; }
     try {
       setRefreshing(true);
+      setError(null);
       const data = await fetchChatThreads();
       setThreads(data);
     } catch (e: any) {
-      console.error('Chat threads error:', e?.message);
+      setError(e?.message || 'Failed to load conversations');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -143,6 +146,14 @@ export default function ChatListScreen() {
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
             <Text style={styles.loadingText}>Loading messages...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.signInBtn} onPress={load}>
+              <Text style={styles.signInBtnText}>Retry</Text>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -289,6 +300,7 @@ const styles = StyleSheet.create({
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
     width: 80, height: 80, borderRadius: 40, backgroundColor: Brand.surfaceAlt,

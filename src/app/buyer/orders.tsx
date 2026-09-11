@@ -39,14 +39,16 @@ export default function BuyerOrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       setRefreshing(true);
+      setError(null);
       const data = await apiRequest<any>({ method: 'GET', url: '/orders/' });
       setOrders(Array.isArray(data) ? data : data.results || []);
     } catch (e: any) {
-      console.error('Buyer orders error:', e?.message);
+      setError(e?.message || 'Failed to load orders');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -93,6 +95,14 @@ export default function BuyerOrdersScreen() {
           <View style={styles.centerBody}>
             <ActivityIndicator size="large" color={Brand.primary} />
           </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.shopBtn} onPress={load}>
+              <Text style={styles.shopBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : orders.length === 0 ? (
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="shopping-outline" size={48} color={Brand.textTertiary} />
@@ -126,6 +136,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
   list: { padding: 12, gap: 10 },

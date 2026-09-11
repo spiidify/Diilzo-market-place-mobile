@@ -83,6 +83,11 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
       { icon: 'currency-usd', label: 'Currencies', route: '/admin/currencies', color: '#16A34A' },
       { icon: 'barcode', label: 'HS Codes', route: '/admin/hs-codes', color: '#8B5CF6' },
       { icon: 'block-helper', label: 'Restricted Goods', route: '/admin/restricted-goods', color: Brand.danger },
+      { icon: 'chart-line', label: 'Revenue Report', route: '/admin/revenue-report', color: '#16A34A' },
+      { icon: 'scale-balance', label: 'Reconciliation', route: '/admin/reconciliation', color: '#F59E0B' },
+      { icon: 'book-open', label: 'Ledger', route: '/admin/ledger', color: '#8B5CF6' },
+      { icon: 'file-export', label: 'Accounting Export', route: '/admin/accounting-export', color: '#06B6D4' },
+      { icon: 'clipboard-list', label: 'Audit Log', route: '/admin/audit-log', color: Brand.textSecondary },
     ],
   },
 ];

@@ -3,9 +3,10 @@ import { useAudioPlayer } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -96,6 +97,8 @@ export default function ChatThreadScreen() {
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('Chat');
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -113,10 +116,11 @@ export default function ChatThreadScreen() {
   const load = useCallback(async () => {
     if (!threadId) return;
     try {
+      setError(null);
       const data = await fetchChatMessages(threadId);
       setMessages(data);
     } catch (e: any) {
-      console.error('Chat messages error:', e?.message);
+      setError(e?.message || 'Failed to load messages');
     } finally {
       setLoading(false);
     }
@@ -138,13 +142,14 @@ export default function ChatThreadScreen() {
     setInput('');
     setSending(true);
     try {
+      setSendError(null);
       const sent = await sendChatMessage(threadId, msg);
       setMessages((prev) => [...prev, sent]);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (e: any) {
-      console.error('Send message error:', e?.message);
+      setSendError(e?.message || 'Failed to send message');
       setInput(msg);
     } finally {
       setSending(false);
@@ -260,6 +265,14 @@ export default function ChatThreadScreen() {
             <ActivityIndicator size="large" color={Brand.primary} />
             <Text style={styles.loadingText}>Loading messages...</Text>
           </View>
+        ) : error ? (
+          <View style={styles.centerBody}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable style={styles.retryBtn} onPress={load}>
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </Pressable>
+          </View>
         ) : (
           <FlatList
             ref={flatListRef}
@@ -308,50 +321,61 @@ export default function ChatThreadScreen() {
             </View>
           ) : (
             // ── Normal input bar ───────────────────────────────────
-            <View style={styles.inputBar}>
-              <TextInput
-                style={styles.input}
-                value={input}
-                onChangeText={setInput}
-                placeholder="Type a message..."
-                placeholderTextColor={Brand.textTertiary}
-                multiline
-                maxLength={1000}
-                editable={!sending}
-              />
-              {/* Mic button — visible when input is empty */}
-              {!input.trim() && !sending ? (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.micBtn,
-                    pressed && { opacity: 0.8 },
-                    !hasPermission && styles.micBtnDisabled,
-                  ]}
-                  onPress={handleMicPress}
-                  onLongPress={handleMicLongPress}
-                  disabled={!hasPermission}
-                >
-                  <MaterialCommunityIcons name="microphone" size={22} color="#FFFFFF" />
-                </Pressable>
-              ) : (
-                /* Send button — visible when there's text */
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.sendBtn,
-                    pressed && { opacity: 0.8 },
-                    (!input.trim() || sending) && styles.sendBtnDisabled,
-                  ]}
-                  onPress={handleSend}
-                  disabled={!input.trim() || sending}
-                >
-                  {sending ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
-                  )}
-                </Pressable>
-              )}
-            </View>
+            <>
+              {sendError ? (
+                <View style={styles.sendErrorBar}>
+                  <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
+                  <Text style={styles.sendErrorText}>{sendError}</Text>
+                  <Pressable onPress={() => setSendError(null)} hitSlop={8}>
+                    <MaterialCommunityIcons name="close" size={16} color={Brand.textTertiary} />
+                  </Pressable>
+                </View>
+              ) : null}
+              <View style={styles.inputBar}>
+                <TextInput
+                  style={styles.input}
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder="Type a message..."
+                  placeholderTextColor={Brand.textTertiary}
+                  multiline
+                  maxLength={1000}
+                  editable={!sending}
+                />
+                {/* Mic button — visible when input is empty */}
+                {!input.trim() && !sending ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.micBtn,
+                      pressed && { opacity: 0.8 },
+                      !hasPermission && styles.micBtnDisabled,
+                    ]}
+                    onPress={handleMicPress}
+                    onLongPress={handleMicLongPress}
+                    disabled={!hasPermission}
+                  >
+                    <MaterialCommunityIcons name="microphone" size={22} color="#FFFFFF" />
+                  </Pressable>
+                ) : (
+                  /* Send button — visible when there's text */
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.sendBtn,
+                      pressed && { opacity: 0.8 },
+                      (!input.trim() || sending) && styles.sendBtnDisabled,
+                    ]}
+                    onPress={handleSend}
+                    disabled={!input.trim() || sending}
+                  >
+                    {sending ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
+                    )}
+                  </Pressable>
+                )}
+              </View>
+            </>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -524,4 +548,9 @@ const styles = StyleSheet.create({
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  sendErrorBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#FEF2F2' },
+  sendErrorText: { flex: 1, fontSize: 12, color: Brand.danger },
 });

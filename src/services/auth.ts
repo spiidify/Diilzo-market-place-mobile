@@ -88,3 +88,48 @@ export async function isAuthenticated(): Promise<boolean> {
   const token = await getAccessToken();
   return token !== null;
 }
+
+// ── Password Reset / Change ────────────────────────────────────────
+
+/**
+ * Request a password reset email.
+ * POST /api/v1/auth/password/reset/
+ */
+export async function requestPasswordReset(email: string): Promise<{ detail: string }> {
+  return apiRequest<{ detail: string }>({
+    method: 'POST',
+    url: '/auth/password/reset/',
+    data: { email },
+  });
+}
+
+/**
+ * Confirm a password reset with uid + token from the email link.
+ * POST /api/v1/auth/password/reset/confirm/
+ */
+export async function confirmPasswordReset(
+  uid: string,
+  token: string,
+  newPassword: string
+): Promise<{ detail: string }> {
+  return apiRequest<{ detail: string }>({
+    method: 'POST',
+    url: '/auth/password/reset/confirm/',
+    data: { uid, token, new_password: newPassword },
+  });
+}
+
+/**
+ * Change password for an authenticated user.
+ * POST /api/v1/auth/change-password/
+ */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ detail: string }> {
+  return apiRequest<{ detail: string }>({
+    method: 'POST',
+    url: '/auth/change-password/',
+    data: { current_password: currentPassword, new_password: newPassword },
+  });
+}
