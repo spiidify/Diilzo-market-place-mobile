@@ -1,4 +1,5 @@
 import { Brand } from '@/constants/theme';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
@@ -10,6 +11,21 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
+const WHOOSH_SOUND = require('@/assets/sounds/whoosh.wav');
+
+// Create the audio player at module level (synchronous) and play
+// immediately when this module loads. This is the earliest point
+// within the splash screen — the sound starts the instant the
+// splash module is imported, before the component renders.
+const whooshPlayer = createAudioPlayer(WHOOSH_SOUND);
+setAudioModeAsync({
+  playsInSilentMode: true,
+  shouldPlayInBackground: false,
+  interruptionMode: 'mixWithOthers',
+}).catch(() => { });
+try {
+  whooshPlayer.play();
+} catch { }
 
 const DURATION = 7000;
 
@@ -145,8 +161,8 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        // The startup sound already played at module level in _layout.tsx
-        // before this component even mounted. Just start the animation.
+        // Sound already played at module level when this file loaded.
+        // Just start the animation.
         setAnimate(true);
         SplashScreen.hideAsync().catch(() => { });
       }}
