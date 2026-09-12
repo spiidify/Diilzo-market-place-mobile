@@ -70,17 +70,27 @@ export async function sendVoiceMessage(
   } as any);
   formData.append('audio_duration', String(Math.round(durationSec)));
 
-  const response = await api.post<ChatMessage>(
-    `/chat/threads/${threadId}/send/`,
-    formData,
-    {
-      // Let axios/RN set the Content-Type automatically with the correct
-      // multipart boundary — setting it manually omits the boundary and
-      // the backend can't parse the form data.
-      timeout: 30000,
-    }
-  );
-  return response.data;
+  try {
+    const response = await api.post<ChatMessage>(
+      `/chat/threads/${threadId}/send/`,
+      formData,
+      {
+        // Let axios/RN set the Content-Type automatically with the correct
+        // multipart boundary — setting it manually omits the boundary and
+        // the backend can't parse the form data.
+        timeout: 30000,
+      }
+    );
+    return response.data;
+  } catch (e: any) {
+    // Log the full error for debugging
+    console.error('sendVoiceMessage error:', {
+      status: e?.response?.status,
+      data: e?.response?.data,
+      message: e?.message,
+    });
+    throw e;
+  }
 }
 
 /** GET /api/v1/chat/unread/ — total unread count */

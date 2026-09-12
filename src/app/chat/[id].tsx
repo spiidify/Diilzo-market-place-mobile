@@ -144,8 +144,13 @@ export default function ChatThreadScreen() {
   } = useVoiceRecorder();
 
   // Set audio mode for playback (plays through speaker even in silent mode)
+  // Wrapped in try/catch — setAudioModeAsync is not available in Expo Go
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true });
+    try {
+      setAudioModeAsync?.({ playsInSilentMode: true });
+    } catch (e) {
+      console.warn('setAudioModeAsync not available:', e);
+    }
   }, []);
 
   // ── Heartbeat: send every 30s so the other party sees us as online ──
@@ -340,7 +345,9 @@ export default function ChatThreadScreen() {
             flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);
         } catch (e: any) {
-          console.error('Voice send error:', e?.message);
+          const errDetail = e?.response?.data?.detail || e?.response?.data?.error || e?.response?.data?.audio || e?.message;
+          console.error('Voice send error:', errDetail, e?.response?.data);
+          setSendError(typeof errDetail === 'string' ? errDetail : 'Failed to send voice message');
         } finally {
           setSending(false);
           reset();
