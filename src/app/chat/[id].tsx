@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -47,34 +47,41 @@ function DateSeparator({ label }: { label: string }) {
   );
 }
 
-// ── Audio message bubble with play/pause ───────────────────────────
+// ── Audio message bubble with play/pause + progress ────────────────
 function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; isMe: boolean }) {
   const player = useAudioPlayer({ uri });
+  const status = useAudioPlayerStatus(player);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const currentTime = status.currentTime || 0;
+  const totalDuration = status.duration || duration || 0;
+  const progress = totalDuration > 0 ? Math.min(currentTime / totalDuration, 1) : 0;
+  const isFinished = status.didJustFinish || (totalDuration > 0 && currentTime >= totalDuration && !isPlaying);
 
   const togglePlay = useCallback(() => {
     if (isPlaying) {
       player.pause();
       setIsPlaying(false);
     } else {
+      // If finished, replay from start
+      if (isFinished || currentTime >= totalDuration) {
+        player.seekTo(0);
+      }
       player.play();
       setIsPlaying(true);
     }
-  }, [isPlaying, player]);
+  }, [isPlaying, isFinished, currentTime, totalDuration, player]);
 
   // Reset playing state when playback finishes
   useEffect(() => {
-    const id = player.addListener?.('playbackStatusUpdate', (status: any) => {
-      if (status?.didJustFinish) {
-        setIsPlaying(false);
-      }
-    });
-    return () => { id?.remove?.(); };
-  }, [player]);
+    if (status.didJustFinish) {
+      setIsPlaying(false);
+    }
+  }, [status.didJustFinish]);
 
   const fmtTime = (s: number) => {
     const m = Math.floor(s / 60);
-    const sec = s % 60;
+    const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
@@ -89,22 +96,40 @@ function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; i
         color={isMe ? '#FFFFFF' : Brand.primary}
       />
       <View style={styles.audioWave}>
-        {/* Simple waveform bars */}
-        {[6, 12, 8, 16, 10, 14, 7, 11, 9, 13, 6, 10, 8, 12, 7].map((h, i) => (
+        {/* Progress bar overlay */}
+        <View style={styles.audioProgressTrack}>
           <View
-            key={i}
             style={[
-              styles.audioBar,
+              styles.audioProgressFill,
               {
-                height: h,
-                backgroundColor: isMe ? 'rgba(255,255,255,0.6)' : Brand.border,
+                width: `${progress * 100}%`,
+                backgroundColor: isMe ? '#FFFFFF' : Brand.primary,
               },
             ]}
           />
-        ))}
+        </View>
+        {/* Waveform bars */}
+        {[6, 12, 8, 16, 10, 14, 7, 11, 9, 13, 6, 10, 8, 12, 7].map((h, i) => {
+          const barProgress = i / 15;
+          const isPlayed = barProgress <= progress;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.audioBar,
+                {
+                  height: h,
+                  backgroundColor: isMe
+                    ? (isPlayed ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)')
+                    : (isPlayed ? Brand.primary : Brand.border),
+                },
+              ]}
+            />
+          );
+        })}
       </View>
       <Text style={[styles.audioDuration, isMe ? styles.msgTextMe : styles.msgTextThem]}>
-        {fmtTime(duration || 0)}
+        {isPlaying || currentTime > 0 ? fmtTime(currentTime) : fmtTime(totalDuration)}
       </Text>
     </Pressable>
   );
@@ -727,6 +752,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
     height: 24,
+    position: 'relative',
+  },
+  audioProgressTrack: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    borderRadius: 1,
+    transform: [{ translateY: -1 }],
+    overflow: 'hidden',
+  },
+  audioProgressFill: {
+    height: '100%',
+    borderRadius: 1,
   },
   audioBar: {
     width: 3,
