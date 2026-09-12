@@ -26,6 +26,27 @@ import { scanMessageRisk } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { ChatMessage, ChatThread } from '@/types';
 
+// ── Date separator helpers ────────────────────────────────────────
+function formatDateSeparator(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' });
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function DateSeparator({ label }: { label: string }) {
+  return (
+    <View style={styles.dateSepWrap}>
+      <View style={styles.dateSepChip}>
+        <Text style={styles.dateSepText}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
 // ── Audio message bubble with play/pause ───────────────────────────
 function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; isMe: boolean }) {
   const player = useAudioPlayer({ uri });
@@ -289,8 +310,13 @@ export default function ChatThreadScreen() {
     }
   }, [isRecording, cancelRecording]);
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const renderMessage = ({ item, index }: { item: ChatMessage; index: number }) => {
     const isMe = !!(user && item.sender === user.id);
+
+    // Date separator: show date header when day changes
+    const prevMsg = index > 0 ? messages[index - 1] : null;
+    const showDateSep = !prevMsg || new Date(prevMsg.created_at).toDateString() !== new Date(item.created_at).toDateString();
+    const dateSep = formatDateSeparator(item.created_at);
 
     // Audio message
     if (item.message_type === 'audio' && item.audio_url) {
@@ -298,12 +324,18 @@ export default function ChatThreadScreen() {
         ? item.audio_url
         : `${BASE_URL.replace('/api/v1', '')}${item.audio_url}`;
       return (
-        <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
-          <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
-            <AudioBubble uri={fullUrl} duration={item.audio_duration} isMe={isMe} />
-            <Text style={[styles.msgTime, isMe ? styles.msgTimeMe : styles.msgTimeThem]}>
-              {new Date(item.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </Text>
+        <View>
+          {showDateSep && <DateSeparator label={dateSep} />}
+          <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
+            <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
+              <AudioBubble uri={fullUrl} duration={item.audio_duration} isMe={isMe} />
+              <View style={styles.msgMetaRow}>
+                <Text style={[styles.msgTime, isMe ? styles.msgTimeMe : styles.msgTimeThem]}>
+                  {new Date(item.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                {isMe && <MaterialCommunityIcons name="check-all" size={12} color="rgba(255,255,255,0.6)" />}
+              </View>
+            </View>
           </View>
         </View>
       );
@@ -311,14 +343,26 @@ export default function ChatThreadScreen() {
 
     // Text message
     return (
-      <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
-        <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
-          <Text style={[styles.msgText, isMe ? styles.msgTextMe : styles.msgTextThem]}>
-            {item.message}
-          </Text>
-          <Text style={[styles.msgTime, isMe ? styles.msgTimeMe : styles.msgTimeThem]}>
-            {new Date(item.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+      <View>
+        {showDateSep && <DateSeparator label={dateSep} />}
+        <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
+          <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
+            <Text style={[styles.msgText, isMe ? styles.msgTextMe : styles.msgTextThem]}>
+              {item.message}
+            </Text>
+            <View style={styles.msgMetaRow}>
+              <Text style={[styles.msgTime, isMe ? styles.msgTimeMe : styles.msgTimeThem]}>
+                {new Date(item.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+              {isMe && (
+                <MaterialCommunityIcons
+                  name={item.is_read ? 'check-all' : 'check'}
+                  size={12}
+                  color={item.is_read ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)'}
+                />
+              )}
+            </View>
+          </View>
         </View>
       </View>
     );
@@ -340,7 +384,7 @@ export default function ChatThreadScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => router.dismiss()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
           <View style={styles.headerInfo}>
@@ -574,6 +618,15 @@ const styles = StyleSheet.create({
   msgTime: { fontSize: 10, marginTop: 4 },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
   msgTimeThem: { color: Brand.textTertiary },
+  msgMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 2 },
+
+  // ── Date separator ─────────────────────────────────────────────
+  dateSepWrap: { alignItems: 'center', marginVertical: 12 },
+  dateSepChip: {
+    backgroundColor: Brand.surfaceAlt, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 4,
+  },
+  dateSepText: { fontSize: 11, fontWeight: '600', color: Brand.textSecondary },
 
   // ── Audio bubble ────────────────────────────────────────────────
   audioBubble: {

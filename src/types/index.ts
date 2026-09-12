@@ -424,6 +424,7 @@ export interface ChatThread {
   updated_at: string;
   last_message: {
     message: string;
+    message_type: string;
     sender: string;
     created_at: string;
   } | null;

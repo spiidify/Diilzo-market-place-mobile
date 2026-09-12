@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,6 +10,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,36 @@ import { useAuth } from '@/context/AuthContext';
 import { createSupportChat, fetchChatThreads } from '@/services/chat';
 import type { ChatThread } from '@/types';
 
+// ── Helpers ───────────────────────────────────────────────────────
+function formatChatTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24 && d.getDate() === now.getDate()) {
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) {
+    return d.toLocaleDateString('en-US', { weekday: 'short' });
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function getLastMessagePreview(thread: ChatThread): string {
+  const last = thread.last_message;
+  if (!last) return 'Tap to start chatting';
+  if (last.message_type === 'audio') return '🎤 Voice message';
+  const sender = last.sender === thread.buyer_name ? 'You' : last.sender;
+  const text = last.message || '';
+  return `${sender}: ${text}`;
+}
+
 export default function ChatListScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
@@ -27,6 +58,7 @@ export default function ChatListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [startingSupport, setStartingSupport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const load = useCallback(async () => {
     if (!isAuthenticated) { setLoading(false); return; }
@@ -45,6 +77,13 @@ export default function ChatListScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Refresh when screen gains focus (coming back from a chat)
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
   const handleSupportChat = async () => {
     if (!isAuthenticated) {
       router.push('/(auth)/login' as any);
@@ -61,11 +100,42 @@ export default function ChatListScreen() {
     }
   };
 
+  // Filter threads by search query
+  const filteredThreads = useMemo(() => {
+    if (!searchQuery.trim()) return threads;
+    const q = searchQuery.toLowerCase();
+    return threads.filter(t => {
+      const name = t.is_support ? 'diilzo support' : (t.store_name || '').toLowerCase();
+      const product = (t.product_name || '').toLowerCase();
+      const lastMsg = t.last_message?.message?.toLowerCase() || '';
+      return name.includes(q) || product.includes(q) || lastMsg.includes(q);
+    });
+  }, [threads, searchQuery]);
+
+  // Sort: unread first, then by last message time
+  const sortedThreads = useMemo(() => {
+    return [...filteredThreads].sort((a, b) => {
+      if ((b.unread_count || 0) !== (a.unread_count || 0)) {
+        return (b.unread_count || 0) - (a.unread_count || 0);
+      }
+      const aTime = a.last_message?.created_at || a.updated_at;
+      const bTime = b.last_message?.created_at || b.updated_at;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
+  }, [filteredThreads]);
+
+  const totalUnread = useMemo(() => {
+    return threads.reduce((sum, t) => sum + (t.unread_count || 0), 0);
+  }, [threads]);
+
   const renderItem = ({ item }: { item: ChatThread }) => {
     const lastMsg = item.last_message;
-    const time = lastMsg ? new Date(lastMsg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    const time = lastMsg ? formatChatTime(lastMsg.created_at) : '';
     const isSupport = item.is_support;
     const displayName = isSupport ? 'Diilzo Support' : (item.store_name || 'Unknown Store');
+    const preview = getLastMessagePreview(item);
+    const isMine = lastMsg?.sender === item.buyer_name;
+
     return (
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
@@ -77,15 +147,13 @@ export default function ChatListScreen() {
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
           ) : item.store_logo ? (
-            <Image source={{ uri: item.store_logo }} style={styles.avatar} resizeMode="contain" />
+            <Image source={{ uri: item.store_logo }} style={styles.avatar} resizeMode="cover" />
           ) : (
             <View style={styles.avatarFallback}>
               <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
             </View>
           )}
-          {item.unread_count > 0 && (
-            <View style={styles.unreadDot} />
-          )}
+          {item.unread_count > 0 && <View style={styles.unreadDot} />}
         </View>
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
@@ -93,18 +161,32 @@ export default function ChatListScreen() {
               {isSupport && <MaterialCommunityIcons name="shield-check" size={14} color={Brand.primary} />}
               <Text style={styles.storeName} numberOfLines={1}>{displayName}</Text>
             </View>
-            <Text style={styles.time}>{time}</Text>
+            <Text style={[styles.time, item.unread_count > 0 && styles.timeUnread]}>{time}</Text>
           </View>
           {item.product_name ? (
-            <Text style={styles.productName} numberOfLines={1}>{item.product_name}</Text>
+            <View style={styles.productRow}>
+              <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.primary} />
+              <Text style={styles.productName} numberOfLines={1}>{item.product_name}</Text>
+            </View>
           ) : null}
           <View style={styles.lastMsgRow}>
-            <Text style={styles.lastMsg} numberOfLines={1}>
-              {lastMsg ? `${lastMsg.sender === item.buyer_name ? 'You' : lastMsg.sender}: ${lastMsg.message}` : 'No messages yet'}
+            {isMine && lastMsg && (
+              <MaterialCommunityIcons
+                name={item.unread_count > 0 ? 'check' : 'check-all'}
+                size={14}
+                color={item.unread_count > 0 ? Brand.textTertiary : Brand.primary}
+                style={styles.tickIcon}
+              />
+            )}
+            <Text
+              style={[styles.lastMsg, item.unread_count > 0 && styles.lastMsgUnread]}
+              numberOfLines={1}
+            >
+              {preview}
             </Text>
             {item.unread_count > 0 && (
               <View style={styles.unreadBadge}>
-                <Text style={styles.unreadBadgeText}>{item.unread_count}</Text>
+                <Text style={styles.unreadBadgeText}>{item.unread_count > 9 ? '9+' : item.unread_count}</Text>
               </View>
             )}
           </View>
@@ -126,9 +208,37 @@ export default function ChatListScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Messages</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Messages</Text>
+            {totalUnread > 0 && (
+              <View style={styles.headerBadge}>
+                <Text style={styles.headerBadgeText}>{totalUnread > 9 ? '9+' : totalUnread}</Text>
+              </View>
+            )}
+          </View>
+          <Pressable onPress={load} hitSlop={12}>
+            <MaterialCommunityIcons name="refresh" size={22} color="#FFFFFF" />
+          </Pressable>
         </LinearGradient>
+
+        {/* ── Search bar ──────────────────────────────────────────── */}
+        {isAuthenticated && threads.length > 0 && (
+          <View style={styles.searchWrap}>
+            <MaterialCommunityIcons name="magnify" size={18} color={Brand.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search conversations..."
+              placeholderTextColor={Brand.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              </Pressable>
+            )}
+          </View>
+        )}
 
         {/* ── Not signed in ───────────────────────────────────────── */}
         {!isAuthenticated ? (
@@ -174,23 +284,35 @@ export default function ChatListScreen() {
                 <Text style={styles.supportTitle}>Chat with Diilzo Staff</Text>
                 <Text style={styles.supportSub}>Get help, ask questions, report issues</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={22} color="rgba(255,255,255,0.5)" />
             </Pressable>
 
-            {threads.length === 0 ? (
+            {sortedThreads.length === 0 ? (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIconWrap}>
-                  <MaterialCommunityIcons name="message-off-outline" size={48} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons
+                    name={searchQuery ? "magnify" : "message-off-outline"}
+                    size={48}
+                    color={Brand.textTertiary}
+                  />
                 </View>
-                <Text style={styles.emptyTitle}>No conversations yet</Text>
-                <Text style={styles.emptySubtext}>Start chatting with suppliers from their store pages</Text>
-                <Pressable style={styles.browseBtn} onPress={() => router.push('/suppliers' as any)}>
-                  <Text style={styles.browseBtnText}>Browse Suppliers</Text>
-                </Pressable>
+                <Text style={styles.emptyTitle}>
+                  {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                </Text>
+                <Text style={styles.emptySubtext}>
+                  {searchQuery
+                    ? 'Try a different search term'
+                    : 'Start chatting with suppliers from their store or product pages'}
+                </Text>
+                {!searchQuery && (
+                  <Pressable style={styles.browseBtn} onPress={() => router.push('/suppliers' as any)}>
+                    <Text style={styles.browseBtnText}>Browse Suppliers</Text>
+                  </Pressable>
+                )}
               </View>
             ) : (
               <FlatList
-                data={threads}
+                data={sortedThreads}
                 keyExtractor={(item) => String(item.id)}
                 renderItem={renderItem}
                 contentContainerStyle={styles.list}
@@ -201,6 +323,7 @@ export default function ChatListScreen() {
                 refreshControl={
                   <RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />
                 }
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
               />
             )}
           </>
@@ -222,48 +345,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  headerBadge: {
+    backgroundColor: '#FFFFFF',
+    minWidth: 22, height: 22, borderRadius: 11,
+    paddingHorizontal: 6,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  headerBadgeText: { color: Brand.primary, fontSize: 11, fontWeight: '800' },
+
+  // ── Search ──────────────────────────────────────────────────────
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 12, marginVertical: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+    backgroundColor: Brand.surfaceAlt, borderRadius: 12,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: Brand.text, padding: 0 },
 
   // ── List ────────────────────────────────────────────────────────
-  list: { paddingVertical: 8 },
+  list: { paddingVertical: 4 },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: Brand.surfaceAlt, marginLeft: 76 },
 
   // ── Support banner ──────────────────────────────────────────────
   supportBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginHorizontal: 12,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: Brand.text,
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginHorizontal: 12, marginTop: 8, marginBottom: 4,
+    paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: 14, backgroundColor: Brand.text,
+    elevation: 3, shadowColor: '#000000', shadowOpacity: 0.12,
+    shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   supportIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
   supportInfo: { flex: 1, gap: 2 },
   supportTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
   supportSub: { fontSize: 12, color: 'rgba(255,255,255,0.65)' },
 
+  // ── Chat card ───────────────────────────────────────────────────
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   avatarWrap: { position: 'relative' },
@@ -274,24 +400,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   unreadDot: {
-    position: 'absolute',
-    top: 0, right: 0,
-    width: 12, height: 12,
-    borderRadius: 6,
-    backgroundColor: '#16A34A',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+    position: 'absolute', top: 0, right: 0,
+    width: 12, height: 12, borderRadius: 6,
+    backgroundColor: '#16A34A', borderWidth: 2, borderColor: '#FFFFFF',
   },
-  cardBody: { flex: 1, gap: 2 },
+  cardBody: { flex: 1, gap: 3 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   storeName: { flex: 1, fontSize: 15, fontWeight: '700', color: Brand.text },
   time: { fontSize: 11, color: Brand.textTertiary },
+  timeUnread: { color: Brand.primary, fontWeight: '700' },
+  productRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   productName: { fontSize: 12, color: Brand.primary, fontWeight: '500' },
-  lastMsgRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  lastMsgRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  tickIcon: { marginTop: 1 },
   lastMsg: { flex: 1, fontSize: 13, color: Brand.textSecondary },
+  lastMsgUnread: { color: Brand.text, fontWeight: '500' },
   unreadBadge: {
     minWidth: 20, height: 20, borderRadius: 10,
-    backgroundColor: Brand.primary,
+    backgroundColor: '#16A34A',
     justifyContent: 'center', alignItems: 'center',
     paddingHorizontal: 6,
   },

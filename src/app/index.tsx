@@ -37,7 +37,7 @@ import {
   fetchTopStores,
   fetchUnreadNotificationCount,
 } from '@/services/catalog';
-import { createChatThread } from '@/services/chat';
+import { createChatThread, getChatUnreadCount } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
   Brand as BrandType,
@@ -759,6 +759,7 @@ export default function ProductFeedScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const { cartCount, refreshCartCount } = useCart();
   const [categories, setCategories] = useState<Category[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -919,12 +920,17 @@ export default function ProductFeedScreen() {
 
   // ── Refresh cart count and chat unread when screen gains focus ──
   const loadNotificationCount = useCallback(async () => {
-    if (!isAuthenticated) { setNotificationCount(0); return; }
+    if (!isAuthenticated) { setNotificationCount(0); setChatUnreadCount(0); return; }
     try {
-      const count = await fetchUnreadNotificationCount();
-      setNotificationCount(count);
+      const [notifCount, chatCount] = await Promise.all([
+        fetchUnreadNotificationCount(),
+        getChatUnreadCount().catch(() => 0),
+      ]);
+      setNotificationCount(notifCount);
+      setChatUnreadCount(chatCount);
     } catch {
       setNotificationCount(0);
+      setChatUnreadCount(0);
     }
   }, [isAuthenticated]);
 
@@ -1244,6 +1250,18 @@ export default function ProductFeedScreen() {
                 </View>
               )}
             </Pressable>
+            {/* Chat icon */}
+            <Pressable
+              style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
+              onPress={() => router.push('/chat')}
+            >
+              <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+              {chatUnreadCount > 0 && (
+                <View style={styles.chatBadge}>
+                  <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
+                </View>
+              )}
+            </Pressable>
             {/* Notification bell */}
             <Pressable
               style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
@@ -1381,6 +1399,30 @@ const styles = StyleSheet.create({
     padding: Spacing.one + 2,
     marginLeft: Spacing.one,
     position: 'relative',
+  },
+  chatBtn: {
+    padding: Spacing.one + 2,
+    marginLeft: Spacing.one,
+    position: 'relative',
+  },
+  chatBadge: {
+    position: 'absolute',
+    top: 0,
+    right: -2,
+    backgroundColor: '#16A34A',
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  chatBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
   },
   notifBadge: {
     position: 'absolute',
