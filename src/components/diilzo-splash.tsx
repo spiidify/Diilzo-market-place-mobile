@@ -1,5 +1,4 @@
 import { Brand } from '@/constants/theme';
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
@@ -11,18 +10,6 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
-const WHOOSH_SOUND = require('@/assets/sounds/whoosh.wav');
-
-// Create the audio player at module level — this is SYNCHRONOUS
-// and happens before any component renders. No async delay.
-const whooshPlayer = createAudioPlayer(WHOOSH_SOUND);
-
-// Configure audio session in the background (non-blocking)
-setAudioModeAsync({
-  playsInSilentMode: true,
-  shouldPlayInBackground: false,
-  interruptionMode: 'mixWithOthers',
-}).catch(() => { });
 
 const DURATION = 7000;
 
@@ -158,13 +145,8 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        // Play the startup sound AND start the animation at the SAME
-        // instant — no async, no waiting. The native splash is hidden
-        // in the background so it doesn't delay anything.
-        try {
-          whooshPlayer.seekTo(0);
-          whooshPlayer.play();
-        } catch { }
+        // The startup sound already played at module level in _layout.tsx
+        // before this component even mounted. Just start the animation.
         setAnimate(true);
         SplashScreen.hideAsync().catch(() => { });
       }}

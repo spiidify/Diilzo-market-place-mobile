@@ -1,3 +1,4 @@
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -18,6 +19,25 @@ import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { router } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
+
+// ── Play the startup sound BEFORE anything else ──────────────────
+// The audio player is created at module level (synchronous) and played
+// immediately. This is the earliest possible point in the app lifecycle
+// — before any component renders, before the splash screen appears.
+const WHOOSH_SOUND = require('@/assets/sounds/whoosh.wav');
+const whooshPlayer = createAudioPlayer(WHOOSH_SOUND);
+
+// Configure the audio session in the background (non-blocking)
+setAudioModeAsync({
+  playsInSilentMode: true,
+  shouldPlayInBackground: false,
+  interruptionMode: 'mixWithOthers',
+}).catch(() => { });
+
+// Play the sound immediately at module load time
+try {
+  whooshPlayer.play();
+} catch { }
 
 function AppContent() {
   useSessionManager();
