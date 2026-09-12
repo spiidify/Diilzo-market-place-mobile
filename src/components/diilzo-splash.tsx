@@ -2,7 +2,7 @@ import { Brand } from '@/constants/theme';
 import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -102,12 +102,13 @@ export function DiilzoSplash() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
-  // Preload sounds and play whoosh when animation starts
-  if (animate && visible) {
-    // Play whoosh once when the animated splash starts
+  // Play the startup sound the moment the animated splash begins —
+  // this is during the splash, not after it.
+  useEffect(() => {
+    if (!animate) return;
     preloadSounds();
     playSound(Sounds.WHOOSH);
-  }
+  }, [animate]);
 
   if (!visible) return null;
 
