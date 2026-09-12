@@ -358,7 +358,7 @@ export default function SearchScreen() {
         if (controller.signal.aborted) return;
         if (reset) {
           setPinned([]);
-          setSponsored([]);
+          setSponsored(data.sponsored || []);
           setSuggestion(data.suggestion || null);
         }
         setProducts((prev) => {

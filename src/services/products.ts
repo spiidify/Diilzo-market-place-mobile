@@ -112,6 +112,7 @@ export interface SearchResult {
   es_used: boolean;        // maintained for backward compat (always false now)
   query?: string;          // the original query
   suggestion?: string | null;  // "Did you mean..." spelling correction
+  sponsored?: Product[];   // CPC-sponsored products (clearly labeled, page 1 only)
 }
 
 /**
