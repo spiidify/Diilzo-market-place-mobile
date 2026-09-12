@@ -450,6 +450,7 @@ export interface StoreCustomer {
   status: 'new' | 'active' | 'repeat' | 'vip' | 'churned';
   total_orders: number;
   total_spent: string;
+  loyalty_points: number;
   first_order_at: string | null;
   last_order_at: string | null;
   tags: string;

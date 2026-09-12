@@ -22,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, sendChatMessage, sendVoiceMessage } from '@/services/chat';
+import { scanMessageRisk } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { ChatMessage } from '@/types';
 
@@ -100,6 +101,7 @@ export default function ChatThreadScreen() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [riskWarning, setRiskWarning] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('Chat');
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -214,6 +216,15 @@ export default function ChatThreadScreen() {
     setInput('');
     setSending(true);
     playSound(Sounds.MESSAGE_SEND);
+    // Scan for off-platform risk (non-blocking)
+    try {
+      const risk = await scanMessageRisk(msg);
+      if (risk.risk_level !== 'low' && risk.warning) {
+        setRiskWarning(risk.warning);
+      } else {
+        setRiskWarning(null);
+      }
+    } catch { /* non-critical */ }
     try {
       setSendError(null);
       const sent = await sendChatMessage(threadId, msg);
@@ -401,6 +412,15 @@ export default function ChatThreadScreen() {
                   <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
                   <Text style={styles.sendErrorText}>{sendError}</Text>
                   <Pressable onPress={() => setSendError(null)} hitSlop={8}>
+                    <MaterialCommunityIcons name="close" size={16} color={Brand.textTertiary} />
+                  </Pressable>
+                </View>
+              ) : null}
+              {riskWarning ? (
+                <View style={styles.riskWarningBar}>
+                  <MaterialCommunityIcons name="shield-alert-outline" size={16} color={Brand.rating} />
+                  <Text style={styles.riskWarningText}>{riskWarning}</Text>
+                  <Pressable onPress={() => setRiskWarning(null)} hitSlop={8}>
                     <MaterialCommunityIcons name="close" size={16} color={Brand.textTertiary} />
                   </Pressable>
                 </View>
@@ -627,4 +647,6 @@ const styles = StyleSheet.create({
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   sendErrorBar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#FEF2F2' },
   sendErrorText: { flex: 1, fontSize: 12, color: Brand.danger },
+  riskWarningBar: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#FFFBEB' },
+  riskWarningText: { flex: 1, fontSize: 11, color: '#92400E', lineHeight: 16 },
 });

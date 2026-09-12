@@ -23,6 +23,7 @@ import {
   type SellerThread,
   type SellerThreadDetail,
 } from '@/services/seller';
+import { playSound, Sounds } from '@/services/sound';
 
 export default function SellerMessagesScreen() {
   const router = useRouter();
@@ -66,9 +67,31 @@ export default function SellerMessagesScreen() {
     }
   };
 
+  // Poll for new messages every 3 seconds when a thread is open
+  useEffect(() => {
+    if (!activeThread) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await getSellerThreadDetail(activeThread.thread_id);
+        // Only update if new messages arrived
+        if (data.messages.length !== activeThread.messages.length) {
+          // Check if the new message is from the buyer (not me)
+          const lastMsg = data.messages[data.messages.length - 1];
+          if (lastMsg && !lastMsg.is_me) {
+            playSound(Sounds.MESSAGE);
+          }
+          setActiveThread(data);
+          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+        }
+      } catch { /* ignore polling errors */ }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [activeThread?.thread_id]);
+
   const handleSend = async () => {
     if (!activeThread || !replyText.trim()) return;
     setSending(true);
+    playSound(Sounds.MESSAGE_SEND);
     try {
       const newMsg = await sendSellerMessage(activeThread.thread_id, replyText.trim());
       setActiveThread({
