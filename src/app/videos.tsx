@@ -553,8 +553,8 @@ export default function VideosScreen() {
           </>
         )}
 
-        {/* Bottom gradient for text readability */}
-        <View style={styles.bottomGradient} />
+        {/* Bottom gradient for text readability — only on inactive/thumbnail items */}
+        {!isActive || !hasDirectVideo ? <View style={styles.bottomGradient} /> : null}
 
         {/* Heart burst on double-tap like */}
         <HeartBurst visible={heartBurstIndex === index} />
