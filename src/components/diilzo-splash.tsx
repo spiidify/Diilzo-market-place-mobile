@@ -1,5 +1,5 @@
 import { Brand } from '@/constants/theme';
-import { playSound, preloadSounds, Sounds } from '@/services/sound';
+import { playSound, preloadSound, Sounds } from '@/services/sound';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
@@ -153,10 +153,10 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        // Preload sound system and create the whoosh player BEFORE
-        // starting the animation. This ensures the audio player is
-        // ready to play instantly when the animation begins.
-        preloadSounds().then(() => {
+        // Preload ONLY the whoosh sound and init the audio system
+        // BEFORE starting the animation. This ensures the audio player
+        // is ready to play synchronously the instant the animation begins.
+        preloadSound(Sounds.WHOOSH).then(() => {
           SplashScreen.hideAsync().finally(() => {
             setAnimate(true);
           });

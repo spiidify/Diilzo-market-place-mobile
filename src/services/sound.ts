@@ -51,15 +51,16 @@ export enum Sounds {
 // ── Settings ──────────────────────────────────────────────────────
 const PREF_KEY = 'diilzo:sound_enabled';
 let soundEnabled = true;
-let initialized = false;
+let initStarted = false;
+let initDone = false;
 
 // Player cache — one AudioPlayer per sound, reused for rapid replay
 const players: Partial<Record<Sounds, AudioPlayer>> = {};
 
 // ── Init ──────────────────────────────────────────────────────────
-async function init() {
-  if (initialized) return;
-  initialized = true;
+async function init(): Promise<void> {
+  if (initDone) return;
+  initStarted = true;
   try {
     // Load user preference
     const pref = await AsyncStorage.getItem(PREF_KEY);
@@ -74,9 +75,10 @@ async function init() {
   } catch {
     // Non-critical — sounds just won't play
   }
+  initDone = true;
 }
 
-// Pre-create players lazily on first play
+// Pre-create a player for a single sound (synchronous if init is done)
 function getPlayer(sound: Sounds): AudioPlayer | null {
   if (players[sound]) return players[sound]!;
   try {
@@ -95,15 +97,32 @@ function getPlayer(sound: Sounds): AudioPlayer | null {
 /**
  * Play a sound effect by name. Safe to call from anywhere.
  * Silently no-ops if sounds are disabled or the player fails.
+ *
+ * If the audio system is already initialized, plays SYNCHRONOUSLY
+ * (no async delay). If not yet initialized, falls back to async.
  */
 export function playSound(sound: Sounds): void {
   if (!soundEnabled) return;
+
+  if (initDone) {
+    // Already initialized — play synchronously, no delay
+    const player = getPlayer(sound);
+    if (!player) return;
+    try {
+      player.seekTo(0);
+      player.play();
+    } catch {
+      // Non-critical
+    }
+    return;
+  }
+
+  // Not yet initialized — async fallback
   init().then(() => {
     if (!soundEnabled) return;
     const player = getPlayer(sound);
     if (!player) return;
     try {
-      // Seek to start for rapid replay (sound may have just played)
       player.seekTo(0);
       player.play();
     } catch {
@@ -125,6 +144,15 @@ export function isSoundEnabled(): boolean {
 export async function setSoundEnabled(enabled: boolean): Promise<void> {
   soundEnabled = enabled;
   await AsyncStorage.setItem(PREF_KEY, String(enabled));
+}
+
+/**
+ * Preload a single sound player for instant synchronous playback.
+ * Call this before you need the sound to play with zero delay.
+ */
+export async function preloadSound(sound: Sounds): Promise<void> {
+  await init();
+  getPlayer(sound);
 }
 
 /**
