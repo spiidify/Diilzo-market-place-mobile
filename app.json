@@ -74,10 +74,20 @@
           "recordAudioAndroid": true
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/splash-icon.png",
+          "color": "#32C700"
+        }
+      ]
     ],
     "extra": {
-      "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1"
+      "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1",
+      "eas": {
+        "projectId": "diilzo-mobile"
+      }
     },
     "experiments": {
       "typedRoutes": true,

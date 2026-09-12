@@ -8,14 +8,41 @@ import { DiilzoSplash } from '@/components/diilzo-splash';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
-import { registerForPushNotifications } from '@/services/push';
+import {
+  addNotificationResponseListener,
+  getLastNotificationResponse,
+  registerForPushNotifications,
+} from '@/services/push';
+import { router } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   useSessionManager();
   useEffect(() => {
+    // Register for push notifications on app launch
     registerForPushNotifications().catch(() => { });
+
+    // Handle notification taps (deep-linking)
+    const responseListener = addNotificationResponseListener((response) => {
+      const url = response.notification.request.content.data?.url;
+      if (typeof url === 'string' && url.startsWith('/')) {
+        // Defer navigation slightly to ensure router is ready
+        setTimeout(() => router.push(url as any), 100);
+      }
+    });
+
+    // Handle the notification that launched the app (cold start)
+    getLastNotificationResponse().then((response) => {
+      if (response) {
+        const url = response.notification.request.content.data?.url;
+        if (typeof url === 'string' && url.startsWith('/')) {
+          setTimeout(() => router.push(url as any), 500);
+        }
+      }
+    });
+
+    return () => responseListener.remove();
   }, []);
   return (
     <>
