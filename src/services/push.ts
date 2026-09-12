@@ -72,8 +72,13 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
-    if (!projectId) {
-      console.error('No EAS projectId found in app config.');
+    if (!projectId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+      // projectId is missing or not a valid UUID. Push notifications require
+      // an EAS project — run `eas init` to create one and populate app.json.
+      console.warn(
+        'Push notifications disabled: no valid EAS projectId found.\n' +
+        'Run `eas init` to create an EAS project and add the projectId to app.json.'
+      );
       return null;
     }
 

@@ -86,7 +86,7 @@
     "extra": {
       "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1",
       "eas": {
-        "projectId": "diilzo-mobile"
+        "projectId": ""
       }
     },
     "experiments": {
