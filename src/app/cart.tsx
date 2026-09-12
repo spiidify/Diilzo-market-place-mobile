@@ -101,6 +101,7 @@ export default function CartScreen() {
   };
 
   const handleRemove = async (item: CartItem) => {
+    playSound(Sounds.REMOVE);
     // Save deep copies for rollback
     const oldItems = cart?.items.map((i) => ({ ...i })) || [];
     const oldTotalItems = cart?.total_items || 0;
@@ -134,6 +135,7 @@ export default function CartScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear', style: 'destructive', onPress: async () => {
+          playSound(Sounds.REMOVE);
           const oldItems = cart?.items.map((i) => ({ ...i })) || [];
           const oldTotalItems = cart?.total_items || 0;
           updateLocalCart((prev) => ({

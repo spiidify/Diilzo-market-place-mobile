@@ -33,6 +33,7 @@ const SOUND_FILES = {
   whoosh: require('@/assets/sounds/whoosh.wav'),
   payment: require('@/assets/sounds/payment.wav'),
   message: require('@/assets/sounds/message.wav'),
+  remove: require('@/assets/sounds/remove.wav'),
 } as const;
 
 export enum Sounds {
@@ -46,6 +47,7 @@ export enum Sounds {
   WHOOSH = 'whoosh',
   PAYMENT = 'payment',
   MESSAGE = 'message',
+  REMOVE = 'remove',
 }
 
 // ── Settings ──────────────────────────────────────────────────────
