@@ -1,7 +1,7 @@
 // ── Chat API Service ──────────────────────────────────────────────
 
 import type { ChatMessage, ChatThread, PaginatedResponse } from '../types';
-import api, { apiRequest } from './api';
+import api, { apiRequest, BASE_URL, getAccessToken } from './api';
 
 /** GET /api/v1/chat/threads/ — list user's chat threads */
 export async function fetchChatThreads(): Promise<ChatThread[]> {
@@ -70,27 +70,31 @@ export async function sendVoiceMessage(
   } as any);
   formData.append('audio_duration', String(Math.round(durationSec)));
 
-  try {
-    const response = await api.post<ChatMessage>(
-      `/chat/threads/${threadId}/send/`,
-      formData,
-      {
-        // Let axios/RN set the Content-Type automatically with the correct
-        // multipart boundary — setting it manually omits the boundary and
-        // the backend can't parse the form data.
-        timeout: 30000,
-      }
-    );
-    return response.data;
-  } catch (e: any) {
-    // Log the full error for debugging
+  // Use fetch directly — axios on React Native sometimes doesn't send
+  // multipart file data in a way DRF's MultiPartParser recognizes.
+  const token = await getAccessToken();
+  const url = `${BASE_URL}/chat/threads/${threadId}/send/`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': token ? `Bearer ${token}` : '',
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errData: any = null;
+    try { errData = await response.json(); } catch { /* not JSON */ }
     console.error('sendVoiceMessage error:', {
-      status: e?.response?.status,
-      data: e?.response?.data,
-      message: e?.message,
+      status: response.status,
+      data: errData,
     });
-    throw e;
+    const err: any = new Error(`Voice send failed: ${response.status}`);
+    err.response = { status: response.status, data: errData };
+    throw err;
   }
+
+  return response.json();
 }
 
 /** GET /api/v1/chat/unread/ — total unread count */
