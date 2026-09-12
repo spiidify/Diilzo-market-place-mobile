@@ -20,7 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { BASE_URL } from '@/services/api';
+import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, sendChatMessage, sendVoiceMessage } from '@/services/chat';
 import type { ChatMessage } from '@/types';
 
@@ -128,13 +128,80 @@ export default function ChatThreadScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Poll for new messages every 5 seconds ───────────────────────
+  // ── Real-time message streaming via SSE ──────────────────────────
+  // Uses fetch streaming (React Native supports ReadableStream).
+  // Falls back to polling if SSE is unavailable.
   useEffect(() => {
-    const interval = setInterval(() => {
-      load();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [load]);
+    if (!threadId) return;
+    let cancelled = false;
+    let abortController: AbortController | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    async function connectSSE() {
+      abortController = new AbortController();
+      try {
+        const token = await getAccessToken();
+        const since = new Date(Date.now() - 1000).toISOString();
+        const response = await fetch(`${BASE_URL}/chat/threads/${threadId}/stream/?since=${encodeURIComponent(since)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+          },
+          signal: abortController.signal,
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error('SSE unavailable');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (!cancelled) {
+          const { done, value } = await reader.read();
+          if (done || cancelled) break;
+          buffer += decoder.decode(value, { stream: true });
+          // Parse complete SSE events (separated by \n\n)
+          const events = buffer.split('\n\n');
+          buffer = events.pop() || ''; // Keep incomplete event in buffer
+          for (const evt of events) {
+            if (evt.startsWith(':')) continue; // Heartbeat comment
+            const lines = evt.split('\n');
+            let data = '';
+            for (const line of lines) {
+              if (line.startsWith('data: ')) data = line.slice(6);
+            }
+            if (data) {
+              try {
+                const msg = JSON.parse(data);
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === msg.id)) return prev;
+                  return [...prev, msg];
+                });
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+              } catch { }
+            }
+          }
+        }
+      } catch {
+        // SSE failed — fall back to polling
+        if (!cancelled) {
+          pollInterval = setInterval(() => load(), 5000);
+        }
+      }
+    }
+
+    connectSSE();
+
+    return () => {
+      cancelled = true;
+      abortController?.abort();
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [threadId, load]);
 
   const handleSend = useCallback(async () => {
     const msg = input.trim();
