@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEvent } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -34,6 +36,66 @@ import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Product, Review } from '@/types';
 
+// ── Product video player for modal ──────────────────────────────────
+function ProductVideoPlayer({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = false;
+    p.timeUpdateEventInterval = 0.1;
+    p.play();
+  });
+
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [isPlaying, player]);
+
+  const isLoading = status === 'loading' || status === 'idle';
+
+  return (
+    <View style={videoModalStyles.container}>
+      <VideoView
+        style={videoModalStyles.video}
+        player={player}
+        contentFit="contain"
+        nativeControls={false}
+        allowsPictureInPicture={false}
+      />
+      <Pressable style={videoModalStyles.tapOverlay} onPress={togglePlay}>
+        {isLoading && (
+          <View style={videoModalStyles.centerWrap}>
+            <ActivityIndicator size="large" color={Brand.primary} />
+          </View>
+        )}
+        {!isPlaying && !isLoading && (
+          <View style={videoModalStyles.playBtnCircle}>
+            <MaterialCommunityIcons name="play" size={36} color="#FFFFFF" />
+          </View>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+const videoModalStyles = StyleSheet.create({
+  container: { width: '100%', height: 300, backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' },
+  video: { width: '100%', height: '100%' },
+  tapOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
+  centerWrap: { justifyContent: 'center', alignItems: 'center' },
+  playBtnCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
+  },
+});
+
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
@@ -59,6 +121,7 @@ export default function ProductDetailScreen() {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
@@ -309,9 +372,11 @@ export default function ProductDetailScreen() {
     }
   }, [product]);
 
-  const handleCallNow = useCallback(() => {
-    setShowCallModal(true);
-  }, []);
+  const handleSeeVideo = useCallback(() => {
+    if (product?.video_file_url) {
+      setShowVideoModal(true);
+    }
+  }, [product]);
 
   const handleConfirmCall = useCallback(async () => {
     const phone = product?.store?.phone;
@@ -1300,11 +1365,12 @@ export default function ProductDetailScreen() {
             <Text style={styles.cartBtnText}>Add to Cart</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleCallNow}
+            style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.85 }, !product?.video_file_url && { opacity: 0.5 }]}
+            onPress={handleSeeVideo}
+            disabled={!product?.video_file_url}
           >
-            <MaterialCommunityIcons name="phone" size={18} color="#FFFFFF" />
-            <Text style={styles.callBtnText}>Call Now</Text>
+            <MaterialCommunityIcons name="play-circle" size={18} color="#FFFFFF" />
+            <Text style={styles.callBtnText}>See Video</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }, (buyingNow || addingToCart) && { opacity: 0.6 }]}
@@ -1559,6 +1625,28 @@ export default function ProductDetailScreen() {
                 </Pressable>
               )}
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Product Video modal ───────────────────────────────────── */}
+      <Modal visible={showVideoModal} transparent animationType="fade">
+        <Pressable style={styles.videoModalOverlay} onPress={() => setShowVideoModal(false)}>
+          <Pressable style={styles.videoModalCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.videoModalHeader}>
+              <Text style={styles.videoModalTitle}>Product Video</Text>
+              <Pressable style={styles.videoModalCloseBtn} onPress={() => setShowVideoModal(false)}>
+                <MaterialCommunityIcons name="close" size={22} color={Brand.text} />
+              </Pressable>
+            </View>
+            {product?.video_file_url ? (
+              <ProductVideoPlayer uri={product.video_file_url} />
+            ) : (
+              <View style={styles.videoModalEmpty}>
+                <MaterialCommunityIcons name="play-circle-outline" size={48} color={Brand.textTertiary} />
+                <Text style={styles.videoModalEmptyText}>No video available</Text>
+              </View>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
@@ -1860,6 +1948,37 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   callChatAltText: { fontSize: 13, color: Brand.primary, fontWeight: '600' },
+
+  // ── Product Video modal ──────────────────────────────────────────
+  videoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  videoModalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    overflow: 'hidden',
+  },
+  videoModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  videoModalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
+  videoModalCloseBtn: { padding: 4 },
+  videoModalEmpty: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  videoModalEmptyText: { fontSize: 14, color: Brand.textTertiary },
 
   // ── Title section ───────────────────────────────────────────────
   titleSection: {
