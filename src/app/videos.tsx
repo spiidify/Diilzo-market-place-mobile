@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEvent } from 'expo';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,7 +19,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DiilzoLogo } from '@/components/diilzo-logo';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCategories } from '@/services/catalog';
@@ -277,8 +280,9 @@ export default function VideosScreen() {
   // Tab bar is 88px (from app-tabs.tsx). Header ~48px. Tabs row ~40px.
   // Feed item height = visible area between header+tabs and tab bar.
   const TAB_BAR_HEIGHT = 88;
+  const HEADER_HEIGHT = 56;
   const TABS_HEIGHT = 40;
-  const feedHeight = screenHeight - TAB_BAR_HEIGHT - TABS_HEIGHT;
+  const feedHeight = screenHeight - TAB_BAR_HEIGHT - HEADER_HEIGHT - TABS_HEIGHT;
 
   // ── State ────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
@@ -725,6 +729,19 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* ── Header (same as home page) ──────────────────────────────── */}
+      <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+          <View style={styles.headerBar}>
+            <DiilzoLogo size={22} variant="color" />
+            <View style={{ flex: 1 }} />
+            <Pressable style={styles.headerIconBtn} onPress={() => setShowSearch((prev) => !prev)}>
+              <MaterialCommunityIcons name="magnify" size={22} color={Brand.dark} />
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
       {/* ── Category tabs ──────────────────────────────────────────── */}
       <View style={styles.tabsContainer}>
         <ScrollView
@@ -750,12 +767,6 @@ export default function VideosScreen() {
             </Pressable>
           ))}
         </ScrollView>
-        <Pressable
-          style={styles.searchToggleBtn}
-          onPress={() => setShowSearch((prev) => !prev)}
-        >
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-        </Pressable>
       </View>
 
       {/* Search bar (collapsible) */}
@@ -828,6 +839,22 @@ export default function VideosScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000000' },
   centerScreen: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
+  safeArea: { flex: 0, backgroundColor: 'transparent' },
+  headerBg: { width: '100%' },
+  headerBar: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerIconBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   loadingText: { marginTop: 8, color: Brand.textTertiary, fontSize: 14 },
   emptyIconWrap: {
     width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)',
