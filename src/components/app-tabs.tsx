@@ -85,6 +85,8 @@ export default function AppTabs() {
       <Tabs.Screen name="buyer/tracking" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer/reviews" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer/coupons" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/my-sellers" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="buyer/buy-again" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/products" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/products/add" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
@@ -101,6 +103,8 @@ export default function AppTabs() {
       <Tabs.Screen name="seller/shipments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/verification" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/messages" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/customers" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/customers/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/payouts" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/staff" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/finance" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
