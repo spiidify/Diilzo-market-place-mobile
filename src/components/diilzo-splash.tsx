@@ -11,7 +11,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
 
-const DURATION = 5000;
+const DURATION = 7000;
 
 // ── Orange background fade out ────────────────────────────────────
 const bgKeyframe = new Keyframe({
@@ -23,12 +23,26 @@ const bgKeyframe = new Keyframe({
   },
 });
 
-// ── Logo container — visible immediately, no animation ───────────
-// The logo is shown from the very first frame with no scale/fade delay.
+// ── Logo container — scale in with bounce ────────────────────────
 const logoKeyframe = new Keyframe({
   0: {
+    transform: [{ scale: 0.3 }, { translateY: 0 }],
+    opacity: 1,
+  },
+  5: {
+    transform: [{ scale: 0.5 }, { translateY: 0 }],
+    opacity: 1,
+    easing: Easing.out(Easing.exp),
+  },
+  12: {
+    transform: [{ scale: 1.1 }, { translateY: -8 }],
+    opacity: 1,
+    easing: Easing.bounce,
+  },
+  18: {
     transform: [{ scale: 1 }, { translateY: 0 }],
     opacity: 1,
+    easing: Easing.out(Easing.ease),
   },
   100: {
     transform: [{ scale: 1 }, { translateY: 0 }],
@@ -36,11 +50,20 @@ const logoKeyframe = new Keyframe({
   },
 });
 
-// ── "Marketplace" subtitle — visible immediately ────────────────
+// ── "Marketplace" subtitle — fade in shortly after logo ──────────
 const subtitleKeyframe = new Keyframe({
   0: {
+    opacity: 0,
+    transform: [{ translateY: 20 }],
+  },
+  10: {
+    opacity: 0,
+    transform: [{ translateY: 20 }],
+  },
+  20: {
     opacity: 1,
     transform: [{ translateY: 0 }],
+    easing: Easing.out(Easing.exp),
   },
   100: {
     opacity: 1,
@@ -51,22 +74,22 @@ const subtitleKeyframe = new Keyframe({
 // ── Orange dot pulse ──────────────────────────────────────────────
 const dotKeyframe = new Keyframe({
   0: { transform: [{ scale: 0 }], opacity: 0 },
-  10: { transform: [{ scale: 0 }], opacity: 0 },
-  18: {
+  8: { transform: [{ scale: 0 }], opacity: 0 },
+  15: {
     transform: [{ scale: 1.4 }],
     opacity: 1,
     easing: Easing.bounce,
   },
-  25: { transform: [{ scale: 1 }], opacity: 1 },
+  20: { transform: [{ scale: 1 }], opacity: 1 },
   100: { transform: [{ scale: 1 }], opacity: 1 },
 });
 
 // ── Loading bar — slides in from left ────────────────────────────
 const barKeyframe = new Keyframe({
   0: { transform: [{ scaleX: 0 }], opacity: 0 },
-  15: { transform: [{ scaleX: 0 }], opacity: 0 },
-  20: { opacity: 1, transform: [{ scaleX: 0 }] },
-  80: {
+  12: { transform: [{ scaleX: 0 }], opacity: 0 },
+  18: { opacity: 1, transform: [{ scaleX: 0 }] },
+  85: {
     transform: [{ scaleX: 1 }],
     opacity: 1,
     easing: Easing.inOut(Easing.ease),
