@@ -106,7 +106,6 @@ export function DiilzoSplash() {
   // this is during the splash, not after it.
   useEffect(() => {
     if (!animate) return;
-    preloadSounds();
     playSound(Sounds.WHOOSH);
   }, [animate]);
 
@@ -154,8 +153,13 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
+        // Preload sound system and create the whoosh player BEFORE
+        // starting the animation. This ensures the audio player is
+        // ready to play instantly when the animation begins.
+        preloadSounds().then(() => {
+          SplashScreen.hideAsync().finally(() => {
+            setAnimate(true);
+          });
         });
       }}
       style={styles.overlay}
