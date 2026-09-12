@@ -5,6 +5,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Image,
   Pressable,
@@ -26,7 +27,19 @@ import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wis
 import type { Category, Product, WishlistItem } from '@/types';
 
 // ── TikTok-style video player for direct Cloudinary uploads ──────────
-function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: boolean; onEnd: () => void }) {
+function DirectVideoPlayer({
+  uri,
+  isActive,
+  onEnd,
+  onDoubleTap,
+  posterImage,
+}: {
+  uri: string;
+  isActive: boolean;
+  onEnd: () => void;
+  onDoubleTap: () => void;
+  posterImage?: string | null;
+}) {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
     p.muted = false;
@@ -37,6 +50,12 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
   const timeUpdate = useEvent(player, 'timeUpdate', null);
+
+  const [muted, setMuted] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const lastTapRef = useRef(0);
+  const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Play/pause based on active state
   useEffect(() => {
@@ -55,6 +74,11 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
     return () => sub.remove();
   }, [player, onEnd]);
 
+  // Sync muted state to player
+  useEffect(() => {
+    player.muted = muted;
+  }, [muted, player]);
+
   const togglePlay = useCallback(() => {
     if (isPlaying) {
       player.pause();
@@ -63,13 +87,68 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
     }
   }, [isPlaying, player]);
 
+  const toggleMute = useCallback(() => {
+    setMuted((m) => !m);
+  }, []);
+
+  const seekTo = useCallback((ratio: number) => {
+    const dur = player.duration || 0;
+    if (dur > 0) {
+      player.currentTime = Math.max(0, Math.min(ratio * dur, dur));
+    }
+  }, [player]);
+
+  // Show controls with auto-hide
+  const showControlsWithAutoHide = useCallback(() => {
+    setShowControls(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
+    hideControlsTimer.current = setTimeout(() => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setShowControls(false));
+    }, 2000);
+  }, [fadeAnim]);
+
+  // Handle tap — single tap = toggle controls, double tap = like
+  const handleTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      // Double tap — like
+      onDoubleTap();
+      lastTapRef.current = 0;
+    } else {
+      // Single tap — toggle play/pause + show controls
+      lastTapRef.current = now;
+      togglePlay();
+      showControlsWithAutoHide();
+    }
+  }, [togglePlay, onDoubleTap, showControlsWithAutoHide]);
+
   const currentTime = timeUpdate?.currentTime ?? 0;
   const duration = player.duration || 0;
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
   const isLoading = status === 'loading' || status === 'idle';
 
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = Math.floor(s % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <View style={directVideoStyles.container}>
+      {/* Poster image while loading */}
+      {isLoading && posterImage ? (
+        <Image source={{ uri: posterImage }} style={directVideoStyles.poster} resizeMode="cover" />
+      ) : null}
+
       <VideoView
         style={directVideoStyles.video}
         player={player}
@@ -78,11 +157,8 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
         allowsPictureInPicture={false}
       />
 
-      {/* Tap to pause/play overlay */}
-      <Pressable
-        style={directVideoStyles.tapOverlay}
-        onPress={togglePlay}
-      >
+      {/* Tap overlay */}
+      <Pressable style={directVideoStyles.tapOverlay} onPress={handleTap}>
         {/* Loading spinner */}
         {isLoading && (
           <View style={directVideoStyles.centerWrap}>
@@ -98,11 +174,38 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
         )}
       </Pressable>
 
-      {/* Progress bar at bottom */}
+      {/* Controls overlay (mute, time) — fades in/out */}
+      {showControls && (
+        <Animated.View style={[directVideoStyles.controlsRow, { opacity: fadeAnim }]}>
+          {/* Time display */}
+          <Text style={directVideoStyles.timeText}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </Text>
+          {/* Mute toggle */}
+          <Pressable style={directVideoStyles.muteBtn} onPress={toggleMute} hitSlop={12}>
+            <MaterialCommunityIcons
+              name={muted ? 'volume-mute' : 'volume-high'}
+              size={22}
+              color="#FFFFFF"
+            />
+          </Pressable>
+        </Animated.View>
+      )}
+
+      {/* Seekable progress bar */}
       {duration > 0 && (
-        <View style={directVideoStyles.progressTrack}>
+        <Pressable
+          style={directVideoStyles.progressTrack}
+          onPress={(e) => {
+            const trackWidth = (e.nativeEvent as any).layoutMeasurement?.width || 1;
+            const ratio = Math.max(0, Math.min(e.nativeEvent.locationX / trackWidth, 1));
+            seekTo(ratio);
+          }}
+        >
+          <View style={directVideoStyles.progressBg} />
           <View style={[directVideoStyles.progressFill, { width: `${progress * 100}%` }]} />
-        </View>
+          <View style={[directVideoStyles.progressThumb, { left: `${progress * 100}%` }]} />
+        </Pressable>
       )}
     </View>
   );
@@ -110,30 +213,125 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
 
 const directVideoStyles = StyleSheet.create({
   container: { flex: 1, position: 'relative', backgroundColor: '#000' },
+  poster: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   video: { flex: 1, width: '100%', height: '100%' },
   tapOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center',
   },
-  centerWrap: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  centerWrap: { justifyContent: 'center', alignItems: 'center' },
   playBtnCircle: {
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
   },
+  controlsRow: {
+    position: 'absolute',
+    bottom: 8, left: 12, right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  timeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  muteBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+  },
   progressTrack: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,
-    height: 3,
+    height: 20,
+    justifyContent: 'center',
+  },
+  progressBg: {
+    height: 3, width: '100%',
     backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
   },
   progressFill: {
-    height: '100%',
+    position: 'absolute',
+    height: 3,
     backgroundColor: Brand.primary,
+    borderRadius: 2,
+  },
+  progressThumb: {
+    position: 'absolute',
+    width: 12, height: 12, borderRadius: 6,
+    backgroundColor: Brand.primary,
+    marginLeft: -6,
+    bottom: 4,
+  },
+});
+
+// ── Animated heart burst on double-tap like ────────────────────────
+function HeartBurst({ visible }: { visible: boolean }) {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(scaleAnim, {
+              toValue: 1.3,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+              toValue: 0,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, 400);
+      });
+    } else {
+      scaleAnim.setValue(0);
+      opacityAnim.setValue(0);
+    }
+  }, [visible, scaleAnim, opacityAnim]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        heartStyles.container,
+        {
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+        },
+      ]}
+    >
+      <MaterialCommunityIcons name="heart" size={100} color="#FF4757" />
+    </Animated.View>
+  );
+}
+
+const heartStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
@@ -151,6 +349,9 @@ export default function VideosScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+
+  // Heart burst animation per item
+  const [heartBurstIndex, setHeartBurstIndex] = useState<number | null>(null);
 
   // Category tabs
   const [categories, setCategories] = useState<Category[]>([]);
@@ -315,6 +516,16 @@ export default function VideosScreen() {
     const isActive = index === activeIndex;
     const hasDirectVideo = Boolean(item.video_file_url);
 
+    // Double-tap to like
+    const handleDoubleTap = () => {
+      if (!isWishlisted) {
+        handleWishlistToggle(item);
+      }
+      // Trigger heart burst
+      setHeartBurstIndex(index);
+      setTimeout(() => setHeartBurstIndex(null), 1000);
+    };
+
     return (
       <View style={[styles.feedItem, { height: screenHeight }]}>
         {/* Direct video (Cloudinary) — TikTok-style, no controls */}
@@ -324,6 +535,8 @@ export default function VideosScreen() {
               uri={item.video_file_url}
               isActive={isActive}
               onEnd={handleVideoEnd}
+              onDoubleTap={handleDoubleTap}
+              posterImage={thumb}
             />
           ) : (
             <>
@@ -365,9 +578,15 @@ export default function VideosScreen() {
         {/* Bottom gradient for text readability */}
         <View style={styles.bottomGradient} />
 
+        {/* Heart burst on double-tap like */}
+        <HeartBurst visible={heartBurstIndex === index} />
+
         {/* Right action bar (TikTok-style) */}
         <View style={styles.actionBar}>
-          <View style={styles.actionAvatar}>
+          <Pressable
+            style={styles.actionAvatar}
+            onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
+          >
             {item.store?.logo_url ? (
               <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} resizeMode="contain" />
             ) : (
@@ -375,7 +594,7 @@ export default function VideosScreen() {
                 <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />
               </View>
             )}
-          </View>
+          </Pressable>
           {/* Wishlist */}
           <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
             <MaterialCommunityIcons
@@ -404,9 +623,16 @@ export default function VideosScreen() {
 
         {/* Bottom product info */}
         <View style={styles.bottomInfo}>
-          <Text style={styles.storeName} numberOfLines={1}>
-            {item.store?.name || 'Diilzo Store'}
-          </Text>
+          <Pressable
+            style={styles.storeRow}
+            onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
+          >
+            <MaterialCommunityIcons name="store" size={13} color={Brand.primary} />
+            <Text style={styles.storeName} numberOfLines={1}>
+              {item.store?.name || 'Diilzo Store'}
+            </Text>
+            <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
+          </Pressable>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
           {item.short_description ? (
             <Text style={styles.description} numberOfLines={2}>{item.short_description}</Text>
@@ -430,7 +656,7 @@ export default function VideosScreen() {
         </View>
       </View>
     );
-  }, [screenHeight, activeIndex, isPlaying, wishlistIds, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
+  }, [screenHeight, activeIndex, isPlaying, wishlistIds, heartBurstIndex, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
@@ -667,7 +893,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 60,
   },
-  storeName: { color: Brand.primary, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  storeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  storeName: { color: Brand.primary, fontSize: 14, fontWeight: '700' },
   productName: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', lineHeight: 24, marginBottom: 6 },
   description: { color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18, marginBottom: 8 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
