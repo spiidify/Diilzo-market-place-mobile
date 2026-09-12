@@ -230,6 +230,7 @@ export default function EditProductScreen() {
       ]);
     } catch (e: any) {
       const msg =
+        e?.response?.data?.error ||
         e?.response?.data?.detail ||
         e?.response?.data?.name?.[0] ||
         e?.message ||
