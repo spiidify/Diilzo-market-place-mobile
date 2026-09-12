@@ -21,10 +21,10 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
-import { fetchChatMessages, sendChatMessage, sendVoiceMessage } from '@/services/chat';
+import { fetchChatMessages, fetchChatThread, sendChatMessage, sendVoiceMessage } from '@/services/chat';
 import { scanMessageRisk } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
-import type { ChatMessage } from '@/types';
+import type { ChatMessage, ChatThread } from '@/types';
 
 // ── Audio message bubble with play/pause ───────────────────────────
 function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; isMe: boolean }) {
@@ -104,6 +104,9 @@ export default function ChatThreadScreen() {
   const [riskWarning, setRiskWarning] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('Chat');
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
+  const [productName, setProductName] = useState<string | null>(null);
+  const [productImage, setProductImage] = useState<string | null>(null);
+  const [productSlug, setProductSlug] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   const {
@@ -120,8 +123,18 @@ export default function ChatThreadScreen() {
     if (!threadId) return;
     try {
       setError(null);
-      const data = await fetchChatMessages(threadId);
-      setMessages(data);
+      const [msgs, thread] = await Promise.all([
+        fetchChatMessages(threadId),
+        fetchChatThread(threadId).catch(() => null as ChatThread | null),
+      ]);
+      setMessages(msgs);
+      if (thread) {
+        setStoreName(thread.store_name || 'Chat');
+        setStoreLogo(thread.store_logo);
+        setProductName(thread.product_name || null);
+        setProductImage(thread.product_image || null);
+        setProductSlug(thread.product_slug || null);
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load messages');
     } finally {
@@ -216,15 +229,16 @@ export default function ChatThreadScreen() {
     setInput('');
     setSending(true);
     playSound(Sounds.MESSAGE_SEND);
-    // Scan for off-platform risk (non-blocking)
-    try {
-      const risk = await scanMessageRisk(msg);
-      if (risk.risk_level !== 'low' && risk.warning) {
-        setRiskWarning(risk.warning);
-      } else {
-        setRiskWarning(null);
-      }
-    } catch { /* non-critical */ }
+    // Fire-and-forget risk scan (non-blocking — never delays the actual send)
+    scanMessageRisk(msg)
+      .then((risk) => {
+        if (risk.risk_level !== 'low' && risk.warning) {
+          setRiskWarning(risk.warning);
+        } else {
+          setRiskWarning(null);
+        }
+      })
+      .catch(() => { /* non-critical */ });
     try {
       setSendError(null);
       const sent = await sendChatMessage(threadId, msg);
@@ -343,6 +357,27 @@ export default function ChatThreadScreen() {
           </View>
           <View style={{ width: 24 }} />
         </LinearGradient>
+
+        {/* ── Product context bar ─────────────────────────────────── */}
+        {productName && (
+          <Pressable
+            style={styles.productContextBar}
+            onPress={() => productSlug && router.push(`/product/${productSlug}` as any)}
+          >
+            {productImage ? (
+              <Image source={{ uri: productImage }} style={styles.productContextImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.productContextImagePlaceholder}>
+                <MaterialCommunityIcons name="package-variant" size={18} color={Brand.textTertiary} />
+              </View>
+            )}
+            <View style={styles.productContextInfo}>
+              <Text style={styles.productContextLabel}>Discussing</Text>
+              <Text style={styles.productContextName} numberOfLines={1}>{productName}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+          </Pressable>
+        )}
 
         {/* ── Messages ────────────────────────────────────────────── */}
         {loading ? (
@@ -498,6 +533,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+
+  // ── Product context bar ──────────────────────────────────────────
+  productContextBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: Brand.surface, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+  },
+  productContextImage: { width: 40, height: 40, borderRadius: 8, backgroundColor: Brand.surfaceAlt },
+  productContextImagePlaceholder: {
+    width: 40, height: 40, borderRadius: 8, backgroundColor: Brand.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  productContextInfo: { flex: 1 },
+  productContextLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
+  productContextName: { fontSize: 13, fontWeight: '600', color: Brand.text, marginTop: 1 },
 
   // ── Messages ────────────────────────────────────────────────────
   messagesList: { paddingHorizontal: 16, paddingVertical: 16, flexGrow: 1 },
