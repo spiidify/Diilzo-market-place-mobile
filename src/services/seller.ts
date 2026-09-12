@@ -4,7 +4,7 @@
 // SellerViewSet in the Django backend. The apiRequest helper prepends
 // BASE_URL (/api/v1), so we use /seller/... as the relative path.
 
-import { apiRequest } from './api';
+import { apiRequest, BASE_URL, getAccessToken } from './api';
 
 const SELLER_BASE = '/seller';
 
@@ -124,24 +124,59 @@ export async function getProductDetail(productId: number): Promise<any> {
   return apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/${productId}/product_detail/` });
 }
 
-/** POST /seller/create_product/ — create a new product */
-export async function createProduct(formData: FormData): Promise<any> {
-  return apiRequest<any>({
-    method: 'POST',
-    url: `${SELLER_BASE}/create_product/`,
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' },
+/**
+ * Upload multipart form data using XMLHttpRequest — the most reliable
+ * way to upload files in React Native. axios and fetch both have issues
+ * with FormData file parts on certain RN platforms.
+ */
+async function uploadMultipart(path: string, method: string, formData: FormData): Promise<any> {
+  const token = await getAccessToken();
+  const url = `${BASE_URL}${path}`;
+
+  return new Promise<any>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          resolve(xhr.responseText || {});
+        }
+      } else {
+        let errData: any = null;
+        try { errData = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+        console.error('uploadMultipart error:', { status: xhr.status, data: errData });
+        const err: any = new Error(`Upload failed: ${xhr.status}`);
+        err.response = { status: xhr.status, data: errData };
+        reject(err);
+      }
+    };
+
+    xhr.onerror = () => {
+      console.error('uploadMultipart network error');
+      reject(new Error('Network error during upload'));
+    };
+
+    xhr.ontimeout = () => {
+      reject(new Error('Upload timed out'));
+    };
+
+    xhr.timeout = 60000; // 60s for video uploads
+    xhr.send(formData);
   });
 }
 
-/** PATCH /seller/<id>/product_detail/ — update a product */
+/** POST /seller/create_product/ — create a new product (multipart upload) */
+export async function createProduct(formData: FormData): Promise<any> {
+  return uploadMultipart(`${SELLER_BASE}/create_product/`, 'POST', formData);
+}
+
+/** PATCH /seller/<id>/product_detail/ — update a product (multipart upload) */
 export async function updateProduct(productId: number, formData: FormData): Promise<any> {
-  return apiRequest<any>({
-    method: 'PATCH',
-    url: `${SELLER_BASE}/${productId}/product_detail/`,
-    data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return uploadMultipart(`${SELLER_BASE}/${productId}/product_detail/`, 'PATCH', formData);
 }
 
 /** DELETE /seller/<id>/product_detail/ — delete a product */
