@@ -21,7 +21,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
-import { fetchChatMessages, fetchChatThread, sendChatMessage, sendVoiceMessage } from '@/services/chat';
+import { fetchChatMessages, fetchChatPresence, fetchChatThread, sendChatMessage, sendHeartbeat, sendTypingStatus, sendVoiceMessage } from '@/services/chat';
 import { scanMessageRisk } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { ChatMessage, ChatThread } from '@/types';
@@ -128,6 +128,9 @@ export default function ChatThreadScreen() {
   const [productName, setProductName] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productSlug, setProductSlug] = useState<string | null>(null);
+  const [presence, setPresence] = useState<{ online: boolean; last_seen: string; is_typing: boolean } | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const lastTypingSentRef = useRef(0);
   const flatListRef = useRef<FlatList>(null);
 
   const {
@@ -144,6 +147,31 @@ export default function ChatThreadScreen() {
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true });
   }, []);
+
+  // ── Heartbeat: send every 30s so the other party sees us as online ──
+  useEffect(() => {
+    if (!threadId) return;
+    sendHeartbeat();
+    const interval = setInterval(() => sendHeartbeat(), 30000);
+    return () => clearInterval(interval);
+  }, [threadId]);
+
+  // ── Presence polling: fetch other party's online/typing status every 3s ──
+  useEffect(() => {
+    if (!threadId) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const p = await fetchChatPresence(Number(threadId));
+        if (!cancelled) setPresence({ online: p.online, last_seen: p.last_seen, is_typing: p.is_typing });
+      } catch {
+        // silent
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [threadId]);
 
   const load = useCallback(async () => {
     if (!threadId) return;
@@ -249,10 +277,28 @@ export default function ChatThreadScreen() {
     };
   }, [threadId, load]);
 
+  // ── Typing indicator: send typing status when user types ──
+  const handleInputChange = useCallback((text: string) => {
+    setInput(text);
+    if (!threadId) return;
+    const now = Date.now();
+    // Throttle: only send typing status once every 2s
+    if (now - lastTypingSentRef.current > 2000) {
+      lastTypingSentRef.current = now;
+      sendTypingStatus(Number(threadId), text.length > 0);
+    }
+    if (text.length === 0) {
+      lastTypingSentRef.current = 0;
+    }
+  }, [threadId]);
+
   const handleSend = useCallback(async () => {
     const msg = input.trim();
     if (!msg || sending) return;
     setInput('');
+    // Stop typing indicator when message is sent
+    if (threadId) sendTypingStatus(Number(threadId), false);
+    lastTypingSentRef.current = 0;
     setSending(true);
     playSound(Sounds.MESSAGE_SEND);
     // Fire-and-forget risk scan (non-blocking — never delays the actual send)
@@ -410,8 +456,20 @@ export default function ChatThreadScreen() {
                   <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
                 </View>
               )}
+              {presence?.online && (
+                <View style={styles.onlineDot} />
+              )}
             </View>
-            <Text style={styles.headerTitle} numberOfLines={1}>{storeName}</Text>
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.headerTitle} numberOfLines={1}>{storeName}</Text>
+              <Text style={styles.headerStatus} numberOfLines={1}>
+                {presence?.is_typing
+                  ? 'typing...'
+                  : presence?.online
+                    ? 'online'
+                    : presence?.last_seen || 'offline'}
+              </Text>
+            </View>
           </View>
           <View style={{ width: 24 }} />
         </LinearGradient>
@@ -522,7 +580,7 @@ export default function ChatThreadScreen() {
                 <TextInput
                   style={styles.input}
                   value={input}
-                  onChangeText={setInput}
+                  onChangeText={handleInputChange}
                   placeholder="Type a message..."
                   placeholderTextColor={Brand.textTertiary}
                   multiline
@@ -583,14 +641,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerAvatarWrap: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden' },
+  headerAvatarWrap: { width: 36, height: 36, borderRadius: 18, overflow: 'hidden', position: 'relative' },
   headerAvatar: { width: '100%', height: '100%' },
   headerAvatarFallback: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center', alignItems: 'center',
   },
+  onlineDot: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: '#16A34A', borderWidth: 2, borderColor: '#FFFFFF',
+  },
+  headerTextWrap: { flex: 1, gap: 1 },
   headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  headerStatus: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
 
   // ── Product context bar ──────────────────────────────────────────
   productContextBar: {

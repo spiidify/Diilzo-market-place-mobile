@@ -99,3 +99,37 @@ export async function createSupportChat(): Promise<ChatThread> {
     url: '/chat/support/create/',
   });
 }
+
+// ── Presence / Typing ──────────────────────────────────────────────
+
+export interface ChatPresence {
+  online: boolean;
+  last_seen: string;
+  is_typing: boolean;
+  user_id: number | null;
+  user_name: string;
+}
+
+/** POST /api/v1/chat/heartbeat/ — update caller's last_seen timestamp */
+export async function sendHeartbeat(): Promise<void> {
+  try {
+    await api.post('/chat/heartbeat/', {});
+  } catch {
+    // Silent fail — heartbeat is best-effort
+  }
+}
+
+/** POST /api/v1/chat/threads/<id>/typing/ — broadcast typing status */
+export async function sendTypingStatus(threadId: number, isTyping: boolean): Promise<void> {
+  try {
+    await api.post(`/chat/threads/${threadId}/typing/`, { is_typing: isTyping });
+  } catch {
+    // Silent fail — typing is best-effort
+  }
+}
+
+/** GET /api/v1/chat/threads/<id>/presence/ — get other party's presence */
+export async function fetchChatPresence(threadId: number): Promise<ChatPresence> {
+  const { data } = await api.get<ChatPresence>(`/chat/threads/${threadId}/presence/`);
+  return data;
+}
