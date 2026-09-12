@@ -17,13 +17,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import YoutubePlayer from 'react-native-youtube-iframe';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCategories } from '@/services/catalog';
 import { fetchProducts } from '@/services/products';
-import { getYouTubeId, getYouTubeThumbnail } from '@/services/videos';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Category, Product, WishlistItem } from '@/types';
 
@@ -262,8 +260,7 @@ export default function VideosScreen() {
 
   // ── Render each video card (inline playback, no modal) ────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
-    const videoId = getYouTubeId(item.video_url || '');
-    const thumb = videoId ? getYouTubeThumbnail(videoId) : item.primary_image_url;
+    const thumb = item.primary_image_url;
     const isWishlisted = wishlistIds.has(item.id);
     const isActive = index === activeIndex;
     const hasDirectVideo = Boolean(item.video_file_url);
@@ -295,19 +292,9 @@ export default function VideosScreen() {
               </Pressable>
             </>
           )
-        ) : videoId && isActive ? (
-          /* YouTube player — legacy fallback */
-          <YoutubePlayer
-            videoId={videoId}
-            height={screenHeight}
-            play={isPlaying}
-            onChangeState={(e: string) => {
-              if (e === 'ended') handleVideoEnd();
-            }}
-          />
         ) : (
           <>
-            {/* Thumbnail for non-active items */}
+            {/* Thumbnail for non-video items */}
             {thumb ? (
               <Image source={{ uri: thumb }} style={styles.thumbnail} resizeMode="cover" />
             ) : (
