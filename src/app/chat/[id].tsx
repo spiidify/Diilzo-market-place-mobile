@@ -384,7 +384,16 @@ export default function ChatThreadScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
-          <Pressable onPress={() => router.dismiss()} hitSlop={12}>
+          <Pressable
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/chat' as any);
+              }
+            }}
+            hitSlop={12}
+          >
             <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
           </Pressable>
           <View style={styles.headerInfo}>
