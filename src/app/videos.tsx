@@ -32,12 +32,14 @@ function DirectVideoPlayer({
   isActive,
   onEnd,
   onDoubleTap,
+  onSingleTap,
   posterImage,
 }: {
   uri: string;
   isActive: boolean;
   onEnd: () => void;
   onDoubleTap: () => void;
+  onSingleTap: () => void;
   posterImage?: string | null;
 }) {
   const player = useVideoPlayer(uri, (p) => {
@@ -113,7 +115,7 @@ function DirectVideoPlayer({
     }, 2000);
   }, []);
 
-  // Handle tap — single tap = toggle controls, double tap = like
+  // Handle tap — single tap = toggle overlay, double tap = like
   const handleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
@@ -121,12 +123,11 @@ function DirectVideoPlayer({
       onDoubleTap();
       lastTapRef.current = 0;
     } else {
-      // Single tap — toggle play/pause + show controls
+      // Single tap — toggle overlay visibility (parent handles)
       lastTapRef.current = now;
-      togglePlay();
-      showControlsWithAutoHide();
+      onSingleTap();
     }
-  }, [togglePlay, onDoubleTap, showControlsWithAutoHide]);
+  }, [onDoubleTap, onSingleTap]);
 
   const currentTime = timeUpdate?.currentTime ?? 0;
   const duration = player.duration || 0;
@@ -305,6 +306,41 @@ export default function VideosScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+
+  // Overlay visibility — hides when video plays, shows on tap
+  const [showOverlay, setShowOverlay] = useState(true);
+  const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-hide overlay after 3 seconds when video is playing
+  useEffect(() => {
+    if (isPlaying && showOverlay) {
+      if (overlayTimer.current) clearTimeout(overlayTimer.current);
+      overlayTimer.current = setTimeout(() => setShowOverlay(false), 3000);
+    }
+    return () => {
+      if (overlayTimer.current) clearTimeout(overlayTimer.current);
+    };
+  }, [isPlaying, showOverlay]);
+
+  // Show overlay when video pauses
+  useEffect(() => {
+    if (!isPlaying) {
+      setShowOverlay(true);
+      if (overlayTimer.current) clearTimeout(overlayTimer.current);
+    }
+  }, [isPlaying]);
+
+  // Toggle overlay on tap (called from DirectVideoPlayer single tap)
+  const handleOverlayToggle = useCallback(() => {
+    setShowOverlay((prev) => {
+      const next = !prev;
+      if (next && isPlaying) {
+        if (overlayTimer.current) clearTimeout(overlayTimer.current);
+        overlayTimer.current = setTimeout(() => setShowOverlay(false), 3000);
+      }
+      return next;
+    });
+  }, [isPlaying]);
 
   // Heart burst animation per item
   const [heartBurstIndex, setHeartBurstIndex] = useState<number | null>(null);
@@ -514,6 +550,7 @@ export default function VideosScreen() {
               isActive={isActive && isPlaying}
               onEnd={handleVideoEnd}
               onDoubleTap={handleDoubleTap}
+              onSingleTap={handleOverlayToggle}
               posterImage={thumb}
             />
           ) : (
@@ -553,88 +590,94 @@ export default function VideosScreen() {
           </>
         )}
 
-        {/* Bottom gradient for text readability — only on inactive/thumbnail items */}
-        {!isActive || !hasDirectVideo ? <View style={styles.bottomGradient} /> : null}
+        {/* Bottom gradient for text readability */}
+        {!(isActive && hasDirectVideo && isPlaying) || showOverlay ? (
+          <View style={styles.bottomGradient} />
+        ) : null}
 
         {/* Heart burst on double-tap like */}
         <HeartBurst visible={heartBurstIndex === index} />
 
-        {/* Right action bar (TikTok-style) */}
-        <View style={styles.actionBar}>
-          <Pressable
-            style={styles.actionAvatar}
-            onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
-          >
-            {item.store?.logo_url ? (
-              <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} resizeMode="contain" />
-            ) : (
-              <View style={styles.storeAvatarFallback}>
-                <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />
-              </View>
-            )}
-          </Pressable>
-          {/* Wishlist */}
-          <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
-            <MaterialCommunityIcons
-              name={isWishlisted ? 'heart' : 'heart-outline'}
-              size={30}
-              color={isWishlisted ? '#FF4757' : '#FFFFFF'}
-            />
-            <Text style={styles.actionText}>{isWishlisted ? 'Saved' : 'Save'}</Text>
-          </Pressable>
-          {/* Share */}
-          <Pressable style={styles.actionItem} onPress={() => handleShare(item)}>
-            <MaterialCommunityIcons name="share-variant" size={30} color="#FFFFFF" />
-            <Text style={styles.actionText}>Share</Text>
-          </Pressable>
-          {/* Buy */}
-          <Pressable style={styles.actionItem} onPress={() => router.push(`/product/${item.slug}` as any)}>
-            <MaterialCommunityIcons name="shopping" size={30} color="#FFFFFF" />
-            <Text style={styles.actionText}>Buy</Text>
-          </Pressable>
-          {/* Rating */}
-          <View style={styles.actionItem}>
-            <MaterialCommunityIcons name="star" size={30} color={Brand.rating} />
-            <Text style={styles.actionText}>{item.rating ? parseFloat(item.rating).toFixed(1) : '0.0'}</Text>
+        {/* Right action bar (TikTok-style) — hidden when video playing without overlay */}
+        {!(isActive && hasDirectVideo && isPlaying) || showOverlay ? (
+          <View style={styles.actionBar}>
+            <Pressable
+              style={styles.actionAvatar}
+              onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
+            >
+              {item.store?.logo_url ? (
+                <Image source={{ uri: item.store.logo_url }} style={styles.storeAvatar} resizeMode="contain" />
+              ) : (
+                <View style={styles.storeAvatarFallback}>
+                  <MaterialCommunityIcons name="store" size={18} color="#FFFFFF" />
+                </View>
+              )}
+            </Pressable>
+            {/* Wishlist */}
+            <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
+              <MaterialCommunityIcons
+                name={isWishlisted ? 'heart' : 'heart-outline'}
+                size={30}
+                color={isWishlisted ? '#FF4757' : '#FFFFFF'}
+              />
+              <Text style={styles.actionText}>{isWishlisted ? 'Saved' : 'Save'}</Text>
+            </Pressable>
+            {/* Share */}
+            <Pressable style={styles.actionItem} onPress={() => handleShare(item)}>
+              <MaterialCommunityIcons name="share-variant" size={30} color="#FFFFFF" />
+              <Text style={styles.actionText}>Share</Text>
+            </Pressable>
+            {/* Buy */}
+            <Pressable style={styles.actionItem} onPress={() => router.push(`/product/${item.slug}` as any)}>
+              <MaterialCommunityIcons name="shopping" size={30} color="#FFFFFF" />
+              <Text style={styles.actionText}>Buy</Text>
+            </Pressable>
+            {/* Rating */}
+            <View style={styles.actionItem}>
+              <MaterialCommunityIcons name="star" size={30} color={Brand.rating} />
+              <Text style={styles.actionText}>{item.rating ? parseFloat(item.rating).toFixed(1) : '0.0'}</Text>
+            </View>
           </View>
-        </View>
+        ) : null}
 
-        {/* Bottom product info */}
-        <View style={styles.bottomInfo}>
-          <Pressable
-            style={styles.storeRow}
-            onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
-          >
-            <MaterialCommunityIcons name="store" size={13} color={Brand.primary} />
-            <Text style={styles.storeName} numberOfLines={1}>
-              {item.store?.name || 'Diilzo Store'}
-            </Text>
-            <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
-          </Pressable>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-          {item.short_description ? (
-            <Text style={styles.description} numberOfLines={2}>{item.short_description}</Text>
-          ) : null}
-          <View style={styles.priceRow}>
-            <Text style={styles.currency}>{item.currency} </Text>
-            <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
-            {item.is_on_sale && (
-              <View style={styles.saleTag}>
-                <Text style={styles.saleTagText}>{item.discount_percentage}% OFF</Text>
-              </View>
-            )}
+        {/* Bottom product info — hidden when video playing without overlay */}
+        {!(isActive && hasDirectVideo && isPlaying) || showOverlay ? (
+          <View style={styles.bottomInfo}>
+            <Pressable
+              style={styles.storeRow}
+              onPress={() => item.store?.slug && router.push(`/store/${item.store.slug}` as any)}
+            >
+              <MaterialCommunityIcons name="store" size={13} color={Brand.primary} />
+              <Text style={styles.storeName} numberOfLines={1}>
+                {item.store?.name || 'Diilzo Store'}
+              </Text>
+              <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
+            </Pressable>
+            <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+            {item.short_description ? (
+              <Text style={styles.description} numberOfLines={2}>{item.short_description}</Text>
+            ) : null}
+            <View style={styles.priceRow}>
+              <Text style={styles.currency}>{item.currency} </Text>
+              <Text style={styles.price}>{Number(item.final_price).toLocaleString()}</Text>
+              {item.is_on_sale && (
+                <View style={styles.saleTag}>
+                  <Text style={styles.saleTagText}>{item.discount_percentage}% OFF</Text>
+                </View>
+              )}
+            </View>
+            <Pressable
+              style={styles.viewProductBtn}
+              onPress={() => router.push(`/product/${item.slug}` as any)}
+            >
+              <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#FFFFFF" />
+              <Text style={styles.viewProductText}>View Product</Text>
+            </Pressable>
           </View>
-          <Pressable
-            style={styles.viewProductBtn}
-            onPress={() => router.push(`/product/${item.slug}` as any)}
-          >
-            <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#FFFFFF" />
-            <Text style={styles.viewProductText}>View Product</Text>
-          </Pressable>
-        </View>
+        ) : null}
       </View>
     );
-  }, [feedHeight, activeIndex, isPlaying, wishlistIds, heartBurstIndex, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
+  }, [feedHeight, activeIndex, isPlaying, showOverlay, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleWishlistToggle, handleShare, router]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
