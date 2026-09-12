@@ -34,6 +34,8 @@ function DirectVideoPlayer({
   onDoubleTap,
   onSingleTap,
   showOverlay,
+  muted,
+  onToggleMute,
   posterImage,
 }: {
   uri: string;
@@ -42,6 +44,8 @@ function DirectVideoPlayer({
   onDoubleTap: () => void;
   onSingleTap: () => void;
   showOverlay: boolean;
+  muted: boolean;
+  onToggleMute: () => void;
   posterImage?: string | null;
 }) {
   const player = useVideoPlayer(uri, (p) => {
@@ -55,15 +59,12 @@ function DirectVideoPlayer({
   const { status } = useEvent(player, 'statusChange', { status: player.status });
   const timeUpdate = useEvent(player, 'timeUpdate', null);
 
-  const [muted, setMuted] = useState(false);
-  const mutedRef = useRef(false);
   const lastTapRef = useRef(0);
 
   // Play/pause based on active state — seek to start when reactivated
   useEffect(() => {
     try {
       if (isActive) {
-        // If video has ended, seek back to start before playing
         const dur = player.duration || 0;
         if (dur > 0 && player.currentTime >= dur - 0.5) {
           player.currentTime = 0;
@@ -75,14 +76,22 @@ function DirectVideoPlayer({
     } catch { }
   }, [isActive, player]);
 
-  // Pause and release on unmount (when scrolling away or leaving screen)
+  // Pause on unmount
   useEffect(() => {
     return () => {
       try { player.pause(); } catch { }
     };
   }, [player]);
 
-  // Auto-advance when video ends (playToEnd event)
+  // Sync muted from parent
+  useEffect(() => {
+    try {
+      player.muted = muted;
+      player.volume = muted ? 0 : 1;
+    } catch { }
+  }, [muted, player]);
+
+  // Auto-advance when video ends
   useEffect(() => {
     const sub = player.addListener('playToEnd', () => {
       onEnd();
@@ -90,22 +99,13 @@ function DirectVideoPlayer({
     return () => sub.remove();
   }, [player, onEnd]);
 
-  const toggleMute = useCallback(() => {
-    const newMuted = !mutedRef.current;
-    mutedRef.current = newMuted;
-    setMuted(newMuted);
-    try {
-      player.muted = newMuted;
-      // Also set volume as fallback
-      player.volume = newMuted ? 0 : 1;
-    } catch { }
-  }, [player]);
-
   const seekTo = useCallback((ratio: number) => {
-    const dur = player.duration || 0;
-    if (dur > 0) {
-      player.currentTime = Math.max(0, Math.min(ratio * dur, dur));
-    }
+    try {
+      const dur = player.duration || 0;
+      if (dur > 0) {
+        player.currentTime = Math.max(0, Math.min(ratio * dur, dur));
+      }
+    } catch { }
   }, [player]);
 
   // Handle tap — single tap = toggle overlay, double tap = like
@@ -165,25 +165,16 @@ function DirectVideoPlayer({
         )}
       </Pressable>
 
-      {/* Controls overlay (mute, time) — visible when overlay is shown */}
+      {/* Controls overlay (time) — visible when overlay is shown */}
       {showOverlay && (
         <View style={directVideoStyles.controlsRow}>
-          {/* Time display */}
           <Text style={directVideoStyles.timeText}>
             {formatTime(currentTime)} / {formatTime(duration)}
           </Text>
-          {/* Mute toggle */}
-          <Pressable style={directVideoStyles.muteBtn} onPress={toggleMute} hitSlop={12}>
-            <MaterialCommunityIcons
-              name={muted ? 'volume-mute' : 'volume-high'}
-              size={22}
-              color="#FFFFFF"
-            />
-          </Pressable>
         </View>
       )}
 
-      {/* Seekable progress bar — above the bottom info */}
+      {/* Seekable progress bar — at the very bottom */}
       {duration > 0 && showOverlay && (
         <Pressable
           style={directVideoStyles.progressTrack}
@@ -232,7 +223,7 @@ const directVideoStyles = StyleSheet.create({
   },
   progressTrack: {
     position: 'absolute',
-    bottom: 120, left: 12, right: 12,
+    bottom: 0, left: 0, right: 0,
     height: 20,
     justifyContent: 'center',
   },
@@ -299,6 +290,7 @@ export default function VideosScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [videoMuted, setVideoMuted] = useState(false);
 
   // Overlay visibility — hides when video plays, shows on tap
   const [showOverlay, setShowOverlay] = useState(true);
@@ -338,6 +330,10 @@ export default function VideosScreen() {
       setIsPlaying(true);
     }
   }, [isPlaying]);
+
+  const handleToggleMute = useCallback(() => {
+    setVideoMuted((m) => !m);
+  }, []);
 
   // Heart burst animation per item
   const [heartBurstIndex, setHeartBurstIndex] = useState<number | null>(null);
@@ -549,6 +545,8 @@ export default function VideosScreen() {
               onDoubleTap={handleDoubleTap}
               onSingleTap={handleOverlayToggle}
               showOverlay={showOverlay}
+              muted={videoMuted}
+              onToggleMute={handleToggleMute}
               posterImage={thumb}
             />
           ) : (
@@ -622,6 +620,17 @@ export default function VideosScreen() {
                 <Text style={styles.actionText}>{isPlaying ? 'Pause' : 'Play'}</Text>
               </Pressable>
             ) : null}
+            {/* Mute / Unmute */}
+            {isActive && hasDirectVideo ? (
+              <Pressable style={styles.actionItem} onPress={handleToggleMute}>
+                <MaterialCommunityIcons
+                  name={videoMuted ? 'volume-mute' : 'volume-high'}
+                  size={30}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.actionText}>{videoMuted ? 'Muted' : 'Sound'}</Text>
+              </Pressable>
+            ) : null}
             {/* Wishlist */}
             <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
               <MaterialCommunityIcons
@@ -686,7 +695,7 @@ export default function VideosScreen() {
         ) : null}
       </View>
     );
-  }, [feedHeight, activeIndex, isPlaying, showOverlay, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleWishlistToggle, handleShare, router]);
+  }, [feedHeight, activeIndex, isPlaying, showOverlay, videoMuted, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleToggleMute, handleWishlistToggle, handleShare, router]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
