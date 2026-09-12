@@ -289,6 +289,13 @@ export default function VideosScreen() {
   const { isAuthenticated } = useAuth();
   const { height: screenHeight } = useWindowDimensions();
 
+  // Tab bar is 88px (from app-tabs.tsx). Header ~48px. Tabs row ~40px.
+  // Feed item height = visible area between header+tabs and tab bar.
+  const TAB_BAR_HEIGHT = 88;
+  const HEADER_HEIGHT = 48;
+  const TABS_HEIGHT = 40;
+  const feedHeight = screenHeight - TAB_BAR_HEIGHT - HEADER_HEIGHT - TABS_HEIGHT;
+
   // ── State ────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -498,7 +505,7 @@ export default function VideosScreen() {
     };
 
     return (
-      <View style={[styles.feedItem, { height: screenHeight }]}>
+      <View style={[styles.feedItem, { height: feedHeight }]}>
         {/* Direct video (Cloudinary) — TikTok-style, no controls */}
         {hasDirectVideo && item.video_file_url ? (
           isActive ? (
@@ -627,7 +634,7 @@ export default function VideosScreen() {
         </View>
       </View>
     );
-  }, [screenHeight, activeIndex, isPlaying, wishlistIds, heartBurstIndex, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
+  }, [feedHeight, activeIndex, isPlaying, wishlistIds, heartBurstIndex, handleVideoEnd, handleTogglePlay, handleWishlistToggle, handleShare, router]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
@@ -842,7 +849,7 @@ const styles = StyleSheet.create({
   },
   tapToggle: {
     position: 'absolute',
-    top: 0, left: 0, right: 70, bottom: 100,
+    top: 0, left: 0, right: 70, bottom: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -851,7 +858,7 @@ const styles = StyleSheet.create({
   actionBar: {
     position: 'absolute',
     right: 12,
-    bottom: 100,
+    bottom: 60,
     alignItems: 'center',
     gap: 18,
   },
@@ -876,7 +883,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 70,
     padding: 16,
-    paddingBottom: 60,
+    paddingBottom: 20,
   },
   storeRow: {
     flexDirection: 'row',
