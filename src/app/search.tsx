@@ -24,6 +24,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScrollToTopButton } from '@/components/scroll-to-top';
+import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import {
   esSearchProducts,
@@ -829,8 +830,7 @@ export default function SearchScreen() {
             <Text style={styles.contextTitle} numberOfLines={1}>{contextTitle}</Text>
           )}
           <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-            <Text style={styles.loadingText}>Searching...</Text>
+            <ProductListSkeleton count={6} />
           </View>
         </SafeAreaView>
       </View>

@@ -3,16 +3,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { OrderListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { apiRequest } from '@/services/api';
 
@@ -92,9 +92,7 @@ export default function BuyerOrdersScreen() {
         </LinearGradient>
 
         {loading ? (
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-          </View>
+          <OrderListSkeleton count={4} />
         ) : error ? (
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />

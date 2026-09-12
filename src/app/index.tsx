@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiilzoLogo } from '@/components/diilzo-logo';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
+import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -1160,8 +1161,7 @@ export default function ProductFeedScreen() {
           </SafeAreaView>
         </LinearGradient>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Brand.primary} />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <ProductListSkeleton count={6} />
         </View>
       </View>
     );
