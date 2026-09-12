@@ -47,6 +47,7 @@ export default function AddProductScreen() {
   const [minOrderQty, setMinOrderQty] = useState('1');
   const [weight, setWeight] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState<PickedImage | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [images, setImages] = useState<PickedImage[]>([]);
 
@@ -106,6 +107,26 @@ export default function AddProductScreen() {
     }
   };
 
+  // ── Video picker ────────────────────────────────────────────────
+  const pickVideo = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      setVideoFile({
+        uri: asset.uri,
+        name: `video_${Date.now()}.mp4`,
+        type: 'video/mp4',
+      });
+    } catch (e: any) {
+      Alert.alert('Error', 'Could not pick video');
+    }
+  };
+
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -141,6 +162,13 @@ export default function AddProductScreen() {
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
       if (weight.trim()) formData.append('weight', weight.trim());
       if (videoUrl.trim()) formData.append('video_url', videoUrl.trim());
+      if (videoFile) {
+        formData.append('video_file', {
+          uri: videoFile.uri,
+          name: videoFile.name,
+          type: videoFile.type,
+        } as any);
+      }
       formData.append('is_active', isActive ? 'true' : 'false');
 
       images.forEach((img, idx) => {
@@ -365,7 +393,26 @@ export default function AddProductScreen() {
               {/* ── Media & status ─────────────────────────────────── */}
               <Text style={styles.sectionTitle}>Media & Status</Text>
               <View style={styles.card}>
-                <Text style={styles.label}>Video URL</Text>
+                <Text style={styles.label}>Product Video (Upload)</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.addImageBtn, { paddingVertical: 12, marginBottom: 8 }, pressed && { opacity: 0.7 }]}
+                  onPress={pickVideo}
+                >
+                  <MaterialCommunityIcons name="video-plus-outline" size={22} color={Brand.primary} />
+                  <Text style={[styles.addImageText, { color: Brand.primary }]}>
+                    {videoFile ? `Video selected: ${videoFile.name}` : 'Upload Video (MP4, MOV)'}
+                  </Text>
+                </Pressable>
+                {videoFile && (
+                  <Pressable
+                    style={{ alignSelf: 'flex-end', marginBottom: 8 }}
+                    onPress={() => setVideoFile(null)}
+                  >
+                    <Text style={{ color: Brand.danger, fontSize: 13, fontWeight: '600' }}>Remove video</Text>
+                  </Pressable>
+                )}
+
+                <Text style={[styles.label, { marginTop: 8 }]}>Or YouTube URL (legacy)</Text>
                 <TextInput
                   style={styles.input}
                   value={videoUrl}

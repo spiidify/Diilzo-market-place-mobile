@@ -1,9 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEvent } from 'expo';
 import { useRouter } from 'expo-router';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,8 +14,8 @@ import {Image,
   StyleSheet,
   Text,
   TextInput,
-  View,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
@@ -23,6 +26,68 @@ import { fetchProducts } from '@/services/products';
 import { getYouTubeId, getYouTubeThumbnail } from '@/services/videos';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Category, Product, WishlistItem } from '@/types';
+
+// ── TikTok-style video player for direct Cloudinary uploads ──────────
+function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: boolean; onEnd: () => void }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+    if (isActive) p.play();
+  });
+
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+
+  // Play/pause based on active state
+  useEffect(() => {
+    if (isActive) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isActive, player]);
+
+  // Auto-advance when video ends (playToEnd event)
+  useEffect(() => {
+    const sub = player.addListener('playToEnd', () => {
+      onEnd();
+    });
+    return () => sub.remove();
+  }, [player, onEnd]);
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [isPlaying, player]);
+
+  return (
+    <View style={directVideoStyles.container}>
+      <VideoView
+        style={directVideoStyles.video}
+        player={player}
+        contentFit="cover"
+        nativeControls={false}
+        allowsPictureInPicture={false}
+      />
+      {/* Tap to pause/play overlay (no controls, TikTok-style) */}
+      <Pressable style={directVideoStyles.tapOverlay} onPress={togglePlay}>
+        {!isPlaying && (
+          <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.8)" />
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+const directVideoStyles = StyleSheet.create({
+  container: { flex: 1, position: 'relative' },
+  video: { flex: 1, width: '100%', height: '100%' },
+  tapOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center', alignItems: 'center',
+  },
+});
 
 export default function VideosScreen() {
   const router = useRouter();
@@ -201,11 +266,37 @@ export default function VideosScreen() {
     const thumb = videoId ? getYouTubeThumbnail(videoId) : item.primary_image_url;
     const isWishlisted = wishlistIds.has(item.id);
     const isActive = index === activeIndex;
+    const hasDirectVideo = Boolean(item.video_file_url);
 
     return (
       <View style={[styles.feedItem, { height: screenHeight }]}>
-        {/* YouTube player — only active video renders, fills entire item */}
-        {videoId && isActive ? (
+        {/* Direct video (Cloudinary) — TikTok-style, no controls */}
+        {hasDirectVideo && item.video_file_url ? (
+          isActive ? (
+            <DirectVideoPlayer
+              uri={item.video_file_url}
+              isActive={isActive}
+              onEnd={handleVideoEnd}
+            />
+          ) : (
+            <>
+              {thumb ? (
+                <Image source={{ uri: thumb }} style={styles.thumbnail} resizeMode="cover" />
+              ) : (
+                <View style={styles.thumbnailFallback} />
+              )}
+              <View style={styles.overlay} />
+              <Pressable style={styles.playBtn} onPress={() => {
+                setActiveIndex(index);
+                setIsPlaying(true);
+                listRef.current?.scrollToIndex({ index, animated: true });
+              }}>
+                <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
+              </Pressable>
+            </>
+          )
+        ) : videoId && isActive ? (
+          /* YouTube player — legacy fallback */
           <YoutubePlayer
             videoId={videoId}
             height={screenHeight}

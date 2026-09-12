@@ -81,7 +81,8 @@
           "icon": "./assets/images/splash-icon.png",
           "color": "#32C700"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "extra": {
       "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1",

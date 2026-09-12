@@ -158,6 +158,8 @@ export interface Product {
   width: string | null;
   height: string | null;
   video_url: string | null;
+  video_file_url: string | null;
+  has_video: boolean;
   is_sponsored?: boolean;
   promotion_type?: string | null;
   promotion_id?: number | null;
