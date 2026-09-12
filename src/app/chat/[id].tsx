@@ -469,11 +469,11 @@ export default function ChatThreadScreen() {
         >
           <Pressable
             onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/chat' as any);
-              }
+              // Always go to the chat list (WhatsApp pattern).
+              // router.back() would go to whatever screen opened the chat
+              // (Home, Product detail, etc.) — but the user expects to see
+              // their conversation list when leaving a chat.
+              router.replace('/chat' as any);
             }}
             hitSlop={12}
           >
