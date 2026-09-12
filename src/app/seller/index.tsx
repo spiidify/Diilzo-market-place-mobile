@@ -109,6 +109,7 @@ export default function SellerDashboardScreen() {
       title: 'Sales & Orders',
       items: [
         { icon: 'clipboard-list-outline', label: 'Orders', color: '#16A34A', route: '/seller/orders', count: stats?.pending_orders },
+        { icon: 'account-group-outline', label: 'Customers', color: '#10B981', route: '/seller/customers' },
         { icon: 'truck-fast', label: 'Shipments', color: '#3B82F6', route: '/seller/shipments' },
         { icon: 'alert-circle-outline', label: 'Disputes', color: Brand.danger, route: '/seller/disputes' },
         { icon: 'file-document-outline', label: 'RFQs', color: '#8B5CF6', route: '/seller/rfqs' },

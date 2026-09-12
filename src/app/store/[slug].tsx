@@ -56,6 +56,10 @@ export default function StoreDetailScreen() {
         if (!store) {
           const storeData = await fetchStoreBySlug(slug);
           setStore(storeData);
+          // Restore follow state from server
+          if (storeData.is_following !== undefined) {
+            setIsFollowing(storeData.is_following);
+          }
         }
       } else {
         setLoadingMore(true);

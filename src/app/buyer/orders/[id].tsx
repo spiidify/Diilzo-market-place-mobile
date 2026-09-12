@@ -2,9 +2,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {Image,
+import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -16,6 +17,7 @@ import {Image,
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { createChatThread } from '@/services/chat';
 import {
   cancelOrder,
   fetchOrderById,
@@ -130,6 +132,17 @@ export default function OrderDetailScreen() {
       Alert.alert('Error', e?.message || 'Failed to reorder items');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleContactSeller = async () => {
+    try {
+      const suborder = order?.suborders?.[0];
+      if (!suborder?.store_slug) return;
+      const thread = await createChatThread(suborder.store_slug, undefined, order?.id);
+      router.push(`/chat/${thread.id}` as any);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to start chat');
     }
   };
 
@@ -421,6 +434,13 @@ export default function OrderDetailScreen() {
                   <Text style={styles.actionBtnOutlineText}>Reorder</Text>
                 </>
               )}
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnOutline, pressed && { opacity: 0.85 }]}
+              onPress={handleContactSeller}
+            >
+              <MaterialCommunityIcons name="chat-outline" size={20} color="#EC4899" />
+              <Text style={styles.actionBtnOutlineText}>Message Seller</Text>
             </Pressable>
             {canCancel && (
               <Pressable

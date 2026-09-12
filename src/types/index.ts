@@ -63,6 +63,7 @@ export interface StoreDetail extends Store {
   product_count: number;
   created_at: string;
   banner_url?: string | null;
+  is_following?: boolean;
 }
 
 // ── Category & Brand ─────────────────────────────────────────────
@@ -351,6 +352,7 @@ export interface OrderItem {
 export interface SubOrder {
   id: number;
   store_name: string;
+  store_slug?: string;
   status: string;
   subtotal: string;
   commission_amount: string;
@@ -415,6 +417,7 @@ export interface ChatThread {
   product: number | null;
   product_name: string | null;
   product_slug: string | null;
+  order: number | null;
   is_support?: boolean;
   created_at: string;
   updated_at: string;
@@ -424,6 +427,42 @@ export interface ChatThread {
     created_at: string;
   } | null;
   unread_count: number;
+}
+
+// ── My Sellers (followed stores) ────────────────────────────────
+export interface FollowedStore {
+  id: number;
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  rating: number;
+  product_count: number;
+  follower_count: number;
+  followed_at: string;
+}
+
+// ── Seller Customer (CRM) ────────────────────────────────────────
+export interface StoreCustomer {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  status: 'new' | 'active' | 'repeat' | 'vip' | 'churned';
+  total_orders: number;
+  total_spent: string;
+  first_order_at: string | null;
+  last_order_at: string | null;
+  tags: string;
+  notes: string;
+  orders?: CustomerOrder[];
+}
+
+export interface CustomerOrder {
+  id: number;
+  order_number: string;
+  status: string;
+  total: string;
+  created_at: string;
 }
 
 // ── Reviews ──────────────────────────────────────────────────────

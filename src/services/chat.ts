@@ -21,9 +21,14 @@ export async function fetchChatThread(threadId: number): Promise<ChatThread> {
 }
 
 /** POST /api/v1/chat/threads/create/ — start or get a thread with a store */
-export async function createChatThread(storeSlug: string, productId?: number): Promise<ChatThread> {
+export async function createChatThread(
+  storeSlug: string,
+  productId?: number,
+  orderId?: number
+): Promise<ChatThread> {
   const data: Record<string, any> = { store_slug: storeSlug };
   if (productId) data.product_id = productId;
+  if (orderId) data.order_id = orderId;
   return apiRequest<ChatThread>({
     method: 'POST',
     url: '/chat/threads/create/',
