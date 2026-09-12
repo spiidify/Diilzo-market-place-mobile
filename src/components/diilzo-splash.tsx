@@ -27,7 +27,7 @@ try {
   whooshPlayer.play();
 } catch { }
 
-const DURATION = 10000;
+const DURATION = 13000;
 
 // ── Orange background fade out ────────────────────────────────────
 const bgKeyframe = new Keyframe({
