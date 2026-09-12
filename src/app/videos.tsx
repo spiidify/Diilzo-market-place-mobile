@@ -61,22 +61,24 @@ function DirectVideoPlayer({
 
   // Play/pause based on active state — seek to start when reactivated
   useEffect(() => {
-    if (isActive) {
-      // If video has ended, seek back to start before playing
-      const dur = player.duration || 0;
-      if (dur > 0 && player.currentTime >= dur - 0.5) {
-        player.currentTime = 0;
+    try {
+      if (isActive) {
+        // If video has ended, seek back to start before playing
+        const dur = player.duration || 0;
+        if (dur > 0 && player.currentTime >= dur - 0.5) {
+          player.currentTime = 0;
+        }
+        player.play();
+      } else {
+        player.pause();
       }
-      player.play();
-    } else {
-      player.pause();
-    }
+    } catch { }
   }, [isActive, player]);
 
   // Pause and release on unmount (when scrolling away or leaving screen)
   useEffect(() => {
     return () => {
-      player.pause();
+      try { player.pause(); } catch { }
     };
   }, [player]);
 
@@ -92,7 +94,11 @@ function DirectVideoPlayer({
     const newMuted = !mutedRef.current;
     mutedRef.current = newMuted;
     setMuted(newMuted);
-    player.muted = newMuted;
+    try {
+      player.muted = newMuted;
+      // Also set volume as fallback
+      player.volume = newMuted ? 0 : 1;
+    } catch { }
   }, [player]);
 
   const seekTo = useCallback((ratio: number) => {
@@ -177,8 +183,8 @@ function DirectVideoPlayer({
         </View>
       )}
 
-      {/* Seekable progress bar */}
-      {duration > 0 && (
+      {/* Seekable progress bar — above the bottom info */}
+      {duration > 0 && showOverlay && (
         <Pressable
           style={directVideoStyles.progressTrack}
           onPress={(e) => {
@@ -226,7 +232,7 @@ const directVideoStyles = StyleSheet.create({
   },
   progressTrack: {
     position: 'absolute',
-    bottom: 80, left: 0, right: 0,
+    bottom: 120, left: 12, right: 12,
     height: 20,
     justifyContent: 'center',
   },
