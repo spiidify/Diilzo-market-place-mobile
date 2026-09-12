@@ -33,8 +33,8 @@ interface PickedImage {
 
 export default function EditProductScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ product_id?: string; slug?: string }>();
-  const productId = params.product_id;
+  const params = useLocalSearchParams<{ id?: string; product_id?: string; slug?: string }>();
+  const productId = params.id || params.product_id;
   const slug = params.slug;
 
   // ── Form state ──────────────────────────────────────────────────
