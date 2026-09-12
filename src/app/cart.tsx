@@ -19,6 +19,7 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
+import { playSound, Sounds } from '@/services/sound';
 import type { CartItem, Cart as CartType } from '@/types';
 
 export default function CartScreen() {
@@ -69,6 +70,7 @@ export default function CartScreen() {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
 
+    playSound(Sounds.TAP);
     const oldItem = { ...item };
     const oldTotalItems = cart?.total_items || 0;
     updateLocalCart((prev) => {

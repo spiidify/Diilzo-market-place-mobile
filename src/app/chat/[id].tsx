@@ -22,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, sendChatMessage, sendVoiceMessage } from '@/services/chat';
+import { playSound, Sounds } from '@/services/sound';
 import type { ChatMessage } from '@/types';
 
 // ── Audio message bubble with play/pause ───────────────────────────
@@ -179,6 +180,10 @@ export default function ChatThreadScreen() {
                 const msg = JSON.parse(data);
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === msg.id)) return prev;
+                  // Play message sound only for incoming messages (not our own)
+                  if (msg.sender_id !== user?.id) {
+                    playSound(Sounds.MESSAGE);
+                  }
                   return [...prev, msg];
                 });
                 setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);

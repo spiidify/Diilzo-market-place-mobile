@@ -1,4 +1,5 @@
 import { Brand } from '@/constants/theme';
+import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
@@ -100,6 +101,13 @@ const barKeyframe = new Keyframe({
 export function DiilzoSplash() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
+
+  // Preload sounds and play whoosh when animation starts
+  if (animate && visible) {
+    // Play whoosh once when the animated splash starts
+    preloadSounds();
+    playSound(Sounds.WHOOSH);
+  }
 
   if (!visible) return null;
 

@@ -30,6 +30,7 @@ import { createReview, fetchProductReviews, trackProductView } from '@/services/
 import { createChatThread } from '@/services/chat';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackClick as trackPromoClick } from '@/services/promotions';
+import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Product, Review } from '@/types';
 
@@ -228,6 +229,7 @@ export default function ProductDetailScreen() {
     try {
       await addToCart(product.id, quantity, selectedVariantId ?? undefined);
       incrementCartCount(quantity);
+      playSound(Sounds.ADD_TO_CART);
       showToast('success', `${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart`);
     } catch (e: any) {
       const status = e?.response?.status;

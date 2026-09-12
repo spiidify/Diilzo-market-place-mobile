@@ -9,10 +9,12 @@ import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import {
+  addNotificationReceivedListener,
   addNotificationResponseListener,
   getLastNotificationResponse,
   registerForPushNotifications,
 } from '@/services/push';
+import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { router } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
@@ -20,8 +22,14 @@ SplashScreen.preventAutoHideAsync();
 function AppContent() {
   useSessionManager();
   useEffect(() => {
-    // Register for push notifications on app launch
+    // Preload sound effects and register for push notifications on app launch
+    preloadSounds();
     registerForPushNotifications().catch(() => { });
+
+    // Play sound when a push notification is received in the foreground
+    const receivedListener = addNotificationReceivedListener(() => {
+      playSound(Sounds.NOTIFICATION);
+    });
 
     // Handle notification taps (deep-linking)
     const responseListener = addNotificationResponseListener((response) => {
@@ -42,7 +50,10 @@ function AppContent() {
       }
     });
 
-    return () => responseListener.remove();
+    return () => {
+      responseListener.remove();
+      receivedListener.remove();
+    };
   }, []);
   return (
     <>

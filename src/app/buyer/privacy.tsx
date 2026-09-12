@@ -25,6 +25,7 @@ import {
   isBiometricEnabled,
   setBiometricEnabled,
 } from '@/services/biometric';
+import { isSoundEnabled, playSound, setSoundEnabled, Sounds } from '@/services/sound';
 
 export default function PrivacyScreen() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function PrivacyScreen() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [screenshotPrevention, setScreenshotPrevention] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
   const [loading, setLoading] = useState(true);
 
   // Notification preferences
@@ -95,6 +97,8 @@ export default function PrivacyScreen() {
         const saved = await AsyncStorage.getItem('dark_mode');
         setDarkMode(saved === 'true');
       } catch { }
+      // Load sound preference
+      setSoundEnabledState(isSoundEnabled());
     } catch {
       setBiometricAvailable(false);
     } finally {
@@ -108,6 +112,12 @@ export default function PrivacyScreen() {
       await AsyncStorage.setItem('dark_mode', value ? 'true' : 'false');
       Alert.alert('Dark Mode', 'Please restart the app for dark mode to take effect.');
     } catch { }
+  };
+
+  const handleSoundToggle = async (value: boolean) => {
+    setSoundEnabledState(value);
+    await setSoundEnabled(value);
+    if (value) playSound(Sounds.SUCCESS);
   };
 
   useEffect(() => {
@@ -280,6 +290,25 @@ export default function PrivacyScreen() {
                     <Switch
                       value={darkMode}
                       onValueChange={handleDarkModeToggle}
+                      trackColor={{ false: Brand.border, true: Brand.primary }}
+                      thumbColor="#FFFFFF"
+                    />
+                  </View>
+
+                  {/* Sound effects */}
+                  <View style={styles.settingRow}>
+                    <View style={[styles.settingIcon, { backgroundColor: '#F59E0B20' }]}>
+                      <MaterialCommunityIcons name="volume-high" size={22} color="#F59E0B" />
+                    </View>
+                    <View style={styles.settingInfo}>
+                      <Text style={styles.settingLabel}>Sound Effects</Text>
+                      <Text style={styles.settingSublabel}>
+                        Play sounds for taps, notifications, and actions
+                      </Text>
+                    </View>
+                    <Switch
+                      value={soundEnabled}
+                      onValueChange={handleSoundToggle}
                       trackColor={{ false: Brand.border, true: Brand.primary }}
                       thumbColor="#FFFFFF"
                     />

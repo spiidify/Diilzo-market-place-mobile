@@ -36,6 +36,7 @@ import {
   initiatePayment,
   type PaymentMethod,
 } from '@/services/payments';
+import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
 
 const PAYMENT_OPTIONS: {
@@ -355,6 +356,7 @@ export default function CheckoutScreen() {
         } else {
           await clearCart();
           setGlobalCartCount(0);
+          playSound(Sounds.ORDER_PLACED);
           showSuccess(order);
         }
       } catch (payErr: any) {
@@ -382,6 +384,7 @@ export default function CheckoutScreen() {
         msg = 'Some items in your cart are no longer available. Please refresh your cart.';
       }
       setError(msg);
+      playSound(Sounds.ERROR);
       Alert.alert('Checkout Error', msg);
     } finally {
       setPlacing(false);
