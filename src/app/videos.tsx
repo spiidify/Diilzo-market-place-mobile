@@ -277,9 +277,8 @@ export default function VideosScreen() {
   // Tab bar is 88px (from app-tabs.tsx). Header ~48px. Tabs row ~40px.
   // Feed item height = visible area between header+tabs and tab bar.
   const TAB_BAR_HEIGHT = 88;
-  const HEADER_HEIGHT = 48;
   const TABS_HEIGHT = 40;
-  const feedHeight = screenHeight - TAB_BAR_HEIGHT - HEADER_HEIGHT - TABS_HEIGHT;
+  const feedHeight = screenHeight - TAB_BAR_HEIGHT - TABS_HEIGHT;
 
   // ── State ────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
@@ -726,14 +725,6 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* ── Header ─────────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Videos</Text>
-        <Pressable style={styles.headerSearchBtn} onPress={() => setShowSearch((prev) => !prev)}>
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-        </Pressable>
-      </View>
-
       {/* ── Category tabs ──────────────────────────────────────────── */}
       <View style={styles.tabsContainer}>
         <ScrollView
@@ -759,6 +750,12 @@ export default function VideosScreen() {
             </Pressable>
           ))}
         </ScrollView>
+        <Pressable
+          style={styles.searchToggleBtn}
+          onPress={() => setShowSearch((prev) => !prev)}
+        >
+          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+        </Pressable>
       </View>
 
       {/* Search bar (collapsible) */}
