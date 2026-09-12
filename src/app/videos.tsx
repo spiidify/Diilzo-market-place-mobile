@@ -58,9 +58,14 @@ function DirectVideoPlayer({
   const lastTapRef = useRef(0);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Play/pause based on active state
+  // Play/pause based on active state — seek to start when reactivated
   useEffect(() => {
     if (isActive) {
+      // If video has ended, seek back to start before playing
+      const dur = player.duration || 0;
+      if (dur > 0 && player.currentTime >= dur - 0.5) {
+        player.currentTime = 0;
+      }
       player.play();
     } else {
       player.pause();
@@ -340,6 +345,10 @@ export default function VideosScreen() {
       }
       return next;
     });
+    // If video is not playing (ended or paused), resume on tap
+    if (!isPlaying) {
+      setIsPlaying(true);
+    }
   }, [isPlaying]);
 
   // Heart burst animation per item
