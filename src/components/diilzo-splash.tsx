@@ -23,26 +23,12 @@ const bgKeyframe = new Keyframe({
   },
 });
 
-// ── Logo container — scale in with bounce ────────────────────────
+// ── Logo container — visible immediately, no animation ───────────
+// The logo is shown from the very first frame with no scale/fade delay.
 const logoKeyframe = new Keyframe({
   0: {
-    transform: [{ scale: 0.3 }, { translateY: 0 }],
-    opacity: 1,
-  },
-  8: {
-    transform: [{ scale: 0.5 }, { translateY: 0 }],
-    opacity: 1,
-    easing: Easing.out(Easing.exp),
-  },
-  18: {
-    transform: [{ scale: 1.1 }, { translateY: -8 }],
-    opacity: 1,
-    easing: Easing.bounce,
-  },
-  25: {
     transform: [{ scale: 1 }, { translateY: 0 }],
     opacity: 1,
-    easing: Easing.out(Easing.ease),
   },
   100: {
     transform: [{ scale: 1 }, { translateY: 0 }],
@@ -50,20 +36,11 @@ const logoKeyframe = new Keyframe({
   },
 });
 
-// ── "Marketplace" subtitle — fade in from below ──────────────────
+// ── "Marketplace" subtitle — visible immediately ────────────────
 const subtitleKeyframe = new Keyframe({
   0: {
-    opacity: 0,
-    transform: [{ translateY: 20 }],
-  },
-  10: {
-    opacity: 0,
-    transform: [{ translateY: 20 }],
-  },
-  20: {
     opacity: 1,
     transform: [{ translateY: 0 }],
-    easing: Easing.out(Easing.exp),
   },
   100: {
     opacity: 1,
