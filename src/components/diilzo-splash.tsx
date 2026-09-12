@@ -1,8 +1,8 @@
 import { Brand } from '@/constants/theme';
-import { playSound, preloadSound, Sounds } from '@/services/sound';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -11,6 +11,18 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
+const WHOOSH_SOUND = require('@/assets/sounds/whoosh.wav');
+
+// Create the audio player at module level — this is SYNCHRONOUS
+// and happens before any component renders. No async delay.
+const whooshPlayer = createAudioPlayer(WHOOSH_SOUND);
+
+// Configure audio session in the background (non-blocking)
+setAudioModeAsync({
+  playsInSilentMode: true,
+  shouldPlayInBackground: false,
+  interruptionMode: 'mixWithOthers',
+}).catch(() => { });
 
 const DURATION = 7000;
 
@@ -102,13 +114,6 @@ export function DiilzoSplash() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
 
-  // Play the startup sound the moment the animated splash begins —
-  // this is during the splash, not after it.
-  useEffect(() => {
-    if (!animate) return;
-    playSound(Sounds.WHOOSH);
-  }, [animate]);
-
   if (!visible) return null;
 
   return animate ? (
@@ -153,13 +158,16 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        // Preload ONLY the whoosh sound and init the audio system
-        // BEFORE starting the animation. This ensures the audio player
-        // is ready to play synchronously the instant the animation begins.
-        preloadSound(Sounds.WHOOSH).then(() => {
-          SplashScreen.hideAsync().finally(() => {
-            setAnimate(true);
-          });
+        // Play the startup sound IMMEDIATELY — the audio player was
+        // created at module level (synchronous), so there's no delay.
+        // Then hide the native splash and start the animation at the
+        // same time, so sound + animation begin together.
+        try {
+          whooshPlayer.seekTo(0);
+          whooshPlayer.play();
+        } catch { }
+        SplashScreen.hideAsync().finally(() => {
+          setAnimate(true);
         });
       }}
       style={styles.overlay}
