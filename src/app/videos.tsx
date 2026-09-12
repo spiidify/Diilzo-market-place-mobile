@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DiilzoLogo } from '@/components/diilzo-logo';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCategories } from '@/services/catalog';
@@ -729,12 +728,10 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* ── Gradient header with logo ──────────────────────────────── */}
+      {/* ── Gradient spacer for status bar ─────────────────────────── */}
       <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.headerBar}>
-            <DiilzoLogo size={22} variant="color" />
-          </View>
+          <View style={styles.headerBar} />
         </SafeAreaView>
       </LinearGradient>
 
