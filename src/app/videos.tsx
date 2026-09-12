@@ -56,6 +56,7 @@ function DirectVideoPlayer({
   const timeUpdate = useEvent(player, 'timeUpdate', null);
 
   const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(false);
   const lastTapRef = useRef(0);
 
   // Play/pause based on active state — seek to start when reactivated
@@ -88,10 +89,11 @@ function DirectVideoPlayer({
   }, [player, onEnd]);
 
   const toggleMute = useCallback(() => {
-    const newMuted = !muted;
+    const newMuted = !mutedRef.current;
+    mutedRef.current = newMuted;
     setMuted(newMuted);
     player.muted = newMuted;
-  }, [muted, player]);
+  }, [player]);
 
   const seekTo = useCallback((ratio: number) => {
     const dur = player.duration || 0;
@@ -211,7 +213,7 @@ const directVideoStyles = StyleSheet.create({
   },
   controlsRow: {
     position: 'absolute',
-    bottom: 8, left: 12, right: 12,
+    bottom: 90, left: 12, right: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -224,7 +226,7 @@ const directVideoStyles = StyleSheet.create({
   },
   progressTrack: {
     position: 'absolute',
-    bottom: 0, left: 0, right: 0,
+    bottom: 80, left: 0, right: 0,
     height: 20,
     justifyContent: 'center',
   },
@@ -893,7 +895,7 @@ const styles = StyleSheet.create({
   },
   tapToggle: {
     position: 'absolute',
-    top: 0, left: 0, right: 70, bottom: 60,
+    top: 0, left: 0, right: 70, bottom: 140,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -902,7 +904,7 @@ const styles = StyleSheet.create({
   actionBar: {
     position: 'absolute',
     right: 12,
-    bottom: 60,
+    bottom: 140,
     alignItems: 'center',
     gap: 18,
   },
@@ -923,11 +925,11 @@ const styles = StyleSheet.create({
   // ── Bottom info ─────────────────────────────────────────────────
   bottomInfo: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 100,
     left: 0,
     right: 70,
     padding: 16,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   storeRow: {
     flexDirection: 'row',
