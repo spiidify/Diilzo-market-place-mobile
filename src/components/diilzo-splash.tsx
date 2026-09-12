@@ -158,17 +158,15 @@ export function DiilzoSplash() {
   ) : (
     <View
       onLayout={() => {
-        // Play the startup sound IMMEDIATELY — the audio player was
-        // created at module level (synchronous), so there's no delay.
-        // Then hide the native splash and start the animation at the
-        // same time, so sound + animation begin together.
+        // Play the startup sound AND start the animation at the SAME
+        // instant — no async, no waiting. The native splash is hidden
+        // in the background so it doesn't delay anything.
         try {
           whooshPlayer.seekTo(0);
           whooshPlayer.play();
         } catch { }
-        SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
-        });
+        setAnimate(true);
+        SplashScreen.hideAsync().catch(() => { });
       }}
       style={styles.overlay}
     >
