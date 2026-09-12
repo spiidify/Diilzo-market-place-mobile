@@ -11,12 +11,12 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
 
-const DURATION = 3500;
+const DURATION = 5000;
 
 // ── Orange background fade out ────────────────────────────────────
 const bgKeyframe = new Keyframe({
   0: { opacity: 1 },
-  80: { opacity: 1 },
+  90: { opacity: 1 },
   100: {
     opacity: 0,
     easing: Easing.out(Easing.ease),
@@ -27,19 +27,19 @@ const bgKeyframe = new Keyframe({
 const logoKeyframe = new Keyframe({
   0: {
     transform: [{ scale: 0.3 }, { translateY: 0 }],
-    opacity: 0,
+    opacity: 1,
   },
-  10: {
+  8: {
     transform: [{ scale: 0.5 }, { translateY: 0 }],
-    opacity: 0.5,
+    opacity: 1,
     easing: Easing.out(Easing.exp),
   },
-  25: {
+  18: {
     transform: [{ scale: 1.1 }, { translateY: -8 }],
     opacity: 1,
     easing: Easing.bounce,
   },
-  35: {
+  25: {
     transform: [{ scale: 1 }, { translateY: 0 }],
     opacity: 1,
     easing: Easing.out(Easing.ease),
@@ -56,11 +56,11 @@ const subtitleKeyframe = new Keyframe({
     opacity: 0,
     transform: [{ translateY: 20 }],
   },
-  20: {
+  10: {
     opacity: 0,
     transform: [{ translateY: 20 }],
   },
-  35: {
+  20: {
     opacity: 1,
     transform: [{ translateY: 0 }],
     easing: Easing.out(Easing.exp),
@@ -74,22 +74,22 @@ const subtitleKeyframe = new Keyframe({
 // ── Orange dot pulse ──────────────────────────────────────────────
 const dotKeyframe = new Keyframe({
   0: { transform: [{ scale: 0 }], opacity: 0 },
-  15: { transform: [{ scale: 0 }], opacity: 0 },
-  25: {
+  10: { transform: [{ scale: 0 }], opacity: 0 },
+  18: {
     transform: [{ scale: 1.4 }],
     opacity: 1,
     easing: Easing.bounce,
   },
-  32: { transform: [{ scale: 1 }], opacity: 1 },
+  25: { transform: [{ scale: 1 }], opacity: 1 },
   100: { transform: [{ scale: 1 }], opacity: 1 },
 });
 
 // ── Loading bar — slides in from left ────────────────────────────
 const barKeyframe = new Keyframe({
   0: { transform: [{ scaleX: 0 }], opacity: 0 },
-  25: { transform: [{ scaleX: 0 }], opacity: 0 },
-  30: { opacity: 1, transform: [{ scaleX: 0 }] },
-  75: {
+  15: { transform: [{ scaleX: 0 }], opacity: 0 },
+  20: { opacity: 1, transform: [{ scaleX: 0 }] },
+  80: {
     transform: [{ scaleX: 1 }],
     opacity: 1,
     easing: Easing.inOut(Easing.ease),
@@ -185,8 +185,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoImage: {
-    width: 140,
-    height: 44,
+    width: 200,
+    height: 63,
   },
   subtitle: {
     fontSize: 13,
