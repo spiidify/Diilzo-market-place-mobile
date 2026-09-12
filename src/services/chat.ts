@@ -70,31 +70,47 @@ export async function sendVoiceMessage(
   } as any);
   formData.append('audio_duration', String(Math.round(durationSec)));
 
-  // Use fetch directly — axios on React Native sometimes doesn't send
-  // multipart file data in a way DRF's MultiPartParser recognizes.
+  // Use XMLHttpRequest — the most reliable way to upload files in React
+  // Native. Both axios and fetch have issues with FormData file parts on
+  // certain RN platforms ("The submitted data was not a file" / 
+  // "Unsupported FormDataPart implementation undefined").
   const token = await getAccessToken();
   const url = `${BASE_URL}/chat/threads/${threadId}/send/`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-    },
-    body: formData,
+
+  return new Promise<ChatMessage>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch (e) {
+          reject(new Error('Invalid response from server'));
+        }
+      } else {
+        let errData: any = null;
+        try { errData = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+        console.error('sendVoiceMessage error:', { status: xhr.status, data: errData });
+        const err: any = new Error(`Voice send failed: ${xhr.status}`);
+        err.response = { status: xhr.status, data: errData };
+        reject(err);
+      }
+    };
+
+    xhr.onerror = () => {
+      console.error('sendVoiceMessage network error');
+      reject(new Error('Network error while sending voice message'));
+    };
+
+    xhr.ontimeout = () => {
+      reject(new Error('Voice upload timed out'));
+    };
+
+    xhr.timeout = 30000;
+    xhr.send(formData);
   });
-
-  if (!response.ok) {
-    let errData: any = null;
-    try { errData = await response.json(); } catch { /* not JSON */ }
-    console.error('sendVoiceMessage error:', {
-      status: response.status,
-      data: errData,
-    });
-    const err: any = new Error(`Voice send failed: ${response.status}`);
-    err.response = { status: response.status, data: errData };
-    throw err;
-  }
-
-  return response.json();
 }
 
 /** GET /api/v1/chat/unread/ — total unread count */
