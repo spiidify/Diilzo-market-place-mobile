@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAudioPlayer } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -139,6 +139,11 @@ export default function ChatThreadScreen() {
     cancelRecording,
     reset,
   } = useVoiceRecorder();
+
+  // Set audio mode for playback (plays through speaker even in silent mode)
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true });
+  }, []);
 
   const load = useCallback(async () => {
     if (!threadId) return;

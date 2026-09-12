@@ -74,7 +74,9 @@ export async function sendVoiceMessage(
     `/chat/threads/${threadId}/send/`,
     formData,
     {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      // Let axios/RN set the Content-Type automatically with the correct
+      // multipart boundary — setting it manually omits the boundary and
+      // the backend can't parse the form data.
       timeout: 30000,
     }
   );
