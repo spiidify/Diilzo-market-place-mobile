@@ -29,6 +29,7 @@ import {
   fetchPickupStations,
   type PickUpStation,
 } from '@/services/logistics';
+import { calculateShipping } from '@/services/orders';
 import {
   checkPaymentStatus,
   fetchPaymentMethods,
@@ -84,9 +85,7 @@ const PAYMENT_OPTIONS: {
     },
   ];
 
-const SHIPPING_FEE = 5000;
-const TAX_RATE = 0.0;
-const REGIONS = ['Central', 'Northern', 'West Nile'];
+const DEFAULT_SHIPPING_FEE = 5000; // Fallback only — actual cost fetched from API
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -121,6 +120,9 @@ export default function CheckoutScreen() {
   const [pickupError, setPickupError] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('Central');
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingEstimate, setShippingEstimate] = useState<{ method_name: string; estimated_days: number } | null>(null);
 
   const loadCheckout = useCallback(async () => {
     if (!isAuthenticated) {
@@ -173,6 +175,41 @@ export default function CheckoutScreen() {
     loadCheckout();
   }, [loadCheckout]);
 
+  // Fetch dynamic shipping cost when cart, address, or fulfillment method changes
+  useEffect(() => {
+    if (fulfillmentMethod === 'pickup_station' || !cart || cart.items.length === 0) {
+      setShippingCost(0);
+      setShippingEstimate(null);
+      return;
+    }
+    const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
+    if (!selectedAddr) {
+      setShippingCost(DEFAULT_SHIPPING_FEE);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setShippingLoading(true);
+      try {
+        const result = await calculateShipping({
+          items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+          address: { city: selectedAddr.city, country: selectedAddr.country },
+        });
+        if (!cancelled && result.available) {
+          setShippingCost(Number(result.shipping_cost));
+          setShippingEstimate({ method_name: result.method_name, estimated_days: result.estimated_days });
+        } else if (!cancelled) {
+          setShippingCost(DEFAULT_SHIPPING_FEE);
+        }
+      } catch {
+        if (!cancelled) setShippingCost(DEFAULT_SHIPPING_FEE);
+      } finally {
+        if (!cancelled) setShippingLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [cart, selectedAddressId, fulfillmentMethod, addresses]);
+
   // Fetch pickup stations when user switches to pickup fulfillment
   useEffect(() => {
     if (fulfillmentMethod === 'pickup_station' && pickupStations.length === 0 && !pickupLoading) {
@@ -210,8 +247,8 @@ export default function CheckoutScreen() {
   };
 
   const subtotal = cart ? Number(cart.total_price) : 0;
-  const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
-  const tax = Math.round(subtotal * TAX_RATE);
+  const shipping = fulfillmentMethod === 'pickup_station' ? 0 : shippingCost;
+  const tax = 0; // Tax is calculated server-side during order creation
   const total = Math.max(0, subtotal + shipping + tax - discount);
 
   const handleValidateCoupon = async () => {
@@ -620,7 +657,7 @@ export default function CheckoutScreen() {
                   style={styles.regionTabsScroll}
                   contentContainerStyle={styles.regionTabsContent}
                 >
-                  {REGIONS.map((region) => (
+                  {Array.from(new Set(pickupStations.map((s) => s.region).filter(Boolean))).map((region) => (
                     <Pressable
                       key={`region-${region}`}
                       style={({ pressed }) => [
@@ -860,8 +897,19 @@ export default function CheckoutScreen() {
               </View>
               <View style={styles.costRow}>
                 <Text style={styles.costLabel}>Shipping</Text>
-                <Text style={styles.costValue}>{currency} {shipping.toLocaleString()}</Text>
+                {shippingLoading ? (
+                  <ActivityIndicator size="small" color={Brand.primary} />
+                ) : (
+                  <Text style={styles.costValue}>
+                    {shipping === 0 && fulfillmentMethod === 'pickup_station' ? 'Free (Pickup)' : `${currency} ${shipping.toLocaleString()}`}
+                  </Text>
+                )}
               </View>
+              {shippingEstimate && fulfillmentMethod === 'home_delivery' && !shippingLoading && (
+                <Text style={styles.shippingEstimate}>
+                  {shippingEstimate.method_name} · Est. {shippingEstimate.estimated_days} day(s)
+                </Text>
+              )}
               {discount > 0 && (
                 <View style={styles.costRow}>
                   <Text style={[styles.costLabel, { color: Brand.primary }]}>Discount</Text>
@@ -1399,6 +1447,7 @@ const styles = StyleSheet.create({
   costRow: { flexDirection: 'row', justifyContent: 'space-between' },
   costLabel: { fontSize: 13, color: Brand.textSecondary },
   costValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  shippingEstimate: { fontSize: 11, color: Brand.textTertiary, marginTop: 2, marginBottom: 4 },
 
   // Total bar — full width green gradient feel
   totalBar: {
