@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { apiRequest } from '@/services/api';
 import {
   authenticateWithBiometrics,
   getBiometricType,
@@ -35,6 +36,49 @@ export default function PrivacyScreen() {
   const [screenshotPrevention, setScreenshotPrevention] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Notification preferences
+  const [notifPrefs, setNotifPrefs] = useState<Array<{
+    notification_type: string; label: string;
+    in_app_enabled: boolean; email_enabled: boolean; push_enabled: boolean;
+  }>>([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+
+  const loadNotifPrefs = useCallback(async () => {
+    try {
+      setNotifLoading(true);
+      const data = await apiRequest<{ preferences: any[] }>({
+        method: 'GET', url: '/notifications/preferences/',
+      });
+      setNotifPrefs(data.preferences || []);
+    } catch (e) {
+      // Non-critical — preferences just won't be editable
+    } finally {
+      setNotifLoading(false);
+    }
+  }, []);
+
+  const toggleNotif = useCallback(async (ntype: string, channel: string) => {
+    setNotifPrefs((prev) => {
+      const updated = prev.map((p) => {
+        if (p.notification_type !== ntype) return p;
+        return { ...p, [channel]: !p[channel as keyof typeof p] };
+      });
+      // Fire-and-forget save
+      const changed = updated.find((p) => p.notification_type === ntype);
+      if (changed) {
+        apiRequest({
+          method: 'PUT', url: '/notifications/preferences/',
+          data: { preferences: [changed] },
+        }).catch(() => { });
+      }
+      return updated;
+    });
+  }, []);
+
+  useEffect(() => {
+    loadNotifPrefs();
+  }, [loadNotifPrefs]);
 
   const checkBiometric = useCallback(async () => {
     try {
@@ -243,6 +287,65 @@ export default function PrivacyScreen() {
                 </View>
               </View>
 
+              {/* Notification preferences section */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Notifications</Text>
+                <Text style={styles.sectionSub}>
+                  Choose which notifications you receive on each channel.
+                </Text>
+                {notifLoading ? (
+                  <View style={styles.loadingWrap}><ActivityIndicator size="small" color={Brand.primary} /></View>
+                ) : (
+                  <View style={styles.card}>
+                    {notifPrefs.map((pref, idx) => (
+                      <View key={pref.notification_type}>
+                        {idx > 0 && <View style={styles.rowDivider} />}
+                        <View style={styles.notifTypeRow}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.settingLabel}>{pref.label}</Text>
+                            <View style={styles.notifChannels}>
+                              <Pressable
+                                style={styles.notifChannelChip}
+                                onPress={() => toggleNotif(pref.notification_type, 'in_app_enabled')}
+                              >
+                                <MaterialCommunityIcons
+                                  name={pref.in_app_enabled ? 'bell' : 'bell-off'}
+                                  size={14}
+                                  color={pref.in_app_enabled ? Brand.primary : Brand.textTertiary}
+                                />
+                                <Text style={[styles.notifChannelText, { color: pref.in_app_enabled ? Brand.primary : Brand.textTertiary }]}>App</Text>
+                              </Pressable>
+                              <Pressable
+                                style={styles.notifChannelChip}
+                                onPress={() => toggleNotif(pref.notification_type, 'email_enabled')}
+                              >
+                                <MaterialCommunityIcons
+                                  name={pref.email_enabled ? 'email' : 'email-off'}
+                                  size={14}
+                                  color={pref.email_enabled ? Brand.primary : Brand.textTertiary}
+                                />
+                                <Text style={[styles.notifChannelText, { color: pref.email_enabled ? Brand.primary : Brand.textTertiary }]}>Email</Text>
+                              </Pressable>
+                              <Pressable
+                                style={styles.notifChannelChip}
+                                onPress={() => toggleNotif(pref.notification_type, 'push_enabled')}
+                              >
+                                <MaterialCommunityIcons
+                                  name={pref.push_enabled ? 'cellphone' : 'cellphone-off'}
+                                  size={14}
+                                  color={pref.push_enabled ? Brand.primary : Brand.textTertiary}
+                                />
+                                <Text style={[styles.notifChannelText, { color: pref.push_enabled ? Brand.primary : Brand.textTertiary }]}>Push</Text>
+                              </Pressable>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+
               {/* Data privacy section */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Data & Privacy</Text>
@@ -393,4 +496,15 @@ const styles = StyleSheet.create({
   infoContent: { flex: 1, gap: 4 },
   infoTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
   infoText: { fontSize: 13, color: Brand.textSecondary, lineHeight: 20 },
+
+  // Notification preferences
+  sectionSub: { fontSize: 13, color: Brand.textSecondary, marginBottom: Spacing.two },
+  notifTypeRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.three },
+  notifChannels: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  notifChannelChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: Brand.surfaceAlt, borderRadius: 12,
+  },
+  notifChannelText: { fontSize: 12, fontWeight: '600' },
 });
