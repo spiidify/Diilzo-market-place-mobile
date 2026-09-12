@@ -27,13 +27,16 @@ import type { Category, Product, WishlistItem } from '@/types';
 
 // ── TikTok-style video player for direct Cloudinary uploads ──────────
 function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: boolean; onEnd: () => void }) {
-  const player = useVideoPlayer({ uri }, (p) => {
-    p.loop = false;
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
     p.muted = false;
+    p.timeUpdateEventInterval = 0.1;
+    if (isActive) p.play();
   });
 
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
+  const timeUpdate = useEvent(player, 'timeUpdate', null);
 
   // Play/pause based on active state
   useEffect(() => {
@@ -60,28 +63,47 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
     }
   }, [isPlaying, player]);
 
+  const currentTime = timeUpdate?.currentTime ?? 0;
+  const duration = player.duration || 0;
+  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+  const isLoading = status === 'loading' || status === 'idle';
+
   return (
     <View style={directVideoStyles.container}>
       <VideoView
         style={directVideoStyles.video}
         player={player}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
         allowsPictureInPicture={false}
       />
-      {/* Tap to pause/play overlay (no controls, TikTok-style) */}
-      <Pressable style={directVideoStyles.tapOverlay} onPress={togglePlay}>
-        {!isPlaying && status !== 'loading' && (
-          <View style={directVideoStyles.playBtnWrap}>
-            <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
+
+      {/* Tap to pause/play overlay */}
+      <Pressable
+        style={directVideoStyles.tapOverlay}
+        onPress={togglePlay}
+      >
+        {/* Loading spinner */}
+        {isLoading && (
+          <View style={directVideoStyles.centerWrap}>
+            <ActivityIndicator size="large" color={Brand.primary} />
           </View>
         )}
-        {status === 'loading' && (
-          <View style={directVideoStyles.playBtnWrap}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
+
+        {/* Play button when paused */}
+        {!isPlaying && !isLoading && (
+          <View style={directVideoStyles.playBtnCircle}>
+            <MaterialCommunityIcons name="play" size={36} color="#FFFFFF" />
           </View>
         )}
       </Pressable>
+
+      {/* Progress bar at bottom */}
+      {duration > 0 && (
+        <View style={directVideoStyles.progressTrack}>
+          <View style={[directVideoStyles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+      )}
     </View>
   );
 }
@@ -93,9 +115,25 @@ const directVideoStyles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center',
   },
-  playBtnWrap: {
+  centerWrap: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  playBtnCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
+  },
+  progressTrack: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Brand.primary,
   },
 });
 
