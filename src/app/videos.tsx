@@ -87,14 +87,11 @@ function DirectVideoPlayer({
     return () => sub.remove();
   }, [player, onEnd]);
 
-  // Sync muted state to player
-  useEffect(() => {
-    player.muted = muted;
-  }, [muted, player]);
-
   const toggleMute = useCallback(() => {
-    setMuted((m) => !m);
-  }, []);
+    const newMuted = !muted;
+    setMuted(newMuted);
+    player.muted = newMuted;
+  }, [muted, player]);
 
   const seekTo = useCallback((ratio: number) => {
     const dur = player.duration || 0;
