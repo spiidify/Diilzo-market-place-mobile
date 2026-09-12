@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEvent } from 'expo';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  AppState,
   FlatList,
   Image,
   Pressable,
@@ -65,6 +66,13 @@ function DirectVideoPlayer({
       player.pause();
     }
   }, [isActive, player]);
+
+  // Pause and release on unmount (when scrolling away or leaving screen)
+  useEffect(() => {
+    return () => {
+      player.pause();
+    };
+  }, [player]);
 
   // Auto-advance when video ends (playToEnd event)
   useEffect(() => {
@@ -366,6 +374,28 @@ export default function VideosScreen() {
   const listRef = useRef<FlatList<Product>>(null);
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
+  // ── Pause video when screen loses focus (leaving tab, opening another page) ──
+  useFocusEffect(
+    useCallback(() => {
+      // Returning from another screen — resume playing
+      setIsPlaying(true);
+      return () => {
+        // Leaving the screen — pause the video
+        setIsPlaying(false);
+      };
+    }, [])
+  );
+
+  // ── Pause video when app goes to background (closing, home button, etc.) ──
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        setIsPlaying(false);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
   // ── Load categories for tabs ──────────────────────────────────────
   useEffect(() => {
     fetchCategories()
@@ -533,7 +563,7 @@ export default function VideosScreen() {
           isActive ? (
             <DirectVideoPlayer
               uri={item.video_file_url}
-              isActive={isActive}
+              isActive={isActive && isPlaying}
               onEnd={handleVideoEnd}
               onDoubleTap={handleDoubleTap}
               posterImage={thumb}
