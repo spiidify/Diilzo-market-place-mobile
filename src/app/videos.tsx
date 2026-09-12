@@ -33,6 +33,7 @@ function DirectVideoPlayer({
   onEnd,
   onDoubleTap,
   onSingleTap,
+  showOverlay,
   posterImage,
 }: {
   uri: string;
@@ -40,6 +41,7 @@ function DirectVideoPlayer({
   onEnd: () => void;
   onDoubleTap: () => void;
   onSingleTap: () => void;
+  showOverlay: boolean;
   posterImage?: string | null;
 }) {
   const player = useVideoPlayer(uri, (p) => {
@@ -54,9 +56,7 @@ function DirectVideoPlayer({
   const timeUpdate = useEvent(player, 'timeUpdate', null);
 
   const [muted, setMuted] = useState(false);
-  const [showControls, setShowControls] = useState(false);
   const lastTapRef = useRef(0);
-  const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Play/pause based on active state — seek to start when reactivated
   useEffect(() => {
@@ -92,14 +92,6 @@ function DirectVideoPlayer({
     player.muted = muted;
   }, [muted, player]);
 
-  const togglePlay = useCallback(() => {
-    if (isPlaying) {
-      player.pause();
-    } else {
-      player.play();
-    }
-  }, [isPlaying, player]);
-
   const toggleMute = useCallback(() => {
     setMuted((m) => !m);
   }, []);
@@ -110,15 +102,6 @@ function DirectVideoPlayer({
       player.currentTime = Math.max(0, Math.min(ratio * dur, dur));
     }
   }, [player]);
-
-  // Show controls with auto-hide
-  const showControlsWithAutoHide = useCallback(() => {
-    setShowControls(true);
-    if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
-    hideControlsTimer.current = setTimeout(() => {
-      setShowControls(false);
-    }, 2000);
-  }, []);
 
   // Handle tap — single tap = toggle overlay, double tap = like
   const handleTap = useCallback(() => {
@@ -177,8 +160,8 @@ function DirectVideoPlayer({
         )}
       </Pressable>
 
-      {/* Controls overlay (mute, time) — auto-hide */}
-      {showControls && (
+      {/* Controls overlay (mute, time) — visible when overlay is shown */}
+      {showOverlay && (
         <View style={directVideoStyles.controlsRow}>
           {/* Time display */}
           <Text style={directVideoStyles.timeText}>
@@ -560,6 +543,7 @@ export default function VideosScreen() {
               onEnd={handleVideoEnd}
               onDoubleTap={handleDoubleTap}
               onSingleTap={handleOverlayToggle}
+              showOverlay={showOverlay}
               posterImage={thumb}
             />
           ) : (
@@ -622,6 +606,17 @@ export default function VideosScreen() {
                 </View>
               )}
             </Pressable>
+            {/* Pause / Play */}
+            {isActive && hasDirectVideo ? (
+              <Pressable style={styles.actionItem} onPress={() => setIsPlaying((p) => !p)}>
+                <MaterialCommunityIcons
+                  name={isPlaying ? 'pause' : 'play'}
+                  size={30}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.actionText}>{isPlaying ? 'Pause' : 'Play'}</Text>
+              </Pressable>
+            ) : null}
             {/* Wishlist */}
             <Pressable style={styles.actionItem} onPress={() => handleWishlistToggle(item)}>
               <MaterialCommunityIcons
