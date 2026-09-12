@@ -213,6 +213,7 @@ export default function ChatThreadScreen() {
     if (!msg || sending) return;
     setInput('');
     setSending(true);
+    playSound(Sounds.MESSAGE_SEND);
     try {
       setSendError(null);
       const sent = await sendChatMessage(threadId, msg);
@@ -234,6 +235,7 @@ export default function ChatThreadScreen() {
       const result = await stopRecording();
       if (result && result.uri) {
         setSending(true);
+        playSound(Sounds.MESSAGE_SEND);
         try {
           const sent = await sendVoiceMessage(threadId, result.uri, result.duration);
           setMessages((prev) => [...prev, sent]);
