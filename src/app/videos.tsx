@@ -5,7 +5,6 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   AppState,
   FlatList,
   Image,
@@ -54,7 +53,6 @@ function DirectVideoPlayer({
 
   const [muted, setMuted] = useState(false);
   const [showControls, setShowControls] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
   const lastTapRef = useRef(0);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -109,20 +107,11 @@ function DirectVideoPlayer({
   // Show controls with auto-hide
   const showControlsWithAutoHide = useCallback(() => {
     setShowControls(true);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
     if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
     hideControlsTimer.current = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setShowControls(false));
+      setShowControls(false);
     }, 2000);
-  }, [fadeAnim]);
+  }, []);
 
   // Handle tap — single tap = toggle controls, double tap = like
   const handleTap = useCallback(() => {
@@ -182,9 +171,9 @@ function DirectVideoPlayer({
         )}
       </Pressable>
 
-      {/* Controls overlay (mute, time) — fades in/out */}
+      {/* Controls overlay (mute, time) — auto-hide */}
       {showControls && (
-        <Animated.View style={[directVideoStyles.controlsRow, { opacity: fadeAnim }]}>
+        <View style={directVideoStyles.controlsRow}>
           {/* Time display */}
           <Text style={directVideoStyles.timeText}>
             {formatTime(currentTime)} / {formatTime(duration)}
@@ -197,7 +186,7 @@ function DirectVideoPlayer({
               color="#FFFFFF"
             />
           </Pressable>
-        </Animated.View>
+        </View>
       )}
 
       {/* Seekable progress bar */}
@@ -273,62 +262,14 @@ const directVideoStyles = StyleSheet.create({
   },
 });
 
-// ── Animated heart burst on double-tap like ────────────────────────
+// ── Heart burst on double-tap like ─────────────────────────────────
 function HeartBurst({ visible }: { visible: boolean }) {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 4,
-          tension: 80,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setTimeout(() => {
-          Animated.parallel([
-            Animated.timing(scaleAnim, {
-              toValue: 1.3,
-              duration: 400,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-              toValue: 0,
-              duration: 400,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, 400);
-      });
-    } else {
-      scaleAnim.setValue(0);
-      opacityAnim.setValue(0);
-    }
-  }, [visible, scaleAnim, opacityAnim]);
-
   if (!visible) return null;
 
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        heartStyles.container,
-        {
-          transform: [{ scale: scaleAnim }],
-          opacity: opacityAnim,
-        },
-      ]}
-    >
+    <View pointerEvents="none" style={heartStyles.container}>
       <MaterialCommunityIcons name="heart" size={100} color="#FF4757" />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -717,7 +658,15 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* ── Category tabs + search bar ────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Videos</Text>
+        <Pressable style={styles.headerSearchBtn} onPress={() => setShowSearch((prev) => !prev)}>
+          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+        </Pressable>
+      </View>
+
+      {/* ── Category tabs ──────────────────────────────────────────── */}
       <View style={styles.tabsContainer}>
         <ScrollView
           horizontal
@@ -742,12 +691,6 @@ export default function VideosScreen() {
             </Pressable>
           ))}
         </ScrollView>
-        <Pressable
-          style={styles.searchToggleBtn}
-          onPress={() => setShowSearch((prev) => !prev)}
-        >
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-        </Pressable>
       </View>
 
       {/* Search bar (collapsible) */}
@@ -825,6 +768,18 @@ const styles = StyleSheet.create({
     width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
+
+  // ── Header ──────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#0a0a0a',
+  },
+  headerTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
+  headerSearchBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
 
