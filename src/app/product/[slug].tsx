@@ -66,6 +66,7 @@ export default function ProductDetailScreen() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const toastAnim = useRef(new Animated.Value(-100)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [chatCreating, setChatCreating] = useState(false);
   const { isAuthenticated } = useAuth();
 
   const load = useCallback(async () => {
@@ -186,17 +187,6 @@ export default function ProductDetailScreen() {
     }
   }, [product, isWishlisted, isAuthenticated, router]);
 
-  const handleChat = useCallback(async () => {
-    if (!product?.store?.slug) return;
-    if (!isAuthenticated) { router.push('/login'); return; }
-    try {
-      const thread = await createChatThread(product.store.slug, product.id);
-      router.push(`/chat/${thread.id}` as any);
-    } catch (e: any) {
-      console.error('Chat create error:', e?.message);
-    }
-  }, [product, isAuthenticated, router]);
-
   const showToast = useCallback((type: 'success' | 'error', text: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ type, text });
@@ -213,6 +203,37 @@ export default function ProductDetailScreen() {
       }).start(() => setToast(null));
     }, 2500);
   }, [toastAnim]);
+
+  const handleChat = useCallback(async () => {
+    if (!product) {
+      showToast('error', 'Product not loaded yet');
+      return;
+    }
+    if (!product.store) {
+      showToast('error', 'No store found for this product');
+      return;
+    }
+    if (!product.store.slug) {
+      showToast('error', 'Store information unavailable');
+      return;
+    }
+    if (!isAuthenticated) {
+      router.push('/(auth)/login');
+      return;
+    }
+    if (chatCreating) return;
+    setChatCreating(true);
+    try {
+      const thread = await createChatThread(product.store.slug, product.id);
+      router.push(`/chat/${thread.id}` as any);
+    } catch (e: any) {
+      console.error('Chat create error:', e?.message);
+      const msg = e?.response?.data?.error || e?.response?.data?.detail || e?.message || 'Failed to start chat. Check your connection.';
+      showToast('error', msg);
+    } finally {
+      setChatCreating(false);
+    }
+  }, [product, isAuthenticated, router, chatCreating, showToast]);
 
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
@@ -728,9 +749,13 @@ export default function ProductDetailScreen() {
               <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={18} color={Brand.danger} />
               <Text style={styles.actionChipText}>{isWishlisted ? 'In Wishlist' : 'Add to Wishlist'}</Text>
             </Pressable>
-            <Pressable style={styles.actionChip} onPress={handleChat}>
-              <MaterialCommunityIcons name="chat-outline" size={18} color={Brand.link} />
-              <Text style={styles.actionChipText}>Chat with Seller</Text>
+            <Pressable style={styles.actionChip} onPress={handleChat} disabled={chatCreating}>
+              {chatCreating ? (
+                <ActivityIndicator size="small" color={Brand.link} />
+              ) : (
+                <MaterialCommunityIcons name="chat-outline" size={18} color={Brand.link} />
+              )}
+              <Text style={styles.actionChipText}>{chatCreating ? 'Starting...' : 'Chat with Seller'}</Text>
             </Pressable>
           </View>
 
