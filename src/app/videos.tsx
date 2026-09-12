@@ -27,12 +27,13 @@ import type { Category, Product, WishlistItem } from '@/types';
 
 // ── TikTok-style video player for direct Cloudinary uploads ──────────
 function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: boolean; onEnd: () => void }) {
-  const player = useVideoPlayer(uri, (p) => {
+  const player = useVideoPlayer({ uri }, (p) => {
     p.loop = false;
-    if (isActive) p.play();
+    p.muted = false;
   });
 
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
 
   // Play/pause based on active state
   useEffect(() => {
@@ -70,8 +71,15 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
       />
       {/* Tap to pause/play overlay (no controls, TikTok-style) */}
       <Pressable style={directVideoStyles.tapOverlay} onPress={togglePlay}>
-        {!isPlaying && (
-          <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.8)" />
+        {!isPlaying && status !== 'loading' && (
+          <View style={directVideoStyles.playBtnWrap}>
+            <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.9)" />
+          </View>
+        )}
+        {status === 'loading' && (
+          <View style={directVideoStyles.playBtnWrap}>
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          </View>
         )}
       </Pressable>
     </View>
@@ -79,11 +87,15 @@ function DirectVideoPlayer({ uri, isActive, onEnd }: { uri: string; isActive: bo
 }
 
 const directVideoStyles = StyleSheet.create({
-  container: { flex: 1, position: 'relative' },
+  container: { flex: 1, position: 'relative', backgroundColor: '#000' },
   video: { flex: 1, width: '100%', height: '100%' },
   tapOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center',
+  },
+  playBtnWrap: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
@@ -314,18 +326,6 @@ export default function VideosScreen() {
 
         {/* Bottom gradient for text readability */}
         <View style={styles.bottomGradient} />
-
-        {/* Tap to pause/play (only for active video, above action bar area) */}
-        {isActive && (
-          <Pressable
-            style={styles.tapToggle}
-            onPress={handleTogglePlay}
-          >
-            {!isPlaying && (
-              <MaterialCommunityIcons name="play-circle" size={72} color="rgba(255,255,255,0.8)" />
-            )}
-          </Pressable>
-        )}
 
         {/* Right action bar (TikTok-style) */}
         <View style={styles.actionBar}>
