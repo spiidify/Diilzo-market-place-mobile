@@ -3,6 +3,10 @@
 // Used on both the login and register screens.
 // Uses expo-auth-session for the OAuth flow, then exchanges the
 // provider token for Diilzo JWT tokens via the backend.
+//
+// Buttons are ALWAYS visible. If a provider is not configured (no
+// client ID in env), tapping the button shows an alert explaining
+// how to configure it.
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -12,8 +16,6 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import {
-  isFacebookConfigured,
-  isGoogleConfigured,
   useFacebookAuth,
   useGoogleAuth,
 } from '@/services/socialAuth';
@@ -23,12 +25,16 @@ export function SocialLoginButtons() {
   const { socialLogin } = useAuth();
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
+  // Hooks are always called — no conditional returns before them
   const googleAuth = useGoogleAuth();
   const facebookAuth = useFacebookAuth();
 
   const handleGoogle = async () => {
-    if (!googleAuth) {
-      Alert.alert('Not Configured', 'Google sign-in is not configured. Set EXPO_PUBLIC_GOOGLE_CLIENT_ID in your environment.');
+    if (!googleAuth.configured) {
+      Alert.alert(
+        'Google Sign-In Not Configured',
+        'Add EXPO_PUBLIC_GOOGLE_CLIENT_ID to your .env file to enable Google sign-in.',
+      );
       return;
     }
     try {
@@ -51,8 +57,11 @@ export function SocialLoginButtons() {
   };
 
   const handleFacebook = async () => {
-    if (!facebookAuth) {
-      Alert.alert('Not Configured', 'Facebook sign-in is not configured. Set EXPO_PUBLIC_FACEBOOK_CLIENT_ID in your environment.');
+    if (!facebookAuth.configured) {
+      Alert.alert(
+        'Facebook Sign-In Not Configured',
+        'Add EXPO_PUBLIC_FACEBOOK_CLIENT_ID to your .env file to enable Facebook sign-in.',
+      );
       return;
     }
     try {
@@ -73,13 +82,6 @@ export function SocialLoginButtons() {
     }
   };
 
-  // Only show buttons for configured providers
-  const showGoogle = isGoogleConfigured();
-  const showFacebook = isFacebookConfigured();
-  const anyConfigured = showGoogle || showFacebook;
-
-  if (!anyConfigured) return null;
-
   return (
     <View style={styles.container}>
       <View style={styles.dividerRow}>
@@ -89,33 +91,43 @@ export function SocialLoginButtons() {
       </View>
 
       <View style={styles.buttonRow}>
-        {showGoogle && (
-          <Pressable
-            style={[styles.socialBtn, loadingProvider === 'google' && styles.socialBtnDisabled]}
-            onPress={handleGoogle}
-            disabled={loadingProvider !== null}
-          >
-            {loadingProvider === 'google' ? (
-              <ActivityIndicator size="small" color={Brand.text} />
-            ) : (
-              <MaterialCommunityIcons name="google" size={22} color={Brand.text} />
-            )}
-          </Pressable>
-        )}
+        {/* Google */}
+        <Pressable
+          style={[styles.socialBtn, loadingProvider === 'google' && styles.socialBtnDisabled]}
+          onPress={handleGoogle}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'google' ? (
+            <ActivityIndicator size="small" color={Brand.text} />
+          ) : (
+            <MaterialCommunityIcons name="google" size={22} color={Brand.text} />
+          )}
+        </Pressable>
 
-        {showFacebook && (
-          <Pressable
-            style={[styles.socialBtn, loadingProvider === 'facebook' && styles.socialBtnDisabled]}
-            onPress={handleFacebook}
-            disabled={loadingProvider !== null}
-          >
-            {loadingProvider === 'facebook' ? (
-              <ActivityIndicator size="small" color={Brand.text} />
-            ) : (
-              <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
-            )}
-          </Pressable>
-        )}
+        {/* Facebook */}
+        <Pressable
+          style={[styles.socialBtn, loadingProvider === 'facebook' && styles.socialBtnDisabled]}
+          onPress={handleFacebook}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'facebook' ? (
+            <ActivityIndicator size="small" color={Brand.text} />
+          ) : (
+            <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+          )}
+        </Pressable>
+
+        {/* Apple — placeholder for future development build */}
+        <Pressable
+          style={[styles.socialBtn, loadingProvider === 'apple' && styles.socialBtnDisabled]}
+          onPress={() => Alert.alert(
+            'Apple Sign-In',
+            'Apple Sign-In requires a development build and will be available soon.',
+          )}
+          disabled={loadingProvider !== null}
+        >
+          <MaterialCommunityIcons name="apple" size={22} color={Brand.text} />
+        </Pressable>
       </View>
     </View>
   );

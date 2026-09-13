@@ -36,43 +36,44 @@ export async function socialLogin(
   return data;
 }
 
-// ── Google ────────────────────────────────────────────────────────
+// ── Configuration checks ───────────────────────────────────────────
 export function isGoogleConfigured(): boolean {
   return !!GOOGLE_CLIENT_ID;
 }
 
-export function useGoogleAuth() {
-  if (!GOOGLE_CLIENT_ID) return null;
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    scopes: ['openid', 'profile', 'email'],
-  });
-  return { request, response, promptAsync };
-}
-
-// ── Facebook ──────────────────────────────────────────────────────
 export function isFacebookConfigured(): boolean {
   return !!FACEBOOK_CLIENT_ID;
 }
 
+export function isAppleConfigured(): boolean {
+  return false; // Requires native module — future development build
+}
+
+// ── Google ────────────────────────────────────────────────────────
+// Always call the hook (Rules of Hooks). When clientId is empty the
+// request is unusable, but the hook count stays stable.
+export function useGoogleAuth() {
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: GOOGLE_CLIENT_ID,
+    scopes: ['openid', 'profile', 'email'],
+  });
+  return { request, response, promptAsync, configured: isGoogleConfigured() };
+}
+
+// ── Facebook ──────────────────────────────────────────────────────
 export function useFacebookAuth() {
-  if (!FACEBOOK_CLIENT_ID) return null;
   const [request, response, promptAsync] = Facebook.useAuthRequest({
     clientId: FACEBOOK_CLIENT_ID,
     scopes: ['email', 'public_profile'],
   });
-  return { request, response, promptAsync };
+  return { request, response, promptAsync, configured: isFacebookConfigured() };
 }
 
 // ── Apple ─────────────────────────────────────────────────────────
 // Apple Sign-In requires a native module (expo-apple-authentication).
 // Not available in Expo Go. The backend endpoint is ready for it.
-export function isAppleConfigured(): boolean {
-  return false;
-}
-
 export function useAppleAuth() {
-  return null;
+  return { configured: false };
 }
 
 // Ensure the auth session completes properly when returning from the browser
