@@ -446,7 +446,7 @@ export default function VideosScreen() {
           setProducts((prev) => [...prev, ...(data.results || [])]);
           setPage((prev) => prev + 1);
         }
-        setHasMore(!!data.has_next);
+        setHasMore(Boolean(data.has_next));
       } else {
         // No search query — browse all videos with category filter
         const params: Record<string, any> = {
@@ -465,7 +465,8 @@ export default function VideosScreen() {
           setProducts((prev) => [...prev, ...(data.results || [])]);
           setPage((prev) => prev + 1);
         }
-        setHasMore(!!data.next);
+        // Normalize: PaginatedResponse uses `next` (URL string), SearchResult uses `has_next` (bool)
+        setHasMore(Boolean((data as any).has_next ?? data.next));
       }
     } catch (e: any) {
       if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED' || controller.signal.aborted) return;

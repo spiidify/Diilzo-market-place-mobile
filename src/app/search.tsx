@@ -26,6 +26,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { apiRequest } from '@/services/api';
 import {
   esSearchProducts,
   fetchProducts,
@@ -34,7 +36,7 @@ import {
   logSearchClick,
   searchProducts,
 } from '@/services/products';
-import type { Product } from '@/types';
+import type { Address, Product } from '@/types';
 
 const RECENT_SEARCHES_KEY = 'recent_searches';
 const MAX_RECENT = 8;
@@ -230,6 +232,7 @@ const SearchProductCard = memo(function SearchProductCard({
 export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
+  const { isAuthenticated } = useAuth();
   const categorySlug = params.category || null;
   const brandSlug = params.brand || null;
   const contextTitle = categorySlug ? (params.categoryName || 'Category') : brandSlug ? (params.brandName || 'Brand') : null;
@@ -257,8 +260,8 @@ export default function SearchScreen() {
   const [localOnly, setLocalOnly] = useState(false);
   const [internationalOnly, setInternationalOnly] = useState(false);
   // Buyer country for local/international search — defaults to Uganda
-  // (DIILZO's primary market). In future, read from user profile/device locale.
-  const buyerCountry = 'Uganda';
+  // (DIILZO's primary market). Updated from user's default address if logged in.
+  const [buyerCountry, setBuyerCountry] = useState('Uganda');
   // Buyer GPS coordinates for distance calculation ("near me" search)
   const [buyerLat, setBuyerLat] = useState<number | null>(null);
   const [buyerLng, setBuyerLng] = useState<number | null>(null);
@@ -321,7 +324,27 @@ export default function SearchScreen() {
         try { setRecentSearches(JSON.parse(raw)); } catch { }
       }
     }).catch(() => { });
-  }, []);
+
+    // Fetch the user's default address to determine buyer country
+    // for local/international search filtering and ranking.
+    if (isAuthenticated) {
+      (async () => {
+        try {
+          const data = await apiRequest<{ results: Address[] } | Address[]>({
+            method: 'GET',
+            url: '/auth/addresses/',
+          });
+          const addresses = Array.isArray(data) ? data : data.results;
+          const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+          if (defaultAddr?.country) {
+            setBuyerCountry(defaultAddr.country);
+          }
+        } catch {
+          // Fall back to default 'Uganda'
+        }
+      })();
+    }
+  }, [isAuthenticated]);
 
   const load = useCallback(async (reset = false, userRefresh = false) => {
     const targetPage = reset ? 1 : page;
