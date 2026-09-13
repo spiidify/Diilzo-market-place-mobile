@@ -494,3 +494,140 @@ export const broadcastNotification = (data: {
   url: `${ADMIN_BASE}/broadcast/`,
   data,
 });
+
+// ── Platform Staff Management ─────────────────────────────────────
+
+export interface PlatformStaffMember {
+  id: number;
+  user_id: number;
+  email: string;
+  full_name: string;
+  avatar_url: string | null;
+  role_id: number | null;
+  role_name: string | null;
+  role_type: string | null;
+  department: string;
+  employee_id: string;
+  country: string;
+  city: string;
+  hired_at: string | null;
+  is_active_staff: boolean;
+  is_superuser: boolean;
+  is_online: boolean;
+  last_active_at: string | null;
+  invited_by: string | null;
+  invited_at: string;
+  accepted_at: string | null;
+}
+
+export interface PlatformStaffRole {
+  id: number;
+  name: string;
+  role_type: string;
+  can_review_kyc: boolean;
+  can_manage_payouts: boolean;
+  can_moderate_products: boolean;
+  can_resolve_disputes: boolean;
+  can_manage_stores: boolean;
+  can_view_finances: boolean;
+  can_manage_users: boolean;
+  can_manage_announcements: boolean;
+  can_handle_support_chats: boolean;
+  can_manage_slides: boolean;
+  can_manage_currencies: boolean;
+  can_manage_staff: boolean;
+}
+
+export interface StaffActivityEntry {
+  id: number;
+  staff_user: string;
+  staff_user_id: number | null;
+  action: string;
+  target_type: string;
+  target_id: string;
+  description: string;
+  created_at: string;
+}
+
+export interface StaffInvitation {
+  id: number;
+  email: string;
+  department: string;
+  role_name: string | null;
+  role_id: number | null;
+  status: string;
+  invited_by: string | null;
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+}
+
+export interface StaffDetail extends PlatformStaffMember {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  permissions: Record<string, boolean>;
+  activity: StaffActivityEntry[];
+}
+
+export const getPlatformStaff = () =>
+  apiRequest<PlatformStaffMember[]>({ method: 'GET', url: `${ADMIN_BASE}/staff/` });
+
+export const addPlatformStaff = (payload: {
+  user_id: number;
+  role_id?: number;
+  department?: string;
+  employee_id?: string;
+  country?: string;
+  city?: string;
+}) =>
+  apiRequest<{ id: number; message: string }>({
+    method: 'POST', url: `${ADMIN_BASE}/staff/`, data: payload,
+  });
+
+export const getStaffDetail = (id: number) =>
+  apiRequest<StaffDetail>({ method: 'GET', url: `${ADMIN_BASE}/staff/${id}/` });
+
+export const updateStaff = (id: number, data: Partial<{
+  role_id: number;
+  department: string;
+  employee_id: string;
+  country: string;
+  city: string;
+  is_active_staff: boolean;
+  hired_at: string;
+}>) =>
+  apiRequest<{ id: number; message: string }>({
+    method: 'PATCH', url: `${ADMIN_BASE}/staff/${id}/`, data,
+  });
+
+export const removeStaff = (id: number) =>
+  apiRequest<{ message: string }>({
+    method: 'DELETE', url: `${ADMIN_BASE}/staff/${id}/`,
+  });
+
+export const getStaffRoles = () =>
+  apiRequest<PlatformStaffRole[]>({ method: 'GET', url: `${ADMIN_BASE}/staff/roles/` });
+
+export const createStaffRole = (payload: Partial<PlatformStaffRole>) =>
+  apiRequest<{ id: number; name: string; message: string }>({
+    method: 'POST', url: `${ADMIN_BASE}/staff/roles/`, data: payload,
+  });
+
+export const getStaffActivity = (staffUserId?: number) =>
+  apiRequest<StaffActivityEntry[]>({
+    method: 'GET',
+    url: `${ADMIN_BASE}/staff/activity/${staffUserId ? `?staff_user_id=${staffUserId}` : ''}`,
+  });
+
+export const getStaffInvitations = () =>
+  apiRequest<StaffInvitation[]>({ method: 'GET', url: `${ADMIN_BASE}/staff/invitations/` });
+
+export const inviteStaff = (payload: {
+  email: string;
+  role_id?: number;
+  department?: string;
+}) =>
+  apiRequest<{ id: number; email: string; token: string; accept_url: string; message: string }>({
+    method: 'POST', url: `${ADMIN_BASE}/staff/invite/`, data: payload,
+  });

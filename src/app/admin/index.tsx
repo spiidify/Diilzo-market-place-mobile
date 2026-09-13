@@ -35,6 +35,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
     title: 'Marketplace',
     items: [
       { icon: 'account-group', label: 'Users', route: '/admin/users', color: '#06B6D4', badgeKey: undefined },
+      { icon: 'id-badge', label: 'Platform Staff', route: '/admin/staff', color: '#8B5CF6' },
       { icon: 'store', label: 'Stores', route: '/admin/stores', color: '#16A34A', badgeKey: 'pending_stores' },
       { icon: 'package-variant-closed', label: 'Products', route: '/admin/products', color: '#3B82F6' },
       { icon: 'clipboard-list', label: 'Orders', route: '/admin/orders', color: '#F59E0B' },
