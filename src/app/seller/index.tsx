@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
+import { getChatUnreadCount } from '@/services/chat';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
 // ── Stat card data ──────────────────────────────────────────────────
@@ -47,6 +48,7 @@ export default function SellerDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chatUnread, setChatUnread] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -62,7 +64,21 @@ export default function SellerDashboardScreen() {
     }
   }, []);
 
+  const loadChatUnread = useCallback(async () => {
+    try {
+      const count = await getChatUnreadCount();
+      setChatUnread(count);
+    } catch { /* non-critical */ }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+
+  // Refresh chat unread count when screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      loadChatUnread();
+    }, [loadChatUnread])
+  );
 
   const stats = data?.stats;
   const store = data?.store;
@@ -138,7 +154,7 @@ export default function SellerDashboardScreen() {
       items: [
         { icon: 'account-group', label: 'Staff', color: '#3B82F6', route: '/seller/staff' },
         { icon: 'shield-check-outline', label: 'Verification', color: Brand.textSecondary, route: '/seller/verification' },
-        { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages' },
+        { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages', count: chatUnread },
         { icon: 'store-settings-outline', label: 'Settings', color: Brand.textSecondary, route: '/seller/settings' },
       ],
     },
@@ -194,7 +210,7 @@ export default function SellerDashboardScreen() {
       <ScrollView
         style={styles.body}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { load(); loadChatUnread(); }} colors={[Brand.primary]} tintColor={Brand.primary} />}
       >
         {/* ── Gradient hero header with store info ─────────────────── */}
         <GradientHero title="Seller Dashboard" store={store} stats={stats} />

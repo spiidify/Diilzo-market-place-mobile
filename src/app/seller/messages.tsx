@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -52,6 +52,20 @@ export default function SellerMessagesScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Refresh when screen gains focus (so new messages appear without manual pull)
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  // Poll for new threads every 10s when the thread list is visible (no thread open)
+  useEffect(() => {
+    if (activeThread) return;
+    const interval = setInterval(() => { load(); }, 10000);
+    return () => clearInterval(interval);
+  }, [activeThread, load]);
 
   const openThread = async (id: number) => {
     setThreadLoading(true);
