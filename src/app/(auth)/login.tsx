@@ -20,6 +20,8 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import {
   authenticateWithBiometrics,
+  enableBiometric,
+  getBiometricCredentials,
   getBiometricType,
   isBiometricAvailable,
   isBiometricEnabled,
@@ -39,6 +41,8 @@ export default function LoginScreen() {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioType, setBioType] = useState<string>('');
 
+  const [bioLoading, setBioLoading] = useState(false);
+
   useEffect(() => {
     (async () => {
       const available = await isBiometricAvailable();
@@ -52,12 +56,25 @@ export default function LoginScreen() {
 
   const handleBiometricLogin = async () => {
     try {
+      setBioLoading(true);
+      // 1. Authenticate with device biometrics (Face ID / fingerprint)
       const result = await authenticateWithBiometrics('Use biometrics to sign in to Diilzo');
-      if (result) {
-        router.replace('/');
+      if (!result) {
+        return;
       }
+      // 2. Retrieve stored credentials from SecureStore
+      const credentials = await getBiometricCredentials();
+      if (!credentials) {
+        Alert.alert('Biometric Login', 'No saved credentials found. Please sign in with email/password first.');
+        return;
+      }
+      // 3. Log in with the stored credentials
+      await login(credentials.email, credentials.password);
+      router.replace('/');
     } catch (e: any) {
       Alert.alert('Biometric Login', 'Biometric authentication failed. Please use email/password.');
+    } finally {
+      setBioLoading(false);
     }
   };
 
@@ -104,7 +121,32 @@ export default function LoginScreen() {
     setError(null);
     try {
       // Sanitize inputs before sending
-      await login(sanitizeEmail(email), sanitizeString(password, 128));
+      const cleanEmail = sanitizeEmail(email);
+      const cleanPassword = sanitizeString(password, 128);
+      await login(cleanEmail, cleanPassword);
+
+      // After successful login, offer to enable biometric if available and not yet enabled
+      if (bioAvailable && !bioEnabled) {
+        Alert.alert(
+          `Enable ${bioType || 'Biometrics'}?`,
+          `Sign in faster next time with ${bioType || 'biometrics'}.`,
+          [
+            { text: 'Not now', style: 'cancel' },
+            {
+              text: 'Enable',
+              onPress: async () => {
+                try {
+                  await enableBiometric(cleanEmail, cleanPassword);
+                  setBioEnabled(true);
+                } catch {
+                  // Non-critical — just skip enabling
+                }
+              },
+            },
+          ],
+        );
+      }
+
       router.replace('/');
     } catch (e: any) {
       setError(getSafeErrorMessage(e, 'Login failed. Please check your credentials.'));
@@ -223,13 +265,23 @@ export default function LoginScreen() {
 
             {/* Biometric login */}
             {bioAvailable && bioEnabled && (
-              <Pressable style={styles.biometricBtn} onPress={handleBiometricLogin}>
-                <MaterialCommunityIcons
-                  name={bioType === 'FaceID' ? 'face-recognition' : 'fingerprint'}
-                  size={22}
-                  color={Brand.primary}
-                />
-                <Text style={styles.biometricText}>Sign in with {bioType || 'Biometrics'}</Text>
+              <Pressable
+                style={[styles.biometricBtn, bioLoading && styles.signInBtnDisabled]}
+                onPress={handleBiometricLogin}
+                disabled={bioLoading}
+              >
+                {bioLoading ? (
+                  <ActivityIndicator color={Brand.primary} />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons
+                      name={bioType === 'Face ID' ? 'face-recognition' : 'fingerprint'}
+                      size={22}
+                      color={Brand.primary}
+                    />
+                    <Text style={styles.biometricText}>Sign in with {bioType || 'Biometrics'}</Text>
+                  </>
+                )}
               </Pressable>
             )}
           </View>

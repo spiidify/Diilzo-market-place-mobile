@@ -20,6 +20,8 @@ import { Brand, Spacing } from '@/constants/theme';
 import { apiRequest } from '@/services/api';
 import {
   authenticateWithBiometrics,
+  disableBiometric,
+  getBiometricCredentials,
   getBiometricType,
   isBiometricAvailable,
   isBiometricEnabled,
@@ -133,8 +135,24 @@ export default function PrivacyScreen() {
           `Authenticate to enable ${biometricType} for Diilzo`
         );
         if (success) {
-          await setBiometricEnabled(true);
-          setBiometricEnabledState(true);
+          // Check if credentials are already stored (from login screen)
+          const credentials = await getBiometricCredentials();
+          if (credentials) {
+            // Credentials already stored — just enable the flag
+            await setBiometricEnabled(true);
+            setBiometricEnabledState(true);
+            Alert.alert(
+              `${biometricType} Enabled`,
+              `You can now sign in with ${biometricType} on the login screen.`,
+            );
+          } else {
+            // No stored credentials — user needs to log in first
+            Alert.alert(
+              'Sign In Required',
+              `Please sign in with your email and password first, then enable ${biometricType} from the login prompt to save your credentials securely.`,
+              [{ text: 'OK' }],
+            );
+          }
         } else {
           Alert.alert('Authentication Failed', 'Could not verify your identity. Please try again.');
         }
@@ -145,8 +163,12 @@ export default function PrivacyScreen() {
       }
     } else {
       try {
-        await setBiometricEnabled(false);
+        await disableBiometric();
         setBiometricEnabledState(false);
+        Alert.alert(
+          `${biometricType} Disabled`,
+          'Your saved credentials have been removed. You will need to sign in with email and password.',
+        );
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to disable biometric auth');
       }
