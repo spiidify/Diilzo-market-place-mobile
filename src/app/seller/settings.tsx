@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 
+import { LocationPicker } from '@/components/LocationPicker';
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { getMyStore, updateStoreSettings } from '@/services/seller';
@@ -72,6 +73,19 @@ export default function SellerSettingsScreen() {
   const [payoutDetails, setPayoutDetails] = useState('');
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
 
+  // ── Location state (Phase 2 — Alibaba-style hierarchy) ─────────
+  const [location, setLocation] = useState<{
+    country_ref?: number | null;
+    region_ref?: number | null;
+    city_ref?: number | null;
+    country?: string;
+    country_code?: string;
+    region?: string;
+    city?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  }>({});
+
   // ── UI state ────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -101,6 +115,17 @@ export default function SellerSettingsScreen() {
       setNotifMarketing(store.notification_marketing ?? false);
       setPayoutMethod(store.payout_method || 'mobile_money');
       setPayoutDetails(store.payout_details || '');
+      setLocation({
+        country_ref: store.country_ref || null,
+        region_ref: store.region_ref || null,
+        city_ref: store.city_ref || null,
+        country: store.country || '',
+        country_code: store.country_code || '',
+        region: store.region || '',
+        city: store.city || '',
+        latitude: store.latitude ? parseFloat(store.latitude) : null,
+        longitude: store.longitude ? parseFloat(store.longitude) : null,
+      });
     } catch (e: any) {
       setError(e?.message || 'Failed to load store settings');
     } finally {
@@ -156,6 +181,17 @@ export default function SellerSettingsScreen() {
       formData.append('notification_marketing', notifMarketing ? 'true' : 'false');
       formData.append('payout_method', payoutMethod);
       formData.append('payout_details', payoutDetails.trim());
+
+      // Location FKs (Phase 2 — Alibaba-style hierarchy)
+      if (location.country_ref) formData.append('country_ref', String(location.country_ref));
+      if (location.region_ref) formData.append('region_ref', String(location.region_ref));
+      if (location.city_ref) formData.append('city_ref', String(location.city_ref));
+      if (location.country) formData.append('country', location.country);
+      if (location.country_code) formData.append('country_code', location.country_code);
+      if (location.region) formData.append('region', location.region);
+      if (location.city) formData.append('city', location.city);
+      if (location.latitude != null) formData.append('latitude', String(location.latitude));
+      if (location.longitude != null) formData.append('longitude', String(location.longitude));
 
       // Only append image files if they are local (not remote URLs)
       if (logoUri && !logoUri.startsWith('http')) {
@@ -290,6 +326,12 @@ export default function SellerSettingsScreen() {
                   placeholderTextColor={Brand.textTertiary}
                   keyboardType="phone-pad"
                 />
+              </View>
+
+              {/* ── Location (Alibaba-style hierarchy) ─────────────── */}
+              <Text style={styles.sectionTitle}>Store Location</Text>
+              <View style={styles.card}>
+                <LocationPicker value={location} onChange={setLocation} label="Country / Region / City" />
               </View>
 
               {/* ── Business type ──────────────────────────────────── */}

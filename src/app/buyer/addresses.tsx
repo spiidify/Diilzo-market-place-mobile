@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LocationPicker } from '@/components/LocationPicker';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/services/api';
@@ -38,6 +39,9 @@ const EMPTY_FORM = {
   country: 'Uganda',
   phone: '',
   is_default: false,
+  country_ref: null as number | null,
+  region_ref: null as number | null,
+  city_ref: null as number | null,
 };
 
 export default function BuyerAddressesScreen() {
@@ -93,6 +97,9 @@ export default function BuyerAddressesScreen() {
       country: addr.country || 'Uganda',
       phone: addr.phone || '',
       is_default: addr.is_default,
+      country_ref: (addr as any).country_ref || null,
+      region_ref: (addr as any).region_ref || null,
+      city_ref: (addr as any).city_ref || null,
     });
     setShowForm(true);
   };
@@ -307,17 +314,6 @@ export default function BuyerAddressesScreen() {
 
               <View style={styles.rowTwo}>
                 <View style={styles.col}>
-                  <Text style={styles.sectionLabel}>City</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.city}
-                    onChangeText={(v) => update('city', v)}
-                    placeholder="Kampala"
-                    placeholderTextColor={Brand.textTertiary}
-                    returnKeyType="next"
-                  />
-                </View>
-                <View style={styles.col}>
                   <Text style={styles.sectionLabel}>Postal Code</Text>
                   <TextInput
                     style={styles.input}
@@ -330,30 +326,28 @@ export default function BuyerAddressesScreen() {
                 </View>
               </View>
 
-              <View style={styles.rowTwo}>
-                <View style={styles.col}>
-                  <Text style={styles.sectionLabel}>State / Region</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.state}
-                    onChangeText={(v) => update('state', v)}
-                    placeholder="Central"
-                    placeholderTextColor={Brand.textTertiary}
-                    returnKeyType="next"
-                  />
-                </View>
-                <View style={styles.col}>
-                  <Text style={styles.sectionLabel}>Country</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.country}
-                    onChangeText={(v) => update('country', v)}
-                    placeholder="Uganda"
-                    placeholderTextColor={Brand.textTertiary}
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
+              {/* Location picker (Alibaba-style hierarchy) */}
+              <LocationPicker
+                value={{
+                  country_ref: form.country_ref,
+                  region_ref: form.region_ref,
+                  city_ref: form.city_ref,
+                  country: form.country,
+                  region: form.state,
+                  city: form.city,
+                }}
+                onChange={(loc: any) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    country_ref: loc.country_ref ?? null,
+                    region_ref: loc.region_ref ?? null,
+                    city_ref: loc.city_ref ?? null,
+                    country: loc.country ?? prev.country,
+                    state: loc.region ?? prev.state,
+                    city: loc.city ?? prev.city,
+                  }));
+                }}
+              />
 
               <Text style={styles.sectionLabel}>Phone</Text>
               <TextInput
