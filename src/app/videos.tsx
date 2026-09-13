@@ -1408,11 +1408,11 @@ export default function VideosScreen() {
         </View>
       )}
 
-      {/* ── Full-screen feed mode (from tapping a grid video) ──────────── */}
-      {feedMode && searchQuery.trim().length >= 2 ? (
+      {/* ── Full-screen TikTok feed (browse mode OR feed mode from grid tap) ─ */}
+      {feedMode || searchQuery.trim().length < 2 ? (
         <>
           <FlatList
-            key="search-feed"
+            key="feed"
             ref={listRef}
             data={products}
             keyExtractor={(item) => `video-${item.id}-${item.slug}`}
@@ -1427,8 +1427,12 @@ export default function VideosScreen() {
             maxToRenderPerBatch={3}
             windowSize={5}
             initialNumToRender={3}
-            initialScrollIndex={Math.min(feedStartIndex, products.length - 1)}
-            getItemLayout={(_, index) => ({ length: feedModeHeight, offset: feedModeHeight * index, index })}
+            initialScrollIndex={feedMode ? Math.min(feedStartIndex, products.length - 1) : 0}
+            getItemLayout={(_, index) => ({
+              length: feedMode ? feedModeHeight : feedHeight,
+              offset: (feedMode ? feedModeHeight : feedHeight) * index,
+              index,
+            })}
             removeClippedSubviews={false}
             onScrollToIndexFailed={({ index, averageItemLength }) => {
               listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
@@ -1450,18 +1454,20 @@ export default function VideosScreen() {
             }
           />
 
-          {/* Back button to return to grid */}
-          <Pressable style={styles.feedBackBtn} onPress={handleExitFeedMode} hitSlop={12}>
-            <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
-            <Text style={styles.feedBackText}>Grid</Text>
-          </Pressable>
+          {/* Back button to return to grid (feed mode only) */}
+          {feedMode && (
+            <Pressable style={styles.feedBackBtn} onPress={handleExitFeedMode} hitSlop={12}>
+              <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
+              <Text style={styles.feedBackText}>Grid</Text>
+            </Pressable>
+          )}
 
           {/* Progress indicator */}
           <View style={styles.progressWrap}>
             <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
           </View>
         </>
-      ) : searchQuery.trim().length >= 2 ? (
+      ) : (
         /* ── Search results: 2-column grid with muted autoplay ─────────── */
         <FlatList
           key="grid"
@@ -1498,52 +1504,6 @@ export default function VideosScreen() {
             ) : null
           }
         />
-      ) : (
-        /* ── Browse mode: Vertical swipe feed (TikTok-style paging) ── */
-        <FlatList
-          key="feed"
-          ref={listRef}
-          data={products}
-          keyExtractor={(item) => `video-${item.id}-${item.slug}`}
-          renderItem={renderVideoItem}
-          extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
-          pagingEnabled
-          showsVerticalScrollIndicator={false}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          maxToRenderPerBatch={3}
-          windowSize={5}
-          initialNumToRender={3}
-          getItemLayout={(_, index) => ({ length: feedHeight, offset: feedHeight * index, index })}
-          removeClippedSubviews={false}
-          onScrollToIndexFailed={({ index, averageItemLength }) => {
-            listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[Brand.primary]}
-              tintColor={Brand.primary}
-            />
-          }
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footerLoading}>
-                <ActivityIndicator size="small" color={Brand.primary} />
-              </View>
-            ) : null
-          }
-        />
-      )}
-
-      {/* ── Progress indicator (browse mode only) ───────────────────── */}
-      {searchQuery.trim().length < 2 && !feedMode && (
-        <View style={styles.progressWrap}>
-          <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
-        </View>
       )}
     </View>
   );
