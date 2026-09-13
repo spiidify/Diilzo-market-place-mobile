@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useBadges } from '@/context/BadgeContext';
 import { createSupportChat, fetchChatThreads } from '@/services/chat';
 import type { ChatThread } from '@/types';
 
@@ -53,6 +54,7 @@ function getLastMessagePreview(thread: ChatThread): string {
 export default function ChatListScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { refreshBadges } = useBadges();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,13 +69,15 @@ export default function ChatListScreen() {
       setError(null);
       const data = await fetchChatThreads();
       setThreads(data);
+      // Refresh badge counts since opening the chat list may mark threads as read
+      refreshBadges();
     } catch (e: any) {
       setError(e?.message || 'Failed to load conversations');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshBadges]);
 
   useEffect(() => { load(); }, [load]);
 

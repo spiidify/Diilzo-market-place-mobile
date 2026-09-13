@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
-import { getChatUnreadCount } from '@/services/chat';
+import { useBadges } from '@/context/BadgeContext';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
 // ── Stat card data ──────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export default function SellerDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chatUnread, setChatUnread] = useState(0);
+  const { chatUnread, refreshBadges } = useBadges();
 
   const load = useCallback(async () => {
     try {
@@ -64,20 +64,13 @@ export default function SellerDashboardScreen() {
     }
   }, []);
 
-  const loadChatUnread = useCallback(async () => {
-    try {
-      const count = await getChatUnreadCount();
-      setChatUnread(count);
-    } catch { /* non-critical */ }
-  }, []);
-
   useEffect(() => { load(); }, [load]);
 
-  // Refresh chat unread count when screen gains focus
+  // Refresh badges when screen gains focus (also polled every 20s by BadgeProvider)
   useFocusEffect(
     useCallback(() => {
-      loadChatUnread();
-    }, [loadChatUnread])
+      refreshBadges();
+    }, [refreshBadges])
   );
 
   const stats = data?.stats;
@@ -210,7 +203,7 @@ export default function SellerDashboardScreen() {
       <ScrollView
         style={styles.body}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { load(); loadChatUnread(); }} colors={[Brand.primary]} tintColor={Brand.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { load(); refreshBadges(); }} colors={[Brand.primary]} tintColor={Brand.primary} />}
       >
         {/* ── Gradient hero header with store info ─────────────────── */}
         <GradientHero title="Seller Dashboard" store={store} stats={stats} />

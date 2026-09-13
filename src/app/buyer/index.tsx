@@ -1,22 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { getChatUnreadCount } from '@/services/chat';
+import { useBadges } from '@/context/BadgeContext';
 
 export default function BuyerDashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const [chatUnread, setChatUnread] = useState(0);
-
-  useFocusEffect(() => {
-    if (!isAuthenticated) return;
-    getChatUnreadCount().then(setChatUnread).catch(() => { });
-  });
+  const { chatUnread } = useBadges();
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },

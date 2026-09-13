@@ -24,6 +24,7 @@ import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useBadges } from '@/context/BadgeContext';
 import { useCart } from '@/context/CartContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import {
@@ -34,10 +35,9 @@ import {
   fetchRecentlyViewed,
   fetchSlides,
   fetchTopBrands,
-  fetchTopStores,
-  fetchUnreadNotificationCount,
+  fetchTopStores
 } from '@/services/catalog';
-import { createChatThread, getChatUnreadCount } from '@/services/chat';
+import { createChatThread } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
   Brand as BrandType,
@@ -758,8 +758,7 @@ export default function ProductFeedScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const { chatUnread: chatUnreadCount, notificationCount, refreshBadges } = useBadges();
   const { cartCount, refreshCartCount } = useCart();
   const [categories, setCategories] = useState<Category[]>([]);
   const [slides, setSlides] = useState<Slide[]>([]);
@@ -917,33 +916,13 @@ export default function ProductFeedScreen() {
     return () => clearTimeout(retryTimer);
   }, []);
 
-  // ── Refresh cart count and chat unread when screen gains focus ──
-  const loadNotificationCount = useCallback(async () => {
-    if (!isAuthenticated) { setNotificationCount(0); setChatUnreadCount(0); return; }
-    try {
-      const [notifCount, chatCount] = await Promise.all([
-        fetchUnreadNotificationCount(),
-        getChatUnreadCount().catch(() => 0),
-      ]);
-      setNotificationCount(notifCount);
-      setChatUnreadCount(chatCount);
-    } catch {
-      setNotificationCount(0);
-      setChatUnreadCount(0);
-    }
-  }, [isAuthenticated]);
-
-  // Refresh cart count, chat unread, and notification count every time
-  // the home screen gains focus. The three requests are independent so
-  // we fan them out in parallel via Promise.all — this avoids serial
-  // round-trips that add up on slow networks.
+  // Refresh cart count and badges when screen gains focus.
+  // Badge counts are also polled every 20s in the background by BadgeProvider.
   useFocusEffect(
     useCallback(() => {
-      // refreshCartCount comes from useCart(); it's sync-ish but we still
-      // kick it off alongside the two async badge fetches.
       refreshCartCount();
-      Promise.all([loadNotificationCount()]).catch(() => { });
-    }, [refreshCartCount, loadNotificationCount])
+      refreshBadges();
+    }, [refreshCartCount, refreshBadges])
   );
 
   // Reload products when category changes

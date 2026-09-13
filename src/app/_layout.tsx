@@ -6,6 +6,7 @@ import { useColorScheme } from 'react-native';
 import AppTabs from '@/components/app-tabs';
 import { DiilzoSplash } from '@/components/diilzo-splash';
 import { AuthProvider } from '@/context/AuthContext';
+import { BadgeProvider } from '@/context/BadgeContext';
 import { CartProvider } from '@/context/CartContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import {
@@ -68,9 +69,11 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <CartProvider>
-          <AppContent />
-        </CartProvider>
+        <BadgeProvider>
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
+        </BadgeProvider>
       </AuthProvider>
     </ThemeProvider>
   );

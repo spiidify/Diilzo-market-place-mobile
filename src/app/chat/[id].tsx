@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useBadges } from '@/context/BadgeContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, fetchChatPresence, fetchChatThread, sendChatMessage, sendHeartbeat, sendTypingStatus, sendVoiceMessage } from '@/services/chat';
@@ -139,6 +140,7 @@ export default function ChatThreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshBadges } = useBadges();
   const threadId = Number(id);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -212,6 +214,8 @@ export default function ChatThreadScreen() {
         fetchChatThread(threadId).catch(() => null as ChatThread | null),
       ]);
       setMessages(msgs);
+      // Refresh badge counts since loading messages marks them as read
+      refreshBadges();
       if (thread) {
         setStoreName(thread.store_name || 'Chat');
         setStoreLogo(thread.store_logo);
@@ -224,7 +228,7 @@ export default function ChatThreadScreen() {
     } finally {
       setLoading(false);
     }
-  }, [threadId]);
+  }, [threadId, refreshBadges]);
 
   useEffect(() => { load(); }, [load]);
 
