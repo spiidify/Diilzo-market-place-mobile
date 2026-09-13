@@ -1430,7 +1430,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: -2,
-    backgroundColor: '#16A34A',
+    backgroundColor: Brand.danger,
     minWidth: 18,
     height: 18,
     borderRadius: 9,

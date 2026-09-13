@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   unreadDot: {
     position: 'absolute', top: 0, right: 0,
     width: 12, height: 12, borderRadius: 6,
-    backgroundColor: '#16A34A', borderWidth: 2, borderColor: '#FFFFFF',
+    backgroundColor: Brand.danger, borderWidth: 2, borderColor: '#FFFFFF',
   },
   cardBody: { flex: 1, gap: 3 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   lastMsgUnread: { color: Brand.text, fontWeight: '500' },
   unreadBadge: {
     minWidth: 20, height: 20, borderRadius: 10,
-    backgroundColor: '#16A34A',
+    backgroundColor: Brand.danger,
     justifyContent: 'center', alignItems: 'center',
     paddingHorizontal: 6,
   },
