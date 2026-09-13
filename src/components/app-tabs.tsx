@@ -37,7 +37,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="videos"
         options={{
-          title: 'Videos',
+          title: 'Reels',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="play-circle" size={26} color={color} />
           ),
