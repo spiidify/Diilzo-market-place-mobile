@@ -115,6 +115,8 @@ export default function AppTabs() {
       <Tabs.Screen name="seller/billing" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin/users" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="admin/staff" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="admin/staff/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin/stores" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin/products" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
