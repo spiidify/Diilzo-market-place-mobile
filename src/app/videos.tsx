@@ -779,6 +779,11 @@ export default function VideosScreen() {
     setIsPlaying(true);
     setShowOverlay(true);
     setFeedMode(true);
+    // Close search bar, autocomplete dropdown, and keyboard so they
+    // don't overlay the full-screen feed player.
+    setShowSearch(false);
+    setShowAutocomplete(false);
+    Keyboard.dismiss();
   }, []);
 
   // Return to grid view from full-screen feed
@@ -1239,48 +1244,52 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* ── Gradient spacer for status bar ─────────────────────────── */}
-      <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <View style={styles.headerBar} />
-        </SafeAreaView>
-      </LinearGradient>
+      {/* ── Gradient spacer for status bar (hidden in feed mode) ─────── */}
+      {!feedMode && (
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+          <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <View style={styles.headerBar} />
+          </SafeAreaView>
+        </LinearGradient>
+      )}
 
-      {/* ── Category tabs ──────────────────────────────────────────── */}
-      <View style={styles.tabsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsContent}
-        >
-          <Pressable
-            style={[styles.tab, !activeCategory && styles.tabActive]}
-            onPress={() => setActiveCategory(null)}
+      {/* ── Category tabs (hidden in full-screen feed mode) ─────────── */}
+      {!feedMode && (
+        <View style={styles.tabsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabsContent}
           >
-            <Text style={[styles.tabText, !activeCategory && styles.tabTextActive]}>All</Text>
-          </Pressable>
-          {categories.map((cat) => (
             <Pressable
-              key={`cat-tab-${cat.id}-${cat.slug}`}
-              style={[styles.tab, activeCategory === cat.slug && styles.tabActive]}
-              onPress={() => setActiveCategory(cat.slug)}
+              style={[styles.tab, !activeCategory && styles.tabActive]}
+              onPress={() => setActiveCategory(null)}
             >
-              <Text style={[styles.tabText, activeCategory === cat.slug && styles.tabTextActive]}>
-                {cat.name}
-              </Text>
+              <Text style={[styles.tabText, !activeCategory && styles.tabTextActive]}>All</Text>
             </Pressable>
-          ))}
-        </ScrollView>
-        <Pressable
-          style={styles.searchToggleBtn}
-          onPress={() => setShowSearch((prev) => !prev)}
-        >
-          <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
-        </Pressable>
-      </View>
+            {categories.map((cat) => (
+              <Pressable
+                key={`cat-tab-${cat.id}-${cat.slug}`}
+                style={[styles.tab, activeCategory === cat.slug && styles.tabActive]}
+                onPress={() => setActiveCategory(cat.slug)}
+              >
+                <Text style={[styles.tabText, activeCategory === cat.slug && styles.tabTextActive]}>
+                  {cat.name}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <Pressable
+            style={styles.searchToggleBtn}
+            onPress={() => setShowSearch((prev) => !prev)}
+          >
+            <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      )}
 
       {/* Search bar (collapsible) */}
-      {showSearch && (
+      {showSearch && !feedMode && (
         <View style={styles.searchContainer}>
           <View style={styles.searchBarWrap}>
             <MaterialCommunityIcons name="magnify" size={18} color="rgba(255,255,255,0.6)" />
