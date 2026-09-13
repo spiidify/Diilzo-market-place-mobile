@@ -28,7 +28,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +48,10 @@ export default function RegisterScreen() {
     }
     if (!isPasswordValid(password)) {
       setError('Password must be at least 8 characters with letters and numbers.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
     if (phone && !isValidPhone(phone)) {
@@ -236,6 +242,50 @@ export default function RegisterScreen() {
               </View>
             )}
             <Text style={styles.hint}>Minimum 8 characters with letters and numbers</Text>
+
+            {/* Confirm Password */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons
+                name="lock-check-outline"
+                size={20}
+                color={Brand.textTertiary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm password"
+                placeholderTextColor={Brand.textTertiary}
+                secureTextEntry={!showConfirmPassword}
+                autoCapitalize="none"
+              />
+              <Pressable
+                onPress={() => setShowConfirmPassword((v) => !v)}
+                style={styles.eyeBtn}
+                hitSlop={8}
+              >
+                <MaterialCommunityIcons
+                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={Brand.textTertiary}
+                />
+              </Pressable>
+            </View>
+            {/* Password match indicator */}
+            {confirmPassword.length > 0 && (
+              <Text
+                style={[
+                  styles.hint,
+                  { marginTop: 4, marginBottom: 4 },
+                  password === confirmPassword
+                    ? { color: '#16A34A' }
+                    : { color: Brand.danger },
+                ]}
+              >
+                {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </Text>
+            )}
 
             {/* Sign Up button */}
             <Pressable
