@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEvent } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -275,6 +275,8 @@ const heartStyles = StyleSheet.create({
 
 export default function VideosScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ product?: string }>();
+  const targetProductSlug = params.product || null;
   const { isAuthenticated } = useAuth();
   const { height: screenHeight } = useWindowDimensions();
 
@@ -561,6 +563,22 @@ export default function VideosScreen() {
       setIsPlaying(true);
     }
   }, []);
+
+  // ── Scroll to target product when arriving from "See Video" ──────
+  // When navigated to /videos?product=<slug>, find that product in the
+  // loaded feed and scroll to it so the user sees its video directly.
+  const [hasScrolledToTarget, setHasScrolledToTarget] = useState(false);
+  useEffect(() => {
+    if (targetProductSlug && !loading && products.length > 0 && !hasScrolledToTarget) {
+      const idx = products.findIndex((p) => p.slug === targetProductSlug);
+      if (idx >= 0) {
+        setActiveIndex(idx);
+        setIsPlaying(true);
+        listRef.current?.scrollToIndex({ index: idx, animated: false });
+        setHasScrolledToTarget(true);
+      }
+    }
+  }, [targetProductSlug, loading, products, hasScrolledToTarget]);
 
   // Toggle play/pause on tap
   const handleTogglePlay = useCallback(() => {

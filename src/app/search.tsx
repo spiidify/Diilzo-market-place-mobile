@@ -120,10 +120,12 @@ const SearchProductCard = memo(function SearchProductCard({
   item,
   onPress,
   buyerCountry,
+  onSeeVideo,
 }: {
   item: Product;
   onPress: (slug: string) => void;
   buyerCountry?: string;
+  onSeeVideo?: (slug: string) => void;
 }) {
   const onSale = item.is_on_sale && item.sale_price;
   const rating = parseFloat(item.rating) || 0;
@@ -170,6 +172,13 @@ const SearchProductCard = memo(function SearchProductCard({
             <Text style={styles.wholesaleBadgeText}>B2B</Text>
           </View>
         )}
+        {/* Video badge — shows if product has a direct video upload */}
+        {item.has_video && item.video_file_url && (
+          <View style={styles.videoBadge}>
+            <MaterialCommunityIcons name="play" size={8} color="#FFFFFF" />
+            <Text style={styles.videoBadgeText}>VIDEO</Text>
+          </View>
+        )}
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
@@ -202,6 +211,16 @@ const SearchProductCard = memo(function SearchProductCard({
               </Text>
             )}
           </View>
+        )}
+        {/* See Video button — shown if product has a direct video upload */}
+        {item.has_video && item.video_file_url && onSeeVideo && (
+          <Pressable
+            style={styles.seeVideoBtn}
+            onPress={(e) => { e.stopPropagation(); onSeeVideo(item.slug); }}
+          >
+            <MaterialCommunityIcons name="play-circle-outline" size={14} color="#FFFFFF" />
+            <Text style={styles.seeVideoBtnText}>See Video</Text>
+          </Pressable>
         )}
       </View>
     </Pressable>
@@ -547,11 +566,16 @@ export default function SearchScreen() {
     router.push(`/product/${slug}`);
   }, [router, query, saveRecentSearch, products]);
 
+  const handleSeeVideo = useCallback((slug: string) => {
+    if (query.trim()) saveRecentSearch(query);
+    router.push({ pathname: '/videos', params: { product: slug } } as any);
+  }, [router, query, saveRecentSearch]);
+
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
-      <SearchProductCard item={item} onPress={handleProductPress} buyerCountry={buyerCountry} />
+      <SearchProductCard item={item} onPress={handleProductPress} buyerCountry={buyerCountry} onSeeVideo={handleSeeVideo} />
     ),
-    [handleProductPress, buyerCountry]
+    [handleProductPress, handleSeeVideo, buyerCountry]
   );
 
   const showEmpty = !loading && !refreshing && products.length === 0 && query.trim().length >= 2;
@@ -1432,6 +1456,33 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   wholesaleBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  // ── Video badge ──────────────────────────────────────────────────
+  videoBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  videoBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  // ── See Video button in card body ────────────────────────────────
+  seeVideoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+  },
+  seeVideoBtnText: { color: Brand.text, fontSize: 11, fontWeight: '700' },
   // ── Store location row in card body ─────────────────────────────
   storeLocationRow: {
     flexDirection: 'row',
