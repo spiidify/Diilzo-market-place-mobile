@@ -8,6 +8,7 @@
     "scheme": "diilzomobile",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.diilzo.mobile",
       "icon": "./assets/expo.icon",
       "supportsTablet": true,
       "infoPlist": {
@@ -16,7 +17,6 @@
         "NSPhotoLibraryUsageDescription": "Diilzo needs photo library access to upload product images.",
         "NSPhotoLibraryAddUsageDescription": "Diilzo can save product images to your photo library.",
         "NSFaceIDUsageDescription": "Diilzo uses Face ID to secure your account and payments.",
-        "NSLocalNetworkUsageDescription": "Diilzo connects to the local server during development.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -34,8 +34,11 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "web": {
@@ -87,12 +90,14 @@
     "extra": {
       "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1",
       "eas": {
-        "projectId": ""
-      }
+        "projectId": "b78e18af-5580-4211-9e27-0138c8d3049f"
+      },
+      "router": {}
     },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "spiidify-2026"
   }
 }

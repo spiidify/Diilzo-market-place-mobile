@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -36,8 +35,6 @@ export default function PrivacyScreen() {
   const [biometricType, setBiometricType] = useState('Biometric');
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
-  const [screenshotPrevention, setScreenshotPrevention] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -94,11 +91,6 @@ export default function PrivacyScreen() {
       setBiometricAvailable(available);
       setBiometricEnabledState(enabled);
       setBiometricType(type);
-      // Load dark mode preference
-      try {
-        const saved = await AsyncStorage.getItem('dark_mode');
-        setDarkMode(saved === 'true');
-      } catch { }
       // Load sound preference
       setSoundEnabledState(isSoundEnabled());
     } catch {
@@ -107,14 +99,6 @@ export default function PrivacyScreen() {
       setLoading(false);
     }
   }, []);
-
-  const handleDarkModeToggle = async (value: boolean) => {
-    setDarkMode(value);
-    try {
-      await AsyncStorage.setItem('dark_mode', value ? 'true' : 'false');
-      Alert.alert('Dark Mode', 'Please restart the app for dark mode to take effect.');
-    } catch { }
-  };
 
   const handleSoundToggle = async (value: boolean) => {
     setSoundEnabledState(value);
@@ -173,18 +157,6 @@ export default function PrivacyScreen() {
         Alert.alert('Error', e?.message || 'Failed to disable biometric auth');
       }
     }
-  };
-
-  const handleScreenshotToggle = (value: boolean) => {
-    setScreenshotPrevention(value);
-    // Note: actual screenshot prevention requires native module / FlagSecure
-    // This is a UI toggle that persists the preference
-    Alert.alert(
-      value ? 'Screenshot Prevention On' : 'Screenshot Prevention Off',
-      value
-        ? 'Screenshots will be blocked on sensitive screens in future updates.'
-        : 'Screenshots are now allowed on all screens.'
-    );
   };
 
   const handleTerms = () => {
@@ -275,46 +247,6 @@ export default function PrivacyScreen() {
                         thumbColor="#FFFFFF"
                       />
                     )}
-                  </View>
-
-                  <View style={styles.rowDivider} />
-
-                  {/* Screenshot prevention */}
-                  <View style={styles.settingRow}>
-                    <View style={[styles.settingIcon, { backgroundColor: '#8B5CF6' + '20' }]}>
-                      <MaterialCommunityIcons name="shield-lock-outline" size={22} color="#8B5CF6" />
-                    </View>
-                    <View style={styles.settingInfo}>
-                      <Text style={styles.settingLabel}>Screenshot Prevention</Text>
-                      <Text style={styles.settingSublabel}>
-                        Block screenshots on sensitive screens
-                      </Text>
-                    </View>
-                    <Switch
-                      value={screenshotPrevention}
-                      onValueChange={handleScreenshotToggle}
-                      trackColor={{ false: Brand.border, true: Brand.primary }}
-                      thumbColor="#FFFFFF"
-                    />
-                  </View>
-
-                  {/* Dark mode */}
-                  <View style={styles.settingRow}>
-                    <View style={[styles.settingIcon, { backgroundColor: '#1A1A2E20' }]}>
-                      <MaterialCommunityIcons name="theme-light-dark" size={22} color="#1A1A2E" />
-                    </View>
-                    <View style={styles.settingInfo}>
-                      <Text style={styles.settingLabel}>Dark Mode</Text>
-                      <Text style={styles.settingSublabel}>
-                        Use dark theme (restart required)
-                      </Text>
-                    </View>
-                    <Switch
-                      value={darkMode}
-                      onValueChange={handleDarkModeToggle}
-                      trackColor={{ false: Brand.border, true: Brand.primary }}
-                      thumbColor="#FFFFFF"
-                    />
                   </View>
 
                   {/* Sound effects */}

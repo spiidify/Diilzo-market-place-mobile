@@ -823,7 +823,6 @@ export default function ProductFeedScreen() {
       setTileA(tileAData);
       setTileB(tileBData);
       setBecauseYouViewed(becauseData.slice(0, 10));
-      console.log('[Home] Slides loaded:', slideData.length, slideData.map(s => s.title));
 
       // Load recently viewed from local storage as a fallback
       try {

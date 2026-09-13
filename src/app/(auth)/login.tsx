@@ -1,6 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -78,32 +77,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialLogin = async (provider: string) => {
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://diilzo-market-place-production.up.railway.app/api/v1';
-    const webUrl = baseUrl.replace('/api/v1', '');
-    const oauthUrl = `${webUrl}/accounts/${provider}/login/`;
-    try {
-      const result = await WebBrowser.openAuthSessionAsync(oauthUrl, 'diilzomobile://');
-      if (result.type === 'success' && result.url) {
-        // The redirect should contain tokens; parse them
-        const url = new URL(result.url);
-        const accessToken = url.searchParams.get('access') || url.searchParams.get('access_token');
-        const refreshToken = url.searchParams.get('refresh') || url.searchParams.get('refresh_token');
-        if (accessToken && refreshToken) {
-          // Store tokens directly via the auth service
-          const { setTokens } = await import('@/services/api');
-          await setTokens(accessToken, refreshToken);
-          // Reload the app to let AuthContext pick up the new tokens
-          router.replace('/');
-        } else {
-          Alert.alert('Social Login', 'Authentication was cancelled or did not return tokens.');
-        }
-      }
-    } catch (e: any) {
-      Alert.alert('Social Login', `${provider} login is not yet configured. Please use email/password.`);
-    }
-  };
-
   const handleLogin = async () => {
     // Validate inputs
     if (!email || !password) {
@@ -169,33 +142,6 @@ export default function LoginScreen() {
         >
           {/* White form card */}
           <View style={styles.card}>
-            {/* Social login grid */}
-            <View style={styles.socialGrid}>
-              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('google')}>
-                <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
-                <Text style={styles.socialText}>Google</Text>
-              </Pressable>
-              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('facebook')}>
-                <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
-                <Text style={styles.socialText}>Facebook</Text>
-              </Pressable>
-              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('instagram')}>
-                <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
-                <Text style={styles.socialText}>Instagram</Text>
-              </Pressable>
-              <Pressable style={styles.socialBtn} onPress={() => handleSocialLogin('tiktok')}>
-                <MaterialCommunityIcons name="music-note" size={22} color="#000" />
-                <Text style={styles.socialText}>TikTok</Text>
-              </Pressable>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or sign in with email</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
             {/* Error box */}
             {error && (
               <View style={styles.errorBox}>
@@ -332,45 +278,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-  },
-  socialGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  socialBtn: {
-    flex: 1,
-    minWidth: '47%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Brand.border,
-    backgroundColor: '#FFFFFF',
-  },
-  socialText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Brand.text,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Brand.border,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: Brand.textTertiary,
-    marginHorizontal: 10,
   },
   errorBox: {
     backgroundColor: '#FFF3F3',
