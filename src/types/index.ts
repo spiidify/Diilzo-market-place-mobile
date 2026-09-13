@@ -313,6 +313,10 @@ export interface Address {
   state: string;
   postal_code: string;
   country: string;
+  country_code?: string;
+  country_ref?: number | null;
+  region_ref?: number | null;
+  city_ref?: number | null;
   phone: string;
   is_default: boolean;
   created_at: string;

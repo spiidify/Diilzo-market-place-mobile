@@ -13,13 +13,14 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,6 +29,7 @@ import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/services/api';
+import { fetchCountries } from '@/services/locations';
 import {
   esSearchProducts,
   fetchProducts,
@@ -259,9 +261,21 @@ export default function SearchScreen() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [localOnly, setLocalOnly] = useState(false);
   const [internationalOnly, setInternationalOnly] = useState(false);
-  // Buyer country for local/international search — defaults to Uganda
-  // (DIILZO's primary market). Updated from user's default address if logged in.
-  const [buyerCountry, setBuyerCountry] = useState('Uganda');
+  // Seller location filters (Alibaba-style hierarchy)
+  const [sellerCountry, setSellerCountry] = useState('');
+  const [sellerCountryName, setSellerCountryName] = useState('');
+  const [sellerRegion, setSellerRegion] = useState('');
+  const [sellerCity, setSellerCity] = useState('');
+  // Country picker modal state
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [countries, setCountries] = useState<any[]>([]);
+  // Buyer country for local/international search — defaults to UG (Uganda,
+  // DIILZO's primary market) using ISO2 code for indexed FK lookups.
+  // Updated from user's default address if logged in.
+  const [buyerCountry, setBuyerCountry] = useState('UG');
+  // Display name for the Local chip (e.g. "Uganda" instead of "UG")
+  const [buyerCountryName, setBuyerCountryName] = useState('Uganda');
   // Buyer GPS coordinates for distance calculation ("near me" search)
   const [buyerLat, setBuyerLat] = useState<number | null>(null);
   const [buyerLng, setBuyerLng] = useState<number | null>(null);
@@ -327,6 +341,7 @@ export default function SearchScreen() {
 
     // Fetch the user's default address to determine buyer country
     // for local/international search filtering and ranking.
+    // Prefer ISO code (UG) for indexed FK lookup; fall back to full name.
     if (isAuthenticated) {
       (async () => {
         try {
@@ -336,8 +351,12 @@ export default function SearchScreen() {
           });
           const addresses = Array.isArray(data) ? data : data.results;
           const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
-          if (defaultAddr?.country) {
+          if (defaultAddr?.country_code) {
+            setBuyerCountry(defaultAddr.country_code);
+            setBuyerCountryName(defaultAddr.country || defaultAddr.country_code);
+          } else if (defaultAddr?.country) {
             setBuyerCountry(defaultAddr.country);
+            setBuyerCountryName(defaultAddr.country);
           }
         } catch {
           // Fall back to default 'Uganda'
@@ -345,6 +364,13 @@ export default function SearchScreen() {
       })();
     }
   }, [isAuthenticated]);
+
+  // Load countries for the seller country filter modal
+  useEffect(() => {
+    if (showCountryModal && countries.length === 0) {
+      fetchCountries().then(setCountries).catch(() => { });
+    }
+  }, [showCountryModal, countries.length]);
 
   const load = useCallback(async (reset = false, userRefresh = false) => {
     const targetPage = reset ? 1 : page;
@@ -389,6 +415,9 @@ export default function SearchScreen() {
           ...(onSaleOnly ? { on_sale: 'true' } : {}),
           ...(inStockOnly ? { in_stock: 'true' } : {}),
           ...(verifiedOnly ? { verified: 'true' } : {}),
+          ...(sellerCountry ? { seller_country: sellerCountry } : {}),
+          ...(sellerRegion ? { seller_region: sellerRegion } : {}),
+          ...(sellerCity ? { seller_city: sellerCity } : {}),
           ...(localOnly ? { local: 'true', buyer_country: buyerCountry } : {}),
           ...(internationalOnly ? { international: 'true', buyer_country: buyerCountry } : {}),
           // Always pass buyer_country for local ranking boost (even without filter)
@@ -458,7 +487,7 @@ export default function SearchScreen() {
         setLoadingMore(false);
       }
     }
-  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly, localOnly, internationalOnly, buyerCountry, buyerLat, buyerLng]);
+  }, [page, query, categorySlug, brandSlug, sortBy, minPrice, maxPrice, onSaleOnly, inStockOnly, verifiedOnly, localOnly, internationalOnly, buyerCountry, buyerLat, buyerLng, sellerCountry, sellerRegion, sellerCity]);
 
   useEffect(() => {
     load(true);
@@ -757,7 +786,7 @@ export default function SearchScreen() {
             }}
           >
             <MaterialCommunityIcons name="map-marker-radius" size={16} color={localOnly ? '#FFFFFF' : Brand.textSecondary} />
-            <Text style={[styles.locChipText, localOnly && styles.locChipTextActive]}>Local ({buyerCountry})</Text>
+            <Text style={[styles.locChipText, localOnly && styles.locChipTextActive]}>Local ({buyerCountryName})</Text>
           </Pressable>
           <Pressable
             style={[styles.locChip, internationalOnly && styles.locChipActiveIntl]}
@@ -771,7 +800,44 @@ export default function SearchScreen() {
             <Text style={[styles.locChipText, internationalOnly && styles.locChipTextActive]}>International</Text>
           </Pressable>
         </View>
-        {(sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly || localOnly || internationalOnly) ? (
+        {/* ── Seller location filter ─────────────────────────────── */}
+        <Text style={styles.filterLabel}>Seller Location</Text>
+        <Pressable
+          style={styles.filterInputRow}
+          onPress={() => { setShowCountryModal(true); setCountrySearch(''); }}
+        >
+          <MaterialCommunityIcons name="earth" size={18} color={Brand.textTertiary} />
+          <Text style={[styles.filterInputText, !sellerCountryName && styles.filterInputPlaceholder]}>
+            {sellerCountryName || 'All countries'}
+          </Text>
+          {sellerCountry ? (
+            <Pressable hitSlop={8} onPress={() => { setSellerCountry(''); setSellerCountryName(''); setSellerRegion(''); setSellerCity(''); load(true); }}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+            </Pressable>
+          ) : (
+            <MaterialCommunityIcons name="chevron-right" size={18} color={Brand.textTertiary} />
+          )}
+        </Pressable>
+        <View style={styles.filterRowTwo}>
+          <TextInput
+            style={[styles.filterInput, { flex: 1 }]}
+            value={sellerRegion}
+            onChangeText={setSellerRegion}
+            placeholder="Region/state"
+            placeholderTextColor={Brand.textTertiary}
+            returnKeyType="next"
+          />
+          <TextInput
+            style={[styles.filterInput, { flex: 1 }]}
+            value={sellerCity}
+            onChangeText={setSellerCity}
+            placeholder="City"
+            placeholderTextColor={Brand.textTertiary}
+            returnKeyType="search"
+            onSubmitEditing={() => load(true)}
+          />
+        </View>
+        {(sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly || localOnly || internationalOnly || sellerCountry || sellerRegion || sellerCity) ? (
           <View style={styles.clearFiltersRow}>
             <Pressable
               onPress={() => {
@@ -783,6 +849,10 @@ export default function SearchScreen() {
                 setVerifiedOnly(false);
                 setLocalOnly(false);
                 setInternationalOnly(false);
+                setSellerCountry('');
+                setSellerCountryName('');
+                setSellerRegion('');
+                setSellerCity('');
                 setShowFilters(false);
                 setTimeout(() => load(true), 0);
               }}
@@ -794,6 +864,59 @@ export default function SearchScreen() {
         ) : null}
       </View>
     </View>
+  ) : null;
+
+  // ── Country picker modal for seller location filter ──────────────
+  const countryModal = showCountryModal ? (
+    <Modal visible animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Country</Text>
+            <Pressable onPress={() => setShowCountryModal(false)}>
+              <MaterialCommunityIcons name="close" size={24} color={Brand.textSecondary} />
+            </Pressable>
+          </View>
+          <View style={styles.searchBar}>
+            <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search..."
+              placeholderTextColor={Brand.textTertiary}
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              autoFocus
+            />
+          </View>
+          <FlatList
+            data={countries.filter((c: any) => c.name.toLowerCase().includes(countrySearch.toLowerCase()))}
+            keyExtractor={(item: any) => String(item.id)}
+            renderItem={({ item }: { item: any }) => (
+              <Pressable
+                style={({ pressed }) => [styles.countryListItem, pressed && styles.countryListItemPressed]}
+                onPress={() => {
+                  setSellerCountry(item.iso2);
+                  setSellerCountryName(item.name);
+                  setSellerRegion('');
+                  setSellerCity('');
+                  setShowCountryModal(false);
+                  load(true);
+                }}
+              >
+                <Text style={styles.countryListText}>{item.name}</Text>
+                <Text style={styles.countryListCode}>{item.iso2} • {item.currency_code}</Text>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <Text style={{ color: Brand.textTertiary }}>No countries found</Text>
+              </View>
+            }
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        </View>
+      </View>
+    </Modal>
   ) : null;
 
   // ── Idle state: recent + trending searches ───────────────────────
@@ -897,6 +1020,7 @@ export default function SearchScreen() {
           </View>
         )}
         {filterPanel}
+        {countryModal}
 
         {isIdle ? (
           idleBody
@@ -1222,6 +1346,85 @@ const styles = StyleSheet.create({
     color: Brand.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+  },
+  filterInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Brand.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.border,
+    marginTop: 6,
+  },
+  filterInputText: {
+    flex: 1,
+    fontSize: 14,
+    color: Brand.text,
+  },
+  filterInputPlaceholder: {
+    color: Brand.textTertiary,
+  },
+  filterRowTwo: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+  },
+  filterInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: Brand.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: Brand.text,
+    backgroundColor: Brand.surface,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Brand.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Brand.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Brand.text,
+  },
+  countryListItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Brand.border,
+  },
+  countryListItemPressed: {
+    backgroundColor: Brand.surfaceAlt,
+  },
+  countryListText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: Brand.text,
+  },
+  countryListCode: {
+    fontSize: 12,
+    color: Brand.textTertiary,
+    marginTop: 2,
   },
   sortRow: {
     flexDirection: 'row',
