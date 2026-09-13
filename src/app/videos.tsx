@@ -1378,6 +1378,7 @@ export default function VideosScreen() {
       {/* ── Search results: 2-column grid with muted autoplay ─────────── */}
       {searchQuery.trim().length >= 2 ? (
         <FlatList
+          key="grid"
           ref={gridListRef}
           data={products}
           keyExtractor={(item) => `grid-video-${item.id}-${item.slug}`}
@@ -1414,6 +1415,7 @@ export default function VideosScreen() {
       ) : (
         /* ── Browse mode: Vertical swipe feed (TikTok-style paging) ── */
         <FlatList
+          key="feed"
           ref={listRef}
           data={products}
           keyExtractor={(item) => `video-${item.id}-${item.slug}`}
