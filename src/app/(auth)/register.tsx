@@ -86,35 +86,6 @@ export default function RegisterScreen() {
         >
           {/* White form card */}
           <View style={styles.card}>
-            {/* Social login buttons — 2x2 grid */}
-            <View style={styles.socialRow}>
-              <Pressable style={styles.socialBtn}>
-                <MaterialCommunityIcons name="google" size={22} color="#4285F4" />
-                <Text style={styles.socialText}>Google</Text>
-              </Pressable>
-              <Pressable style={styles.socialBtn}>
-                <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
-                <Text style={styles.socialText}>Facebook</Text>
-              </Pressable>
-            </View>
-            <View style={styles.socialRow}>
-              <Pressable style={styles.socialBtn}>
-                <MaterialCommunityIcons name="instagram" size={22} color="#d62976" />
-                <Text style={styles.socialText}>Instagram</Text>
-              </Pressable>
-              <Pressable style={styles.socialBtn}>
-                <MaterialCommunityIcons name="music-note" size={22} color="#000" />
-                <Text style={styles.socialText}>TikTok</Text>
-              </Pressable>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or sign up with email</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
             {/* Error box */}
             {error && (
               <View style={styles.errorBox}>
@@ -317,48 +288,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-  },
-
-  // Social login buttons
-  socialRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-  },
-  socialBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Brand.border,
-    borderRadius: 10,
-    paddingVertical: 12,
-  },
-  socialText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Brand.text,
-  },
-
-  // Divider
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Brand.border,
-  },
-  dividerText: {
-    fontSize: 13,
-    color: Brand.textTertiary,
-    marginHorizontal: 10,
   },
 
   // Error box
