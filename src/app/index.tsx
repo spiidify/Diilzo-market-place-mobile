@@ -1138,6 +1138,17 @@ export default function ProductFeedScreen() {
                 )}
               </Pressable>
               <Pressable
+                style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
+                onPress={() => router.push('/chat')}
+              >
+                <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+                {chatUnreadCount > 0 && (
+                  <View style={styles.chatBadge}>
+                    <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
@@ -1187,6 +1198,17 @@ export default function ProductFeedScreen() {
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
+                onPress={() => router.push('/chat')}
+              >
+                <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+                {chatUnreadCount > 0 && (
+                  <View style={styles.chatBadge}>
+                    <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
                   </View>
                 )}
               </Pressable>

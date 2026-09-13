@@ -1,14 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { getChatUnreadCount } from '@/services/chat';
 
 export default function BuyerDashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const [chatUnread, setChatUnread] = useState(0);
+
+  useFocusEffect(() => {
+    if (!isAuthenticated) return;
+    getChatUnreadCount().then(setChatUnread).catch(() => { });
+  });
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
@@ -74,7 +82,14 @@ export default function BuyerDashboardScreen() {
 
   return (
     <View style={styles.screen}>
-      <GradientHeader title="My Dashboard" subtitle="Welcome back" showBack={false} />
+      <GradientHeader
+        title="My Dashboard"
+        subtitle="Welcome back"
+        showBack={false}
+        rightIcon="chat-outline"
+        rightBadge={chatUnread}
+        onRightPress={() => router.push('/chat' as any)}
+      />
 
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
         {/* Profile hero — card with avatar */}
