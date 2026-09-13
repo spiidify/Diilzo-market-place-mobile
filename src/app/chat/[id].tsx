@@ -155,6 +155,7 @@ export default function ChatThreadScreen() {
   const [buyerName, setBuyerName] = useState<string | null>(null);
   const [buyerAvatar, setBuyerAvatar] = useState<string | null>(null);
   const [buyerId, setBuyerId] = useState<number | null>(null);
+  const [isSupport, setIsSupport] = useState(false);
   const [productName, setProductName] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productSlug, setProductSlug] = useState<string | null>(null);
@@ -225,6 +226,7 @@ export default function ChatThreadScreen() {
         setBuyerName(thread.buyer_name);
         setBuyerAvatar(thread.buyer_avatar);
         setBuyerId(thread.buyer);
+        setIsSupport(!!thread.is_support);
         setProductName(thread.product_name || null);
         setProductImage(thread.product_image || null);
         setProductSlug(thread.product_slug || null);
@@ -420,7 +422,7 @@ export default function ChatThreadScreen() {
         <View>
           {showDateSep && <DateSeparator label={dateSep} />}
           <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
-            <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
+            <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem, isSupport && (isMe ? styles.supportBubbleMe : styles.supportBubbleThem)]}>
               <AudioBubble uri={fullUrl} duration={item.audio_duration} isMe={isMe} />
               <View style={styles.msgMetaRow}>
                 <Text style={[styles.msgTime, isMe ? styles.msgTimeMe : styles.msgTimeThem]}>
@@ -439,7 +441,7 @@ export default function ChatThreadScreen() {
       <View>
         {showDateSep && <DateSeparator label={dateSep} />}
         <View style={[styles.msgRow, isMe ? styles.msgRowMe : styles.msgRowThem]}>
-          <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem]}>
+          <View style={[styles.msgBubble, isMe ? styles.msgBubbleMe : styles.msgBubbleThem, isSupport && (isMe ? styles.supportBubbleMe : styles.supportBubbleThem)]}>
             <Text style={[styles.msgText, isMe ? styles.msgTextMe : styles.msgTextThem]}>
               {item.message}
             </Text>
@@ -468,11 +470,13 @@ export default function ChatThreadScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isSupport && styles.supportScreen]}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* ── Header ──────────────────────────────────────────────── */}
         <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+          colors={isSupport
+            ? ['#1E293B', '#334155', '#475569']
+            : [Brand.primaryDark, Brand.primary, Brand.accent]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -491,7 +495,11 @@ export default function ChatThreadScreen() {
           </Pressable>
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatarWrap}>
-              {buyerId && user?.id && buyerId !== user.id ? (
+              {isSupport ? (
+                <View style={styles.headerAvatarFallback}>
+                  <MaterialCommunityIcons name="headset" size={16} color="#FFFFFF" />
+                </View>
+              ) : buyerId && user?.id && buyerId !== user.id ? (
                 // Seller viewing — show buyer's avatar
                 buyerAvatar ? (
                   <Image source={{ uri: buyerAvatar }} style={styles.headerAvatar} resizeMode="cover" />
@@ -515,9 +523,11 @@ export default function ChatThreadScreen() {
             </View>
             <View style={styles.headerTextWrap}>
               <Text style={styles.headerTitle} numberOfLines={1}>
-                {buyerId && user?.id && buyerId === user.id
-                  ? (storeName || 'Chat')
-                  : (buyerName || storeName || 'Chat')}
+                {isSupport
+                  ? 'Diilzo Support'
+                  : (buyerId && user?.id && buyerId === user.id
+                    ? (storeName || 'Chat')
+                    : (buyerName || storeName || 'Chat'))}
               </Text>
               <Text style={styles.headerStatus} numberOfLines={1}>
                 {presence?.is_typing
@@ -572,7 +582,7 @@ export default function ChatThreadScreen() {
             data={messages}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderMessage}
-            contentContainerStyle={styles.messagesList}
+            contentContainerStyle={[styles.messagesList, isSupport && styles.supportMessagesList]}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             inverted={false}
             maxToRenderPerBatch={15}
@@ -687,7 +697,8 @@ export default function ChatThreadScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  supportScreen: { backgroundColor: '#F1F5F9' },
+  safeArea: { flex: 1 },
 
   // ── Header ──────────────────────────────────────────────────────
   header: {
@@ -731,6 +742,7 @@ const styles = StyleSheet.create({
 
   // ── Messages ────────────────────────────────────────────────────
   messagesList: { paddingHorizontal: 16, paddingVertical: 16, flexGrow: 1 },
+  supportMessagesList: { backgroundColor: '#F1F5F9' },
   msgRow: { flexDirection: 'row', marginBottom: 10 },
   msgRowMe: { justifyContent: 'flex-end' },
   msgRowThem: { justifyContent: 'flex-start' },
@@ -747,6 +759,12 @@ const styles = StyleSheet.create({
   msgBubbleThem: {
     backgroundColor: Brand.surfaceAlt,
     borderBottomLeftRadius: 4,
+  },
+  supportBubbleMe: {
+    backgroundColor: '#1E293B',
+  },
+  supportBubbleThem: {
+    backgroundColor: '#E2E8F0',
   },
   msgText: { fontSize: 14, lineHeight: 19 },
   msgTextMe: { color: '#FFFFFF' },

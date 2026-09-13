@@ -148,7 +148,7 @@ export default function ChatListScreen() {
 
     return (
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+        style={({ pressed }) => [styles.card, isSupport && styles.supportCard, pressed && { opacity: 0.85 }]}
         onPress={() => router.push(`/chat/${item.id}` as any)}
       >
         <View style={styles.avatarWrap}>
@@ -417,6 +417,9 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 16, paddingVertical: 14,
+  },
+  supportCard: {
+    backgroundColor: '#F1F5F9',
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   avatarWrap: { position: 'relative' },
