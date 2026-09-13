@@ -465,12 +465,15 @@ export default function VideosScreen() {
   const { isAuthenticated } = useAuth();
   const { height: screenHeight } = useWindowDimensions();
 
-  // Tab bar is 88px (from app-tabs.tsx). Header ~48px. Tabs row ~40px.
+  // Tab bar is 88px (from app-tabs.tsx). Header ~56px. Tabs row ~40px.
   // Feed item height = visible area between header+tabs and tab bar.
   const TAB_BAR_HEIGHT = 88;
   const HEADER_HEIGHT = 56;
   const TABS_HEIGHT = 40;
+  // Normal browse mode: header + tabs are visible
   const feedHeight = screenHeight - TAB_BAR_HEIGHT - HEADER_HEIGHT - TABS_HEIGHT;
+  // Feed mode from grid: header + tabs are hidden, so feed fills full screen above tab bar
+  const feedModeHeight = screenHeight - TAB_BAR_HEIGHT;
 
   // ── State ────────────────────────────────────────────────────────
   const [products, setProducts] = useState<Product[]>([]);
@@ -969,7 +972,7 @@ export default function VideosScreen() {
     };
 
     return (
-      <View style={[styles.feedItem, { height: feedHeight }]}>
+      <View style={[styles.feedItem, { height: feedMode ? feedModeHeight : feedHeight }]}>
         {/* Direct video (Cloudinary) — TikTok-style, no controls */}
         {hasDirectVideo && item.video_file_url ? (
           isActive ? (
@@ -1130,7 +1133,7 @@ export default function VideosScreen() {
         ) : null}
       </View>
     );
-  }, [feedHeight, activeIndex, isPlaying, showOverlay, videoMuted, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleToggleMute, handleWishlistToggle, handleShare, handleProductPress]);
+  }, [feedHeight, feedModeHeight, feedMode, activeIndex, isPlaying, showOverlay, videoMuted, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleToggleMute, handleWishlistToggle, handleShare, handleProductPress]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
@@ -1425,6 +1428,7 @@ export default function VideosScreen() {
             windowSize={5}
             initialNumToRender={3}
             initialScrollIndex={Math.min(feedStartIndex, products.length - 1)}
+            getItemLayout={(_, index) => ({ length: feedModeHeight, offset: feedModeHeight * index, index })}
             removeClippedSubviews={false}
             onScrollToIndexFailed={({ index, averageItemLength }) => {
               listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
@@ -1512,6 +1516,7 @@ export default function VideosScreen() {
           maxToRenderPerBatch={3}
           windowSize={5}
           initialNumToRender={3}
+          getItemLayout={(_, index) => ({ length: feedHeight, offset: feedHeight * index, index })}
           removeClippedSubviews={false}
           onScrollToIndexFailed={({ index, averageItemLength }) => {
             listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
