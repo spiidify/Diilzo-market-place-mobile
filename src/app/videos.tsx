@@ -273,6 +273,191 @@ const heartStyles = StyleSheet.create({
   },
 });
 
+// ── Grid video player for search results (2-column, muted autoplay) ──
+function GridVideoPlayer({
+  uri,
+  isActive,
+  posterImage,
+  productName,
+  storeName,
+  price,
+  currency,
+  isOnSale,
+  discountPercentage,
+  isWishlisted,
+  onPress,
+  onWishlistToggle,
+}: {
+  uri: string;
+  isActive: boolean;
+  posterImage?: string | null;
+  productName: string;
+  storeName: string;
+  price: number;
+  currency: string;
+  isOnSale?: boolean;
+  discountPercentage?: number;
+  isWishlisted: boolean;
+  onPress: () => void;
+  onWishlistToggle: () => void;
+}) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.timeUpdateEventInterval = 0.1;
+    if (isActive) p.play();
+  });
+
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+
+  // Play/pause based on active state
+  useEffect(() => {
+    try {
+      if (isActive) {
+        const dur = player.duration || 0;
+        if (dur > 0 && player.currentTime >= dur - 0.5) {
+          player.currentTime = 0;
+        }
+        player.play();
+      } else {
+        player.pause();
+      }
+    } catch { }
+  }, [isActive, player]);
+
+  // Always muted in grid mode
+  useEffect(() => {
+    try {
+      player.muted = true;
+      player.volume = 0;
+    } catch { }
+  }, [player]);
+
+  // Pause on unmount
+  useEffect(() => {
+    return () => {
+      try { player.pause(); } catch { }
+    };
+  }, [player]);
+
+  const isLoading = status === 'loading' || status === 'idle';
+
+  return (
+    <Pressable style={gridVideoStyles.container} onPress={onPress}>
+      {/* Poster image while loading */}
+      {isLoading && posterImage ? (
+        <Image source={{ uri: posterImage }} style={gridVideoStyles.poster} resizeMode="cover" />
+      ) : null}
+
+      <VideoView
+        style={gridVideoStyles.video}
+        player={player}
+        contentFit="cover"
+        nativeControls={false}
+        allowsPictureInPicture={false}
+      />
+
+      {/* Loading spinner */}
+      {isLoading && (
+        <View style={gridVideoStyles.loadingWrap}>
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        </View>
+      )}
+
+      {/* Bottom gradient for text readability */}
+      <View style={gridVideoStyles.bottomGradient} />
+
+      {/* Mute indicator */}
+      <View style={gridVideoStyles.muteBadge}>
+        <MaterialCommunityIcons name="volume-mute" size={12} color="#FFFFFF" />
+      </View>
+
+      {/* Sale badge */}
+      {isOnSale && (
+        <View style={gridVideoStyles.saleBadge}>
+          <Text style={gridVideoStyles.saleBadgeText}>-{discountPercentage}%</Text>
+        </View>
+      )}
+
+      {/* Wishlist heart */}
+      <Pressable style={gridVideoStyles.wishlistBtn} onPress={(e) => { e.stopPropagation(); onWishlistToggle(); }}>
+        <MaterialCommunityIcons
+          name={isWishlisted ? 'heart' : 'heart-outline'}
+          size={18}
+          color={isWishlisted ? '#FF4757' : '#FFFFFF'}
+        />
+      </Pressable>
+
+      {/* Product info overlay */}
+      <View style={gridVideoStyles.info}>
+        <Text style={gridVideoStyles.storeName} numberOfLines={1}>{storeName}</Text>
+        <Text style={gridVideoStyles.productName} numberOfLines={2}>{productName}</Text>
+        <View style={gridVideoStyles.priceRow}>
+          <Text style={gridVideoStyles.currency}>{currency} </Text>
+          <Text style={gridVideoStyles.price}>{price.toLocaleString()}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const gridVideoStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: '#111',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  poster: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
+  video: { flex: 1, width: '100%', height: '100%' },
+  loadingWrap: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomGradient: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: 100,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  muteBadge: {
+    position: 'absolute',
+    top: 8, right: 8,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  saleBadge: {
+    position: 'absolute',
+    top: 8, left: 8,
+    backgroundColor: Brand.danger,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+  },
+  saleBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  wishlistBtn: {
+    position: 'absolute',
+    bottom: 90, right: 8,
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  info: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    padding: 8,
+  },
+  storeName: { color: Brand.primary, fontSize: 11, fontWeight: '700', marginBottom: 2 },
+  productName: { color: '#FFFFFF', fontSize: 12, fontWeight: '600', lineHeight: 16, marginBottom: 4 },
+  priceRow: { flexDirection: 'row', alignItems: 'center' },
+  currency: { color: Brand.primary, fontSize: 10, fontWeight: '700' },
+  price: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' },
+});
+
 export default function VideosScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ product?: string }>();
@@ -297,6 +482,11 @@ export default function VideosScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [videoMuted, setVideoMuted] = useState(false);
+
+  // Grid mode: track which video indices are visible for autoplay (search results)
+  const [gridActiveIndices, setGridActiveIndices] = useState<Set<number>>(new Set());
+  const gridListRef = useRef<FlatList>(null);
+  const gridViewabilityConfig = useRef({ itemVisiblePercentThreshold: 50, minimumViewTime: 200 }).current;
 
   // Overlay visibility — hides when video plays, shows on tap
   const [showOverlay, setShowOverlay] = useState(true);
@@ -565,6 +755,17 @@ export default function VideosScreen() {
     }
   }, []);
 
+  // Grid viewability — track ALL visible items for muted autoplay (2-column grid)
+  const handleGridViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    const newSet = new Set<number>();
+    viewableItems.forEach((item: any) => {
+      if (item.isViewable && item.index != null) {
+        newSet.add(item.index);
+      }
+    });
+    setGridActiveIndices(newSet);
+  }, []);
+
   // ── Scroll to target product when arriving from "See Video" ──────
   // When navigated to /videos?product=<slug>, find that product in the
   // loaded feed and scroll to it so the user sees its video directly.
@@ -674,6 +875,55 @@ export default function VideosScreen() {
     }
     router.push(`/product/${slug}` as any);
   }, [router, searchQuery, saveRecentSearch, products]);
+
+  // ── Render grid video item (2-column, muted autoplay for search results) ──
+  const renderGridVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
+    const hasDirectVideo = Boolean(item.video_file_url);
+    const isWishlisted = wishlistIds.has(item.id);
+    const isActive = gridActiveIndices.has(index);
+
+    if (!hasDirectVideo || !item.video_file_url) {
+      // Non-video items show thumbnail only
+      return (
+        <Pressable
+          style={styles.gridItem}
+          onPress={() => handleProductPress(item.slug)}
+        >
+          {item.primary_image_url ? (
+            <Image source={{ uri: item.primary_image_url }} style={styles.gridThumbnail} resizeMode="cover" />
+          ) : (
+            <View style={[styles.gridThumbnail, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+              <MaterialCommunityIcons name="package-variant-closed" size={32} color="#444" />
+            </View>
+          )}
+          <View style={styles.gridInfo}>
+            <Text style={styles.gridStoreName} numberOfLines={1}>{item.store?.name || 'Diilzo Store'}</Text>
+            <Text style={styles.gridProductName} numberOfLines={2}>{item.name}</Text>
+            <Text style={styles.gridPrice}>{item.currency} {Number(item.final_price).toLocaleString()}</Text>
+          </View>
+        </Pressable>
+      );
+    }
+
+    return (
+      <View style={styles.gridItem}>
+        <GridVideoPlayer
+          uri={item.video_file_url}
+          isActive={isActive}
+          posterImage={item.primary_image_url}
+          productName={item.name}
+          storeName={item.store?.name || 'Diilzo Store'}
+          price={Number(item.final_price)}
+          currency={item.currency}
+          isOnSale={item.is_on_sale}
+          discountPercentage={item.discount_percentage}
+          isWishlisted={isWishlisted}
+          onPress={() => handleProductPress(item.slug)}
+          onWishlistToggle={() => handleWishlistToggle(item)}
+        />
+      </View>
+    );
+  }, [gridActiveIndices, wishlistIds, handleProductPress, handleWishlistToggle]);
 
   // ── Render each video card (inline playback, no modal) ────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
@@ -1125,47 +1375,87 @@ export default function VideosScreen() {
         </View>
       )}
 
-      {/* ── Vertical swipe feed (FlatList with paging + inline video) ── */}
-      <FlatList
-        ref={listRef}
-        data={products}
-        keyExtractor={(item) => `video-${item.id}-${item.slug}`}
-        renderItem={renderVideoItem}
-        extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        onViewableItemsChanged={handleViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={3}
-        removeClippedSubviews={false}
-        onScrollToIndexFailed={({ index, averageItemLength }) => {
-          listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Brand.primary]}
-            tintColor={Brand.primary}
-          />
-        }
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={styles.footerLoading}>
-              <ActivityIndicator size="small" color={Brand.primary} />
-            </View>
-          ) : null
-        }
-      />
+      {/* ── Search results: 2-column grid with muted autoplay ─────────── */}
+      {searchQuery.trim().length >= 2 ? (
+        <FlatList
+          ref={gridListRef}
+          data={products}
+          keyExtractor={(item) => `grid-video-${item.id}-${item.slug}`}
+          renderItem={renderGridVideoItem}
+          extraData={Array.from(gridActiveIndices).join(',')}
+          numColumns={2}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.gridContent}
+          columnWrapperStyle={styles.gridRow}
+          onViewableItemsChanged={handleGridViewableItemsChanged}
+          viewabilityConfig={gridViewabilityConfig}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          initialNumToRender={6}
+          removeClippedSubviews
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Brand.primary]}
+              tintColor={Brand.primary}
+            />
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoading}>
+                <ActivityIndicator size="small" color={Brand.primary} />
+              </View>
+            ) : null
+          }
+        />
+      ) : (
+        /* ── Browse mode: Vertical swipe feed (TikTok-style paging) ── */
+        <FlatList
+          ref={listRef}
+          data={products}
+          keyExtractor={(item) => `video-${item.id}-${item.slug}`}
+          renderItem={renderVideoItem}
+          extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
+          pagingEnabled
+          showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          initialNumToRender={3}
+          removeClippedSubviews={false}
+          onScrollToIndexFailed={({ index, averageItemLength }) => {
+            listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Brand.primary]}
+              tintColor={Brand.primary}
+            />
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoading}>
+                <ActivityIndicator size="small" color={Brand.primary} />
+              </View>
+            ) : null
+          }
+        />
+      )}
 
-      {/* ── Progress indicator ────────────────────────────────────── */}
-      <View style={styles.progressWrap}>
-        <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
-      </View>
+      {/* ── Progress indicator (browse mode only) ───────────────────── */}
+      {searchQuery.trim().length < 2 && (
+        <View style={styles.progressWrap}>
+          <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -1422,4 +1712,29 @@ const styles = StyleSheet.create({
 
   // ── Footer loading ──────────────────────────────────────────────
   footerLoading: { paddingVertical: 20, alignItems: 'center' },
+
+  // ── Grid (search results — 2-column muted autoplay) ──────────────
+  gridContent: { paddingHorizontal: 8, paddingBottom: 100 },
+  gridRow: { gap: 8, marginBottom: 8 },
+  gridItem: {
+    flex: 1,
+    aspectRatio: 9 / 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#111',
+  },
+  gridThumbnail: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%', height: '100%',
+  },
+  gridInfo: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  gridStoreName: { color: Brand.primary, fontSize: 11, fontWeight: '700', marginBottom: 2 },
+  gridProductName: { color: '#FFFFFF', fontSize: 12, fontWeight: '600', lineHeight: 16, marginBottom: 4 },
+  gridPrice: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
 });
