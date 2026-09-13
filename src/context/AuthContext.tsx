@@ -7,6 +7,7 @@ import { useImageDimensions } from '../hooks/useImageDimensions';
 import { getAccessToken } from '../services/api';
 import { login as apiLogin, logout as apiLogout, register as apiRegister, getProfile } from '../services/auth';
 import { clearGuestCartId } from '../services/cart';
+import { socialLogin as apiSocialLogin } from '../services/socialAuth';
 import type { User } from '../types';
 
 interface AuthState {
@@ -18,6 +19,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string, phone?: string) => Promise<void>;
+  socialLogin: (provider: 'google' | 'facebook' | 'apple', payload: { access_token?: string; id_token?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -68,6 +70,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user, isLoading: false, isAuthenticated: true });
   }, [avatarSize]);
 
+  const socialLogin = useCallback(async (
+    provider: 'google' | 'facebook' | 'apple',
+    payload: { access_token?: string; id_token?: string }
+  ) => {
+    await apiSocialLogin(provider, payload);
+    const user = await getProfile(avatarSize);
+    await clearGuestCartId();
+    setState({ user, isLoading: false, isAuthenticated: true });
+  }, [avatarSize]);
+
   const logout = useCallback(async () => {
     await apiLogout();
     setState({ user: null, isLoading: false, isAuthenticated: false });
@@ -83,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [avatarSize]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ ...state, login, register, socialLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

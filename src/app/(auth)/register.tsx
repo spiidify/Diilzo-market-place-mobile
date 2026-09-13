@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
+import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { getSafeErrorMessage } from '@/utils/errors';
@@ -281,6 +282,9 @@ export default function RegisterScreen() {
               )}
             </Pressable>
           </View>
+
+          {/* Social login buttons */}
+          <SocialLoginButtons />
 
           {/* Bottom section */}
           <View style={styles.footer}>

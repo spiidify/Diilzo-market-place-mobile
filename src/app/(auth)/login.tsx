@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
+import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -231,6 +232,10 @@ export default function LoginScreen() {
               </Pressable>
             )}
           </View>
+
+          {/* Social login buttons */}
+          <SocialLoginButtons />
+
           <View style={styles.bottomSection}>
             <Text style={styles.newText}>New to Diilzo?</Text>
             <Link href="/(auth)/register" asChild>
