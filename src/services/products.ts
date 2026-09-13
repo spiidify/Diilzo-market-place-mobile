@@ -86,6 +86,7 @@ export interface SearchParams {
   in_stock?: string;       // "true" to filter in-stock only
   on_sale?: string;        // "true" to filter sale products only
   is_featured?: string;    // "true" to filter featured only
+  has_video?: string;      // "true" to filter products with direct video uploads only
   seller_country?: string; // filter by seller country
   seller_city?: string;    // filter by seller city
   verified?: string;       // "true" for verified sellers only

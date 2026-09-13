@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEvent } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -9,6 +10,7 @@ import {
   AppState,
   FlatList,
   Image,
+  Keyboard,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -24,7 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchCategories } from '@/services/catalog';
-import { fetchProducts } from '@/services/products';
+import { esSearchProducts, fetchProducts, getAutocomplete, getTrendingSearches, logSearchClick } from '@/services/products';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { Category, Product, WishlistItem } from '@/types';
 
@@ -346,6 +348,17 @@ export default function VideosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
+  // Full-text search: autocomplete, recent searches, trending, suggestions
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [autocompleteItems, setAutocompleteItems] = useState<string[]>([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [trendingSearches, setTrendingSearches] = useState<string[]>([]);
+  const [searchCount, setSearchCount] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const autocompleteAbortRef = useRef<AbortController | null>(null);
+  const searchInputRef = useRef<TextInput>(null);
+
   // Wishlist
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
@@ -382,6 +395,16 @@ export default function VideosScreen() {
       .catch((e) => console.error('Category fetch error:', e?.message));
   }, []);
 
+  // ── Load trending searches from API ───────────────────────────────
+  useEffect(() => {
+    getTrendingSearches(8)
+      .then((terms) => { if (terms.length > 0) setTrendingSearches(terms); })
+      .catch(() => { });
+    AsyncStorage.getItem('video_recent_searches')
+      .then((raw) => { if (raw) { try { setRecentSearches(JSON.parse(raw)); } catch { } } })
+      .catch(() => { });
+  }, []);
+
   // ── Load wishlist status ──────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -396,34 +419,65 @@ export default function VideosScreen() {
   // ── Load videos ───────────────────────────────────────────────────
   const load = useCallback(async (reset = false) => {
     const targetPage = reset ? 1 : page;
+    // Cancel any in-flight request before issuing a new one
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const params: Record<string, any> = {
-        has_video: 'true',
-        page: targetPage,
-      };
-      if (activeCategory) params.category = activeCategory;
-      if (searchQuery.trim()) params.search = searchQuery.trim();
-
-      const data = await fetchProducts(params);
-
-      if (reset) {
-        setProducts(data.results || []);
-        setPage(2);
+      if (searchQuery.trim().length >= 2) {
+        // Use PostgreSQL Full Text Search for video search
+        const data = await esSearchProducts({
+          q: searchQuery.trim(),
+          page: targetPage,
+          page_size: 20,
+          has_video: 'true',
+          ...(activeCategory ? { category: activeCategory } : {}),
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (reset) setSuggestion(data.suggestion || null);
+        setSearchCount(data.count);
+        if (reset) {
+          setProducts(data.results || []);
+          setPage(2);
+        } else {
+          setProducts((prev) => [...prev, ...(data.results || [])]);
+          setPage((prev) => prev + 1);
+        }
+        setHasMore(!!data.has_next);
       } else {
-        setProducts((prev) => [...prev, ...(data.results || [])]);
-        setPage((prev) => prev + 1);
+        // No search query — browse all videos with category filter
+        const params: Record<string, any> = {
+          has_video: 'true',
+          page: targetPage,
+        };
+        if (activeCategory) params.category = activeCategory;
+        const data = await fetchProducts({ ...params, signal: controller.signal });
+        if (controller.signal.aborted) return;
+        if (reset) setSuggestion(null);
+        setSearchCount(data.count);
+        if (reset) {
+          setProducts(data.results || []);
+          setPage(2);
+        } else {
+          setProducts((prev) => [...prev, ...(data.results || [])]);
+          setPage((prev) => prev + 1);
+        }
+        setHasMore(!!data.next);
       }
-      setHasMore(!!data.next);
     } catch (e: any) {
+      if (e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED' || controller.signal.aborted) return;
       console.error('Video fetch error:', e?.message);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   }, [page, activeCategory, searchQuery]);
 
-  // Reload when category or search changes
+  // Reload when category changes (immediate)
   useEffect(() => {
     setLoading(true);
     setProducts([]);
@@ -432,7 +486,57 @@ export default function VideosScreen() {
     setHasMore(true);
     setIsPlaying(true);
     load(true);
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory]);
+
+  // Debounced search (300ms) — avoids spamming the API on each keystroke
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      // Instantly reload all videos when search is cleared
+      setLoading(true);
+      setProducts([]);
+      setActiveIndex(0);
+      setPage(1);
+      setHasMore(true);
+      setIsPlaying(true);
+      setSuggestion(null);
+      setShowAutocomplete(false);
+      load(true);
+      return;
+    }
+    const t = setTimeout(() => {
+      setLoading(true);
+      setProducts([]);
+      setActiveIndex(0);
+      setPage(1);
+      setHasMore(true);
+      setIsPlaying(true);
+      load(true);
+      setShowAutocomplete(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Autocomplete debounce (150ms) — faster than full search
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setAutocompleteItems([]);
+      setShowAutocomplete(false);
+      return;
+    }
+    if (autocompleteAbortRef.current) autocompleteAbortRef.current.abort();
+    const t = setTimeout(async () => {
+      try {
+        const suggestions = await getAutocomplete(searchQuery.trim(), 6);
+        if (suggestions.length > 0) {
+          setAutocompleteItems(suggestions);
+          setShowAutocomplete(true);
+        } else {
+          setShowAutocomplete(false);
+        }
+      } catch { }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   // ── Handlers ──────────────────────────────────────────────────────
   const handleRefresh = useCallback(() => {
@@ -517,6 +621,40 @@ export default function VideosScreen() {
       console.error('Share error:', e?.message);
     }
   }, []);
+
+  // ── Recent searches helpers ───────────────────────────────────────
+  const saveRecentSearch = useCallback((term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setRecentSearches((prev) => {
+      const next = [trimmed, ...prev.filter((t) => t.toLowerCase() !== trimmed.toLowerCase())].slice(0, 8);
+      AsyncStorage.setItem('video_recent_searches', JSON.stringify(next)).catch(() => { });
+      return next;
+    });
+  }, []);
+
+  const removeRecentSearch = useCallback((term: string) => {
+    setRecentSearches((prev) => {
+      const next = prev.filter((t) => t !== term);
+      AsyncStorage.setItem('video_recent_searches', JSON.stringify(next)).catch(() => { });
+      return next;
+    });
+  }, []);
+
+  const handleSubmitSearch = useCallback(() => {
+    if (searchQuery.trim()) saveRecentSearch(searchQuery);
+    Keyboard.dismiss();
+    setShowAutocomplete(false);
+  }, [searchQuery, saveRecentSearch]);
+
+  const handleProductPress = useCallback((slug: string) => {
+    if (searchQuery.trim()) {
+      saveRecentSearch(searchQuery);
+      const product = products.find((p) => p.slug === slug);
+      logSearchClick(searchQuery.trim(), product?.id, undefined).catch(() => { });
+    }
+    router.push(`/product/${slug}` as any);
+  }, [router, searchQuery, saveRecentSearch, products]);
 
   // ── Render each video card (inline playback, no modal) ────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
@@ -648,7 +786,7 @@ export default function VideosScreen() {
               <Text style={styles.actionText}>Share</Text>
             </Pressable>
             {/* Buy */}
-            <Pressable style={styles.actionItem} onPress={() => router.push(`/product/${item.slug}` as any)}>
+            <Pressable style={styles.actionItem} onPress={() => handleProductPress(item.slug)}>
               <MaterialCommunityIcons name="shopping" size={30} color="#FFFFFF" />
               <Text style={styles.actionText}>Buy</Text>
             </Pressable>
@@ -688,7 +826,7 @@ export default function VideosScreen() {
             </View>
             <Pressable
               style={styles.viewProductBtn}
-              onPress={() => router.push(`/product/${item.slug}` as any)}
+              onPress={() => handleProductPress(item.slug)}
             >
               <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#FFFFFF" />
               <Text style={styles.viewProductText}>View Product</Text>
@@ -697,7 +835,7 @@ export default function VideosScreen() {
         ) : null}
       </View>
     );
-  }, [feedHeight, activeIndex, isPlaying, showOverlay, videoMuted, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleToggleMute, handleWishlistToggle, handleShare, router]);
+  }, [feedHeight, activeIndex, isPlaying, showOverlay, videoMuted, wishlistIds, heartBurstIndex, handleVideoEnd, handleOverlayToggle, handleToggleMute, handleWishlistToggle, handleShare, handleProductPress]);
 
   // ── Loading state ─────────────────────────────────────────────────
   if (loading) {
@@ -712,16 +850,99 @@ export default function VideosScreen() {
   // ── Empty state ───────────────────────────────────────────────────
   if (products.length === 0) {
     return (
-      <View style={styles.centerScreen}>
-        <View style={styles.emptyIconWrap}>
-          <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
+      <View style={styles.screen}>
+        <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
+          <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <View style={styles.headerBar} />
+          </SafeAreaView>
+        </LinearGradient>
+        <View style={[styles.tabsContainer, { borderBottomWidth: 0 }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabsContent}
+          >
+            <Pressable
+              style={[styles.tab, !activeCategory && styles.tabActive]}
+              onPress={() => setActiveCategory(null)}
+            >
+              <Text style={[styles.tabText, !activeCategory && styles.tabTextActive]}>All</Text>
+            </Pressable>
+            {categories.map((cat) => (
+              <Pressable
+                key={`cat-tab-${cat.id}-${cat.slug}`}
+                style={[styles.tab, activeCategory === cat.slug && styles.tabActive]}
+                onPress={() => setActiveCategory(cat.slug)}
+              >
+                <Text style={[styles.tabText, activeCategory === cat.slug && styles.tabTextActive]}>
+                  {cat.name}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <Pressable
+            style={styles.searchToggleBtn}
+            onPress={() => setShowSearch((prev) => !prev)}
+          >
+            <MaterialCommunityIcons name="magnify" size={22} color="#FFFFFF" />
+          </Pressable>
         </View>
-        <Text style={styles.emptyTitle}>No videos yet</Text>
-        <Text style={styles.emptySubtext}>
-          {searchQuery || activeCategory
-            ? 'Try a different category or search'
-            : 'Product videos will appear here'}
-        </Text>
+        {showSearch && (
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBarWrap}>
+              <MaterialCommunityIcons name="magnify" size={18} color="rgba(255,255,255,0.6)" />
+              <TextInput
+                ref={searchInputRef}
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search product videos..."
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+                onSubmitEditing={handleSubmitSearch}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => { setSearchQuery(''); searchInputRef.current?.focus(); }} hitSlop={8}>
+                  <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.6)" />
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
+        <View style={styles.centerScreen}>
+          <View style={styles.emptyIconWrap}>
+            <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
+          </View>
+          <Text style={styles.emptyTitle}>
+            {searchQuery.trim().length >= 2 ? 'No videos found' : 'No videos yet'}
+          </Text>
+          <Text style={styles.emptySubtext}>
+            {searchQuery.trim().length >= 2
+              ? `We couldn't find videos for "${searchQuery}".\nCheck the spelling or try a different term.`
+              : activeCategory
+                ? 'Try a different category'
+                : 'Product videos will appear here'}
+          </Text>
+          {suggestion && (
+            <Pressable
+              style={styles.suggestionBtn}
+              onPress={() => { setSearchQuery(suggestion); setSuggestion(null); }}
+            >
+              <MaterialCommunityIcons name="lightbulb-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.suggestionBtnText}>Search "{suggestion}" instead</Text>
+            </Pressable>
+          )}
+          {searchQuery.trim().length >= 2 && (
+            <Pressable
+              style={[styles.suggestionBtn, { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+              onPress={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+            >
+              <Text style={[styles.suggestionBtnText, { color: '#FFFFFF' }]}>Clear Search</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     );
   }
@@ -770,22 +991,117 @@ export default function VideosScreen() {
 
       {/* Search bar (collapsible) */}
       {showSearch && (
-        <View style={styles.searchBarWrap}>
-          <MaterialCommunityIcons name="magnify" size={18} color="rgba(255,255,255,0.6)" />
-          <TextInput
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search videos..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.6)" />
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrap}>
+            <MaterialCommunityIcons name="magnify" size={18} color="rgba(255,255,255,0.6)" />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search product videos..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={handleSubmitSearch}
+              onFocus={() => { if (autocompleteItems.length > 0) setShowAutocomplete(true); }}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable
+                onPress={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                hitSlop={8}
+              >
+                <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.6)" />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Autocomplete dropdown */}
+          {showAutocomplete && autocompleteItems.length > 0 && (
+            <View style={styles.autocompleteDropdown}>
+              {autocompleteItems.map((item, idx) => (
+                <Pressable
+                  key={`ac-${idx}`}
+                  style={styles.autocompleteItem}
+                  onPress={() => {
+                    setSearchQuery(item);
+                    setShowAutocomplete(false);
+                  }}
+                >
+                  <MaterialCommunityIcons name="magnify" size={16} color="rgba(255,255,255,0.5)" />
+                  <Text style={styles.autocompleteText} numberOfLines={1}>{item}</Text>
+                  <MaterialCommunityIcons name="arrow-top-left" size={14} color="rgba(255,255,255,0.4)" />
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {/* Recent + trending searches (shown when query is empty) */}
+          {searchQuery.trim().length === 0 && (recentSearches.length > 0 || trendingSearches.length > 0) && (
+            <View style={styles.searchSuggestions}>
+              {recentSearches.length > 0 && (
+                <View style={styles.suggestionSection}>
+                  <View style={styles.suggestionHeader}>
+                    <MaterialCommunityIcons name="history" size={14} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.suggestionTitle}>Recent</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionChips}>
+                    {recentSearches.map((term) => (
+                      <Pressable
+                        key={`recent-${term}`}
+                        style={styles.suggestionChip}
+                        onPress={() => setSearchQuery(term)}
+                      >
+                        <Text style={styles.suggestionChipText} numberOfLines={1}>{term}</Text>
+                        <Pressable onPress={() => removeRecentSearch(term)} hitSlop={6}>
+                          <MaterialCommunityIcons name="close" size={12} color="rgba(255,255,255,0.4)" />
+                        </Pressable>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+              {trendingSearches.length > 0 && (
+                <View style={styles.suggestionSection}>
+                  <View style={styles.suggestionHeader}>
+                    <MaterialCommunityIcons name="fire" size={14} color={Brand.danger} />
+                    <Text style={styles.suggestionTitle}>Trending</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.suggestionChips}>
+                    {trendingSearches.map((term) => (
+                      <Pressable
+                        key={`trending-${term}`}
+                        style={styles.suggestionChip}
+                        onPress={() => setSearchQuery(term)}
+                      >
+                        <Text style={styles.suggestionChipText} numberOfLines={1}>{term}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* "Did you mean" suggestion */}
+          {suggestion && (
+            <Pressable
+              style={styles.didYouMeanBar}
+              onPress={() => { setSearchQuery(suggestion); setSuggestion(null); }}
+            >
+              <MaterialCommunityIcons name="lightbulb-outline" size={14} color={Brand.rating} />
+              <Text style={styles.didYouMeanText}>
+                Did you mean <Text style={styles.didYouMeanLink}>"{suggestion}"</Text>?
+              </Text>
             </Pressable>
+          )}
+
+          {/* Search result count */}
+          {searchQuery.trim().length >= 2 && products.length > 0 && (
+            <Text style={styles.searchCountText}>
+              {searchCount > 0 ? `${searchCount} videos for ` : ''}"{searchQuery}"
+            </Text>
           )}
         </View>
       )}
@@ -866,6 +1182,17 @@ const styles = StyleSheet.create({
   headerSearchBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
+  suggestionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginTop: 16,
+  },
+  suggestionBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 
   // ── Category tabs ────────────────────────────────────────────────
   tabsContainer: {
@@ -888,18 +1215,89 @@ const styles = StyleSheet.create({
   searchToggleBtn: { paddingHorizontal: 8, paddingVertical: 4 },
 
   // ── Search bar ───────────────────────────────────────────────────
+  searchContainer: {
+    backgroundColor: '#0a0a0a',
+    paddingBottom: 4,
+  },
   searchBarWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginHorizontal: 12,
-    marginBottom: 8,
+    marginBottom: 4,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF', padding: 0 },
+
+  // ── Autocomplete dropdown ────────────────────────────────────────
+  autocompleteDropdown: {
+    backgroundColor: '#1a1a1a',
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  autocompleteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  autocompleteText: { flex: 1, color: 'rgba(255,255,255,0.9)', fontSize: 13 },
+
+  // ── Search suggestions (recent + trending) ────────────────────────
+  searchSuggestions: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  suggestionSection: { marginBottom: 8 },
+  suggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  suggestionTitle: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '600' },
+  suggestionChips: { gap: 6 },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  suggestionChipText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, maxWidth: 120 },
+
+  // ── "Did you mean" bar ────────────────────────────────────────────
+  didYouMeanBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(251,191,36,0.1)',
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  didYouMeanText: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
+  didYouMeanLink: { color: Brand.rating, fontWeight: '700' },
+
+  // ── Search count ─────────────────────────────────────────────────
+  searchCountText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
 
   // ── Feed ────────────────────────────────────────────────────────
   feedItem: { flex: 1, position: 'relative', backgroundColor: '#000000' },
