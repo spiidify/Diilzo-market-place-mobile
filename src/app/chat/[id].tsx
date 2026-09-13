@@ -152,6 +152,8 @@ export default function ChatThreadScreen() {
   const [riskWarning, setRiskWarning] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('Chat');
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
+  const [buyerName, setBuyerName] = useState<string | null>(null);
+  const [buyerId, setBuyerId] = useState<number | null>(null);
   const [productName, setProductName] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productSlug, setProductSlug] = useState<string | null>(null);
@@ -219,6 +221,8 @@ export default function ChatThreadScreen() {
       if (thread) {
         setStoreName(thread.store_name || 'Chat');
         setStoreLogo(thread.store_logo);
+        setBuyerName(thread.buyer_name);
+        setBuyerId(thread.buyer);
         setProductName(thread.product_name || null);
         setProductImage(thread.product_image || null);
         setProductSlug(thread.product_slug || null);
@@ -485,9 +489,16 @@ export default function ChatThreadScreen() {
           </Pressable>
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatarWrap}>
-              {storeLogo ? (
+              {buyerId && user?.id && buyerId !== user.id ? (
+                // Seller viewing — show buyer icon
+                <View style={styles.headerAvatarFallback}>
+                  <MaterialCommunityIcons name="account" size={16} color="#FFFFFF" />
+                </View>
+              ) : storeLogo ? (
+                // Buyer viewing — show store logo
                 <Image source={{ uri: storeLogo }} style={styles.headerAvatar} resizeMode="contain" />
               ) : (
+                // Buyer viewing — no store logo, show store icon
                 <View style={styles.headerAvatarFallback}>
                   <MaterialCommunityIcons name="store" size={16} color="#FFFFFF" />
                 </View>
@@ -497,7 +508,11 @@ export default function ChatThreadScreen() {
               )}
             </View>
             <View style={styles.headerTextWrap}>
-              <Text style={styles.headerTitle} numberOfLines={1}>{storeName}</Text>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {buyerId && user?.id && buyerId === user.id
+                  ? (storeName || 'Chat')
+                  : (buyerName || storeName || 'Chat')}
+              </Text>
               <Text style={styles.headerStatus} numberOfLines={1}>
                 {presence?.is_typing
                   ? 'typing...'

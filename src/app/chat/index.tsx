@@ -42,18 +42,20 @@ function formatChatTime(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function getLastMessagePreview(thread: ChatThread): string {
+function getLastMessagePreview(thread: ChatThread, isBuyer: boolean = true): string {
   const last = thread.last_message;
   if (!last) return 'Tap to start chatting';
   if (last.message_type === 'audio') return '🎤 Voice message';
-  const sender = last.sender === thread.buyer_name ? 'You' : last.sender;
+  // "You" is the buyer when the current user is the buyer, otherwise it's the seller
+  const senderIsBuyer = last.sender === thread.buyer_name;
+  const sender = (isBuyer ? senderIsBuyer : !senderIsBuyer) ? 'You' : last.sender;
   const text = last.message || '';
   return `${sender}: ${text}`;
 }
 
 export default function ChatListScreen() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { refreshBadges } = useBadges();
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,9 +138,13 @@ export default function ChatListScreen() {
     const lastMsg = item.last_message;
     const time = lastMsg ? formatChatTime(lastMsg.created_at) : '';
     const isSupport = item.is_support;
-    const displayName = isSupport ? 'Diilzo Support' : (item.store_name || 'Unknown Store');
-    const preview = getLastMessagePreview(item);
-    const isMine = lastMsg?.sender === item.buyer_name;
+    // Buyer sees the store name; seller sees the buyer name
+    const isBuyer = item.buyer === user?.id;
+    const displayName = isSupport
+      ? 'Diilzo Support'
+      : (isBuyer ? (item.store_name || 'Unknown Store') : (item.buyer_name || 'Unknown Buyer'));
+    const preview = getLastMessagePreview(item, isBuyer);
+    const isMine = isBuyer ? (lastMsg?.sender === item.buyer_name) : (lastMsg?.sender !== item.buyer_name);
 
     return (
       <Pressable
@@ -150,11 +156,17 @@ export default function ChatListScreen() {
             <View style={[styles.avatarFallback, { backgroundColor: Brand.text }]}>
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
-          ) : item.store_logo ? (
-            <Image source={{ uri: item.store_logo }} style={styles.avatar} resizeMode="cover" />
+          ) : isBuyer ? (
+            item.store_logo ? (
+              <Image source={{ uri: item.store_logo }} style={styles.avatar} resizeMode="cover" />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
+              </View>
+            )
           ) : (
             <View style={styles.avatarFallback}>
-              <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
+              <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
             </View>
           )}
           {item.unread_count > 0 && <View style={styles.unreadDot} />}
