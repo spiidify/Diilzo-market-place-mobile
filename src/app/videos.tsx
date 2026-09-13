@@ -488,6 +488,10 @@ export default function VideosScreen() {
   const gridListRef = useRef<FlatList>(null);
   const gridViewabilityConfig = useRef({ itemVisiblePercentThreshold: 50, minimumViewTime: 200 }).current;
 
+  // When the user taps a grid video, switch to full-screen feed mode at that index
+  const [feedMode, setFeedMode] = useState(false);
+  const [feedStartIndex, setFeedStartIndex] = useState(0);
+
   // Overlay visibility — hides when video plays, shows on tap
   const [showOverlay, setShowOverlay] = useState(true);
   const overlayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -693,6 +697,7 @@ export default function VideosScreen() {
       setIsPlaying(true);
       setSuggestion(null);
       setShowAutocomplete(false);
+      setFeedMode(false);
       load(true);
       return;
     }
@@ -703,6 +708,7 @@ export default function VideosScreen() {
       setPage(1);
       setHasMore(true);
       setIsPlaying(true);
+      setFeedMode(false);
       load(true);
       setShowAutocomplete(false);
     }, 300);
@@ -764,6 +770,21 @@ export default function VideosScreen() {
       }
     });
     setGridActiveIndices(newSet);
+  }, []);
+
+  // Switch from grid view to full-screen feed at the tapped video's index
+  const handleGridVideoPress = useCallback((index: number) => {
+    setFeedStartIndex(index);
+    setActiveIndex(index);
+    setIsPlaying(true);
+    setShowOverlay(true);
+    setFeedMode(true);
+  }, []);
+
+  // Return to grid view from full-screen feed
+  const handleExitFeedMode = useCallback(() => {
+    setFeedMode(false);
+    setIsPlaying(false);
   }, []);
 
   // ── Scroll to target product when arriving from "See Video" ──────
@@ -883,7 +904,7 @@ export default function VideosScreen() {
     const isActive = gridActiveIndices.has(index);
 
     if (!hasDirectVideo || !item.video_file_url) {
-      // Non-video items show thumbnail only
+      // Non-video items show thumbnail only — tap goes to product detail
       return (
         <Pressable
           style={styles.gridItem}
@@ -918,12 +939,12 @@ export default function VideosScreen() {
           isOnSale={item.is_on_sale}
           discountPercentage={item.discount_percentage}
           isWishlisted={isWishlisted}
-          onPress={() => handleProductPress(item.slug)}
+          onPress={() => handleGridVideoPress(index)}
           onWishlistToggle={() => handleWishlistToggle(item)}
         />
       </View>
     );
-  }, [gridActiveIndices, wishlistIds, handleProductPress, handleWishlistToggle]);
+  }, [gridActiveIndices, wishlistIds, handleProductPress, handleWishlistToggle, handleGridVideoPress]);
 
   // ── Render each video card (inline playback, no modal) ────────────
   const renderVideoItem = useCallback(({ item, index }: { item: Product; index: number }) => {
@@ -1375,8 +1396,60 @@ export default function VideosScreen() {
         </View>
       )}
 
-      {/* ── Search results: 2-column grid with muted autoplay ─────────── */}
-      {searchQuery.trim().length >= 2 ? (
+      {/* ── Full-screen feed mode (from tapping a grid video) ──────────── */}
+      {feedMode && searchQuery.trim().length >= 2 ? (
+        <>
+          <FlatList
+            key="search-feed"
+            ref={listRef}
+            data={products}
+            keyExtractor={(item) => `video-${item.id}-${item.slug}`}
+            renderItem={renderVideoItem}
+            extraData={activeIndex + (isPlaying ? '-playing' : '-paused')}
+            pagingEnabled
+            showsVerticalScrollIndicator={false}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            maxToRenderPerBatch={3}
+            windowSize={5}
+            initialNumToRender={3}
+            initialScrollIndex={Math.min(feedStartIndex, products.length - 1)}
+            removeClippedSubviews={false}
+            onScrollToIndexFailed={({ index, averageItemLength }) => {
+              listRef.current?.scrollToOffset({ offset: index * averageItemLength, animated: true });
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={[Brand.primary]}
+                tintColor={Brand.primary}
+              />
+            }
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.footerLoading}>
+                  <ActivityIndicator size="small" color={Brand.primary} />
+                </View>
+              ) : null
+            }
+          />
+
+          {/* Back button to return to grid */}
+          <Pressable style={styles.feedBackBtn} onPress={handleExitFeedMode} hitSlop={12}>
+            <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
+            <Text style={styles.feedBackText}>Grid</Text>
+          </Pressable>
+
+          {/* Progress indicator */}
+          <View style={styles.progressWrap}>
+            <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
+          </View>
+        </>
+      ) : searchQuery.trim().length >= 2 ? (
+        /* ── Search results: 2-column grid with muted autoplay ─────────── */
         <FlatList
           key="grid"
           ref={gridListRef}
@@ -1453,7 +1526,7 @@ export default function VideosScreen() {
       )}
 
       {/* ── Progress indicator (browse mode only) ───────────────────── */}
-      {searchQuery.trim().length < 2 && (
+      {searchQuery.trim().length < 2 && !feedMode && (
         <View style={styles.progressWrap}>
           <Text style={styles.progressText}>{activeIndex + 1} / {products.length}</Text>
         </View>
@@ -1711,6 +1784,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   progressText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+
+  // ── Feed back button (return to grid from full-screen feed) ──────
+  feedBackBtn: {
+    position: 'absolute',
+    top: 60,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  feedBackText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 
   // ── Footer loading ──────────────────────────────────────────────
   footerLoading: { paddingVertical: 20, alignItems: 'center' },
