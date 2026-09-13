@@ -153,6 +153,7 @@ export default function ChatThreadScreen() {
   const [storeName, setStoreName] = useState('Chat');
   const [storeLogo, setStoreLogo] = useState<string | null>(null);
   const [buyerName, setBuyerName] = useState<string | null>(null);
+  const [buyerAvatar, setBuyerAvatar] = useState<string | null>(null);
   const [buyerId, setBuyerId] = useState<number | null>(null);
   const [productName, setProductName] = useState<string | null>(null);
   const [productImage, setProductImage] = useState<string | null>(null);
@@ -222,6 +223,7 @@ export default function ChatThreadScreen() {
         setStoreName(thread.store_name || 'Chat');
         setStoreLogo(thread.store_logo);
         setBuyerName(thread.buyer_name);
+        setBuyerAvatar(thread.buyer_avatar);
         setBuyerId(thread.buyer);
         setProductName(thread.product_name || null);
         setProductImage(thread.product_image || null);
@@ -490,10 +492,14 @@ export default function ChatThreadScreen() {
           <View style={styles.headerInfo}>
             <View style={styles.headerAvatarWrap}>
               {buyerId && user?.id && buyerId !== user.id ? (
-                // Seller viewing — show buyer icon
-                <View style={styles.headerAvatarFallback}>
-                  <MaterialCommunityIcons name="account" size={16} color="#FFFFFF" />
-                </View>
+                // Seller viewing — show buyer's avatar
+                buyerAvatar ? (
+                  <Image source={{ uri: buyerAvatar }} style={styles.headerAvatar} resizeMode="cover" />
+                ) : (
+                  <View style={styles.headerAvatarFallback}>
+                    <MaterialCommunityIcons name="account" size={16} color="#FFFFFF" />
+                  </View>
+                )
               ) : storeLogo ? (
                 // Buyer viewing — show store logo
                 <Image source={{ uri: storeLogo }} style={styles.headerAvatar} resizeMode="contain" />

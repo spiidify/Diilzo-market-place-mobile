@@ -416,6 +416,7 @@ export interface ChatThread {
   store_slug: string | null;
   buyer: number;
   buyer_name: string;
+  buyer_avatar: string | null;
   product: number | null;
   product_name: string | null;
   product_slug: string | null;

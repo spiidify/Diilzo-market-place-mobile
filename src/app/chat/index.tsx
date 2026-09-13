@@ -164,6 +164,8 @@ export default function ChatListScreen() {
                 <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
               </View>
             )
+          ) : item.buyer_avatar ? (
+            <Image source={{ uri: item.buyer_avatar }} style={styles.avatar} resizeMode="cover" />
           ) : (
             <View style={styles.avatarFallback}>
               <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
