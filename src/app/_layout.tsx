@@ -1,13 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { DiilzoSplash } from '@/components/diilzo-splash';
 import { AuthProvider } from '@/context/AuthContext';
 import { BadgeProvider } from '@/context/BadgeContext';
 import { CartProvider } from '@/context/CartContext';
+import { ThemeProvider as AppThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import {
   addNotificationReceivedListener,
@@ -64,10 +64,11 @@ function AppContent() {
   );
 }
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+// Inner component that reads the app theme to configure expo-router's theme
+function ThemedRoot() {
+  const { isDark } = useAppTheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <BadgeProvider>
           <CartProvider>
@@ -76,5 +77,13 @@ export default function TabLayout() {
         </BadgeProvider>
       </AuthProvider>
     </ThemeProvider>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <AppThemeProvider>
+      <ThemedRoot />
+    </AppThemeProvider>
   );
 }

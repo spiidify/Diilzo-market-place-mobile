@@ -1,16 +1,21 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
+import { useAppTheme, type ThemeMode } from '@/context/ThemeContext';
 
 export default function BuyerDashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { chatUnread } = useBadges();
+  const { mode, setMode, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
@@ -23,7 +28,7 @@ export default function BuyerDashboardScreen() {
     { icon: 'credit-card-outline', label: 'Payment Methods', color: '#8B5CF6', route: '/buyer/payments' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
     { icon: 'bell-outline', label: 'Notifications', color: Brand.rating, route: '/buyer/notifications' as any },
-    { icon: 'shield-account-outline', label: 'Privacy & Security', color: Brand.textSecondary, route: '/buyer/privacy' as any },
+    { icon: 'shield-account-outline', label: 'Privacy & Security', color: colors.textSecondary, route: '/buyer/privacy' as any },
     { icon: 'help-circle-outline', label: 'Help & Support', color: '#06B6D4', route: '/buyer/support' as any },
   ];
 
@@ -145,7 +150,7 @@ export default function BuyerDashboardScreen() {
               <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
               <Text style={styles.switchCtaSub}>Manage your store and products</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
           </Pressable>
         )}
 
@@ -164,7 +169,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.adminCtaTitle}>Seller Dashboard</Text>
                 <Text style={styles.adminCtaSub}>Manage all stores and products</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
@@ -177,7 +182,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.adminCtaTitle}>Merchant Studio</Text>
                 <Text style={styles.adminCtaSub}>Inventory & order dispatch</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
@@ -190,7 +195,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.adminCtaTitle}>AdPulse Studio</Text>
                 <Text style={styles.adminCtaSub}>Marketing & promotions</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
@@ -203,7 +208,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.adminCtaTitle}>AdminOps Central</Text>
                 <Text style={styles.adminCtaSub}>Operations dashboard</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
@@ -216,7 +221,7 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.adminCtaTitle}>Admin Dashboard</Text>
                 <Text style={styles.adminCtaSub}>Full platform management</Text>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
           </View>
         )}
@@ -233,9 +238,47 @@ export default function BuyerDashboardScreen() {
                 <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
           ))}
+        </View>
+
+        {/* Dark mode toggle */}
+        <View style={styles.themeSection}>
+          <View style={styles.themeHeader}>
+            <MaterialCommunityIcons name="theme-light-dark" size={18} color={colors.text} />
+            <Text style={styles.themeTitle}>Appearance</Text>
+          </View>
+          <View style={styles.themeOptions}>
+            {([
+              { key: 'light' as ThemeMode, label: 'Light', icon: 'white-balance-sunny' },
+              { key: 'dark' as ThemeMode, label: 'Dark', icon: 'moon-waning-crescent' },
+              { key: 'system' as ThemeMode, label: 'Auto', icon: 'cellphone-link' },
+            ]).map((opt) => (
+              <Pressable
+                key={opt.key}
+                style={[
+                  styles.themeOption,
+                  mode === opt.key && styles.themeOptionActive,
+                ]}
+                onPress={() => setMode(opt.key)}
+              >
+                <MaterialCommunityIcons
+                  name={opt.icon as any}
+                  size={16}
+                  color={mode === opt.key ? '#FFFFFF' : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    mode === opt.key && styles.themeOptionTextActive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* Logout */}
@@ -254,14 +297,16 @@ export default function BuyerDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+import type { ThemeColors } from '@/context/ThemeContext';
+
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   bodyContent: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 40 },
 
   // Loading state
   loadingBody: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { marginTop: 12, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 12, color: c.textSecondary, fontSize: 14 },
 
   // Login prompt (not authenticated)
   loginPromptBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
@@ -269,8 +314,8 @@ const styles = StyleSheet.create({
     width: 88, height: 88, borderRadius: 44, backgroundColor: Brand.primary + '12',
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
-  loginPromptTitle: { fontSize: 21, fontWeight: '800', color: Brand.text },
-  loginPromptSub: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  loginPromptTitle: { fontSize: 21, fontWeight: '800', color: c.text },
+  loginPromptSub: { fontSize: 14, color: c.textTertiary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
   loginBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Brand.primary, paddingVertical: 14, paddingHorizontal: 32,
@@ -282,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 14, marginTop: 12, width: '100%', alignItems: 'center',
   },
   registerBtnText: { color: Brand.primary, fontSize: 15, fontWeight: '700' },
-  guestText: { color: Brand.textTertiary, fontSize: 13, marginTop: 20 },
+  guestText: { color: c.textTertiary, fontSize: 13, marginTop: 20 },
 
   // Profile card — hero
   profileCard: {
@@ -356,52 +401,69 @@ const styles = StyleSheet.create({
   // Switch to seller
   switchCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', marginTop: 12,
+    backgroundColor: c.surface, marginTop: 12,
     padding: 16, borderRadius: 16,
-    borderWidth: 1, borderColor: '#E8EDF0',
+    borderWidth: 1, borderColor: c.border,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.primary + '12', justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
-  switchCtaTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  switchCtaSub: { fontSize: 13, color: Brand.textTertiary },
+  switchCtaTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  switchCtaSub: { fontSize: 13, color: c.textTertiary },
 
   // ── Super Admin section ──────────────────────────────────────────
   adminSection: { marginTop: 16, gap: 8 },
-  adminSectionTitle: { fontSize: 13, fontWeight: '800', color: Brand.textSecondary, paddingHorizontal: 4, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  adminSectionTitle: { fontSize: 13, fontWeight: '800', color: c.textSecondary, paddingHorizontal: 4, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   adminCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     padding: 16, borderRadius: 14,
-    borderWidth: 1, borderColor: '#E8EDF0',
+    borderWidth: 1, borderColor: c.border,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   adminCtaIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   adminCtaInfo: { flex: 1, gap: 2 },
-  adminCtaTitle: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  adminCtaSub: { fontSize: 12, color: Brand.textTertiary },
+  adminCtaTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+  adminCtaSub: { fontSize: 12, color: c.textTertiary },
 
   // Menu — single grouped card with dividers
   menuCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 16,
     marginTop: 12,
     overflow: 'hidden',
-    borderWidth: 1, borderColor: '#E8EDF0',
+    borderWidth: 1, borderColor: c.border,
   },
   menuItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 14, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: '#F0F2F4',
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   menuIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
 
   // Logout
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', marginBottom: 32, marginTop: 12,
+    backgroundColor: c.surface, marginBottom: 32, marginTop: 12,
     paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: Brand.danger + '25',
   },
   logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
+
+  // Theme section
+  themeSection: {
+    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginTop: 16,
+    gap: 12,
+  },
+  themeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  themeTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  themeOptions: { flexDirection: 'row', gap: 8 },
+  themeOption: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 10, borderRadius: 10,
+    backgroundColor: c.surfaceAlt, borderWidth: 1.5, borderColor: 'transparent',
+  },
+  themeOptionActive: { backgroundColor: Brand.dark, borderColor: Brand.dark },
+  themeOptionText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  themeOptionTextActive: { color: '#FFFFFF', fontWeight: '700' },
 });
