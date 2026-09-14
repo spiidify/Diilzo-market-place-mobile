@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminKYC,
   getAdminKYCDetail,
@@ -35,6 +36,8 @@ const FILTERS = ['pending', 'approved', 'rejected'] as const;
 
 export default function AdminKYCScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [kycs, setKycs] = useState<AdminKYC[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -93,7 +96,7 @@ export default function AdminKYCScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminKYC }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -143,7 +146,7 @@ export default function AdminKYCScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(filter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="shield-account-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="shield-account-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No KYC submissions</Text>
                 <Text style={styles.emptySub}>No {filter} KYC applications</Text>
               </View>
@@ -157,7 +160,7 @@ export default function AdminKYCScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>KYC Details</Text>
                 <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               {detailLoading ? (
@@ -177,8 +180,8 @@ export default function AdminKYCScreen() {
                   <Text style={styles.detailLabel}>Tax ID</Text>
                   <Text style={styles.detailValue}>{detail.tax_id || '—'}</Text>
                   <Text style={styles.detailLabel}>Status</Text>
-                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status}</Text>
+                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status}</Text>
                   </View>
                   <Text style={styles.detailLabel}>ID Document</Text>
                   <Text style={styles.detailValue}>{detail.id_document || 'Not uploaded'}</Text>
@@ -204,7 +207,7 @@ export default function AdminKYCScreen() {
                     value={notesText}
                     onChangeText={setNotesText}
                     placeholder="Add review notes..."
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     multiline
                     numberOfLines={3}
                     textAlignVertical="top"
@@ -229,36 +232,36 @@ export default function AdminKYCScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   filterContainer: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   filterTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   filterTextActive: { color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  storeName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  storeName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  ownerEmail: { fontSize: 13, color: Brand.textSecondary, marginBottom: 2 },
-  businessName: { fontSize: 13, fontWeight: '600', color: Brand.text, marginBottom: 8 },
+  ownerEmail: { fontSize: 13, color: c.textSecondary, marginBottom: 2 },
+  businessName: { fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
-  notesInput: { borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, fontSize: 14, color: Brand.text, marginTop: 4, minHeight: 80 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
+  notesInput: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginTop: 4, minHeight: 80 },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   actionBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   approveBtn: { backgroundColor: Brand.primary },

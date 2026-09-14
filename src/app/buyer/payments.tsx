@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { apiRequest } from '@/services/api';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface SavedPaymentMethod {
@@ -63,7 +64,6 @@ const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
   failed: Brand.danger,
   cancelled: Brand.danger,
-  refunded: Brand.textTertiary,
 };
 
 function formatDate(dateStr: string): string {
@@ -76,6 +76,8 @@ function formatDate(dateStr: string): string {
 
 export default function PaymentsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [methods, setMethods] = useState<SavedPaymentMethod[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +193,7 @@ export default function PaymentsScreen() {
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const config = getMethodConfig(item.method);
-    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <View style={styles.txnCard}>
         <View style={[styles.txnIcon, { backgroundColor: config.color + '20' }]}>
@@ -275,7 +277,7 @@ export default function PaymentsScreen() {
 
             {methods.length === 0 ? (
               <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="credit-card-off-outline" size={40} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="credit-card-off-outline" size={40} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No saved payment methods</Text>
                 <Text style={styles.emptySubtext}>Add a payment method for faster checkout</Text>
               </View>
@@ -309,7 +311,7 @@ export default function PaymentsScreen() {
                           style={styles.methodActionBtn}
                           onPress={() => handleSetDefault(method)}
                         >
-                          <MaterialCommunityIcons name="star-outline" size={18} color={Brand.textSecondary} />
+                          <MaterialCommunityIcons name="star-outline" size={18} color={colors.textSecondary} />
                         </Pressable>
                       )}
                       <Pressable
@@ -343,7 +345,7 @@ export default function PaymentsScreen() {
 
             {transactions.length === 0 ? (
               <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="receipt-text-outline" size={40} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="receipt-text-outline" size={40} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No transactions yet</Text>
                 <Text style={styles.emptySubtext}>Your payment history will appear here</Text>
               </View>
@@ -372,8 +374,8 @@ export default function PaymentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -396,11 +398,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     marginBottom: Spacing.two,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text },
 
   // Empty state
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.four,
     alignItems: 'center',
@@ -411,15 +413,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
-  emptyText: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  emptySubtext: { fontSize: 13, color: Brand.textSecondary, textAlign: 'center' },
+  emptyText: { fontSize: 15, fontWeight: '700', color: c.text },
+  emptySubtext: { fontSize: 13, color: c.textSecondary, textAlign: 'center' },
 
   // Method cards
   methodCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     marginBottom: Spacing.two,
@@ -438,7 +440,7 @@ const styles = StyleSheet.create({
   },
   methodInfo: { flex: 1, gap: 2 },
   methodHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  methodLabel: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  methodLabel: { fontSize: 15, fontWeight: '700', color: c.text },
   defaultBadge: {
     backgroundColor: Brand.primary,
     paddingHorizontal: Spacing.two,
@@ -446,13 +448,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   defaultBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-  methodDetail: { fontSize: 13, color: Brand.textSecondary },
+  methodDetail: { fontSize: 13, color: c.textSecondary },
   methodActions: { flexDirection: 'row', gap: Spacing.two },
   methodActionBtn: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -476,7 +478,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: Spacing.three,
     elevation: 2,
@@ -493,10 +495,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   txnInfo: { flex: 1, gap: 2 },
-  txnOrder: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  txnDate: { fontSize: 12, color: Brand.textTertiary },
+  txnOrder: { fontSize: 14, fontWeight: '600', color: c.text },
+  txnDate: { fontSize: 12, color: c.textTertiary },
   txnRight: { alignItems: 'flex-end', gap: 4 },
-  txnAmount: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  txnAmount: { fontSize: 15, fontWeight: '700', color: c.text },
   txnStatusBadge: { paddingHorizontal: Spacing.two, paddingVertical: 2, borderRadius: 6 },
   txnStatusText: { fontSize: 11, fontWeight: '700' },
 

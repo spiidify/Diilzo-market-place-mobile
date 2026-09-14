@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,10 +12,13 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import { getCommissionHistory, type CommissionTransaction } from '@/services/financial';
 
 export default function SellerCommissionsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [transactions, setTransactions] = useState<CommissionTransaction[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -127,7 +130,7 @@ export default function SellerCommissionsScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="receipt" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="receipt" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No commission transactions yet</Text>
             <Text style={styles.emptySubtext}>Commissions appear when orders are settled</Text>
           </View>
@@ -146,33 +149,33 @@ function statusColor(status: string): string {
   }
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
 
   txCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   txHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   txIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   txInfo: { flex: 1, gap: 2 },
-  txOrder: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  txDate: { fontSize: 12, color: Brand.textTertiary },
+  txOrder: { fontSize: 15, fontWeight: '700', color: c.text },
+  txDate: { fontSize: 12, color: c.textTertiary },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusText: { fontSize: 11, fontWeight: '700', color: Brand.text, textTransform: 'capitalize' },
+  statusText: { fontSize: 11, fontWeight: '700', color: c.text, textTransform: 'capitalize' },
 
   txAmounts: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  txAmountCell: { flex: 1, backgroundColor: Brand.surfaceAlt, borderRadius: 8, padding: 8, alignItems: 'center' },
-  txAmountLabel: { fontSize: 10, color: Brand.textSecondary, marginBottom: 2 },
-  txAmountValue: { fontSize: 12, fontWeight: '700', color: Brand.text },
+  txAmountCell: { flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 8, padding: 8, alignItems: 'center' },
+  txAmountLabel: { fontSize: 10, color: c.textSecondary, marginBottom: 2 },
+  txAmountValue: { fontSize: 12, fontWeight: '700', color: c.text },
 
-  txRule: { fontSize: 11, color: Brand.textTertiary, fontStyle: 'italic' },
+  txRule: { fontSize: 11, color: c.textTertiary, fontStyle: 'italic' },
 });

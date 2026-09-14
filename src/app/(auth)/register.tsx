@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,11 +17,14 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getSafeErrorMessage } from '@/utils/errors';
 import { checkPasswordStrength, isPasswordValid, isValidEmail, isValidPhone, sanitizeEmail, sanitizeString } from '@/utils/validation';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { register } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -105,7 +108,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name="account-outline"
                   size={20}
-                  color={Brand.textTertiary}
+                  color={colors.textTertiary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -113,14 +116,14 @@ export default function RegisterScreen() {
                   value={firstName}
                   onChangeText={setFirstName}
                   placeholder="First name"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
               <View style={styles.inputWrap}>
                 <MaterialCommunityIcons
                   name="account-outline"
                   size={20}
-                  color={Brand.textTertiary}
+                  color={colors.textTertiary}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -128,7 +131,7 @@ export default function RegisterScreen() {
                   value={lastName}
                   onChangeText={setLastName}
                   placeholder="Last name"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
             </View>
@@ -138,7 +141,7 @@ export default function RegisterScreen() {
               <MaterialCommunityIcons
                 name="email-outline"
                 size={20}
-                color={Brand.textTertiary}
+                color={colors.textTertiary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -146,7 +149,7 @@ export default function RegisterScreen() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -158,7 +161,7 @@ export default function RegisterScreen() {
               <MaterialCommunityIcons
                 name="phone-outline"
                 size={20}
-                color={Brand.textTertiary}
+                color={colors.textTertiary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -166,7 +169,7 @@ export default function RegisterScreen() {
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="+256 700 000 000"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="phone-pad"
               />
             </View>
@@ -176,7 +179,7 @@ export default function RegisterScreen() {
               <MaterialCommunityIcons
                 name="lock-outline"
                 size={20}
-                color={Brand.textTertiary}
+                color={colors.textTertiary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -184,7 +187,7 @@ export default function RegisterScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Create a password"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
@@ -196,7 +199,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color={Brand.textTertiary}
+                  color={colors.textTertiary}
                 />
               </Pressable>
             </View>
@@ -219,7 +222,7 @@ export default function RegisterScreen() {
                                   : passwordStrength.score <= 3
                                     ? '#3B82F6'
                                     : '#16A34A'
-                              : Brand.border,
+                              : colors.border,
                         },
                       ]}
                     />
@@ -248,7 +251,7 @@ export default function RegisterScreen() {
               <MaterialCommunityIcons
                 name="lock-check-outline"
                 size={20}
-                color={Brand.textTertiary}
+                color={colors.textTertiary}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -256,7 +259,7 @@ export default function RegisterScreen() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm password"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
               />
@@ -268,7 +271,7 @@ export default function RegisterScreen() {
                 <MaterialCommunityIcons
                   name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color={Brand.textTertiary}
+                  color={colors.textTertiary}
                 />
               </Pressable>
             </View>
@@ -322,8 +325,8 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingTop: 16 },
 
@@ -332,7 +335,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -367,9 +370,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginBottom: 10,
     height: 48,
   },
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
     backgroundColor: 'transparent',
   },
   eyeBtn: {
@@ -392,7 +395,7 @@ const styles = StyleSheet.create({
   // Password hint
   hint: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 4,
   },
   strengthWrap: {
@@ -442,7 +445,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   linkText: {
     color: Brand.primary,

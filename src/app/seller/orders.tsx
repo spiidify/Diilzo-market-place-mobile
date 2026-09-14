@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,17 +15,8 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getMyOrders, type SellerOrder } from '@/services/seller';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: Brand.rating,
-  accepted: '#3B82F6',
-  processing: '#8B5CF6',
-  shipped: '#06B6D4',
-  delivered: '#16A34A',
-  cancelled: Brand.danger,
-  refunded: Brand.textTertiary,
-};
 
 const STATUS_FILTERS = [
   { key: '', label: 'All' },
@@ -46,6 +37,18 @@ const PERIOD_FILTERS = [
 
 export default function SellerOrdersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: Brand.rating,
+    accepted: '#3B82F6',
+    processing: '#8B5CF6',
+    shipped: '#06B6D4',
+    delivered: '#16A34A',
+    cancelled: Brand.danger,
+    refunded: colors.textTertiary,
+  };
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,7 +104,7 @@ export default function SellerOrdersScreen() {
   const hasActiveFilters = statusFilter || periodFilter || search;
 
   const renderItem = ({ item }: { item: SellerOrder }) => {
-    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
@@ -112,7 +115,7 @@ export default function SellerOrdersScreen() {
             <Text style={styles.orderNumber}>#{item.order_number}</Text>
             {item.customer_name ? (
               <View style={styles.customerRow}>
-                <MaterialCommunityIcons name="account-outline" size={13} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="account-outline" size={13} color={colors.textTertiary} />
                 <Text style={styles.customerName} numberOfLines={1}>{item.customer_name}</Text>
               </View>
             ) : null}
@@ -167,11 +170,11 @@ export default function SellerOrdersScreen() {
       {/* Search bar */}
       {searchVisible && (
         <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search by order # or customer name..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={search}
             onChangeText={setSearch}
             autoCapitalize="none"
@@ -180,7 +183,7 @@ export default function SellerOrdersScreen() {
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch('')} hitSlop={12}>
-              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -208,7 +211,7 @@ export default function SellerOrdersScreen() {
       <View style={styles.filterPanel}>
         <View style={styles.filterHeader}>
           <View style={styles.filterHeaderLeft}>
-            <MaterialCommunityIcons name="filter-variant" size={16} color={Brand.text} />
+            <MaterialCommunityIcons name="filter-variant" size={16} color={colors.text} />
             <Text style={styles.filterHeaderText}>Filters</Text>
           </View>
           {hasActiveFilters ? (
@@ -267,7 +270,7 @@ export default function SellerOrdersScreen() {
         </View>
       ) : orders.length === 0 ? (
         <View style={styles.centerBody}>
-          <MaterialCommunityIcons name={hasActiveFilters ? "filter-remove-outline" : "clipboard-list-outline"} size={56} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name={hasActiveFilters ? "filter-remove-outline" : "clipboard-list-outline"} size={56} color={colors.textTertiary} />
           <Text style={styles.emptyText}>{hasActiveFilters ? 'No orders match your filters' : 'No orders yet'}</Text>
           <Text style={styles.emptySub}>{hasActiveFilters ? 'Try adjusting your search or filters' : 'Orders from buyers will appear here'}</Text>
           {hasActiveFilters && (
@@ -293,11 +296,11 @@ export default function SellerOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
-  emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
-  emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: c.text },
+  emptySub: { marginTop: 4, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, marginTop: 8 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -305,24 +308,24 @@ const styles = StyleSheet.create({
   // Search bar
   searchContainer: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: Brand.border,
+    backgroundColor: c.surface, paddingHorizontal: 14, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  searchInput: { flex: 1, fontSize: 15, color: Brand.text, paddingVertical: 4 },
+  searchInput: { flex: 1, fontSize: 15, color: c.text, paddingVertical: 4 },
 
   // Stats row
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 12 },
   statCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
+    flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 12,
     alignItems: 'center', gap: 2,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  statValue: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  statLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600' },
+  statValue: { fontSize: 14, fontWeight: '800', color: c.text },
+  statLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
 
   // Filter panel
   filterPanel: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginHorizontal: 12,
     marginTop: 10,
     marginBottom: 6,
@@ -332,47 +335,47 @@ const styles = StyleSheet.create({
   },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   filterHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  filterHeaderText: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  filterHeaderText: { fontSize: 15, fontWeight: '800', color: c.text },
   clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.primary + '12', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   clearBtnText: { fontSize: 12, fontWeight: '700', color: Brand.primary },
 
   chipSection: { marginBottom: 12 },
-  chipSectionLabel: { fontSize: 10, fontWeight: '800', color: Brand.textTertiary, letterSpacing: 1, marginBottom: 8 },
+  chipSectionLabel: { fontSize: 10, fontWeight: '800', color: c.textTertiary, letterSpacing: 1, marginBottom: 8 },
   chipScroll: { gap: 8 },
 
   chip: {
     paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: Brand.surfaceAlt, minHeight: 40, justifyContent: 'center',
+    backgroundColor: c.surfaceAlt, minHeight: 40, justifyContent: 'center',
     borderWidth: 1.5, borderColor: 'transparent',
   },
   chipActiveDark: { backgroundColor: Brand.dark, borderColor: Brand.dark },
   chipActivePrimary: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  chipText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  chipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   chipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   // Orders list
   list: { padding: 12, gap: 10 },
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   cardTopLeft: { gap: 4, flex: 1 },
-  orderNumber: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  orderNumber: { fontSize: 16, fontWeight: '700', color: c.text },
   customerRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  customerName: { fontSize: 12, color: Brand.textSecondary, fontWeight: '500' },
+  customerName: { fontSize: 12, color: c.textSecondary, fontWeight: '500' },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
 
-  cardBody: { flexDirection: 'row', gap: 8, marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F0F2F4' },
+  cardBody: { flexDirection: 'row', gap: 8, marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: c.borderLight },
   amountCol: { flex: 1, gap: 2 },
-  amountLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
-  amountValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
+  amountLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
+  amountValue: { fontSize: 13, fontWeight: '700', color: c.text },
 
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   footerLeft: { flexDirection: 'row', gap: 6 },
   itemCountBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.primary + '12', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   itemCountText: { fontSize: 11, fontWeight: '600', color: Brand.primary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
 });

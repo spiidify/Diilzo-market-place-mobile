@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getStaffDetail,
   getStaffRoles,
@@ -50,6 +51,8 @@ const PERMISSION_LABELS: { key: string; label: string }[] = [
 export default function AdminStaffDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [staff, setStaff] = useState<StaffDetail | null>(null);
   const [roles, setRoles] = useState<PlatformStaffRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,9 +211,9 @@ export default function AdminStaffDetailScreen() {
                   <MaterialCommunityIcons
                     name={staff.permissions[key] ? 'check-circle' : 'circle-outline'}
                     size={14}
-                    color={staff.permissions[key] ? Brand.success : Brand.textTertiary}
+                    color={staff.permissions[key] ? Brand.success : colors.textTertiary}
                   />
-                  <Text style={[styles.permText, { color: staff.permissions[key] ? Brand.success : Brand.textTertiary }]}>
+                  <Text style={[styles.permText, { color: staff.permissions[key] ? Brand.success : colors.textTertiary }]}>
                     {label}
                   </Text>
                 </View>
@@ -265,7 +268,7 @@ export default function AdminStaffDetailScreen() {
             style={[styles.toggleRow, isActive && styles.toggleRowActive]}
             onPress={() => setIsActive(!isActive)}
           >
-            <MaterialCommunityIcons name={isActive ? 'toggle-switch' : 'toggle-switch-off'} size={28} color={isActive ? Brand.success : Brand.textTertiary} />
+            <MaterialCommunityIcons name={isActive ? 'toggle-switch' : 'toggle-switch-off'} size={28} color={isActive ? Brand.success : colors.textTertiary} />
             <Text style={styles.toggleText}>{isActive ? 'Active staff member' : 'Inactive staff member'}</Text>
           </Pressable>
 
@@ -288,7 +291,7 @@ export default function AdminStaffDetailScreen() {
             staff.activity.map((a) => (
               <View key={a.id} style={styles.activityRow}>
                 <View style={styles.activityIcon}>
-                  <MaterialCommunityIcons name="history" size={14} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="history" size={14} color={colors.textTertiary} />
                 </View>
                 <View style={styles.activityInfo}>
                   <Text style={styles.activityAction}>{a.description || a.action}</Text>
@@ -307,49 +310,49 @@ export default function AdminStaffDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { fontSize: 14, color: Brand.textTertiary },
+  errorText: { fontSize: 14, color: c.textTertiary },
   scrollContent: { padding: 16, gap: 12, paddingBottom: 40 },
-  card: { backgroundColor: Brand.surface, borderRadius: 12, padding: 16, gap: 12, borderWidth: 1, borderColor: Brand.border },
-  cardTitle: { fontSize: 13, fontWeight: '800', color: Brand.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, gap: 12, borderWidth: 1, borderColor: c.border },
+  cardTitle: { fontSize: 13, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Profile
   profileHeader: { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 8 },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
   profileInfo: { flex: 1, gap: 2 },
-  profileName: { fontSize: 16, fontWeight: '700', color: Brand.text },
-  profileEmail: { fontSize: 13, color: Brand.textSecondary },
-  profilePhone: { fontSize: 12, color: Brand.textTertiary },
+  profileName: { fontSize: 16, fontWeight: '700', color: c.text },
+  profileEmail: { fontSize: 13, color: c.textSecondary },
+  profilePhone: { fontSize: 12, color: c.textTertiary },
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   infoItem: { width: '48%' },
-  infoLabel: { fontSize: 10, fontWeight: '600', color: Brand.textTertiary, textTransform: 'uppercase' },
-  infoValue: { fontSize: 13, color: Brand.text, marginTop: 2 },
+  infoLabel: { fontSize: 10, fontWeight: '600', color: c.textTertiary, textTransform: 'uppercase' },
+  infoValue: { fontSize: 13, color: c.text, marginTop: 2 },
   // Permissions
   permGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   permChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   permChipOn: { backgroundColor: Brand.success + '15' },
-  permChipOff: { backgroundColor: Brand.surfaceAlt },
+  permChipOff: { backgroundColor: c.surfaceAlt },
   permText: { fontSize: 11, fontWeight: '500' },
   // Edit
-  inputLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary, marginTop: 4 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary, marginTop: 4 },
   pickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  pickerChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: Brand.border },
+  pickerChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: c.border },
   pickerChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  pickerText: { fontSize: 11, color: Brand.textSecondary },
+  pickerText: { fontSize: 11, color: c.textSecondary },
   pickerTextActive: { color: '#FFFFFF', fontWeight: '600' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   toggleRowActive: {},
-  toggleText: { fontSize: 13, color: Brand.text },
+  toggleText: { fontSize: 13, color: c.text },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
   saveBtnText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
   removeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, justifyContent: 'center', marginTop: 4 },
   removeBtnText: { fontSize: 13, fontWeight: '600', color: Brand.danger },
   // Activity
-  activityRow: { flexDirection: 'row', gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: Brand.border },
+  activityRow: { flexDirection: 'row', gap: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: c.border },
   activityIcon: { width: 24, alignItems: 'center' },
   activityInfo: { flex: 1, gap: 2 },
-  activityAction: { fontSize: 12, color: Brand.text },
-  activityTime: { fontSize: 10, color: Brand.textTertiary },
-  emptyText: { fontSize: 12, color: Brand.textTertiary, textAlign: 'center', paddingVertical: 16 },
+  activityAction: { fontSize: 12, color: c.text },
+  activityTime: { fontSize: 10, color: c.textTertiary },
+  emptyText: { fontSize: 12, color: c.textTertiary, textAlign: 'center', paddingVertical: 16 },
 });

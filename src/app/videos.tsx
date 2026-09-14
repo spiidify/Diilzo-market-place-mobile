@@ -4,7 +4,7 @@ import { useEvent } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchCategories } from '@/services/catalog';
 import { esSearchProducts, fetchProducts, getAutocomplete, getTrendingSearches, logSearchClick } from '@/services/products';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
@@ -460,6 +461,8 @@ const gridVideoStyles = StyleSheet.create({
 
 export default function VideosScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ product?: string }>();
   const targetProductSlug = params.product || null;
   const { isAuthenticated } = useAuth();
@@ -1211,7 +1214,7 @@ export default function VideosScreen() {
         )}
         <View style={styles.centerScreen}>
           <View style={styles.emptyIconWrap}>
-            <MaterialCommunityIcons name="play-circle-outline" size={56} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="play-circle-outline" size={56} color={colors.textTertiary} />
           </View>
           <Text style={styles.emptyTitle}>
             {searchQuery.trim().length >= 2 ? 'No videos found' : 'No videos yet'}
@@ -1509,7 +1512,7 @@ export default function VideosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000000' },
   centerScreen: { flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' },
   safeArea: { flex: 0, backgroundColor: 'transparent' },
@@ -1521,7 +1524,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  loadingText: { marginTop: 8, color: Brand.textTertiary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textTertiary, fontSize: 14 },
   emptyIconWrap: {
     width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
@@ -1539,7 +1542,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
   headerSearchBtn: { paddingHorizontal: 8, paddingVertical: 4 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textTertiary, textAlign: 'center' },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: c.textTertiary, textAlign: 'center' },
   suggestionBtn: {
     flexDirection: 'row',
     alignItems: 'center',

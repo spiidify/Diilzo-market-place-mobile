@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
   createStaffRole,
@@ -28,6 +29,8 @@ import {
 } from '@/services/seller';
 
 export default function SellerStaffScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [staff, setStaff] = useState<SellerStaffMember[]>([]);
   const [roles, setRoles] = useState<SellerStaffRole[]>([]);
@@ -134,11 +137,11 @@ export default function SellerStaffScreen() {
   const renderStaff = ({ item }: { item: SellerStaffMember }) => (
     <View style={styles.staffCard}>
       <View style={styles.staffHeader}>
-        <View style={[styles.avatar, { backgroundColor: item.is_owner ? Brand.primary + '20' : Brand.surfaceAlt }]}>
+        <View style={[styles.avatar, { backgroundColor: item.is_owner ? Brand.primary + '20' : colors.surfaceAlt }]}>
           <MaterialCommunityIcons
             name={item.is_owner ? 'crown' : 'account'}
             size={22}
-            color={item.is_owner ? Brand.primary : Brand.textSecondary}
+            color={item.is_owner ? Brand.primary : colors.textSecondary}
           />
         </View>
         <View style={styles.staffInfo}>
@@ -285,7 +288,7 @@ export default function SellerStaffScreen() {
         }
         ListEmptyComponent={
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="account-group-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="account-group-outline" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No staff members</Text>
             <Text style={styles.emptySubtext}>Invite team members to help manage your store</Text>
           </View>
@@ -299,7 +302,7 @@ export default function SellerStaffScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Invite Staff</Text>
               <Pressable onPress={() => setShowInvite(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
               </Pressable>
             </View>
 
@@ -310,7 +313,7 @@ export default function SellerStaffScreen() {
               onChangeText={setUserId}
               placeholder="Enter user ID"
               keyboardType="numeric"
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor={colors.textTertiary}
             />
 
             <Text style={styles.formLabel}>Role</Text>
@@ -354,7 +357,7 @@ export default function SellerStaffScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create Role</Text>
               <Pressable onPress={() => setShowRole(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
               </Pressable>
             </View>
 
@@ -364,7 +367,7 @@ export default function SellerStaffScreen() {
               value={roleName}
               onChangeText={setRoleName}
               placeholder="e.g. Order Manager"
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor={colors.textTertiary}
             />
 
             <Text style={styles.formLabel}>Role Type</Text>
@@ -398,14 +401,14 @@ export default function SellerStaffScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
 
@@ -416,66 +419,66 @@ const styles = StyleSheet.create({
   inviteBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
 
   rolesSection: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 16,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   rolesHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10, marginTop: 4 },
   createRoleBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   createRoleText: { fontSize: 13, fontWeight: '700', color: Brand.primary },
-  rolesEmpty: { fontSize: 13, color: Brand.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
+  rolesEmpty: { fontSize: 13, color: c.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
 
   roleCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   roleIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: Brand.primary + '12', justifyContent: 'center', alignItems: 'center' },
   roleInfo: { flex: 1, gap: 2 },
-  roleName: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  roleType: { fontSize: 11, color: Brand.textTertiary, textTransform: 'capitalize' },
+  roleName: { fontSize: 14, fontWeight: '700', color: c.text },
+  roleType: { fontSize: 11, color: c.textTertiary, textTransform: 'capitalize' },
 
   staffCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   staffHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   avatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   staffInfo: { flex: 1, gap: 2 },
-  staffName: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  staffEmail: { fontSize: 12, color: Brand.textTertiary },
+  staffName: { fontSize: 15, fontWeight: '700', color: c.text },
+  staffEmail: { fontSize: 12, color: c.textTertiary },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 11, fontWeight: '700' },
 
   staffMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   metaCol: { flex: 1, gap: 2 },
-  metaLabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
-  metaValue: { fontSize: 13, color: Brand.text, fontWeight: '600' },
+  metaLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600' },
+  metaValue: { fontSize: 13, color: c.text, fontWeight: '600' },
   fullAccessBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.primary + '12', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   fullAccessText: { fontSize: 10, fontWeight: '700', color: Brand.primary },
 
-  actionRow: { flexDirection: 'row', gap: 10, borderTopWidth: 1, borderTopColor: Brand.borderLight, paddingTop: 12 },
-  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: Brand.surfaceAlt },
+  actionRow: { flexDirection: 'row', gap: 10, borderTopWidth: 1, borderTopColor: c.borderLight, paddingTop: 12 },
+  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: c.surfaceAlt },
   toggleText: { fontSize: 13, fontWeight: '700' },
   removeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(220,38,38,0.08)' },
   removeText: { fontSize: 13, fontWeight: '700', color: Brand.danger },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6, marginTop: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 12 },
   formInput: {
-    borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Brand.text,
+    borderWidth: 1.5, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text,
   },
-  noRolesText: { fontSize: 13, color: Brand.textTertiary, fontStyle: 'italic' },
+  noRolesText: { fontSize: 13, color: c.textTertiary, fontStyle: 'italic' },
   roleSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  roleOption: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: Brand.border, backgroundColor: Brand.surfaceAlt },
+  roleOption: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.surfaceAlt },
   roleOptionActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '12' },
-  roleOptionText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary },
+  roleOptionText: { fontSize: 13, fontWeight: '600', color: c.textTertiary },
   roleOptionTextActive: { color: Brand.primary, fontWeight: '700' },
 
   typeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: Brand.border, alignItems: 'center' },
+  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: c.border, alignItems: 'center' },
   typeBtnActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '12' },
-  typeBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary, textTransform: 'capitalize' },
+  typeBtnText: { fontSize: 13, fontWeight: '600', color: c.textTertiary, textTransform: 'capitalize' },
   typeBtnTextActive: { color: Brand.primary },
 
   submitBtn: { backgroundColor: Brand.primary, marginTop: 20, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },

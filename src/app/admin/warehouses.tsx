@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminWarehouses,
   getWarehouseInventory,
@@ -23,6 +24,8 @@ import {
 
 export default function AdminWarehousesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [warehouses, setWarehouses] = useState<AdminWarehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,8 +78,8 @@ export default function AdminWarehousesScreen() {
             <Text style={styles.warehouseName}>{item.name}</Text>
             <Text style={styles.warehouseCode}>Code: {item.code}</Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : Brand.textTertiary) + '20' }]}>
-            <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : Brand.textTertiary }]}>
+          <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : colors.textTertiary) + '20' }]}>
+            <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : colors.textTertiary }]}>
               {item.is_active ? 'Active' : 'Inactive'}
             </Text>
           </View>
@@ -122,7 +125,7 @@ export default function AdminWarehousesScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="warehouse" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="warehouse" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No warehouses found</Text>
                 <Text style={styles.emptySub}>No warehouses registered yet</Text>
               </View>
@@ -136,7 +139,7 @@ export default function AdminWarehousesScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{detailWarehouse?.name} — Inventory</Text>
                 <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               {detailWarehouse && (
@@ -155,7 +158,7 @@ export default function AdminWarehousesScreen() {
                   style={{ maxHeight: '65%' }}
                   ListEmptyComponent={
                     <View style={styles.emptyState}>
-                      <MaterialCommunityIcons name="package-variant" size={36} color={Brand.textTertiary} />
+                      <MaterialCommunityIcons name="package-variant" size={36} color={colors.textTertiary} />
                       <Text style={styles.emptyText}>No inventory</Text>
                       <Text style={styles.emptySub}>This warehouse has no inventory</Text>
                     </View>
@@ -170,38 +173,38 @@ export default function AdminWarehousesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  warehouseName: { fontSize: 15, fontWeight: '800', color: Brand.text },
-  warehouseCode: { fontSize: 12, color: Brand.textTertiary },
+  warehouseName: { fontSize: 15, fontWeight: '800', color: c.text },
+  warehouseCode: { fontSize: 12, color: c.textTertiary },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  location: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  location: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   usageContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  usageBar: { flex: 1, height: 8, borderRadius: 4, backgroundColor: Brand.surfaceAlt, overflow: 'hidden' },
+  usageBar: { flex: 1, height: 8, borderRadius: 4, backgroundColor: c.surfaceAlt, overflow: 'hidden' },
   usageFill: { height: '100%', borderRadius: 4 },
-  usageText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  usageText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text, flex: 1 },
-  detailSummary: { backgroundColor: Brand.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 12 },
-  detailText: { fontSize: 13, color: Brand.textSecondary, marginBottom: 2 },
-  invCard: { backgroundColor: Brand.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text, flex: 1 },
+  detailSummary: { backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 12 },
+  detailText: { fontSize: 13, color: c.textSecondary, marginBottom: 2 },
+  invCard: { backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 8 },
   invHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  invProductName: { fontSize: 14, fontWeight: '700', color: Brand.text, flex: 1, marginRight: 8 },
+  invProductName: { fontSize: 14, fontWeight: '700', color: c.text, flex: 1, marginRight: 8 },
   invQty: { fontSize: 13, fontWeight: '800', color: Brand.accent },
-  invStore: { fontSize: 12, color: Brand.textSecondary, marginBottom: 4 },
+  invStore: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
   invFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  invMeta: { fontSize: 12, color: Brand.textTertiary },
-  invFee: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  invDate: { fontSize: 11, color: Brand.textTertiary, marginTop: 2 },
+  invMeta: { fontSize: 12, color: c.textTertiary },
+  invFee: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  invDate: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
 });

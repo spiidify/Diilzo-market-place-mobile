@@ -1,15 +1,20 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function AppTabs() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Brand.primary,
-        tabBarInactiveTintColor: Brand.textTertiary,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIconStyle: styles.tabBarIcon,
@@ -83,11 +88,11 @@ export default function AppTabs() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: 2,
-    borderTopColor: Brand.border,
+    borderTopColor: c.border,
     height: 88,
     paddingBottom: 24,
     paddingTop: 10,

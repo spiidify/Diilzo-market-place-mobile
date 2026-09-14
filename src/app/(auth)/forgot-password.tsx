@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,11 +15,14 @@ import {
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { requestPasswordReset } from '@/services/auth';
 import { getSafeErrorMessage } from '@/utils/errors';
 import { isValidEmail, sanitizeEmail } from '@/utils/validation';
 
 export default function ForgotPasswordScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,13 +87,13 @@ export default function ForgotPasswordScreen() {
 
                 {/* Email input */}
                 <View style={styles.inputWrap}>
-                  <MaterialCommunityIcons name="email-outline" size={20} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="email-outline" size={20} color={colors.textTertiary} />
                   <TextInput
                     style={styles.input}
                     value={email}
                     onChangeText={setEmail}
                     placeholder="you@example.com"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -135,8 +138,8 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingTop: 16 },
 
@@ -145,7 +148,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -178,13 +181,13 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   successHint: {
     fontSize: 13,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     textAlign: 'center',
     lineHeight: 19,
   },
@@ -195,24 +198,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginBottom: 12,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
     padding: 0,
   },
 
   // Hint
   hint: {
     fontSize: 12,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     lineHeight: 17,
     marginBottom: 4,
   },
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   linkText: {
     color: Brand.primary,

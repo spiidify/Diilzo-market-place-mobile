@@ -6,10 +6,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface GradientHeaderProps {
   title: string;
@@ -35,6 +37,8 @@ export function GradientHeader({
   style,
 }: GradientHeaderProps) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const handleBack = onBack || (() => router.back());
 
   return (
@@ -48,7 +52,7 @@ export function GradientHeader({
         <View style={[styles.headerBar, style]}>
           {showBack ? (
             <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
-              <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.text} />
+              <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
             </Pressable>
           ) : (
             <View style={styles.backBtn} />
@@ -75,7 +79,7 @@ export function GradientHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   headerBg: {
     width: '100%',
   },
@@ -89,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -111,12 +115,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 1,
     fontWeight: '500',
   },

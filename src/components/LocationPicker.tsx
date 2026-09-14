@@ -4,7 +4,7 @@
 // Follows the Alibaba-style hierarchy from apps/locations.
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   City,
   Country,
@@ -48,6 +49,8 @@ interface LocationPickerProps {
 type PickerLevel = 'country' | 'region' | 'city';
 
 export function LocationPicker({ value, onChange, label = 'Location' }: LocationPickerProps) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [modalLevel, setModalLevel] = useState<PickerLevel | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -205,7 +208,7 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
         <Text style={styles.listItemTitle}>{label}</Text>
         {sublabel ? <Text style={styles.listItemSub}>{sublabel}</Text> : null}
       </View>
-      <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+      <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
     </Pressable>
   );
 
@@ -221,15 +224,15 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{title}</Text>
               <Pressable onPress={() => { setModalLevel(null); setSearchQuery(''); }}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.textSecondary} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textSecondary} />
               </Pressable>
             </View>
             <View style={styles.searchBar}>
-              <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search..."
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus
@@ -279,7 +282,7 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
         <Text style={[styles.pickerText, !selCountry && styles.pickerPlaceholder]}>
           {selCountry ? selCountry.name : value.country || 'Select country'}
         </Text>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
       </Pressable>
 
       {/* Region */}
@@ -288,11 +291,11 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
         onPress={() => selCountry && setModalLevel('region')}
         disabled={!selCountry}
       >
-        <MaterialCommunityIcons name="map-marker-outline" size={20} color={selCountry ? Brand.primary : Brand.textTertiary} />
+        <MaterialCommunityIcons name="map-marker-outline" size={20} color={selCountry ? Brand.primary : colors.textTertiary} />
         <Text style={[styles.pickerText, !selRegion && styles.pickerPlaceholder]}>
           {selRegion ? selRegion.name : value.region || 'Select region/state'}
         </Text>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
       </Pressable>
 
       {/* City */}
@@ -309,11 +312,11 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
         }}
         disabled={!selCountry}
       >
-        <MaterialCommunityIcons name="map-marker" size={20} color={selCountry ? Brand.primary : Brand.textTertiary} />
+        <MaterialCommunityIcons name="map-marker" size={20} color={selCountry ? Brand.primary : colors.textTertiary} />
         <Text style={[styles.pickerText, !selCity && styles.pickerPlaceholder]}>
           {selCity ? selCity.name : value.city || 'Select city'}
         </Text>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
       </Pressable>
 
       {renderModal()}
@@ -321,14 +324,14 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: Spacing.two,
   },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     marginBottom: Spacing.one,
   },
   pickerRow: {
@@ -337,10 +340,10 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   pickerRowPressed: {
     opacity: 0.85,
@@ -351,10 +354,10 @@ const styles = StyleSheet.create({
   pickerText: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
   },
   pickerPlaceholder: {
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
   modalOverlay: {
     flex: 1,
@@ -362,7 +365,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -374,12 +377,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.border,
+    borderBottomColor: c.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   searchBar: {
     flexDirection: 'row',
@@ -388,13 +391,13 @@ const styles = StyleSheet.create({
     margin: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
   },
   loadingContainer: {
     padding: 40,
@@ -406,19 +409,19 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.border,
+    borderBottomColor: c.border,
   },
   listItemPressed: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   listItemTitle: {
     fontSize: 15,
     fontWeight: '500',
-    color: Brand.text,
+    color: c.text,
   },
   listItemSub: {
     fontSize: 12,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 2,
   },
   emptyContainer: {
@@ -427,6 +430,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
 });

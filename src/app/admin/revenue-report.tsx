@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getRevenueReport, type RevenueReport } from '@/services/financial';
 
 export default function AdminRevenueReportScreen() {
@@ -20,6 +21,8 @@ export default function AdminRevenueReportScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async (period: number = days) => {
     try {
@@ -121,11 +124,11 @@ export default function AdminRevenueReportScreen() {
           {/* Revenue breakdown */}
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Revenue Breakdown</Text>
-            <RevenueRow label="Commission" value={report?.revenue?.commission} color={Brand.success} />
-            <RevenueRow label="Commission Reversals" value={report?.revenue?.commission_reversals} color={Brand.danger} />
-            <RevenueRow label="Net Commission" value={report?.revenue?.net_commission} color={Brand.text} bold />
-            <RevenueRow label="Platform Fees" value={report?.revenue?.platform_fees} color={Brand.success} />
-            <RevenueRow label="Shipping Margin" value={report?.revenue?.shipping_margin} color={Brand.success} />
+            <RevenueRow label="Commission" value={report?.revenue?.commission} color={Brand.success} styles={styles} />
+            <RevenueRow label="Commission Reversals" value={report?.revenue?.commission_reversals} color={Brand.danger} styles={styles} />
+            <RevenueRow label="Net Commission" value={report?.revenue?.net_commission} color={colors.text} bold styles={styles} />
+            <RevenueRow label="Platform Fees" value={report?.revenue?.platform_fees} color={Brand.success} styles={styles} />
+            <RevenueRow label="Shipping Margin" value={report?.revenue?.shipping_margin} color={Brand.success} styles={styles} />
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Revenue</Text>
               <Text style={[styles.totalValue, { color: Brand.success }]}>UGX {fmt(report?.revenue?.total)}</Text>
@@ -135,8 +138,8 @@ export default function AdminRevenueReportScreen() {
           {/* Cost breakdown */}
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-            <RevenueRow label="Refunds" value={report?.costs?.refunds} color={Brand.danger} />
-            <RevenueRow label="Delivery Partner Costs" value={report?.costs?.delivery_partners} color={Brand.danger} />
+            <RevenueRow label="Refunds" value={report?.costs?.refunds} color={Brand.danger} styles={styles} />
+            <RevenueRow label="Delivery Partner Costs" value={report?.costs?.delivery_partners} color={Brand.danger} styles={styles} />
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Costs</Text>
               <Text style={[styles.totalValue, { color: Brand.danger }]}>UGX {fmt(report?.costs?.total)}</Text>
@@ -158,7 +161,7 @@ export default function AdminRevenueReportScreen() {
   );
 }
 
-function RevenueRow({ label, value, color, bold }: { label: string; value?: string; color: string; bold?: boolean }) {
+function RevenueRow({ label, value, color, bold, styles }: { label: string; value?: string; color: string; bold?: boolean; styles: ReturnType<typeof createStyles> }) {
   return (
     <View style={styles.revenueRow}>
       <Text style={[styles.revenueLabel, bold && { fontWeight: '700' }]}>{label}</Text>
@@ -167,8 +170,8 @@ function RevenueRow({ label, value, color, bold }: { label: string; value?: stri
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
@@ -177,8 +180,8 @@ const styles = StyleSheet.create({
   body: { padding: 12, paddingBottom: 32 },
 
   periodRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  periodBtn: { flex: 1, borderWidth: 1, borderColor: Brand.border, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: '#FFFFFF' },
-  periodText: { fontSize: 12, fontWeight: '600', color: Brand.text },
+  periodBtn: { flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, paddingVertical: 10, alignItems: 'center', backgroundColor: c.surface },
+  periodText: { fontSize: 12, fontWeight: '600', color: c.text },
 
   kpiRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   kpiCard: {
@@ -189,24 +192,24 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 15, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   sectionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 },
 
-  revenueRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Brand.borderLight },
-  revenueLabel: { fontSize: 13, color: Brand.text },
+  revenueRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  revenueLabel: { fontSize: 13, color: c.text },
   revenueValue: { fontSize: 13, fontWeight: '700' },
 
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, backgroundColor: Brand.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, marginTop: 8 },
-  totalLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, backgroundColor: c.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, marginTop: 8 },
+  totalLabel: { fontSize: 14, fontWeight: '700', color: c.text },
   totalValue: { fontSize: 16, fontWeight: '800' },
 
   netBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     backgroundColor: '#DCF5EC', borderRadius: 16, padding: 16,
   },
-  netBannerTitle: { fontSize: 13, color: Brand.textSecondary, fontWeight: '600' },
+  netBannerTitle: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
   netBannerValue: { fontSize: 22, fontWeight: '900', color: Brand.success },
-  netBannerSub: { fontSize: 11, color: Brand.textTertiary, marginTop: 2 },
+  netBannerSub: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
 });

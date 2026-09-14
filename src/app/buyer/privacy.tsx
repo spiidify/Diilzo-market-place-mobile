@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -27,9 +27,12 @@ import {
   setBiometricEnabled,
 } from '@/services/biometric';
 import { isSoundEnabled, playSound, setSoundEnabled, Sounds } from '@/services/sound';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function PrivacyScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState('Biometric');
@@ -243,7 +246,7 @@ export default function PrivacyScreen() {
                         value={biometricEnabled}
                         onValueChange={handleBiometricToggle}
                         disabled={!biometricAvailable}
-                        trackColor={{ false: Brand.border, true: Brand.primary }}
+                        trackColor={{ false: colors.border, true: Brand.primary }}
                         thumbColor="#FFFFFF"
                       />
                     )}
@@ -263,7 +266,7 @@ export default function PrivacyScreen() {
                     <Switch
                       value={soundEnabled}
                       onValueChange={handleSoundToggle}
-                      trackColor={{ false: Brand.border, true: Brand.primary }}
+                      trackColor={{ false: colors.border, true: Brand.primary }}
                       thumbColor="#FFFFFF"
                     />
                   </View>
@@ -294,9 +297,9 @@ export default function PrivacyScreen() {
                                 <MaterialCommunityIcons
                                   name={pref.in_app_enabled ? 'bell' : 'bell-off'}
                                   size={14}
-                                  color={pref.in_app_enabled ? Brand.primary : Brand.textTertiary}
+                                  color={pref.in_app_enabled ? Brand.primary : colors.textTertiary}
                                 />
-                                <Text style={[styles.notifChannelText, { color: pref.in_app_enabled ? Brand.primary : Brand.textTertiary }]}>App</Text>
+                                <Text style={[styles.notifChannelText, { color: pref.in_app_enabled ? Brand.primary : colors.textTertiary }]}>App</Text>
                               </Pressable>
                               <Pressable
                                 style={styles.notifChannelChip}
@@ -305,9 +308,9 @@ export default function PrivacyScreen() {
                                 <MaterialCommunityIcons
                                   name={pref.email_enabled ? 'email' : 'email-off'}
                                   size={14}
-                                  color={pref.email_enabled ? Brand.primary : Brand.textTertiary}
+                                  color={pref.email_enabled ? Brand.primary : colors.textTertiary}
                                 />
-                                <Text style={[styles.notifChannelText, { color: pref.email_enabled ? Brand.primary : Brand.textTertiary }]}>Email</Text>
+                                <Text style={[styles.notifChannelText, { color: pref.email_enabled ? Brand.primary : colors.textTertiary }]}>Email</Text>
                               </Pressable>
                               <Pressable
                                 style={styles.notifChannelChip}
@@ -316,9 +319,9 @@ export default function PrivacyScreen() {
                                 <MaterialCommunityIcons
                                   name={pref.push_enabled ? 'cellphone' : 'cellphone-off'}
                                   size={14}
-                                  color={pref.push_enabled ? Brand.primary : Brand.textTertiary}
+                                  color={pref.push_enabled ? Brand.primary : colors.textTertiary}
                                 />
-                                <Text style={[styles.notifChannelText, { color: pref.push_enabled ? Brand.primary : Brand.textTertiary }]}>Push</Text>
+                                <Text style={[styles.notifChannelText, { color: pref.push_enabled ? Brand.primary : colors.textTertiary }]}>Push</Text>
                               </Pressable>
                             </View>
                           </View>
@@ -334,27 +337,27 @@ export default function PrivacyScreen() {
                 <Text style={styles.sectionTitle}>Data & Privacy</Text>
                 <View style={styles.card}>
                   <Pressable
-                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: Brand.surfaceAlt }]}
+                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: colors.surfaceAlt }]}
                     onPress={handlePrivacyPolicy}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: '#06B6D4' + '20' }]}>
                       <MaterialCommunityIcons name="file-document-outline" size={22} color="#06B6D4" />
                     </View>
                     <Text style={styles.linkLabel}>Privacy Policy</Text>
-                    <MaterialCommunityIcons name="open-in-new" size={20} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="open-in-new" size={20} color={colors.textTertiary} />
                   </Pressable>
 
                   <View style={styles.rowDivider} />
 
                   <Pressable
-                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: Brand.surfaceAlt }]}
+                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: colors.surfaceAlt }]}
                     onPress={handleTerms}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: '#3B82F6' + '20' }]}>
                       <MaterialCommunityIcons name="file-find-outline" size={22} color="#3B82F6" />
                     </View>
                     <Text style={styles.linkLabel}>Terms of Service</Text>
-                    <MaterialCommunityIcons name="open-in-new" size={20} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="open-in-new" size={20} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               </View>
@@ -378,7 +381,7 @@ export default function PrivacyScreen() {
                 <Text style={[styles.sectionTitle, { color: Brand.danger }]}>Account Actions</Text>
                 <View style={styles.card}>
                   <Pressable
-                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: Brand.surfaceAlt }]}
+                    style={({ pressed }) => [styles.linkRow, pressed && { backgroundColor: colors.surfaceAlt }]}
                     onPress={handleDeleteData}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: Brand.danger + '20' }]}>
@@ -387,7 +390,7 @@ export default function PrivacyScreen() {
                     <Text style={[styles.linkLabel, { color: Brand.danger }]}>
                       Delete Account Data
                     </Text>
-                    <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               </View>
@@ -399,8 +402,8 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -417,9 +420,9 @@ const styles = StyleSheet.create({
 
   // Sections
   section: { marginBottom: Spacing.three },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: Spacing.two },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: Spacing.two },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     overflow: 'hidden',
     elevation: 2,
@@ -444,9 +447,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingInfo: { flex: 1, gap: 2 },
-  settingLabel: { fontSize: 15, fontWeight: '600', color: Brand.text },
-  settingSublabel: { fontSize: 13, color: Brand.textSecondary },
-  rowDivider: { height: 1, backgroundColor: Brand.borderLight, marginLeft: 60 },
+  settingLabel: { fontSize: 15, fontWeight: '600', color: c.text },
+  settingSublabel: { fontSize: 13, color: c.textSecondary },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 60 },
 
   // Link rows
   linkRow: {
@@ -455,15 +458,15 @@ const styles = StyleSheet.create({
     gap: Spacing.three - 4,
     padding: Spacing.three,
   },
-  linkLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
+  linkLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
 
   // Info card
   infoCard: {
     flexDirection: 'row',
     gap: Spacing.three - 4,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 14,
     padding: Spacing.three,
     marginBottom: Spacing.three,
@@ -472,22 +475,22 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   infoContent: { flex: 1, gap: 4 },
-  infoTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  infoText: { fontSize: 13, color: Brand.textSecondary, lineHeight: 20 },
+  infoTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  infoText: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
 
   // Notification preferences
-  sectionSub: { fontSize: 13, color: Brand.textSecondary, marginBottom: Spacing.two },
+  sectionSub: { fontSize: 13, color: c.textSecondary, marginBottom: Spacing.two },
   notifTypeRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.three },
   notifChannels: { flexDirection: 'row', gap: 8, marginTop: 6 },
   notifChannelChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 4,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 12,
+    backgroundColor: c.surfaceAlt, borderRadius: 12,
   },
   notifChannelText: { fontSize: 12, fontWeight: '600' },
 });

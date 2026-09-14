@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   createBrand,
   deleteBrand,
@@ -27,6 +28,8 @@ import {
 
 export default function AdminBrandsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [brands, setBrands] = useState<AdminBrand[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,8 +138,8 @@ export default function AdminBrandsScreen() {
     <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => showActions(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.brandName} numberOfLines={1}>{item.name}</Text>
-        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : Brand.textTertiary) + '20' }]}>
-          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : Brand.textTertiary }]}>
+        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : colors.textTertiary) + '20' }]}>
+          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : colors.textTertiary }]}>
             {item.is_active ? 'Active' : 'Inactive'}
           </Text>
         </View>
@@ -152,11 +155,11 @@ export default function AdminBrandsScreen() {
       <ModernHeader title="Brands" rightIcon="plus" onRightPress={openCreate} />
       <View style={styles.body}>
         <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search brands..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={query}
             onChangeText={handleSearch}
             autoCapitalize="none"
@@ -164,7 +167,7 @@ export default function AdminBrandsScreen() {
           />
           {query.length > 0 && (
             <Pressable onPress={() => { setQuery(''); load(); }} hitSlop={12}>
-              <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={20} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -180,7 +183,7 @@ export default function AdminBrandsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(query)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="tag-off-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="tag-off-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No brands found</Text>
                 <Text style={styles.emptySub}>Create one to get started</Text>
               </View>
@@ -194,7 +197,7 @@ export default function AdminBrandsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{editing ? 'Edit Brand' : 'New Brand'}</Text>
                 <Pressable onPress={() => setModalVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               <Text style={styles.fieldLabel}>Name</Text>
@@ -203,7 +206,7 @@ export default function AdminBrandsScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Brand name"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
               />
               <Text style={styles.fieldLabel}>Description</Text>
               <TextInput
@@ -211,13 +214,13 @@ export default function AdminBrandsScreen() {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Brand description"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 multiline
                 textAlignVertical="top"
               />
               <View style={styles.switchRow}>
                 <Text style={styles.fieldLabel}>Active</Text>
-                <Switch value={isActive} onValueChange={setIsActive} trackColor={{ false: Brand.border, true: Brand.primary }} />
+                <Switch value={isActive} onValueChange={setIsActive} trackColor={{ false: colors.border, true: Brand.primary }} />
               </View>
               <Pressable style={[styles.saveBtn, saving && { opacity: 0.5 }]} disabled={saving} onPress={handleSave}>
                 <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
@@ -230,30 +233,30 @@ export default function AdminBrandsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, marginLeft: 8, paddingVertical: 0 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, marginLeft: 8, paddingVertical: 0 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  brandName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  brandName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  slug: { fontSize: 13, color: Brand.textSecondary, marginBottom: 4 },
-  description: { fontSize: 13, color: Brand.textSecondary, marginBottom: 4 },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  slug: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
+  description: { fontSize: 13, color: c.textSecondary, marginBottom: 4 },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24 },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  fieldLabel: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, fontSize: 14, color: Brand.text, marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginBottom: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },

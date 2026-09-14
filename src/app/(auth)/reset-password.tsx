@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,12 +15,15 @@ import {
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { confirmPasswordReset } from '@/services/auth';
 import { getSafeErrorMessage } from '@/utils/errors';
 import { sanitizeString } from '@/utils/validation';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { uid, token } = useLocalSearchParams<{ uid: string; token: string }>();
 
   const [newPassword, setNewPassword] = useState('');
@@ -104,13 +107,13 @@ export default function ResetPasswordScreen() {
 
                 {/* New password input */}
                 <View style={styles.inputWrap}>
-                  <MaterialCommunityIcons name="lock-outline" size={20} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="lock-outline" size={20} color={colors.textTertiary} />
                   <TextInput
                     style={styles.input}
                     value={newPassword}
                     onChangeText={setNewPassword}
                     placeholder="New password"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                   />
@@ -118,20 +121,20 @@ export default function ResetPasswordScreen() {
                     <MaterialCommunityIcons
                       name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                       size={20}
-                      color={Brand.textTertiary}
+                      color={colors.textTertiary}
                     />
                   </Pressable>
                 </View>
 
                 {/* Confirm password input */}
                 <View style={styles.inputWrap}>
-                  <MaterialCommunityIcons name="lock-check-outline" size={20} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="lock-check-outline" size={20} color={colors.textTertiary} />
                   <TextInput
                     style={styles.input}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     placeholder="Confirm new password"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     secureTextEntry={!showConfirm}
                     autoCapitalize="none"
                   />
@@ -139,7 +142,7 @@ export default function ResetPasswordScreen() {
                     <MaterialCommunityIcons
                       name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
                       size={20}
-                      color={Brand.textTertiary}
+                      color={colors.textTertiary}
                     />
                   </Pressable>
                 </View>
@@ -170,8 +173,8 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingTop: 16 },
 
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -213,13 +216,13 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   successHint: {
     fontSize: 13,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -230,24 +233,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginBottom: 12,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
     padding: 0,
   },
 
   // Hint
   hint: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 4,
   },
 

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminSettings,
   updateAdminSettings,
@@ -22,6 +23,8 @@ import {
 
 export default function AdminSettingsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,9 +87,9 @@ export default function AdminSettingsScreen() {
               <Text style={styles.sectionTitle}>General</Text>
               <View style={styles.card}>
                 <Text style={styles.fieldLabel}>Site Name</Text>
-                <TextInput style={styles.input} value={form.site_name} onChangeText={(v) => updateField('site_name', v)} placeholder="Site name" placeholderTextColor={Brand.textTertiary} />
+                <TextInput style={styles.input} value={form.site_name} onChangeText={(v) => updateField('site_name', v)} placeholder="Site name" placeholderTextColor={colors.textTertiary} />
                 <Text style={styles.fieldLabel}>Default Currency</Text>
-                <TextInput style={styles.input} value={form.default_currency} onChangeText={(v) => updateField('default_currency', v)} placeholder="e.g. UGX" placeholderTextColor={Brand.textTertiary} />
+                <TextInput style={styles.input} value={form.default_currency} onChangeText={(v) => updateField('default_currency', v)} placeholder="e.g. UGX" placeholderTextColor={colors.textTertiary} />
               </View>
             </View>
 
@@ -94,9 +97,9 @@ export default function AdminSettingsScreen() {
               <Text style={styles.sectionTitle}>Commission & Payouts</Text>
               <View style={styles.card}>
                 <Text style={styles.fieldLabel}>Default Commission Rate (%)</Text>
-                <TextInput style={styles.input} value={form.default_commission_rate} onChangeText={(v) => updateField('default_commission_rate', v)} placeholder="e.g. 5" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+                <TextInput style={styles.input} value={form.default_commission_rate} onChangeText={(v) => updateField('default_commission_rate', v)} placeholder="e.g. 5" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
                 <Text style={styles.fieldLabel}>Minimum Payout Amount</Text>
-                <TextInput style={styles.input} value={form.min_payout_amount} onChangeText={(v) => updateField('min_payout_amount', v)} placeholder="e.g. 50000" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+                <TextInput style={styles.input} value={form.min_payout_amount} onChangeText={(v) => updateField('min_payout_amount', v)} placeholder="e.g. 50000" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
               </View>
             </View>
 
@@ -104,9 +107,9 @@ export default function AdminSettingsScreen() {
               <Text style={styles.sectionTitle}>Escrow & Disputes</Text>
               <View style={styles.card}>
                 <Text style={styles.fieldLabel}>Escrow Period (days)</Text>
-                <TextInput style={styles.input} value={String(form.escrow_period_days)} onChangeText={(v) => updateField('escrow_period_days', Number(v) || 0)} placeholder="e.g. 7" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+                <TextInput style={styles.input} value={String(form.escrow_period_days)} onChangeText={(v) => updateField('escrow_period_days', Number(v) || 0)} placeholder="e.g. 7" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
                 <Text style={styles.fieldLabel}>Dispute Window (days)</Text>
-                <TextInput style={styles.input} value={String(form.dispute_window_days)} onChangeText={(v) => updateField('dispute_window_days', Number(v) || 0)} placeholder="e.g. 14" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+                <TextInput style={styles.input} value={String(form.dispute_window_days)} onChangeText={(v) => updateField('dispute_window_days', Number(v) || 0)} placeholder="e.g. 14" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
               </View>
             </View>
 
@@ -120,16 +123,16 @@ export default function AdminSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 12, paddingBottom: 40 },
   section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: Brand.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  fieldLabel: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, fontSize: 14, color: Brand.text, marginBottom: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: c.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginBottom: 16 },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 8 },
   saveBtnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
 });

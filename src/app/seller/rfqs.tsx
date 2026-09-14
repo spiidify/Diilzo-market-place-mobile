@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,18 +16,21 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getRFQDetail, getRFQs, quoteRFQ, type SellerRFQ, type SellerRFQDetail } from '@/services/seller';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: Brand.rating,
-  quoted: '#3B82F6',
-  accepted: Brand.primary,
-  rejected: Brand.danger,
-  expired: Brand.textTertiary,
-};
 
 export default function SellerRFQsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: Brand.rating,
+    quoted: '#3B82F6',
+    accepted: Brand.primary,
+    rejected: Brand.danger,
+    expired: colors.textTertiary,
+  };
   const [rfqs, setRfqs] = useState<SellerRFQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,7 +92,7 @@ export default function SellerRFQsScreen() {
   };
 
   const renderItem = ({ item }: { item: SellerRFQ }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -146,7 +149,7 @@ export default function SellerRFQsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="file-document-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="file-document-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No RFQs</Text>
                 <Text style={styles.emptySub}>Buyer quotes will appear here</Text>
               </View>
@@ -159,7 +162,7 @@ export default function SellerRFQsScreen() {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>RFQ Details</Text>
-                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} /></Pressable>
+                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} /></Pressable>
               </View>
               {detailLoading ? (
                 <ActivityIndicator size="large" color={Brand.primary} style={{ padding: 40 }} />
@@ -187,9 +190,9 @@ export default function SellerRFQsScreen() {
                     <View style={styles.quoteSection}>
                       <Text style={styles.quoteTitle}>Send Your Quote</Text>
                       <Text style={styles.formLabel}>Quote Price (UGX) *</Text>
-                      <TextInput style={styles.formInput} value={quotePrice} onChangeText={setQuotePrice} placeholder="e.g. 50000" keyboardType="numeric" placeholderTextColor={Brand.textTertiary} />
+                      <TextInput style={styles.formInput} value={quotePrice} onChangeText={setQuotePrice} placeholder="e.g. 50000" keyboardType="numeric" placeholderTextColor={colors.textTertiary} />
                       <Text style={styles.formLabel}>Seller Notes</Text>
-                      <TextInput style={[styles.formInput, { minHeight: 80 }]} value={quoteNotes} onChangeText={setQuoteNotes} placeholder="Add notes for the buyer..." multiline placeholderTextColor={Brand.textTertiary} />
+                      <TextInput style={[styles.formInput, { minHeight: 80 }]} value={quoteNotes} onChangeText={setQuoteNotes} placeholder="Add notes for the buyer..." multiline placeholderTextColor={colors.textTertiary} />
                       <Pressable style={({ pressed }) => [styles.quoteBtn, (quoting || pressed) && { opacity: 0.85 }]} onPress={handleQuote} disabled={quoting}>
                         {quoting ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.quoteBtnText}>Send Quote</Text>}
                       </Pressable>
@@ -213,38 +216,38 @@ export default function SellerRFQsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  productName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  productName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: Brand.borderLight },
+  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.borderLight },
   metricCol: { flex: 1 },
-  metricValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  metricLabel: { fontSize: 10, color: Brand.textTertiary, marginTop: 2 },
-  buyerText: { fontSize: 12, color: Brand.textSecondary, marginTop: 4 },
-  dateText: { fontSize: 12, color: Brand.textTertiary, marginTop: 2 },
+  metricValue: { fontSize: 13, fontWeight: '700', color: c.text },
+  metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
+  buyerText: { fontSize: 12, color: c.textSecondary, marginTop: 4 },
+  dateText: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, maxHeight: '90%' },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
   detailRow: { flexDirection: 'row', gap: 12 },
-  quoteSection: { marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: Brand.borderLight },
-  quoteTitle: { fontSize: 16, fontWeight: '800', color: Brand.text, marginBottom: 12 },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6, marginTop: 8 },
-  formInput: { borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.text },
+  quoteSection: { marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.borderLight },
+  quoteTitle: { fontSize: 16, fontWeight: '800', color: c.text, marginBottom: 12 },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 8 },
+  formInput: { borderWidth: 1.5, borderColor: c.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text },
   quoteBtn: { backgroundColor: Brand.primary, marginTop: 16, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   quoteBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
 });

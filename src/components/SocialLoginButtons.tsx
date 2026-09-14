@@ -10,11 +10,11 @@
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   useFacebookAuth,
   useGoogleAuth,
@@ -23,6 +23,8 @@ import {
 export function SocialLoginButtons() {
   const router = useRouter();
   const { socialLogin } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   // Hooks are always called — no conditional returns before them
@@ -98,9 +100,9 @@ export function SocialLoginButtons() {
           disabled={loadingProvider !== null}
         >
           {loadingProvider === 'google' ? (
-            <ActivityIndicator size="small" color={Brand.text} />
+            <ActivityIndicator size="small" color={colors.text} />
           ) : (
-            <MaterialCommunityIcons name="google" size={22} color={Brand.text} />
+            <MaterialCommunityIcons name="google" size={22} color={colors.text} />
           )}
         </Pressable>
 
@@ -111,7 +113,7 @@ export function SocialLoginButtons() {
           disabled={loadingProvider !== null}
         >
           {loadingProvider === 'facebook' ? (
-            <ActivityIndicator size="small" color={Brand.text} />
+            <ActivityIndicator size="small" color={colors.text} />
           ) : (
             <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
           )}
@@ -126,14 +128,14 @@ export function SocialLoginButtons() {
           )}
           disabled={loadingProvider !== null}
         >
-          <MaterialCommunityIcons name="apple" size={22} color={Brand.text} />
+          <MaterialCommunityIcons name="apple" size={22} color={colors.text} />
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     marginTop: 16,
   },
@@ -145,11 +147,11 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: Brand.border,
+    backgroundColor: c.border,
   },
   dividerText: {
     fontSize: 13,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginHorizontal: 12,
     fontWeight: '500',
   },
@@ -163,8 +165,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: Brand.border,
-    backgroundColor: Brand.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

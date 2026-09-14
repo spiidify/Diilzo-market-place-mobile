@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Alert,
   Pressable,
@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface FAQ {
   question: string;
@@ -67,6 +68,8 @@ const SUPPORT_PHONE = '+256700000000';
 
 export default function SupportScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
   const handleChat = () => {
@@ -164,7 +167,7 @@ export default function SupportScreen() {
                   <Text style={styles.contactLabel}>{option.label}</Text>
                   <Text style={styles.contactSublabel}>{option.sublabel}</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={22} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textTertiary} />
               </Pressable>
             ))}
           </View>
@@ -212,8 +215,8 @@ export default function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -256,14 +259,14 @@ const styles = StyleSheet.create({
 
   // Sections
   section: { marginBottom: Spacing.three },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: Spacing.two },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: Spacing.two },
 
   // Contact
   contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three - 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     padding: Spacing.three,
     borderRadius: 14,
     marginBottom: Spacing.two,
@@ -281,12 +284,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactInfo: { flex: 1, gap: 2 },
-  contactLabel: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  contactSublabel: { fontSize: 13, color: Brand.textSecondary },
+  contactLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+  contactSublabel: { fontSize: 13, color: c.textSecondary },
 
   // FAQ
   faqCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     marginBottom: Spacing.two,
     overflow: 'hidden',
@@ -303,13 +306,13 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
   },
-  faqQuestion: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.text },
+  faqQuestion: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
   faqBody: {
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.three,
     paddingTop: 0,
   },
-  faqAnswer: { fontSize: 14, color: Brand.textSecondary, lineHeight: 22 },
+  faqAnswer: { fontSize: 14, color: c.textSecondary, lineHeight: 22 },
 
   // App info
   appInfoSection: {
@@ -317,11 +320,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     gap: Spacing.one + 2,
   },
-  appInfoName: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  appInfoVersion: { fontSize: 13, color: Brand.textTertiary },
+  appInfoName: { fontSize: 18, fontWeight: '800', color: c.text },
+  appInfoVersion: { fontSize: 13, color: c.textTertiary },
   appInfoText: {
     fontSize: 13,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     marginTop: Spacing.one + 2,
   },

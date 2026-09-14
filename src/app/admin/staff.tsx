@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getPlatformStaff,
   getStaffRoles,
@@ -35,6 +36,8 @@ const DEPARTMENTS: { code: string; label: string }[] = [
 
 export default function AdminStaffScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [staff, setStaff] = useState<PlatformStaffMember[]>([]);
   const [roles, setRoles] = useState<PlatformStaffRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,13 +149,13 @@ export default function AdminStaffScreen() {
         </View>
       </View>
       <View style={styles.locationRow}>
-        <MaterialCommunityIcons name="map-marker" size={14} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="map-marker" size={14} color={colors.textTertiary} />
         <Text style={styles.locationText}>
           {item.country || '—'}{item.city ? `, ${item.city}` : ''}
         </Text>
         {item.employee_id ? (
           <>
-            <MaterialCommunityIcons name="badge-account" size={14} color={Brand.textTertiary} style={{ marginLeft: 12 }} />
+            <MaterialCommunityIcons name="badge-account" size={14} color={colors.textTertiary} style={{ marginLeft: 12 }} />
             <Text style={styles.locationText}>{item.employee_id}</Text>
           </>
         ) : null}
@@ -186,7 +189,7 @@ export default function AdminStaffScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <MaterialCommunityIcons name="account-group" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="account-group" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No staff members yet.</Text>
             <Text style={styles.emptySub}>Tap the + icon to invite your first staff member.</Text>
           </View>
@@ -261,17 +264,17 @@ export default function AdminStaffScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { padding: 16, gap: 12 },
   card: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   cardHeader: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   avatarWrap: { position: 'relative' },
@@ -281,39 +284,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   cardInfo: { flex: 1, gap: 4 },
-  email: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  name: { fontSize: 12, color: Brand.textSecondary },
+  email: { fontSize: 14, fontWeight: '700', color: c.text },
+  name: { fontSize: 12, color: c.textSecondary },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 },
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   badgeText: { fontSize: 10, fontWeight: '600' },
   statusCol: { alignItems: 'flex-end', gap: 4 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   statusText: { fontSize: 10, fontWeight: '700' },
-  onlineText: { fontSize: 10, color: Brand.textTertiary },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 8, borderTopWidth: 1, borderTopColor: Brand.border },
-  locationText: { fontSize: 11, color: Brand.textTertiary },
+  onlineText: { fontSize: 10, color: c.textTertiary },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.border },
+  locationText: { fontSize: 11, color: c.textTertiary },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 14, fontWeight: '600', color: Brand.textSecondary },
-  emptySub: { fontSize: 12, color: Brand.textTertiary, textAlign: 'center' },
+  emptyText: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
+  emptySub: { fontSize: 12, color: c.textTertiary, textAlign: 'center' },
   // Modal
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 16 },
-  modalCard: { backgroundColor: Brand.surface, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, gap: 8 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
-  modalSub: { fontSize: 12, color: Brand.textTertiary, marginBottom: 8 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary, marginTop: 8 },
+  modalCard: { backgroundColor: c.surface, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, gap: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  modalSub: { fontSize: 12, color: c.textTertiary, marginBottom: 8 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary, marginTop: 8 },
   input: {
-    borderWidth: 1, borderColor: Brand.border, borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Brand.text,
+    borderWidth: 1, borderColor: c.border, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.text,
   },
   pickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  pickerChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: Brand.border },
+  pickerChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: c.border },
   pickerChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  pickerText: { fontSize: 11, color: Brand.textSecondary },
+  pickerText: { fontSize: 11, color: c.textSecondary },
   pickerTextActive: { color: '#FFFFFF', fontWeight: '600' },
   modalActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
   modalBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  modalBtnOutline: { borderWidth: 1, borderColor: Brand.border },
+  modalBtnOutline: { borderWidth: 1, borderColor: c.border },
   modalBtnPrimary: { backgroundColor: Brand.primary },
-  modalBtnTextOutline: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  modalBtnTextOutline: { fontSize: 14, fontWeight: '600', color: c.text },
   modalBtnTextPrimary: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
 });

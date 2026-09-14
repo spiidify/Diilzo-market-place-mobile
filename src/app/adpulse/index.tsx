@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   createAdCampaign,
   getAdCampaigns,
@@ -27,6 +28,8 @@ import {
 
 export default function AdPulseStudioScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
   const [analytics, setAnalytics] = useState<AdPulseAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,7 +234,7 @@ export default function AdPulseStudioScreen() {
           scrollEnabled={false}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="bullhorn-outline" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="bullhorn-outline" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyText}>No campaigns yet</Text>
               <Text style={styles.emptySub}>Tap "Create" to launch your first ad</Text>
             </View>
@@ -246,7 +249,7 @@ export default function AdPulseStudioScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create New Campaign</Text>
               <Pressable onPress={() => setShowCreateModal(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
               </Pressable>
             </View>
 
@@ -257,7 +260,7 @@ export default function AdPulseStudioScreen() {
                 value={formName}
                 onChangeText={setFormName}
                 placeholder="e.g. Summer Boost 2026"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
               />
             </View>
 
@@ -269,7 +272,7 @@ export default function AdPulseStudioScreen() {
                   value={formProductId}
                   onChangeText={setFormProductId}
                   placeholder="optional"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="numeric"
                 />
               </View>
@@ -280,7 +283,7 @@ export default function AdPulseStudioScreen() {
                   value={formKeywords}
                   onChangeText={setFormKeywords}
                   placeholder="e.g. audio, tech"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
             </View>
@@ -293,7 +296,7 @@ export default function AdPulseStudioScreen() {
                   value={formDailyBudget}
                   onChangeText={setFormDailyBudget}
                   placeholder="e.g. 50000"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="numeric"
                 />
               </View>
@@ -304,7 +307,7 @@ export default function AdPulseStudioScreen() {
                   value={formBidPerClick}
                   onChangeText={setFormBidPerClick}
                   placeholder="50"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="numeric"
                 />
               </View>
@@ -331,11 +334,11 @@ export default function AdPulseStudioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
 
   body: { flex: 1 },
 
@@ -352,20 +355,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingTop: 12,
   },
   analyticsCard: {
-    flex: 1, minWidth: '31%', backgroundColor: '#FFFFFF',
+    flex: 1, minWidth: '31%', backgroundColor: c.surface,
     borderRadius: 14, padding: 14, gap: 6,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   analyticsIconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  analyticsValue: { fontSize: 20, fontWeight: '800', color: Brand.text },
-  analyticsLabel: { fontSize: 10, color: Brand.textSecondary, fontWeight: '600' },
+  analyticsValue: { fontSize: 20, fontWeight: '800', color: c.text },
+  analyticsLabel: { fontSize: 10, color: c.textSecondary, fontWeight: '600' },
 
   // ── Section header ──────────────────────────────────────────────
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 12, paddingTop: 20, paddingBottom: 10,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text },
   createBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: Brand.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
@@ -374,33 +377,33 @@ const styles = StyleSheet.create({
 
   // ── Campaign card ───────────────────────────────────────────────
   campaignCard: {
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginBottom: 10,
+    backgroundColor: c.surface, marginHorizontal: 12, marginBottom: 10,
     padding: 16, borderRadius: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   campaignHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  campaignName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  campaignName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   campaignStatusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   campaignStatusText: { fontSize: 11, fontWeight: '700' },
-  campaignProduct: { fontSize: 12, color: Brand.textSecondary, marginBottom: 10 },
+  campaignProduct: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
   campaignMetrics: {
     flexDirection: 'row', gap: 8, paddingVertical: 10,
-    borderTopWidth: 1, borderTopColor: Brand.borderLight,
+    borderTopWidth: 1, borderTopColor: c.borderLight,
   },
   metricItem: { flex: 1, alignItems: 'center' },
-  metricItemValue: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  metricItemLabel: { fontSize: 10, color: Brand.textTertiary, marginTop: 2 },
+  metricItemValue: { fontSize: 14, fontWeight: '800', color: c.text },
+  metricItemLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
 
   budgetBar: {
-    height: 6, backgroundColor: Brand.borderLight, borderRadius: 3, overflow: 'hidden', marginTop: 8,
+    height: 6, backgroundColor: c.borderLight, borderRadius: 3, overflow: 'hidden', marginTop: 8,
   },
   budgetFill: { height: '100%', borderRadius: 3 },
-  budgetText: { fontSize: 11, color: Brand.textSecondary, marginTop: 4 },
+  budgetText: { fontSize: 11, color: c.textSecondary, marginTop: 4 },
 
   // ── Empty state ────────────────────────────────────────────────
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 
   // ── Modal ──────────────────────────────────────────────────────
   modalOverlay: {
@@ -408,7 +411,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, paddingBottom: 40,
     maxHeight: '90%',
   },
@@ -416,14 +419,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 20,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
 
   formGroup: { marginBottom: 14, flex: 1 },
   formRow: { flexDirection: 'row', gap: 12 },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6 },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6 },
   formInput: {
-    borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.text,
+    borderWidth: 1.5, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text,
   },
 
   launchBtn: {

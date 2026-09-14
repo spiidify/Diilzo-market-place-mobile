@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   commissionConfigAction,
   getCommissionConfig,
@@ -22,6 +23,8 @@ import {
 
 export default function AdminCommissionConfigScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [configs, setConfigs] = useState<AdminCommissionConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -98,8 +101,8 @@ export default function AdminCommissionConfigScreen() {
     <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => showActions(item)}>
       <View style={styles.cardHeader}>
         <Text style={styles.catName} numberOfLines={1}>{item.category_name}</Text>
-        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : Brand.textTertiary) + '20' }]}>
-          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : Brand.textTertiary }]}>
+        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : colors.textTertiary) + '20' }]}>
+          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : colors.textTertiary }]}>
             {item.is_active ? 'Active' : 'Inactive'}
           </Text>
         </View>
@@ -123,7 +126,7 @@ export default function AdminCommissionConfigScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="percent-circle-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="percent-circle-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No commission configs</Text>
                 <Text style={styles.emptySub}>No commission configurations set up</Text>
               </View>
@@ -135,18 +138,18 @@ export default function AdminCommissionConfigScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  catName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  catName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
   rateText: { fontSize: 14, fontWeight: '700', color: Brand.accent },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

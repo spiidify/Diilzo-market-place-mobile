@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   activatePromotion,
   fetchMyPromotions,
@@ -26,14 +27,6 @@ import {
   resumePromotion,
 } from '@/services/promotions';
 import type { ProductPromotion, PromotionAnalytics, PromotionPackage } from '@/types';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: Brand.rating,
-  active: Brand.success,
-  paused: '#8B5CF6',
-  expired: Brand.textTertiary,
-  cancelled: Brand.danger,
-};
 
 const PACKAGE_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
   top_ad: 'pin',
@@ -53,6 +46,16 @@ function formatDate(dateStr: string | null): string {
 
 export default function SellerPromotionsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: Brand.rating,
+    active: Brand.success,
+    paused: '#8B5CF6',
+    expired: colors.textTertiary,
+    cancelled: Brand.danger,
+  };
 
   const [promotions, setPromotions] = useState<ProductPromotion[]>([]);
   const [packages, setPackages] = useState<PromotionPackage[]>([]);
@@ -152,7 +155,7 @@ export default function SellerPromotionsScreen() {
   };
 
   const renderPromotion = ({ item }: { item: ProductPromotion }) => {
-    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
     const iconName = item.package_type ? PACKAGE_ICONS[item.package_type] : 'bullhorn-outline';
 
     return (
@@ -339,7 +342,7 @@ export default function SellerPromotionsScreen() {
           <Text style={styles.sectionTitle}>My Promotions ({promotions.length})</Text>
           {promotions.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="bullhorn-outline" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="bullhorn-outline" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyTitle}>No Promotions Yet</Text>
               <Text style={styles.emptySubtitle}>
                 Boost your products to appear at the top of search results and category pages
@@ -362,7 +365,7 @@ export default function SellerPromotionsScreen() {
                 {selectedPackage ? selectedPackage.name : 'Select Package'}
               </Text>
               <Pressable onPress={() => setShowPurchaseModal(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.text} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
 
@@ -400,7 +403,7 @@ export default function SellerPromotionsScreen() {
                     onChangeText={setProductId}
                     placeholder="Enter product ID"
                     keyboardType="numeric"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                   />
 
                   {selectedPackage.package_type === 'sponsored' && (
@@ -411,7 +414,7 @@ export default function SellerPromotionsScreen() {
                         value={targetKeywords}
                         onChangeText={setTargetKeywords}
                         placeholder="e.g. phone, electronics, gadget"
-                        placeholderTextColor={Brand.textTertiary}
+                        placeholderTextColor={colors.textTertiary}
                       />
 
                       <Text style={styles.formLabel}>Bid Per Click (UGX)</Text>
@@ -421,7 +424,7 @@ export default function SellerPromotionsScreen() {
                         onChangeText={setBidPerClick}
                         placeholder="50"
                         keyboardType="numeric"
-                        placeholderTextColor={Brand.textTertiary}
+                        placeholderTextColor={colors.textTertiary}
                       />
 
                       <Text style={styles.formLabel}>Ad Spend Budget (UGX, 0 = unlimited)</Text>
@@ -431,7 +434,7 @@ export default function SellerPromotionsScreen() {
                         onChangeText={setAdBudget}
                         placeholder="50000"
                         keyboardType="numeric"
-                        placeholderTextColor={Brand.textTertiary}
+                        placeholderTextColor={colors.textTertiary}
                       />
                     </>
                   )}
@@ -462,65 +465,65 @@ export default function SellerPromotionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F8FAF9' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   body: { flex: 1 },
   bodyContent: { padding: 16, paddingBottom: 40 },
   centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  loadingText: { marginTop: 12, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 12, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, color: Brand.danger, fontSize: 14, textAlign: 'center' },
   retryBtn: {
     marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24,
     paddingVertical: 10, borderRadius: 8,
   },
   retryText: { color: '#FFFFFF', fontWeight: '700' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Brand.text, marginBottom: 12, marginTop: 8 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 12, marginTop: 8 },
 
   // Analytics
   analyticsCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16,
-    marginBottom: 20, borderWidth: 1, borderColor: Brand.borderLight,
+    backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    marginBottom: 20, borderWidth: 1, borderColor: c.borderLight,
   },
   analyticsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   analyticsItem: { width: '31%', alignItems: 'center', paddingVertical: 8 },
-  analyticsValue: { fontSize: 16, fontWeight: '700', color: Brand.text },
-  analyticsLabel: { fontSize: 11, color: Brand.textTertiary, marginTop: 2 },
+  analyticsValue: { fontSize: 16, fontWeight: '700', color: c.text },
+  analyticsLabel: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
 
   // Packages
   packagesScroll: { marginBottom: 20 },
   packageCard: {
-    width: 140, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16,
-    marginRight: 12, alignItems: 'center', borderWidth: 1, borderColor: Brand.borderLight,
+    width: 140, backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    marginRight: 12, alignItems: 'center', borderWidth: 1, borderColor: c.borderLight,
   },
   packageIcon: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: Brand.primary + '15',
     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  packageName: { fontSize: 14, fontWeight: '700', color: Brand.text, textAlign: 'center' },
-  packageDuration: { fontSize: 12, color: Brand.textTertiary, marginTop: 2 },
+  packageName: { fontSize: 14, fontWeight: '700', color: c.text, textAlign: 'center' },
+  packageDuration: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
   packagePrice: { fontSize: 15, fontWeight: '700', color: Brand.primary, marginTop: 6 },
 
   // Promotion cards
   promoCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16,
-    marginBottom: 12, borderWidth: 1, borderColor: Brand.borderLight,
+    backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: c.borderLight,
   },
   promoHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   promoIcon: {
     width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
   promoInfo: { flex: 1 },
-  promoProduct: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  promoPackage: { fontSize: 12, color: Brand.textTertiary, marginTop: 2 },
+  promoProduct: { fontSize: 15, fontWeight: '700', color: c.text },
+  promoPackage: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
 
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   statItem: { alignItems: 'center' },
-  statValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  statLabel: { fontSize: 10, color: Brand.textTertiary, marginTop: 2 },
+  statValue: { fontSize: 13, fontWeight: '700', color: c.text },
+  statLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
 
-  dateRange: { fontSize: 12, color: Brand.textSecondary, marginBottom: 10 },
+  dateRange: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -528,36 +531,36 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   keywordsWrap: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
-  keywordChip: { backgroundColor: Brand.surfaceAlt, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  keywordText: { fontSize: 11, color: Brand.textSecondary },
+  keywordChip: { backgroundColor: c.surfaceAlt, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  keywordText: { fontSize: 11, color: c.textSecondary },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: Brand.textTertiary, textAlign: 'center', marginTop: 6, paddingHorizontal: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginTop: 12 },
+  emptySubtitle: { fontSize: 14, color: c.textTertiary, textAlign: 'center', marginTop: 6, paddingHorizontal: 20 },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
     maxHeight: '85%', padding: 20,
   },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: Brand.text },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: c.text },
   packageList: { gap: 8 },
   packageListItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 10,
+    backgroundColor: c.surfaceAlt, borderRadius: 10,
   },
   packageListInfo: { flex: 1 },
-  packageListName: { fontSize: 15, fontWeight: '600', color: Brand.text },
-  packageListDesc: { fontSize: 12, color: Brand.textTertiary },
+  packageListName: { fontSize: 15, fontWeight: '600', color: c.text },
+  packageListDesc: { fontSize: 12, color: c.textTertiary },
   packageListPrice: { fontSize: 15, fontWeight: '700', color: Brand.primary },
   formContainer: { gap: 12 },
-  formLabel: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  formLabel: { fontSize: 14, fontWeight: '600', color: c.text },
   formInput: {
-    borderWidth: 1, borderColor: Brand.border, borderRadius: 8,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Brand.text,
+    borderWidth: 1, borderColor: c.border, borderRadius: 8,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text,
   },
   purchaseBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

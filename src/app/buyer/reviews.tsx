@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -16,6 +16,7 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { fetchOrders } from '@/services/orders';
 import type { OrderItem } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 // A single product line-item from a delivered order that the buyer can review.
 interface ReviewableItem {
@@ -28,6 +29,8 @@ interface ReviewableItem {
 
 export default function BuyerReviewsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<ReviewableItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,7 +79,7 @@ export default function BuyerReviewsScreen() {
               <Image source={{ uri: img }} style={styles.image} resizeMode="cover" />
             ) : (
               <View style={styles.noImage}>
-                <MaterialCommunityIcons name="image-outline" size={28} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="image-outline" size={28} color={colors.textTertiary} />
               </View>
             )}
           </View>
@@ -119,7 +122,7 @@ export default function BuyerReviewsScreen() {
           </View>
         ) : items.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="star-outline" size={56} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="star-outline" size={56} color={colors.textTertiary} />
             <Text style={styles.title}>No reviews yet</Text>
             <Text style={styles.subtitle}>
               Products from your delivered orders will appear here for you to review.
@@ -153,31 +156,31 @@ export default function BuyerReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: Brand.text },
-  subtitle: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: c.text },
+  subtitle: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   shopBtn: { marginTop: 20, backgroundColor: Brand.primary, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   errorTitle: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.danger },
-  errorSub: { marginTop: 4, fontSize: 13, color: Brand.textTertiary, textAlign: 'center' },
+  errorSub: { marginTop: 4, fontSize: 13, color: c.textTertiary, textAlign: 'center' },
   retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700' },
   list: { padding: Spacing.three, gap: Spacing.two },
   card: {
-    backgroundColor: Brand.surface, borderRadius: 14, padding: Spacing.three, gap: Spacing.two,
-    borderWidth: 1, borderColor: Brand.borderLight,
+    backgroundColor: c.surface, borderRadius: 14, padding: Spacing.three, gap: Spacing.two,
+    borderWidth: 1, borderColor: c.borderLight,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardTop: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   imageWrap: { width: 64, height: 64, borderRadius: 10, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
-  noImage: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: Brand.surfaceAlt },
+  noImage: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: c.surfaceAlt },
   cardBody: { flex: 1, gap: 3 },
-  name: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  orderRef: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary },
-  dateText: { fontSize: 11, color: Brand.textTertiary },
+  name: { fontSize: 14, fontWeight: '700', color: c.text },
+  orderRef: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
+  dateText: { fontSize: 11, color: c.textTertiary },
   reviewBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: Brand.primary, paddingVertical: 10, borderRadius: 10, marginTop: 4,

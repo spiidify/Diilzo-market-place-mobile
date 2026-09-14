@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
   cancelSubscription,
@@ -27,6 +28,8 @@ import {
 
 export default function SellerSubscriptionScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [plans, setPlans] = useState<SellerPlan[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
@@ -190,20 +193,20 @@ export default function SellerSubscriptionScreen() {
                 <Text style={styles.planYearly}>UGX {fmt(plan.yearly_price)}/year</Text>
 
                 <View style={styles.featuresList}>
-                  <FeatureItem text={`${plan.product_limit || 'Unlimited'} products`} />
-                  <FeatureItem text={`${plan.commission_discount}% commission discount`} />
-                  {plan.features?.advanced_analytics ? <FeatureItem text="Advanced analytics" /> : null}
-                  {plan.features?.priority_support ? <FeatureItem text="Priority support" /> : null}
-                  {plan.features?.international_selling ? <FeatureItem text="International selling" /> : null}
-                  {plan.features?.storefront_customization ? <FeatureItem text="Storefront customization" /> : null}
-                  {plan.features?.b2b_tools ? <FeatureItem text="B2B tools" /> : null}
-                  {plan.features?.api_access ? <FeatureItem text="API access" /> : null}
-                  {plan.features?.custom_domain ? <FeatureItem text="Custom domain" /> : null}
-                  {Number(plan.advertising_credit) > 0 ? <FeatureItem text={`UGX ${fmt(plan.advertising_credit)} ad credit`} /> : null}
+                  <FeatureItem text={`${plan.product_limit || 'Unlimited'} products`} styles={styles} />
+                  <FeatureItem text={`${plan.commission_discount}% commission discount`} styles={styles} />
+                  {plan.features?.advanced_analytics ? <FeatureItem text="Advanced analytics" styles={styles} /> : null}
+                  {plan.features?.priority_support ? <FeatureItem text="Priority support" styles={styles} /> : null}
+                  {plan.features?.international_selling ? <FeatureItem text="International selling" styles={styles} /> : null}
+                  {plan.features?.storefront_customization ? <FeatureItem text="Storefront customization" styles={styles} /> : null}
+                  {plan.features?.b2b_tools ? <FeatureItem text="B2B tools" styles={styles} /> : null}
+                  {plan.features?.api_access ? <FeatureItem text="API access" styles={styles} /> : null}
+                  {plan.features?.custom_domain ? <FeatureItem text="Custom domain" styles={styles} /> : null}
+                  {Number(plan.advertising_credit) > 0 ? <FeatureItem text={`UGX ${fmt(plan.advertising_credit)} ad credit`} styles={styles} /> : null}
                 </View>
 
                 <Pressable
-                  style={[styles.subscribeBtn, isCurrent && { backgroundColor: Brand.border }, plan.is_featured && !isCurrent && { backgroundColor: Brand.primary }]}
+                  style={[styles.subscribeBtn, isCurrent && { backgroundColor: colors.border }, plan.is_featured && !isCurrent && { backgroundColor: Brand.primary }]}
                   disabled={isCurrent || subscribing}
                   onPress={() => setSelectedPlan(plan)}
                 >
@@ -218,7 +221,7 @@ export default function SellerSubscriptionScreen() {
           <Pressable style={styles.billingLink} onPress={() => router.push('/seller/billing')}>
             <MaterialCommunityIcons name="history" size={20} color={Brand.primary} />
             <Text style={styles.billingLinkText}>View Billing History</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
           </Pressable>
         </View>
       </ScrollView>
@@ -262,7 +265,7 @@ export default function SellerSubscriptionScreen() {
   );
 }
 
-function FeatureItem({ text }: { text: string }) {
+function FeatureItem({ text, styles }: { text: string; styles: ReturnType<typeof createStyles> }) {
   return (
     <View style={styles.featureItem}>
       <MaterialCommunityIcons name="check" size={14} color={Brand.success} />
@@ -271,8 +274,8 @@ function FeatureItem({ text }: { text: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
@@ -285,8 +288,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#DCF5EC', borderRadius: 14, padding: 14, marginBottom: 12,
   },
   currentPlanInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  currentPlanTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  currentPlanSub: { fontSize: 12, color: Brand.textSecondary, textTransform: 'capitalize' },
+  currentPlanTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  currentPlanSub: { fontSize: 12, color: c.textSecondary, textTransform: 'capitalize' },
   cancelBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: Brand.danger },
   cancelBtnText: { fontSize: 12, fontWeight: '700', color: Brand.danger },
 
@@ -294,14 +297,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#DCF5EC', borderRadius: 12, padding: 12, marginBottom: 12,
   },
-  freeBannerText: { flex: 1, fontSize: 12, color: Brand.textSecondary },
+  freeBannerText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
   planCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Brand.border,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   planHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  planName: { fontSize: 18, fontWeight: '800', color: Brand.text, flex: 1 },
+  planName: { fontSize: 18, fontWeight: '800', color: c.text, flex: 1 },
   popularBadge: { backgroundColor: Brand.primary, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   popularText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
   freeBadge: { backgroundColor: '#DCF5EC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
@@ -309,12 +312,12 @@ const styles = StyleSheet.create({
 
   planPriceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },
   planPrice: { fontSize: 24, fontWeight: '900', color: Brand.primary },
-  planPeriod: { fontSize: 13, color: Brand.textSecondary, marginLeft: 4 },
-  planYearly: { fontSize: 12, color: Brand.textTertiary, marginBottom: 14 },
+  planPeriod: { fontSize: 13, color: c.textSecondary, marginLeft: 4 },
+  planYearly: { fontSize: 12, color: c.textTertiary, marginBottom: 14 },
 
   featuresList: { gap: 6, marginBottom: 16 },
   featureItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  featureText: { fontSize: 13, color: Brand.text },
+  featureText: { fontSize: 13, color: c.text },
 
   subscribeBtn: {
     backgroundColor: Brand.dark, borderRadius: 10, paddingVertical: 12, alignItems: 'center',
@@ -323,21 +326,21 @@ const styles = StyleSheet.create({
 
   billingLink: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginTop: 8,
+    backgroundColor: c.surface, borderRadius: 12, padding: 14, marginTop: 8,
   },
   billingLinkText: { flex: 1, fontSize: 14, fontWeight: '600', color: Brand.primary },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text, marginBottom: 4 },
-  modalPrice: { fontSize: 14, color: Brand.textSecondary, marginBottom: 16 },
-  modalLabel: { fontSize: 13, fontWeight: '600', color: Brand.text, marginBottom: 8 },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text, marginBottom: 4 },
+  modalPrice: { fontSize: 14, color: c.textSecondary, marginBottom: 16 },
+  modalLabel: { fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 },
   paymentMethods: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  paymentMethod: { flex: 1, borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, alignItems: 'center' },
-  paymentMethodText: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  paymentMethod: { flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, alignItems: 'center' },
+  paymentMethodText: { fontSize: 13, fontWeight: '600', color: c.text },
   modalActions: { flexDirection: 'row', gap: 10 },
-  modalCancelBtn: { flex: 1, borderWidth: 1, borderColor: Brand.border, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  modalCancelText: { fontSize: 14, fontWeight: '600', color: Brand.textSecondary },
+  modalCancelBtn: { flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  modalCancelText: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
   modalConfirmBtn: { flex: 1, backgroundColor: Brand.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   modalConfirmText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });

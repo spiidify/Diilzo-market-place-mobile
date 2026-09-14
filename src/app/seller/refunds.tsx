@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getRefunds, type SellerRefund } from '@/services/seller';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -31,6 +32,8 @@ const STATUS_ICONS: Record<string, string> = {
 
 export default function SellerRefundsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [refunds, setRefunds] = useState<SellerRefund[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,7 +63,7 @@ export default function SellerRefundsScreen() {
   const failedCount = refunds.filter((r) => r.status === 'failed').length;
 
   const renderItem = ({ item }: { item: SellerRefund }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     const icon = STATUS_ICONS[item.status] || 'help-circle-outline';
     return (
       <View style={styles.card}>
@@ -90,7 +93,7 @@ export default function SellerRefundsScreen() {
           <View style={styles.footerLeft}>
             {item.payment_method ? (
               <View style={styles.footerChip}>
-                <MaterialCommunityIcons name="credit-card-outline" size={12} color={Brand.textSecondary} />
+                <MaterialCommunityIcons name="credit-card-outline" size={12} color={colors.textSecondary} />
                 <Text style={styles.footerChipText}>{item.payment_method}</Text>
               </View>
             ) : null}
@@ -141,7 +144,7 @@ export default function SellerRefundsScreen() {
                     <Text style={styles.statLabel}>Pending</Text>
                   </View>
                   <View style={styles.statCard}>
-                    <Text style={[styles.statValue, { color: failedCount > 0 ? Brand.danger : Brand.textTertiary }]}>{failedCount}</Text>
+                    <Text style={[styles.statValue, { color: failedCount > 0 ? Brand.danger : colors.textTertiary }]}>{failedCount}</Text>
                     <Text style={styles.statLabel}>Failed</Text>
                   </View>
                 </View>
@@ -149,7 +152,7 @@ export default function SellerRefundsScreen() {
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="check-circle-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="check-circle-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No refunds</Text>
                 <Text style={styles.emptySub}>No refunds have been issued for your store</Text>
               </View>
@@ -161,8 +164,8 @@ export default function SellerRefundsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
@@ -172,42 +175,42 @@ const styles = StyleSheet.create({
   // Stats row
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   statCard: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14,
+    flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 14,
     alignItems: 'center', gap: 4,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  statValue: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  statLabel: { fontSize: 11, color: Brand.textTertiary },
+  statValue: { fontSize: 16, fontWeight: '800', color: c.text },
+  statLabel: { fontSize: 11, color: c.textTertiary },
 
   // Cards
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
   orderInfo: { gap: 2 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
-  paymentId: { fontSize: 11, color: Brand.textTertiary, fontFamily: 'monospace' },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
+  paymentId: { fontSize: 11, color: c.textTertiary, fontFamily: 'monospace' },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  amountLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary },
+  amountLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
   amountValue: { fontSize: 18, fontWeight: '800', color: Brand.danger },
-  currency: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  currency: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
 
-  reason: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8, lineHeight: 18 },
+  reason: { fontSize: 13, color: c.textSecondary, marginBottom: 8, lineHeight: 18 },
 
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   footerLeft: { flexDirection: 'row', gap: 6, flex: 1, flexWrap: 'wrap' },
   footerChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Brand.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    backgroundColor: c.surfaceAlt, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
   },
-  footerChipText: { fontSize: 11, color: Brand.textSecondary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  footerChipText: { fontSize: 11, color: c.textSecondary },
+  dateText: { fontSize: 12, color: c.textTertiary },
 
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary, textAlign: 'center' },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary, textAlign: 'center' },
 });

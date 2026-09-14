@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getSellerThreadDetail,
   getSellerThreads,
@@ -27,6 +28,8 @@ import { playSound, Sounds } from '@/services/sound';
 
 export default function SellerMessagesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [threads, setThreads] = useState<SellerThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -188,7 +191,7 @@ export default function SellerMessagesScreen() {
                 value={replyText}
                 onChangeText={setReplyText}
                 placeholder="Type a message..."
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 multiline
                 maxLength={1000}
               />
@@ -216,7 +219,7 @@ export default function SellerMessagesScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="chat-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chat-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No messages</Text>
                 <Text style={styles.emptySub}>Buyer conversations will appear here</Text>
               </View>
@@ -229,41 +232,41 @@ export default function SellerMessagesScreen() {
 }
 
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  threadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  threadCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   threadAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.primary + '12', justifyContent: 'center', alignItems: 'center' },
   threadInfo: { flex: 1, gap: 2 },
   threadHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  threadName: { fontSize: 14, fontWeight: '800', color: Brand.text, flex: 1 },
+  threadName: { fontSize: 14, fontWeight: '800', color: c.text, flex: 1 },
   unreadBadge: { backgroundColor: Brand.danger, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 6, justifyContent: 'center', alignItems: 'center' },
   unreadText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
   threadProduct: { fontSize: 12, fontWeight: '600', color: Brand.primary },
-  threadLastMsg: { fontSize: 12, color: Brand.textTertiary },
-  threadTime: { fontSize: 11, color: Brand.textTertiary },
+  threadLastMsg: { fontSize: 12, color: c.textTertiary },
+  threadTime: { fontSize: 11, color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  chatContainer: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  productBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.borderLight },
-  productBarText: { flex: 1, fontSize: 13, fontWeight: '600', color: Brand.text },
+  chatContainer: { flex: 1, backgroundColor: c.surfaceAlt },
+  productBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  productBarText: { flex: 1, fontSize: 13, fontWeight: '600', color: c.text },
   chatList: { padding: 12, paddingBottom: 80 },
   msgRow: { flexDirection: 'row', marginBottom: 8 },
   msgRowMe: { justifyContent: 'flex-end' },
   msgRowThem: { justifyContent: 'flex-start' },
   msgBubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16 },
   msgBubbleMe: { backgroundColor: Brand.primary, borderBottomRightRadius: 4 },
-  msgBubbleThem: { backgroundColor: '#FFFFFF', borderBottomLeftRadius: 4, elevation: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  msgText: { fontSize: 14, color: Brand.text },
+  msgBubbleThem: { backgroundColor: c.surface, borderBottomLeftRadius: 4, elevation: 1, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  msgText: { fontSize: 14, color: c.text },
   msgTextMe: { color: '#FFFFFF' },
-  msgTime: { fontSize: 10, color: Brand.textTertiary, marginTop: 4, alignSelf: 'flex-end' },
+  msgTime: { fontSize: 10, color: c.textTertiary, marginTop: 4, alignSelf: 'flex-end' },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)' },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: Brand.borderLight },
-  replyInput: { flex: 1, borderWidth: 1.5, borderColor: Brand.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, color: Brand.text, maxHeight: 100 },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.borderLight },
+  replyInput: { flex: 1, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, color: c.text, maxHeight: 100 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
 });

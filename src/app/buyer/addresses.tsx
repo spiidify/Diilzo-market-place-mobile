@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -23,6 +23,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { apiRequest } from '@/services/api';
 import type { Address } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const LABELS: { key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
   { key: 'home', icon: 'home' },
@@ -46,6 +47,8 @@ const EMPTY_FORM = {
 
 export default function BuyerAddressesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +171,7 @@ export default function BuyerAddressesScreen() {
             <Text style={styles.cardCountry}>{item.country}</Text>
             {item.phone ? (
               <View style={styles.phoneRow}>
-                <MaterialCommunityIcons name="phone-outline" size={13} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="phone-outline" size={13} color={colors.textTertiary} />
                 <Text style={styles.cardPhone}>{item.phone}</Text>
               </View>
             ) : null}
@@ -262,7 +265,7 @@ export default function BuyerAddressesScreen() {
         <SafeAreaView edges={['top']} style={styles.modalSafeArea}>
           <View style={styles.modalHeader}>
             <Pressable onPress={closeForm} hitSlop={12} style={styles.closeBtn}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+              <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
             </Pressable>
             <Text style={styles.modalTitle}>{editing ? 'Edit Address' : 'New Address'}</Text>
             <View style={styles.headerSpacer} />
@@ -292,7 +295,7 @@ export default function BuyerAddressesScreen() {
                       <MaterialCommunityIcons
                         name={l.icon}
                         size={16}
-                        color={active ? '#FFFFFF' : Brand.textSecondary}
+                        color={active ? '#FFFFFF' : colors.textSecondary}
                       />
                       <Text style={[styles.labelChipText, active && styles.labelChipTextActive]}>
                         {l.key}
@@ -308,7 +311,7 @@ export default function BuyerAddressesScreen() {
                 value={form.street}
                 onChangeText={(v) => update('street', v)}
                 placeholder="e.g. Plot 12, Kampala Road"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 returnKeyType="next"
               />
 
@@ -320,7 +323,7 @@ export default function BuyerAddressesScreen() {
                     value={form.postal_code}
                     onChangeText={(v) => update('postal_code', v)}
                     placeholder="00000"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     returnKeyType="next"
                   />
                 </View>
@@ -355,7 +358,7 @@ export default function BuyerAddressesScreen() {
                 value={form.phone}
                 onChangeText={(v) => update('phone', v)}
                 placeholder="+256 7XX XXX XXX"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="phone-pad"
                 returnKeyType="done"
               />
@@ -388,8 +391,8 @@ export default function BuyerAddressesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -413,8 +416,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
-  emptySubtitle: { marginTop: 6, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  emptySubtitle: { marginTop: 6, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   emptyAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -428,11 +431,11 @@ const styles = StyleSheet.create({
   emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   list: { padding: 16, gap: 12, paddingBottom: 96 },
   card: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     gap: 12,
   },
   cardTop: { flexDirection: 'row', gap: 12 },
@@ -446,7 +449,7 @@ const styles = StyleSheet.create({
   },
   cardInfo: { flex: 1, gap: 2 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: Brand.text, textTransform: 'capitalize' },
+  cardLabel: { fontSize: 15, fontWeight: '700', color: c.text, textTransform: 'capitalize' },
   defaultBadge: {
     backgroundColor: Brand.primary,
     paddingHorizontal: 8,
@@ -454,17 +457,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   defaultText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  cardStreet: { fontSize: 14, color: Brand.text },
-  cardCity: { fontSize: 13, color: Brand.textSecondary },
-  cardCountry: { fontSize: 13, color: Brand.textSecondary },
+  cardStreet: { fontSize: 14, color: c.text },
+  cardCity: { fontSize: 13, color: c.textSecondary },
+  cardCountry: { fontSize: 13, color: c.textSecondary },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  cardPhone: { fontSize: 13, color: Brand.textTertiary },
+  cardPhone: { fontSize: 13, color: c.textTertiary },
   cardActions: {
     flexDirection: 'row',
     gap: 24,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Brand.borderLight,
+    borderTopColor: c.borderLight,
   },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actionEditText: { color: Brand.primary, fontSize: 13, fontWeight: '600' },
@@ -486,7 +489,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   // Modal (full screen)
-  modalSafeArea: { flex: 1, backgroundColor: Brand.surface },
+  modalSafeArea: { flex: 1, backgroundColor: c.surface },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -494,10 +497,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
-    backgroundColor: Brand.surface,
+    borderBottomColor: c.borderLight,
+    backgroundColor: c.surface,
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: Brand.text },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: c.text },
   closeBtn: { padding: 4 },
   headerSpacer: { width: 24 },
   formAvoid: { flex: 1 },
@@ -506,21 +509,21 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     marginTop: 14,
     marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   input: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   labelRow: { flexDirection: 'row', gap: 8 },
   labelChip: {
@@ -531,15 +534,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   labelChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   labelChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textTransform: 'capitalize',
   },
   labelChipTextActive: { color: '#FFFFFF' },
@@ -552,23 +555,23 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   toggleRowActive: {
     backgroundColor: Brand.primary + '12',
     borderColor: Brand.primary,
   },
   toggleTextWrap: { flex: 1, paddingRight: 12 },
-  toggleTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  toggleSubtitle: { fontSize: 12, color: Brand.textSecondary, marginTop: 2 },
+  toggleTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  toggleSubtitle: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
   togglePill: {
     width: 52,
     height: 30,
     borderRadius: 15,
-    backgroundColor: Brand.border,
+    backgroundColor: c.border,
     padding: 3,
     justifyContent: 'center',
   },

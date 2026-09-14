@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,10 +15,13 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { deleteProduct, getMyProducts } from '@/services/seller';
 
 export default function SellerProductsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,14 +108,14 @@ export default function SellerProductsScreen() {
           <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="contain" />
         ) : (
           <View style={styles.productImageFallback}>
-            <MaterialCommunityIcons name="package-variant" size={28} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant" size={28} color={colors.textTertiary} />
           </View>
         )}
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
           <Text style={styles.productPrice}>UGX {Number(item.final_price || item.price).toLocaleString()}</Text>
           <View style={styles.productMeta}>
-            <View style={[styles.statusDot, { backgroundColor: item.is_active ? '#16A34A' : Brand.textTertiary }]} />
+            <View style={[styles.statusDot, { backgroundColor: item.is_active ? '#16A34A' : colors.textTertiary }]} />
             <Text style={styles.productStatus}>{item.is_active ? 'Active' : 'Inactive'}</Text>
             <Text style={styles.stockText}> · {item.stock_quantity} in stock</Text>
           </View>
@@ -126,7 +129,7 @@ export default function SellerProductsScreen() {
           <MaterialCommunityIcons
             name={item.is_active ? 'eye-off-outline' : 'eye-outline'}
             size={18}
-            color={Brand.textSecondary}
+            color={colors.textSecondary}
           />
           <Text style={styles.actionBtnText}>{item.is_active ? 'Hide' : 'Show'}</Text>
         </Pressable>
@@ -178,7 +181,7 @@ export default function SellerProductsScreen() {
           </View>
         ) : products.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="package-variant" size={56} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant" size={56} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No products yet</Text>
             <Text style={styles.emptySub}>Add your first product to start selling</Text>
             <Pressable
@@ -207,11 +210,11 @@ export default function SellerProductsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
-  emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: c.text },
+  emptySub: { marginTop: 4, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -224,26 +227,26 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   list: { padding: 12, gap: 10 },
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface, borderRadius: 14, overflow: 'hidden',
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardBody: { flexDirection: 'row', gap: 12, padding: 12 },
   productImage: { width: 70, height: 70, borderRadius: 10 },
-  productImageFallback: { width: 70, height: 70, borderRadius: 10, backgroundColor: Brand.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  productImageFallback: { width: 70, height: 70, borderRadius: 10, backgroundColor: c.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   productInfo: { flex: 1, gap: 4, justifyContent: 'center' },
-  productName: { fontSize: 15, fontWeight: '600', color: Brand.text },
+  productName: { fontSize: 15, fontWeight: '600', color: c.text },
   productPrice: { fontSize: 14, fontWeight: '700', color: Brand.primary },
   productMeta: { flexDirection: 'row', alignItems: 'center' },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  productStatus: { fontSize: 12, color: Brand.textSecondary, fontWeight: '600' },
-  stockText: { fontSize: 12, color: Brand.textTertiary },
+  productStatus: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
+  stockText: { fontSize: 12, color: c.textTertiary },
   cardActions: {
-    flexDirection: 'row', borderTopWidth: 1, borderTopColor: Brand.border,
+    flexDirection: 'row', borderTopWidth: 1, borderTopColor: c.border,
   },
   actionBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingVertical: 10,
   },
-  actionBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
-  deleteBtn: { borderLeftWidth: 1, borderLeftColor: Brand.border },
+  actionBtnText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  deleteBtn: { borderLeftWidth: 1, borderLeftColor: c.border },
 });

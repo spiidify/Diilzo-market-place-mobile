@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,12 +13,15 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getAuditLog, type AuditLog } from '@/services/financial';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function AdminAuditLogScreen() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
     try {
@@ -102,7 +105,7 @@ export default function AdminAuditLogScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="clipboard-list-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="clipboard-list-outline" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No audit logs found</Text>
           </View>
         }
@@ -111,30 +114,30 @@ export default function AdminAuditLogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
 
   list: { padding: 12, paddingBottom: 32 },
 
   logCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 8,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 8,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   logHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   logIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#DCF5EC', justifyContent: 'center', alignItems: 'center' },
   logInfo: { flex: 1, gap: 2 },
-  logAction: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  logUser: { fontSize: 11, color: Brand.textTertiary },
-  logDate: { fontSize: 11, color: Brand.textTertiary },
+  logAction: { fontSize: 13, fontWeight: '700', color: c.text },
+  logUser: { fontSize: 11, color: c.textTertiary },
+  logDate: { fontSize: 11, color: c.textTertiary },
 
-  logDetails: { backgroundColor: Brand.surfaceAlt, borderRadius: 8, padding: 10 },
+  logDetails: { backgroundColor: c.surfaceAlt, borderRadius: 8, padding: 10 },
   logRefRow: { flexDirection: 'row', gap: 6 },
-  logRefLabel: { fontSize: 11, color: Brand.textSecondary, fontWeight: '600' },
-  logRefValue: { fontSize: 11, color: Brand.text, fontFamily: 'monospace' },
-  logReason: { fontSize: 11, color: Brand.textSecondary, marginTop: 4, fontStyle: 'italic' },
+  logRefLabel: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
+  logRefValue: { fontSize: 11, color: c.text, fontFamily: 'monospace' },
+  logReason: { fontSize: 11, color: c.textSecondary, marginTop: 4, fontStyle: 'italic' },
 });

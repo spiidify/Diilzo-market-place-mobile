@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, fetchChatPresence, fetchChatThread, sendChatMessage, sendHeartbeat, sendTypingStatus, sendVoiceMessage } from '@/services/chat';
@@ -39,6 +40,8 @@ function formatDateSeparator(iso: string): string {
 }
 
 function DateSeparator({ label }: { label: string }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.dateSepWrap}>
       <View style={styles.dateSepChip}>
@@ -50,6 +53,8 @@ function DateSeparator({ label }: { label: string }) {
 
 // ── Audio message bubble with play/pause + progress ────────────────
 function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; isMe: boolean }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const player = useAudioPlayer({ uri });
   const status = useAudioPlayerStatus(player);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -122,7 +127,7 @@ function AudioBubble({ uri, duration, isMe }: { uri: string; duration: number; i
                   height: h,
                   backgroundColor: isMe
                     ? (isPlayed ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)')
-                    : (isPlayed ? Brand.primary : Brand.border),
+                    : (isPlayed ? Brand.primary : colors.border),
                 },
               ]}
             />
@@ -141,6 +146,8 @@ export default function ChatThreadScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { refreshBadges } = useBadges();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const threadId = Number(id);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -575,14 +582,14 @@ export default function ChatThreadScreen() {
               <Image source={{ uri: productImage }} style={styles.productContextImage} resizeMode="cover" />
             ) : (
               <View style={styles.productContextImagePlaceholder}>
-                <MaterialCommunityIcons name="package-variant" size={18} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="package-variant" size={18} color={colors.textTertiary} />
               </View>
             )}
             <View style={styles.productContextInfo}>
               <Text style={styles.productContextLabel}>Discussing</Text>
               <Text style={styles.productContextName} numberOfLines={1}>{productName}</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
           </Pressable>
         )}
 
@@ -615,7 +622,7 @@ export default function ChatThreadScreen() {
             removeClippedSubviews={true}
             ListEmptyComponent={
               <View style={styles.emptyChat}>
-                <MaterialCommunityIcons name="chat-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chat-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyChatText}>Start a conversation</Text>
                 <Text style={styles.emptyChatSub}>Send a message or voice note below</Text>
               </View>
@@ -654,7 +661,7 @@ export default function ChatThreadScreen() {
                   <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Brand.danger} />
                   <Text style={styles.sendErrorText}>{sendError}</Text>
                   <Pressable onPress={() => setSendError(null)} hitSlop={8}>
-                    <MaterialCommunityIcons name="close" size={16} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="close" size={16} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               ) : null}
@@ -663,7 +670,7 @@ export default function ChatThreadScreen() {
                   <MaterialCommunityIcons name="shield-alert-outline" size={16} color={Brand.rating} />
                   <Text style={styles.riskWarningText}>{riskWarning}</Text>
                   <Pressable onPress={() => setRiskWarning(null)} hitSlop={8}>
-                    <MaterialCommunityIcons name="close" size={16} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="close" size={16} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               ) : null}
@@ -673,7 +680,7 @@ export default function ChatThreadScreen() {
                   value={input}
                   onChangeText={handleInputChange}
                   placeholder="Type a message..."
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   multiline
                   maxLength={1000}
                   editable={!sending}
@@ -719,8 +726,8 @@ export default function ChatThreadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surface },
   supportScreen: { backgroundColor: '#F1F5F9' },
   safeArea: { flex: 1 },
 
@@ -753,16 +760,16 @@ const styles = StyleSheet.create({
   productContextBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 14, paddingVertical: 8,
-    backgroundColor: Brand.surface, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  productContextImage: { width: 40, height: 40, borderRadius: 8, backgroundColor: Brand.surfaceAlt },
+  productContextImage: { width: 40, height: 40, borderRadius: 8, backgroundColor: c.surfaceAlt },
   productContextImagePlaceholder: {
-    width: 40, height: 40, borderRadius: 8, backgroundColor: Brand.surfaceAlt,
+    width: 40, height: 40, borderRadius: 8, backgroundColor: c.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
   },
   productContextInfo: { flex: 1 },
-  productContextLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
-  productContextName: { fontSize: 13, fontWeight: '600', color: Brand.text, marginTop: 1 },
+  productContextLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
+  productContextName: { fontSize: 13, fontWeight: '600', color: c.text, marginTop: 1 },
 
   // ── Messages ────────────────────────────────────────────────────
   messagesList: { paddingHorizontal: 16, paddingVertical: 16, flexGrow: 1 },
@@ -781,7 +788,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   msgBubbleThem: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderBottomLeftRadius: 4,
   },
   supportBubbleMe: {
@@ -792,19 +799,19 @@ const styles = StyleSheet.create({
   },
   msgText: { fontSize: 14, lineHeight: 19 },
   msgTextMe: { color: '#FFFFFF' },
-  msgTextThem: { color: Brand.text },
+  msgTextThem: { color: c.text },
   msgTime: { fontSize: 10, marginTop: 4 },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
-  msgTimeThem: { color: Brand.textTertiary },
+  msgTimeThem: { color: c.textTertiary },
   msgMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 2 },
 
   // ── Date separator ─────────────────────────────────────────────
   dateSepWrap: { alignItems: 'center', marginVertical: 12 },
   dateSepChip: {
-    backgroundColor: Brand.surfaceAlt, borderRadius: 8,
+    backgroundColor: c.surfaceAlt, borderRadius: 8,
     paddingHorizontal: 12, paddingVertical: 4,
   },
-  dateSepText: { fontSize: 11, fontWeight: '600', color: Brand.textSecondary },
+  dateSepText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
 
   // ── Audio bubble ────────────────────────────────────────────────
   audioBubble: {
@@ -847,8 +854,8 @@ const styles = StyleSheet.create({
 
   // ── Empty ───────────────────────────────────────────────────────
   emptyChat: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
-  emptyChatText: { marginTop: 12, fontSize: 16, fontWeight: '600', color: Brand.textSecondary },
-  emptyChatSub: { marginTop: 4, fontSize: 13, color: Brand.textTertiary },
+  emptyChatText: { marginTop: 12, fontSize: 16, fontWeight: '600', color: c.textSecondary },
+  emptyChatSub: { marginTop: 4, fontSize: 13, color: c.textTertiary },
 
   // ── Input bar ───────────────────────────────────────────────────
   inputBar: {
@@ -857,22 +864,22 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.border,
+    borderTopColor: c.border,
   },
   input: {
     flex: 1,
     minHeight: 40,
     maxHeight: 100,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
   },
   sendBtn: {
     width: 44,
@@ -893,7 +900,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  micBtnDisabled: { backgroundColor: Brand.border },
+  micBtnDisabled: { backgroundColor: c.border },
 
   // ── Recording bar ───────────────────────────────────────────────
   recordingBar: {
@@ -902,9 +909,9 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.border,
+    borderTopColor: c.border,
   },
   recordingInfo: {
     flex: 1,
@@ -925,7 +932,7 @@ const styles = StyleSheet.create({
   },
   recordingHint: {
     fontSize: 13,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
   micBtnRecording: {
     width: 44,
@@ -938,7 +945,7 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },

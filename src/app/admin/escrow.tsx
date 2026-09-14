@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   escrowAction,
   getAdminEscrow,
@@ -33,6 +34,8 @@ const FILTERS = ['all', 'held', 'released', 'disputed', 'refunded'] as const;
 
 export default function AdminEscrowScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [escrows, setEscrows] = useState<AdminEscrow[]>([]);
   const [summary, setSummary] = useState<{ total_held: string; total_released: string; total_disputed: string }>({ total_held: '0', total_released: '0', total_disputed: '0' });
   const [loading, setLoading] = useState(true);
@@ -91,7 +94,7 @@ export default function AdminEscrowScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminEscrow }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => item.status === 'held' && showActions(item)}>
         <View style={styles.cardHeader}>
@@ -165,7 +168,7 @@ export default function AdminEscrowScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(filter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="lock-open-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="lock-open-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No escrow records</Text>
                 <Text style={styles.emptySub}>No escrow match this filter</Text>
               </View>
@@ -177,32 +180,32 @@ export default function AdminEscrowScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   summaryContainer: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 8, gap: 8 },
-  summaryCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  summaryLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
+  summaryCard: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  summaryLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
   summaryValue: { fontSize: 14, fontWeight: '800' },
   filterContainer: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   filterTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   filterTextActive: { color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  amount: { fontSize: 18, fontWeight: '900', color: Brand.text, marginBottom: 8 },
+  amount: { fontSize: 18, fontWeight: '900', color: c.text, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  metaLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', marginBottom: 2 },
-  metaValue: { fontSize: 13, color: Brand.text },
+  metaLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', marginBottom: 2 },
+  metaValue: { fontSize: 13, color: c.text },
   actionHint: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   actionHintText: { fontSize: 12, fontWeight: '600', color: Brand.primary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

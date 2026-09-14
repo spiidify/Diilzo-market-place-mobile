@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,9 +21,12 @@ import { useCart } from '@/context/CartContext';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
 import { playSound, Sounds } from '@/services/sound';
 import type { CartItem, Cart as CartType } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function CartScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const { setCartCount: setGlobalCartCount, refreshCartCount } = useCart();
   const [cart, setCart] = useState<CartType | null>(null);
@@ -275,7 +278,7 @@ export default function CartScreen() {
           </Pressable>
           {item.product.store && (
             <View style={styles.storeRow}>
-              <MaterialCommunityIcons name="store-outline" size={13} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="store-outline" size={13} color={colors.textTertiary} />
               <Text style={styles.itemStore} numberOfLines={1}>{item.product.store.name}</Text>
             </View>
           )}
@@ -359,11 +362,11 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  loadingText: { marginTop: Spacing.two, fontSize: 14, color: Brand.textSecondary },
+  loadingText: { marginTop: Spacing.two, fontSize: 14, color: c.textSecondary },
   emptyIconWrap: { marginBottom: Spacing.four },
   emptyIconCircle: {
     width: 120,
@@ -391,11 +394,11 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
-  errorTitle: { fontSize: 20, fontWeight: '800', color: Brand.text, textAlign: 'center' },
-  emptyTitle: { fontSize: 22, fontWeight: '800', color: Brand.text, textAlign: 'center' },
+  errorTitle: { fontSize: 20, fontWeight: '800', color: c.text, textAlign: 'center' },
+  emptyTitle: { fontSize: 22, fontWeight: '800', color: c.text, textAlign: 'center' },
   emptySub: {
     fontSize: 14,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     marginTop: Spacing.one + 2,
     marginBottom: Spacing.four,
@@ -425,7 +428,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 16,
     marginBottom: Spacing.two + 2,
     padding: Spacing.two + 2,
@@ -440,18 +443,18 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 12,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: c.surfaceAlt,
   },
   noImage: { justifyContent: 'center', alignItems: 'center' },
   itemInfo: { flex: 1, gap: 4 },
   itemName: {
     fontSize: 14,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     lineHeight: 19,
   },
   storeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  itemStore: { fontSize: 12, color: Brand.textTertiary, flex: 1 },
+  itemStore: { fontSize: 12, color: c.textTertiary, flex: 1 },
   itemBottom: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -459,13 +462,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   priceCol: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  currencyText: { fontSize: 12, fontWeight: '700', color: Brand.textSecondary },
-  itemPrice: { fontSize: 17, fontWeight: '800', color: Brand.text },
+  currencyText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  itemPrice: { fontSize: 17, fontWeight: '800', color: c.text },
 
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -480,7 +483,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
   },
 
   removeRow: {
@@ -491,7 +494,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one + 2,
     paddingTop: Spacing.one + 2,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: c.borderLight,
   },
   removeText: { color: Brand.danger, fontSize: 13, fontWeight: '600' },
 
@@ -500,9 +503,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: 1,
-    borderTopColor: '#E8E8E8',
+    borderTopColor: c.borderLight,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + 2,
     paddingBottom: Platform.select({ ios: Spacing.two + 6, android: Spacing.two + 2 }),
@@ -518,10 +521,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   subtotalCol: { gap: 2 },
-  subtotalLabel: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
+  subtotalLabel: { fontSize: 12, color: c.textTertiary, fontWeight: '600' },
   totalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  totalCurrency: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  totalAmount: { fontSize: 22, fontWeight: '900', color: Brand.text },
+  totalCurrency: { fontSize: 13, fontWeight: '700', color: c.text },
+  totalAmount: { fontSize: 22, fontWeight: '900', color: c.text },
   checkoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

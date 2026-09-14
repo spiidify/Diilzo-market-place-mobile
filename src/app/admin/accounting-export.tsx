@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,12 +13,15 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getAccountingExport, type AccountingExport } from '@/services/financial';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function AdminAccountingExportScreen() {
   const [exportData, setExportData] = useState<AccountingExport | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
     try {
@@ -104,7 +107,7 @@ export default function AdminAccountingExportScreen() {
 
           {/* Period info */}
           <View style={styles.periodCard}>
-            <MaterialCommunityIcons name="calendar-clock" size={18} color={Brand.textSecondary} />
+            <MaterialCommunityIcons name="calendar-clock" size={18} color={colors.textSecondary} />
             <Text style={styles.periodText}>
               Period: {exportData?.start_date?.slice(0, 10)} — {exportData?.end_date?.slice(0, 10)}
             </Text>
@@ -113,7 +116,7 @@ export default function AdminAccountingExportScreen() {
           {/* Accounts */}
           {accountKeys.length === 0 ? (
             <View style={styles.centerBody}>
-              <MaterialCommunityIcons name="file-export" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="file-export" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyText}>No entries in this period</Text>
             </View>
           ) : (
@@ -134,23 +137,23 @@ export default function AdminAccountingExportScreen() {
                   </View>
 
                   {account.entries && account.entries.length > 0 ? (
-                account.entries.slice(0, 10).map((entry: any, i: number) => (
-                  <View key={`e-${i}`} style={styles.entryRow}>
-                    <Text style={[styles.entryType, { color: entry.entry_type === 'debit' ? Brand.danger : Brand.success }]}>
-                      {entry.entry_type}
-                    </Text>
-                    <View style={styles.entryInfo}>
-                      <Text style={styles.entryDesc} numberOfLines={1}>{entry.description || '—'}</Text>
-                      <Text style={styles.entryRef}>{entry.reference_type}:{entry.reference_id}</Text>
-                    </View>
-                    <Text style={[styles.entryAmount, { color: entry.entry_type === 'debit' ? Brand.danger : Brand.success }]}>
-                      UGX {fmt(entry.amount)}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.noEntries}>No entries</Text>
-              )}
+                    account.entries.slice(0, 10).map((entry: any, i: number) => (
+                      <View key={`e-${i}`} style={styles.entryRow}>
+                        <Text style={[styles.entryType, { color: entry.entry_type === 'debit' ? Brand.danger : Brand.success }]}>
+                          {entry.entry_type}
+                        </Text>
+                        <View style={styles.entryInfo}>
+                          <Text style={styles.entryDesc} numberOfLines={1}>{entry.description || '—'}</Text>
+                          <Text style={styles.entryRef}>{entry.reference_type}:{entry.reference_id}</Text>
+                        </View>
+                        <Text style={[styles.entryAmount, { color: entry.entry_type === 'debit' ? Brand.danger : Brand.success }]}>
+                          UGX {fmt(entry.amount)}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.noEntries}>No entries</Text>
+                  )}
                 </View>
               );
             })
@@ -161,13 +164,13 @@ export default function AdminAccountingExportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
 
   body: { padding: 12, paddingBottom: 32 },
 
@@ -181,30 +184,30 @@ const styles = StyleSheet.create({
 
   periodCard: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 12, padding: 12, marginBottom: 12,
   },
-  periodText: { fontSize: 13, color: Brand.textSecondary, fontWeight: '600' },
+  periodText: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
 
   accountCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   accountHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   accountInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   codeBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  codeText: { fontSize: 11, fontFamily: 'monospace', color: Brand.text },
-  accountName: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  accountTotals: { fontSize: 11, color: Brand.textSecondary },
+  codeText: { fontSize: 11, fontFamily: 'monospace', color: c.text },
+  accountName: { fontSize: 14, fontWeight: '700', color: c.text },
+  accountTotals: { fontSize: 11, color: c.textSecondary },
 
   entryRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   entryType: { fontSize: 11, fontWeight: '700', textTransform: 'capitalize', width: 50 },
   entryInfo: { flex: 1, gap: 2 },
-  entryDesc: { fontSize: 12, fontWeight: '600', color: Brand.text },
-  entryRef: { fontSize: 10, color: Brand.textTertiary, fontFamily: 'monospace' },
+  entryDesc: { fontSize: 12, fontWeight: '600', color: c.text },
+  entryRef: { fontSize: 10, color: c.textTertiary, fontFamily: 'monospace' },
   entryAmount: { fontSize: 13, fontWeight: '800' },
 
-  noEntries: { fontSize: 12, color: Brand.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
+  noEntries: { fontSize: 12, color: c.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
 });

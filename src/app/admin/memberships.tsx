@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   assignMembership,
   getAdminMemberships,
@@ -25,13 +26,14 @@ import {
 const TIER_COLORS: Record<string, string> = {
   gold: Brand.rating,
   verified: Brand.primary,
-  free: Brand.textTertiary,
 };
 
 const FILTERS = ['all', 'gold', 'verified', 'free'] as const;
 
 export default function AdminMembershipsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [memberships, setMemberships] = useState<AdminMembership[]>([]);
   const [summary, setSummary] = useState<{ gold_count: number; verified_count: number; free_count: number; annual_revenue: string }>({ gold_count: 0, verified_count: 0, free_count: 0, annual_revenue: '0' });
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,7 @@ export default function AdminMembershipsScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminMembership }) => {
-    const color = TIER_COLORS[item.tier] || Brand.textTertiary;
+    const color = TIER_COLORS[item.tier] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => handleAssign(item)}>
         <View style={styles.cardHeader}>
@@ -117,7 +119,7 @@ export default function AdminMembershipsScreen() {
           </View>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Free</Text>
-            <Text style={[styles.summaryValue, { color: Brand.textTertiary }]}>{summary.free_count}</Text>
+            <Text style={[styles.summaryValue, { color: colors.textTertiary }]}>{summary.free_count}</Text>
           </View>
         </View>
         <View style={styles.revenueBar}>
@@ -150,7 +152,7 @@ export default function AdminMembershipsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(filter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="crown-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="crown-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No memberships found</Text>
                 <Text style={styles.emptySub}>No memberships match this filter</Text>
               </View>
@@ -162,35 +164,35 @@ export default function AdminMembershipsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   summaryContainer: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 8, gap: 8 },
-  summaryCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  summaryLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
+  summaryCard: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  summaryLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
   summaryValue: { fontSize: 18, fontWeight: '800' },
   revenueBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: Brand.dark, marginHorizontal: 12, marginTop: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12 },
   revenueLabel: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   revenueValue: { fontSize: 16, fontWeight: '900', color: Brand.primary },
   filterContainer: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   filterTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   filterTextActive: { color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  storeName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  storeName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  feeText: { fontSize: 14, fontWeight: '700', color: Brand.text, marginBottom: 8 },
+  feeText: { fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
   actionHint: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   actionHintText: { fontSize: 12, fontWeight: '600', color: Brand.primary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

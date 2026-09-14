@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminUsers,
   userAction,
@@ -23,6 +24,8 @@ import {
 
 export default function AdminUsersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,11 +128,11 @@ export default function AdminUsersScreen() {
       <ModernHeader title="Users" />
       <View style={styles.body}>
         <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search users by email or name..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={query}
             onChangeText={handleSearch}
             autoCapitalize="none"
@@ -137,7 +140,7 @@ export default function AdminUsersScreen() {
           />
           {query.length > 0 && (
             <Pressable onPress={() => { setQuery(''); load(); }} hitSlop={12}>
-              <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={20} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -153,7 +156,7 @@ export default function AdminUsersScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(query)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="account-search-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="account-search-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No users found</Text>
                 <Text style={styles.emptySub}>Try a different search</Text>
               </View>
@@ -165,23 +168,23 @@ export default function AdminUsersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, marginLeft: 8, paddingVertical: 0 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, marginLeft: 8, paddingVertical: 0 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  email: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  email: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  fullName: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  fullName: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

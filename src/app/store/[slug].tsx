@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,6 +17,7 @@ import {
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchStoreBySlug, fetchStoreProducts, followStore, unfollowStore } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import type { PaginatedResponse, Product, StoreDetail } from '@/types';
@@ -43,6 +44,8 @@ export default function StoreDetailScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const { isAuthenticated } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -179,7 +182,7 @@ export default function StoreDetailScreen() {
           <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
-            <MaterialCommunityIcons name="package-variant-closed" size={32} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant-closed" size={32} color={colors.textTertiary} />
           </View>
         )}
         {item.is_on_sale && (
@@ -404,11 +407,11 @@ export default function StoreDetailScreen() {
                 <Text style={styles.productsTitle}>Products ({store.product_count})</Text>
               </View>
               <View style={styles.searchBar}>
-                <MaterialCommunityIcons name="magnify" size={18} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} />
                 <TextInput
                   style={styles.searchInput}
                   placeholder="Search products in this store..."
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   value={search}
                   onChangeText={setSearch}
                   autoCapitalize="none"
@@ -417,7 +420,7 @@ export default function StoreDetailScreen() {
                 />
                 {search.length > 0 ? (
                   <Pressable onPress={() => setSearch('')} hitSlop={12}>
-                    <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
                   </Pressable>
                 ) : null}
               </View>
@@ -436,8 +439,8 @@ export default function StoreDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   // ── Hero ────────────────────────────────────────────────────────
   heroBanner: {
@@ -489,9 +492,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    borderBottomColor: c.surfaceAlt,
   },
   actionBtn: {
     flex: 1,
@@ -502,19 +505,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Brand.border,
-    backgroundColor: Brand.surfaceAlt,
+    borderColor: c.border,
+    backgroundColor: c.surfaceAlt,
   },
-  actionBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  actionBtnText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
 
   // ── Section cards ───────────────────────────────────────────────
   sectionWrap: { paddingHorizontal: 16, paddingTop: 14 },
   sectionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, gap: 14,
+    backgroundColor: c.surface, borderRadius: 14, padding: 16, gap: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  descText: { fontSize: 13, lineHeight: 20, color: Brand.textSecondary },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  descText: { fontSize: 13, lineHeight: 20, color: c.textSecondary },
 
   // Info grid (2 columns)
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -526,8 +529,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   infoContent: { flex: 1, gap: 2 },
-  infoLabel: { fontSize: 10, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  infoLabel: { fontSize: 10, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoValue: { fontSize: 13, fontWeight: '600', color: c.text },
 
   // ── Products ────────────────────────────────────────────────────
   productsHeader: {
@@ -535,53 +538,53 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 14,
     marginBottom: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.surfaceAlt,
+    borderTopColor: c.surfaceAlt,
     gap: 12,
   },
   productsHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  productsTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  productsTitle: { fontSize: 15, fontWeight: '700', color: c.text },
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: c.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 2 },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, paddingVertical: 2 },
   list: { paddingBottom: 20 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
   productCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Brand.surfaceAlt,
+    borderColor: c.surfaceAlt,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
-  productImageWrap: { position: 'relative', backgroundColor: Brand.surfaceAlt, aspectRatio: 1 },
+  productImageWrap: { position: 'relative', backgroundColor: c.surfaceAlt, aspectRatio: 1 },
   productImage: { width: '100%', height: '100%' },
-  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Brand.surfaceAlt },
+  noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.surfaceAlt },
   saleBadge: {
     position: 'absolute', top: 8, left: 8,
     backgroundColor: Brand.danger, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
   },
   saleBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   productBody: { padding: 10, gap: 4 },
-  productName: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: Brand.text },
+  productName: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: c.text },
   productPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  productCurrency: { fontSize: 11, fontWeight: '600', color: Brand.text },
-  productPrice: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  productCurrency: { fontSize: 11, fontWeight: '600', color: c.text },
+  productPrice: { fontSize: 16, fontWeight: '700', color: c.text },
 
   // ── States ──────────────────────────────────────────────────────
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  centerText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  centerText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorTitle: { marginTop: 8, marginBottom: 12, fontSize: 16, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
-  endText: { textAlign: 'center', paddingVertical: 16, color: Brand.textTertiary, fontSize: 13 },
+  endText: { textAlign: 'center', paddingVertical: 16, color: c.textTertiary, fontSize: 13 },
 });

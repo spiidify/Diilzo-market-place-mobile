@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   FlatList,
   Pressable,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { OrderListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { apiRequest } from '@/services/api';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface Order {
   id: number;
@@ -36,6 +37,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function BuyerOrdersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,7 +61,7 @@ export default function BuyerOrdersScreen() {
   useEffect(() => { load(); }, [load]);
 
   const renderItem = ({ item }: { item: Order }) => {
-    const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
@@ -103,7 +106,7 @@ export default function BuyerOrdersScreen() {
           </View>
         ) : orders.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="shopping-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="shopping-outline" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No orders yet</Text>
             <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
               <Text style={styles.shopBtnText}>Start Shopping</Text>
@@ -127,30 +130,30 @@ export default function BuyerOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
   list: { padding: 12, gap: 10 },
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  orderNumber: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  orderNumber: { fontSize: 16, fontWeight: '700', color: c.text },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '700' },
   cardBody: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 },
-  totalLabel: { fontSize: 13, color: Brand.textTertiary },
+  totalLabel: { fontSize: 13, color: c.textTertiary },
   totalValue: { fontSize: 18, fontWeight: '800', color: Brand.primary },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
 });
 
 

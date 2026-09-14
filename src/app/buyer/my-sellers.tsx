@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,9 +17,12 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchMySellers } from '@/services/connection';
 import type { FollowedStore } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function MySellersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [stores, setStores] = useState<FollowedStore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +75,7 @@ export default function MySellersScreen() {
             <Text style={styles.metaText}>{item.follower_count} followers</Text>
           </View>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
       </View>
     </Pressable>
   );
@@ -82,7 +85,7 @@ export default function MySellersScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>My Sellers</Text>
           <View style={{ width: 24 }} />
@@ -98,7 +101,7 @@ export default function MySellersScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>My Sellers</Text>
         <View style={{ width: 24 }} />
@@ -112,7 +115,7 @@ export default function MySellersScreen() {
         </View>
       ) : stores.length === 0 ? (
         <View style={styles.centerContent}>
-          <MaterialCommunityIcons name="store-off" size={48} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="store-off" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyTitle}>No sellers followed yet</Text>
           <Text style={styles.emptySubtitle}>Follow sellers to stay updated on their products</Text>
         </View>
@@ -129,19 +132,19 @@ export default function MySellersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Brand.surface },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.surface },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.three, paddingVertical: Spacing.two,
-    borderBottomWidth: 1, borderBottomColor: Brand.border,
+    borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
   centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   list: { padding: Spacing.three },
   card: {
-    backgroundColor: Brand.surface, borderRadius: 12, padding: Spacing.three,
-    marginBottom: Spacing.two, borderWidth: 1, borderColor: Brand.border,
+    backgroundColor: c.surface, borderRadius: 12, padding: Spacing.three,
+    marginBottom: Spacing.two, borderWidth: 1, borderColor: c.border,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   logo: { width: 48, height: 48, borderRadius: 8 },
@@ -151,12 +154,12 @@ const styles = StyleSheet.create({
   },
   logoPlaceholderText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   cardInfo: { flex: 1 },
-  storeName: { fontSize: 16, fontWeight: '600', color: Brand.text, marginBottom: 4 },
+  storeName: { fontSize: 16, fontWeight: '600', color: c.text, marginBottom: 4 },
   metaRow: { flexDirection: 'row', gap: 8 },
-  metaText: { fontSize: 12, color: Brand.textSecondary },
+  metaText: { fontSize: 12, color: c.textSecondary },
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
   retryBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Brand.primary, borderRadius: 8 },
   retryText: { color: '#fff', fontWeight: '600' },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: Brand.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: c.text, marginTop: 12 },
+  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 4, textAlign: 'center' },
 });

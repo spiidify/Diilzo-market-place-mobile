@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { fetchOrderTracking } from '@/services/orders';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface TrackingData {
   order_id: number;
@@ -54,6 +55,8 @@ function formatDate(dateStr: string | null): string {
 
 export default function OrderTrackingScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ order_id: string }>();
   const orderId = Number(params.order_id);
 
@@ -124,7 +127,7 @@ export default function OrderTrackingScreen() {
             <View style={{ width: 24 }} />
           </LinearGradient>
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="map-marker-off-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="map-marker-off-outline" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>{error || 'No tracking information available'}</Text>
             <Pressable style={styles.retryBtn} onPress={load}>
               <Text style={styles.retryBtnText}>Retry</Text>
@@ -189,7 +192,7 @@ export default function OrderTrackingScreen() {
                         <MaterialCommunityIcons
                           name={isCompleted ? step.icon : 'circle-outline'}
                           size={20}
-                          color={isCompleted ? '#FFFFFF' : Brand.textTertiary}
+                          color={isCompleted ? '#FFFFFF' : colors.textTertiary}
                         />
                       </View>
                       {!isLast && (
@@ -231,7 +234,7 @@ export default function OrderTrackingScreen() {
             {tracking.shipments.length === 0 ? (
               <View style={styles.card}>
                 <View style={styles.emptyShipment}>
-                  <MaterialCommunityIcons name="package-variant-closed" size={36} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="package-variant-closed" size={36} color={colors.textTertiary} />
                   <Text style={styles.emptyShipmentText}>
                     No shipments yet. Your order is being prepared.
                   </Text>
@@ -265,28 +268,28 @@ export default function OrderTrackingScreen() {
 
                   {/* Tracking number */}
                   <View style={styles.shipmentRow}>
-                    <MaterialCommunityIcons name="barcode" size={18} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="barcode" size={18} color={colors.textTertiary} />
                     <Text style={styles.shipmentRowLabel}>Tracking #</Text>
                     <Text style={styles.shipmentRowValue}>{ship.tracking_number || 'N/A'}</Text>
                   </View>
 
                   {/* Shipped date */}
                   <View style={styles.shipmentRow}>
-                    <MaterialCommunityIcons name="calendar-export" size={18} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="calendar-export" size={18} color={colors.textTertiary} />
                     <Text style={styles.shipmentRowLabel}>Shipped</Text>
                     <Text style={styles.shipmentRowValue}>{formatDate(ship.shipped_at)}</Text>
                   </View>
 
                   {/* Estimated delivery */}
                   <View style={styles.shipmentRow}>
-                    <MaterialCommunityIcons name="calendar-clock-outline" size={18} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="calendar-clock-outline" size={18} color={colors.textTertiary} />
                     <Text style={styles.shipmentRowLabel}>Est. Delivery</Text>
                     <Text style={styles.shipmentRowValue}>{formatDate(ship.estimated_delivery)}</Text>
                   </View>
 
                   {/* Delivered date */}
                   <View style={styles.shipmentRow}>
-                    <MaterialCommunityIcons name="package-check" size={18} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="package-check" size={18} color={colors.textTertiary} />
                     <Text style={styles.shipmentRowLabel}>Delivered</Text>
                     <Text
                       style={[
@@ -307,8 +310,8 @@ export default function OrderTrackingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -319,7 +322,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  emptyText: { marginTop: Spacing.three, fontSize: 15, color: Brand.textSecondary, textAlign: 'center' },
+  emptyText: { marginTop: Spacing.three, fontSize: 15, color: c.textSecondary, textAlign: 'center' },
   retryBtn: {
     marginTop: Spacing.three,
     backgroundColor: Brand.primary,
@@ -340,11 +343,11 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     marginBottom: Spacing.two,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text },
 
   // Timeline
   timelineCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     elevation: 2,
@@ -359,7 +362,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -367,25 +370,25 @@ const styles = StyleSheet.create({
   timelineIconCurrent: {
     backgroundColor: Brand.primary,
     borderWidth: 3,
-    borderColor: Brand.surfaceAlt,
+    borderColor: c.surfaceAlt,
   },
   timelineLine: {
     width: 2,
     flex: 1,
-    backgroundColor: Brand.border,
+    backgroundColor: c.border,
     marginTop: 4,
     marginBottom: 4,
   },
   timelineLineCompleted: { backgroundColor: Brand.primary },
   timelineLabelCol: { flex: 1, justifyContent: 'center', paddingBottom: Spacing.three },
   timelineLabel: { fontSize: 15, fontWeight: '600' },
-  timelineLabelActive: { color: Brand.text },
-  timelineLabelInactive: { color: Brand.textTertiary },
+  timelineLabelActive: { color: c.text },
+  timelineLabelInactive: { color: c.textTertiary },
   timelineCurrentText: { fontSize: 12, color: Brand.primary, fontWeight: '600', marginTop: 2 },
 
   // Shipment cards
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     marginBottom: Spacing.two,
@@ -396,7 +399,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   emptyShipment: { alignItems: 'center', paddingVertical: Spacing.three, gap: Spacing.two },
-  emptyShipmentText: { fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyShipmentText: { fontSize: 14, color: c.textSecondary, textAlign: 'center' },
 
   shipmentHeader: {
     flexDirection: 'row',
@@ -405,10 +408,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.three,
     paddingBottom: Spacing.two,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: c.borderLight,
   },
   shipmentCarrier: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  shipmentCarrierName: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  shipmentCarrierName: { fontSize: 15, fontWeight: '700', color: c.text },
   shipmentStatusBadge: { paddingHorizontal: Spacing.two + 2, paddingVertical: Spacing.one + 2, borderRadius: 8 },
   shipmentStatusText: { fontSize: 12, fontWeight: '700' },
 
@@ -418,6 +421,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: 6,
   },
-  shipmentRowLabel: { fontSize: 13, color: Brand.textSecondary, flex: 1 },
-  shipmentRowValue: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  shipmentRowLabel: { fontSize: 13, color: c.textSecondary, flex: 1 },
+  shipmentRowValue: { fontSize: 14, fontWeight: '600', color: c.text },
 });

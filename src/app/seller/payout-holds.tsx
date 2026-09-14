@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,10 +12,13 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import { getPayoutHolds, type PayoutHold } from '@/services/financial';
 
 export default function SellerPayoutHoldsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [holds, setHolds] = useState<PayoutHold[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,14 +138,14 @@ export default function SellerPayoutHoldsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
 
@@ -150,27 +153,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#DCF5EC', borderRadius: 12, padding: 12, marginBottom: 12,
   },
-  infoText: { flex: 1, fontSize: 12, color: Brand.textSecondary },
+  infoText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
   holdCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   holdHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   holdIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   holdInfo: { flex: 1, gap: 2 },
-  holdReason: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  holdDate: { fontSize: 12, color: Brand.textTertiary },
+  holdReason: { fontSize: 15, fontWeight: '700', color: c.text },
+  holdDate: { fontSize: 12, color: c.textTertiary },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusText: { fontSize: 11, fontWeight: '700', color: Brand.text, textTransform: 'capitalize' },
+  statusText: { fontSize: 11, fontWeight: '700', color: c.text, textTransform: 'capitalize' },
 
   holdAmountRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: Brand.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 8,
+    backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 12, marginBottom: 8,
   },
-  holdAmountLabel: { fontSize: 13, color: Brand.textSecondary, fontWeight: '600' },
+  holdAmountLabel: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
   holdAmountValue: { fontSize: 16, fontWeight: '800' },
 
-  holdRelease: { fontSize: 12, color: Brand.textSecondary, marginBottom: 4 },
-  holdNotes: { fontSize: 12, color: Brand.textTertiary, fontStyle: 'italic' },
+  holdRelease: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
+  holdNotes: { fontSize: 12, color: c.textTertiary, fontStyle: 'italic' },
 });

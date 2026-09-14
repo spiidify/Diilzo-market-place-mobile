@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import { getMyEarnings, requestPayout, type SellerEarnings } from '@/services/seller';
 
@@ -28,6 +29,8 @@ interface PayoutRow {
 }
 
 export default function SellerPayoutsScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [data, setData] = useState<SellerEarnings | null>(null);
   const [payouts, setPayouts] = useState<PayoutRow[]>([]);
@@ -95,7 +98,7 @@ export default function SellerPayoutsScreen() {
       case 'cancelled':
         return Brand.danger;
       default:
-        return Brand.textSecondary;
+        return colors.textSecondary;
     }
   };
 
@@ -213,7 +216,7 @@ export default function SellerPayoutsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="bank-transfer-out" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="bank-transfer-out" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No payouts yet</Text>
             <Text style={styles.emptySubtext}>Your withdrawal history will appear here</Text>
           </View>
@@ -227,7 +230,7 @@ export default function SellerPayoutsScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Request Payout</Text>
               <Pressable onPress={() => setShowModal(false)} hitSlop={12}>
-                <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
               </Pressable>
             </View>
 
@@ -242,7 +245,7 @@ export default function SellerPayoutsScreen() {
               onChangeText={setAmount}
               placeholder="0"
               keyboardType="numeric"
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor={colors.textTertiary}
             />
 
             <Pressable
@@ -263,27 +266,27 @@ export default function SellerPayoutsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
 
   summaryCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 12,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   summaryCol: { flex: 1, gap: 4 },
-  summaryDivider: { width: 1, height: 36, backgroundColor: Brand.borderLight },
-  summaryLabel: { fontSize: 12, color: Brand.textTertiary, fontWeight: '600' },
-  summaryValue: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  summaryValueSmall: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  summaryDivider: { width: 1, height: 36, backgroundColor: c.borderLight },
+  summaryLabel: { fontSize: 12, color: c.textTertiary, fontWeight: '600' },
+  summaryValue: { fontSize: 18, fontWeight: '800', color: c.text },
+  summaryValueSmall: { fontSize: 15, fontWeight: '700', color: c.text },
 
   requestBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -293,41 +296,41 @@ const styles = StyleSheet.create({
 
   commissionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 16,
+    backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 16,
   },
-  commissionText: { fontSize: 13, fontWeight: '600', color: Brand.text },
+  commissionText: { fontSize: 13, fontWeight: '600', color: c.text },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10, marginTop: 4 },
 
   payoutCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   payoutHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   payoutIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   payoutInfo: { flex: 1, gap: 2 },
-  payoutAmount: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  payoutMethod: { fontSize: 12, color: Brand.textTertiary, textTransform: 'capitalize' },
+  payoutAmount: { fontSize: 16, fontWeight: '800', color: c.text },
+  payoutMethod: { fontSize: 12, color: c.textTertiary, textTransform: 'capitalize' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
 
   payoutMetaRow: {
     flexDirection: 'row', gap: 12,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 10, padding: 12,
+    backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 12,
   },
   metaCol: { flex: 1, gap: 2 },
-  metaLabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
-  metaValue: { fontSize: 13, color: Brand.text, fontWeight: '600' },
+  metaLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600' },
+  metaValue: { fontSize: 13, color: c.text, fontWeight: '600' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
   availableText: { fontSize: 14, fontWeight: '700', color: Brand.primary, marginBottom: 12 },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6, marginTop: 4 },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 4 },
   formInput: {
-    borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Brand.text,
+    borderWidth: 1.5, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text,
   },
   submitBtn: { backgroundColor: Brand.primary, marginTop: 20, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   submitBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },

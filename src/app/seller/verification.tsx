@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getKYC, getVerificationLogs, submitKYC, type SellerKYC, type VerificationLog } from '@/services/seller';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -26,6 +27,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function SellerVerificationScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [kyc, setKyc] = useState<SellerKYC | null>(null);
   const [logs, setLogs] = useState<VerificationLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +84,7 @@ export default function SellerVerificationScreen() {
     }
   };
 
-  const statusColor = kyc ? (STATUS_COLORS[kyc.status] || Brand.textTertiary) : Brand.textTertiary;
+  const statusColor = kyc ? (STATUS_COLORS[kyc.status] || colors.textTertiary) : colors.textTertiary;
   const canSubmit = !kyc || kyc.status === 'rejected' || kyc.status === 'approved';
 
   return (
@@ -135,7 +138,7 @@ export default function SellerVerificationScreen() {
                 <Text style={styles.formSub}>Verify your business to unlock all seller features</Text>
 
                 <Text style={styles.formLabel}>Business Name *</Text>
-                <TextInput style={styles.formInput} value={businessName} onChangeText={setBusinessName} placeholder="Your business name" placeholderTextColor={Brand.textTertiary} />
+                <TextInput style={styles.formInput} value={businessName} onChangeText={setBusinessName} placeholder="Your business name" placeholderTextColor={colors.textTertiary} />
 
                 <Text style={styles.formLabel}>Business Type</Text>
                 <View style={styles.typeRow}>
@@ -147,10 +150,10 @@ export default function SellerVerificationScreen() {
                 </View>
 
                 <Text style={styles.formLabel}>Trading License Number *</Text>
-                <TextInput style={styles.formInput} value={licenseNumber} onChangeText={setLicenseNumber} placeholder="e.g. URS-12345" placeholderTextColor={Brand.textTertiary} autoCapitalize="characters" />
+                <TextInput style={styles.formInput} value={licenseNumber} onChangeText={setLicenseNumber} placeholder="e.g. URS-12345" placeholderTextColor={colors.textTertiary} autoCapitalize="characters" />
 
                 <Text style={styles.formLabel}>Tax ID (TIN)</Text>
-                <TextInput style={styles.formInput} value={taxId} onChangeText={setTaxId} placeholder="Optional" placeholderTextColor={Brand.textTertiary} autoCapitalize="characters" />
+                <TextInput style={styles.formInput} value={taxId} onChangeText={setTaxId} placeholder="Optional" placeholderTextColor={colors.textTertiary} autoCapitalize="characters" />
 
                 <Pressable style={({ pressed }) => [styles.submitBtn, (submitting || pressed) && { opacity: 0.85 }]} onPress={handleSubmit} disabled={submitting}>
                   {submitting ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Submit for Review</Text>}
@@ -171,8 +174,8 @@ export default function SellerVerificationScreen() {
                 {logs.map((log, idx) => (
                   <View key={log.id} style={[styles.logItem, idx < logs.length - 1 && styles.logItemBorder]}>
                     <View style={styles.logHeader}>
-                      <View style={[styles.logBadge, { backgroundColor: (STATUS_COLORS[log.new_status] || Brand.textTertiary) + '20' }]}>
-                        <Text style={[styles.logBadgeText, { color: STATUS_COLORS[log.new_status] || Brand.textTertiary }]}>{log.action}</Text>
+                      <View style={[styles.logBadge, { backgroundColor: (STATUS_COLORS[log.new_status] || colors.textTertiary) + '20' }]}>
+                        <Text style={[styles.logBadgeText, { color: STATUS_COLORS[log.new_status] || colors.textTertiary }]}>{log.action}</Text>
                       </View>
                       <Text style={styles.logDate}>{new Date(log.created_at).toLocaleDateString()}</Text>
                     </View>
@@ -190,48 +193,48 @@ export default function SellerVerificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   body: { flex: 1 },
   bodyContent: { padding: 12, paddingBottom: 40 },
-  statusCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 12, borderLeftWidth: 4, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  statusCard: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 12, borderLeftWidth: 4, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   statusHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   statusInfo: { flex: 1 },
-  statusTitle: { fontSize: 15, fontWeight: '800', color: Brand.text, marginBottom: 6 },
+  statusTitle: { fontSize: 15, fontWeight: '800', color: c.text, marginBottom: 6 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  reviewNotes: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: Brand.borderLight },
-  reviewNotesLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginBottom: 4, textTransform: 'uppercase' },
-  reviewNotesText: { fontSize: 13, color: Brand.textSecondary },
-  submittedText: { fontSize: 12, color: Brand.textTertiary, marginTop: 4 },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 20, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  formTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  formSub: { fontSize: 13, color: Brand.textTertiary, marginBottom: 16, marginTop: 2 },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6, marginTop: 12 },
-  formInput: { borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.text },
+  reviewNotes: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.borderLight },
+  reviewNotesLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginBottom: 4, textTransform: 'uppercase' },
+  reviewNotesText: { fontSize: 13, color: c.textSecondary },
+  submittedText: { fontSize: 12, color: c.textTertiary, marginTop: 4 },
+  formCard: { backgroundColor: c.surface, borderRadius: 14, padding: 20, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  formTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  formSub: { fontSize: 13, color: c.textTertiary, marginBottom: 16, marginTop: 2 },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 12 },
+  formInput: { borderWidth: 1.5, borderColor: c.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text },
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  typeBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: Brand.border },
+  typeBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: c.border },
   typeBtnActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '12' },
-  typeBtnText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  typeBtnText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   typeBtnTextActive: { color: Brand.primary },
   submitBtn: { backgroundColor: Brand.primary, marginTop: 20, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   submitBtnText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
-  pendingCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 24, alignItems: 'center', marginBottom: 12, gap: 8 },
-  pendingTitle: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  pendingSub: { fontSize: 13, color: Brand.textTertiary, textAlign: 'center' },
-  historyCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  historyTitle: { fontSize: 15, fontWeight: '800', color: Brand.text, marginBottom: 12 },
+  pendingCard: { backgroundColor: c.surface, borderRadius: 14, padding: 24, alignItems: 'center', marginBottom: 12, gap: 8 },
+  pendingTitle: { fontSize: 16, fontWeight: '800', color: c.text },
+  pendingSub: { fontSize: 13, color: c.textTertiary, textAlign: 'center' },
+  historyCard: { backgroundColor: c.surface, borderRadius: 14, padding: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  historyTitle: { fontSize: 15, fontWeight: '800', color: c.text, marginBottom: 12 },
   logItem: { paddingVertical: 12 },
-  logItemBorder: { borderBottomWidth: 1, borderBottomColor: Brand.borderLight },
+  logItemBorder: { borderBottomWidth: 1, borderBottomColor: c.borderLight },
   logHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   logBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   logBadgeText: { fontSize: 10, fontWeight: '700' },
-  logDate: { fontSize: 12, color: Brand.textTertiary },
-  logStatus: { fontSize: 13, fontWeight: '600', color: Brand.text },
-  logNotes: { fontSize: 12, color: Brand.textSecondary, marginTop: 4 },
-  logReviewer: { fontSize: 11, color: Brand.textTertiary, marginTop: 2 },
+  logDate: { fontSize: 12, color: c.textTertiary },
+  logStatus: { fontSize: 13, fontWeight: '600', color: c.text },
+  logNotes: { fontSize: 12, color: c.textSecondary, marginTop: 4 },
+  logReviewer: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
 });

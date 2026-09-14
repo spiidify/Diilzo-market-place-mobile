@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
   getAdTransactions,
@@ -24,6 +25,8 @@ import {
 } from '@/services/financial';
 
 export default function SellerAdWalletScreen() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [wallet, setWallet] = useState<AdWalletResponse | null>(null);
   const [transactions, setTransactions] = useState<AdTransaction[]>([]);
@@ -216,7 +219,7 @@ export default function SellerAdWalletScreen() {
         }
         ListEmptyComponent={
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="bullhorn-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="bullhorn-outline" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No ad transactions yet</Text>
             <Text style={styles.emptySubtext}>Top up your wallet to start advertising</Text>
           </View>
@@ -226,14 +229,14 @@ export default function SellerAdWalletScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
 
@@ -246,33 +249,33 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 16, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   topUpCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 16,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  topUpTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 4 },
-  topUpSubtitle: { fontSize: 12, color: Brand.textSecondary, marginBottom: 12 },
+  topUpTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 4 },
+  topUpSubtitle: { fontSize: 12, color: c.textSecondary, marginBottom: 12 },
   topUpInput: {
-    backgroundColor: Brand.surfaceAlt, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, borderWidth: 1, borderColor: Brand.border, marginBottom: 10,
+    backgroundColor: c.surfaceAlt, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, borderWidth: 1, borderColor: c.border, marginBottom: 10,
   },
   methodRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  methodBtn: { flex: 1, borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 10, alignItems: 'center' },
-  methodText: { fontSize: 12, fontWeight: '600', color: Brand.text },
+  methodBtn: { flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 10, alignItems: 'center' },
+  methodText: { fontSize: 12, fontWeight: '600', color: c.text },
   topUpBtn: { backgroundColor: Brand.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   topUpBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10, marginTop: 4 },
 
   txRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8,
+    backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 8,
   },
   txIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   txInfo: { flex: 1, gap: 2 },
-  txType: { fontSize: 12, fontWeight: '700', color: Brand.text },
-  txDesc: { fontSize: 12, color: Brand.textSecondary },
-  txDate: { fontSize: 11, color: Brand.textTertiary },
+  txType: { fontSize: 12, fontWeight: '700', color: c.text },
+  txDesc: { fontSize: 12, color: c.textSecondary },
+  txDate: { fontSize: 11, color: c.textTertiary },
   txAmountCol: { alignItems: 'flex-end' },
   txAmount: { fontSize: 14, fontWeight: '700' },
-  txStatus: { fontSize: 11, color: Brand.textTertiary, textTransform: 'capitalize' },
+  txStatus: { fontSize: 11, color: c.textTertiary, textTransform: 'capitalize' },
 });

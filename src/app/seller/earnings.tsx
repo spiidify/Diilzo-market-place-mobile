@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,11 +14,14 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import { getMyEarnings, requestPayout, type SellerEarnings } from '@/services/seller';
 
 export default function SellerEarningsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true); // Block screenshots on financial screen
   const [data, setData] = useState<SellerEarnings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,8 +114,8 @@ export default function SellerEarningsScreen() {
                     <Text style={styles.balanceLabel}>Available</Text>
                     <Text style={styles.balanceValue}>UGX {Number(data?.available_balance || 0).toLocaleString()}</Text>
                   </View>
-                  <View style={[styles.balanceCard, { backgroundColor: Brand.text }]}>
-                    <Text style={[styles.balanceLabel, { color: Brand.textTertiary }]}>Pending</Text>
+                  <View style={[styles.balanceCard, { backgroundColor: colors.text }]}>
+                    <Text style={[styles.balanceLabel, { color: colors.textTertiary }]}>Pending</Text>
                     <Text style={[styles.balanceValue, { color: '#FFFFFF' }]}>UGX {Number(data?.pending_balance || 0).toLocaleString()}</Text>
                   </View>
                 </View>
@@ -170,10 +173,10 @@ export default function SellerEarningsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -189,19 +192,19 @@ const styles = StyleSheet.create({
 
   commissionRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12,
   },
-  commissionText: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  commissionText: { fontSize: 14, fontWeight: '600', color: c.text },
 
   payoutCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 16,
+    backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  payoutTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 12 },
+  payoutTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 },
   payoutInputRow: { flexDirection: 'row', gap: 10 },
   payoutInput: {
-    flex: 1, backgroundColor: Brand.surfaceAlt, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1, borderColor: Brand.border,
+    flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, borderWidth: 1, borderColor: c.border,
   },
   payoutBtn: { backgroundColor: Brand.primary, borderRadius: 10, paddingHorizontal: 24, justifyContent: 'center' },
   payoutBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -209,22 +212,22 @@ const styles = StyleSheet.create({
   payoutsHistory: { marginBottom: 16 },
   payoutHistoryRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, marginBottom: 6,
+    backgroundColor: c.surface, borderRadius: 10, padding: 12, marginBottom: 6,
   },
-  payoutHistoryAmount: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  payoutHistoryAmount: { fontSize: 14, fontWeight: '700', color: c.text },
   payoutHistoryStatus: { fontSize: 12, fontWeight: '600', color: Brand.primary },
-  payoutHistoryDate: { fontSize: 12, color: Brand.textTertiary },
+  payoutHistoryDate: { fontSize: 12, color: c.textTertiary },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10, marginTop: 4 },
 
   ledgerRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8,
+    backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 8,
   },
   ledgerIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   ledgerInfo: { flex: 1, gap: 2 },
-  ledgerRef: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  ledgerDate: { fontSize: 12, color: Brand.textTertiary },
+  ledgerRef: { fontSize: 14, fontWeight: '600', color: c.text },
+  ledgerDate: { fontSize: 12, color: c.textTertiary },
   ledgerAmount: { fontSize: 14, fontWeight: '700' },
 });
 

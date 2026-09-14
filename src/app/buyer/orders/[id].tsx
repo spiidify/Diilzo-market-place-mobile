@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,7 @@ import {
   requestReturn,
 } from '@/services/orders';
 import type { Order } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
@@ -47,6 +48,8 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
 
 export default function OrderDetailScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ id: string }>();
   const orderId = Number(params.id);
 
@@ -191,7 +194,7 @@ export default function OrderDetailScreen() {
             <View style={{ width: 24 }} />
           </LinearGradient>
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="package-variant-remove" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant-remove" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>Order not found</Text>
             <Pressable style={styles.shopBtn} onPress={() => router.back()}>
               <Text style={styles.shopBtnText}>Go Back</Text>
@@ -202,8 +205,8 @@ export default function OrderDetailScreen() {
     );
   }
 
-  const statusColor = STATUS_COLORS[order.status] || Brand.textTertiary;
-  const payColor = PAYMENT_STATUS_COLORS[order.payment_status] || Brand.textTertiary;
+  const statusColor = STATUS_COLORS[order.status] || colors.textTertiary;
+  const payColor = PAYMENT_STATUS_COLORS[order.payment_status] || colors.textTertiary;
   const canCancel = order.status === 'pending' || order.status === 'processing';
   const canReturn = order.status === 'delivered';
   const canTrack = order.status === 'shipped' || order.status === 'delivered' || !!order.tracking_number;
@@ -309,10 +312,10 @@ export default function OrderDetailScreen() {
               {order.suborders.map((sub) => (
                 <View key={`sub-${sub.id}`} style={styles.suborder}>
                   <View style={styles.suborderHeader}>
-                    <MaterialCommunityIcons name="store-outline" size={16} color={Brand.textSecondary} />
+                    <MaterialCommunityIcons name="store-outline" size={16} color={colors.textSecondary} />
                     <Text style={styles.suborderStore}>{sub.store_name}</Text>
-                    <View style={[styles.suborderStatus, { backgroundColor: (STATUS_COLORS[sub.status] || Brand.textTertiary) + '20' }]}>
-                      <Text style={[styles.suborderStatusText, { color: STATUS_COLORS[sub.status] || Brand.textTertiary }]}>
+                    <View style={[styles.suborderStatus, { backgroundColor: (STATUS_COLORS[sub.status] || colors.textTertiary) + '20' }]}>
+                      <Text style={[styles.suborderStatusText, { color: STATUS_COLORS[sub.status] || colors.textTertiary }]}>
                         {sub.status}
                       </Text>
                     </View>
@@ -327,7 +330,7 @@ export default function OrderDetailScreen() {
                         />
                       ) : (
                         <View style={[styles.itemImage, styles.itemImageFallback]}>
-                          <MaterialCommunityIcons name="image-outline" size={20} color={Brand.textTertiary} />
+                          <MaterialCommunityIcons name="image-outline" size={20} color={colors.textTertiary} />
                         </View>
                       )}
                       <View style={styles.itemInfo}>
@@ -465,8 +468,8 @@ export default function OrderDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -477,7 +480,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { marginTop: Spacing.three, fontSize: 15, color: Brand.textSecondary },
+  emptyText: { marginTop: Spacing.three, fontSize: 15, color: c.textSecondary },
   shopBtn: {
     marginTop: Spacing.three,
     backgroundColor: Brand.primary,
@@ -492,7 +495,7 @@ const styles = StyleSheet.create({
 
   // Order header card
   orderHeaderCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: Spacing.three,
     marginBottom: Spacing.three,
@@ -508,8 +511,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: Spacing.three,
   },
-  orderNumberLabel: { fontSize: 12, color: Brand.textTertiary },
-  orderNumber: { fontSize: 20, fontWeight: '800', color: Brand.text },
+  orderNumberLabel: { fontSize: 12, color: c.textTertiary },
+  orderNumber: { fontSize: 20, fontWeight: '800', color: c.text },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -522,8 +525,8 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 12, fontWeight: '700' },
   orderHeaderRow: { flexDirection: 'row', justifyContent: 'space-between' },
   orderHeaderInfo: { gap: 4 },
-  infoLabel: { fontSize: 11, color: Brand.textTertiary },
-  infoValue: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  infoLabel: { fontSize: 11, color: c.textTertiary },
+  infoValue: { fontSize: 14, fontWeight: '600', color: c.text },
   payBadge: { paddingHorizontal: Spacing.two, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start' },
   payBadgeText: { fontSize: 11, fontWeight: '700' },
 
@@ -535,9 +538,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     marginBottom: Spacing.two,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     elevation: 2,
@@ -548,8 +551,8 @@ const styles = StyleSheet.create({
   },
 
   // Address
-  addressLine: { fontSize: 15, fontWeight: '700', color: Brand.text, marginBottom: 4 },
-  addressDetail: { fontSize: 13, color: Brand.textSecondary, marginBottom: 2 },
+  addressLine: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 4 },
+  addressDetail: { fontSize: 13, color: c.textSecondary, marginBottom: 2 },
 
   // Suborders & items
   suborder: { marginBottom: Spacing.three },
@@ -560,9 +563,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
     paddingBottom: Spacing.two,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: c.borderLight,
   },
-  suborderStore: { flex: 1, fontSize: 14, fontWeight: '700', color: Brand.text },
+  suborderStore: { flex: 1, fontSize: 14, fontWeight: '700', color: c.text },
   suborderStatus: { paddingHorizontal: Spacing.two, paddingVertical: 2, borderRadius: 6 },
   suborderStatusText: { fontSize: 11, fontWeight: '700' },
   orderItem: {
@@ -570,28 +573,28 @@ const styles = StyleSheet.create({
     gap: Spacing.two + Spacing.one,
     paddingVertical: Spacing.two,
   },
-  itemImage: { width: 56, height: 56, borderRadius: 10, backgroundColor: Brand.surfaceAlt },
+  itemImage: { width: 56, height: 56, borderRadius: 10, backgroundColor: c.surfaceAlt },
   itemImageFallback: { justifyContent: 'center', alignItems: 'center' },
   itemInfo: { flex: 1, gap: 2 },
-  itemName: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  itemQty: { fontSize: 12, color: Brand.textTertiary },
+  itemName: { fontSize: 14, fontWeight: '600', color: c.text },
+  itemQty: { fontSize: 12, color: c.textTertiary },
   itemPrice: { fontSize: 14, fontWeight: '700', color: Brand.primary },
   suborderTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingTop: Spacing.two,
     borderTopWidth: 1,
-    borderTopColor: Brand.borderLight,
+    borderTopColor: c.borderLight,
   },
-  suborderTotalLabel: { fontSize: 13, color: Brand.textSecondary },
-  suborderTotalValue: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  suborderTotalLabel: { fontSize: 13, color: c.textSecondary },
+  suborderTotalValue: { fontSize: 14, fontWeight: '700', color: c.text },
 
   // Totals
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
-  totalRowLabel: { fontSize: 14, color: Brand.textSecondary },
-  totalRowValue: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  totalDivider: { height: 1, backgroundColor: Brand.borderLight, marginVertical: Spacing.two },
-  grandTotalLabel: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  totalRowLabel: { fontSize: 14, color: c.textSecondary },
+  totalRowValue: { fontSize: 14, fontWeight: '600', color: c.text },
+  totalDivider: { height: 1, backgroundColor: c.borderLight, marginVertical: Spacing.two },
+  grandTotalLabel: { fontSize: 16, fontWeight: '700', color: c.text },
   grandTotalValue: { fontSize: 16, fontWeight: '800', color: Brand.primary },
 
   // Actions
@@ -607,7 +610,7 @@ const styles = StyleSheet.create({
   actionBtnPrimary: { backgroundColor: Brand.primary },
   actionBtnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   actionBtnOutline: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderWidth: 1.5,
     borderColor: Brand.primary,
   },

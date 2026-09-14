@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -31,7 +32,6 @@ const TYPE_CONFIG: Record<string, {
   shipping: { icon: 'truck-fast-outline', color: '#06B6D4' },
   promo: { icon: 'tag-outline', color: Brand.rating },
   review: { icon: 'star-outline', color: Brand.rating },
-  system: { icon: 'bell-outline', color: Brand.textSecondary },
   message: { icon: 'chat-outline', color: '#EC4899' },
   chat: { icon: 'chat-outline', color: '#EC4899' },
   dispute: { icon: 'alert-circle-outline', color: '#EF4444' },
@@ -40,7 +40,10 @@ const TYPE_CONFIG: Record<string, {
   default: { icon: 'bell-outline', color: Brand.primary },
 };
 
-function getIcon(type: string) {
+function getIcon(type: string, colors: ThemeColors) {
+  if (type === 'system') {
+    return { icon: 'bell-outline' as keyof typeof MaterialCommunityIcons.glyphMap, color: colors.textSecondary };
+  }
   return TYPE_CONFIG[type] || TYPE_CONFIG.default;
 }
 
@@ -61,6 +64,8 @@ function formatTimestamp(dateStr: string): string {
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,7 +136,7 @@ export default function NotificationsScreen() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const renderItem = ({ item }: { item: AppNotification }) => {
-    const config = getIcon(item.notification_type);
+    const config = getIcon(item.notification_type, colors);
     return (
       <Pressable
         style={({ pressed }) => [
@@ -207,7 +212,7 @@ export default function NotificationsScreen() {
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="bell-off-outline" size={56} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="bell-off-outline" size={56} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No notifications yet</Text>
             <Text style={styles.emptySubtext}>You'll see updates about your orders here</Text>
           </View>
@@ -238,8 +243,8 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: {
     flexDirection: 'row',
@@ -253,8 +258,8 @@ const styles = StyleSheet.create({
   markAllTextDisabled: { opacity: 0.5 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  emptyText: { marginTop: Spacing.three, fontSize: 16, fontWeight: '700', color: Brand.text },
-  emptySubtext: { marginTop: Spacing.one + 2, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyText: { marginTop: Spacing.three, fontSize: 16, fontWeight: '700', color: c.text },
+  emptySubtext: { marginTop: Spacing.one + 2, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
   notifCard: {
     flexDirection: 'row',
     gap: Spacing.three - 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     elevation: 2,
@@ -274,7 +279,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   notifCardUnread: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderLeftWidth: 3,
     borderLeftColor: Brand.primary,
   },
@@ -287,9 +292,9 @@ const styles = StyleSheet.create({
   },
   notifContent: { flex: 1, gap: 4 },
   notifHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  notifTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: Brand.textSecondary },
-  notifTitleUnread: { fontWeight: '700', color: Brand.text },
+  notifTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: c.textSecondary },
+  notifTitleUnread: { fontWeight: '700', color: c.text },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.primary },
-  notifMessage: { fontSize: 14, color: Brand.textSecondary, lineHeight: 20 },
-  notifTime: { fontSize: 12, color: Brand.textTertiary, marginTop: 2 },
+  notifMessage: { fontSize: 14, color: c.textSecondary, lineHeight: 20 },
+  notifTime: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
 });

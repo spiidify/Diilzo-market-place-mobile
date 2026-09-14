@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getDisputeDetail,
   getDisputes,
@@ -22,16 +23,18 @@ import {
   type SellerDisputeDetail,
 } from '@/services/seller';
 
-const STATUS_COLORS: Record<string, string> = {
-  open: Brand.rating,
-  under_review: '#3B82F6',
-  resolved: Brand.primary,
-  closed: Brand.textTertiary,
-  escalated: Brand.danger,
-};
-
 export default function SellerDisputesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    open: Brand.rating,
+    under_review: '#3B82F6',
+    resolved: Brand.primary,
+    closed: colors.textTertiary,
+    escalated: Brand.danger,
+  };
   const [disputes, setDisputes] = useState<SellerDispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,7 +91,7 @@ export default function SellerDisputesScreen() {
   };
 
   const renderItem = ({ item }: { item: SellerDispute }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -133,7 +136,7 @@ export default function SellerDisputesScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="check-circle-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="check-circle-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No disputes</Text>
                 <Text style={styles.emptySub}>All clear!</Text>
               </View>
@@ -147,7 +150,7 @@ export default function SellerDisputesScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Dispute Details</Text>
                 <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               {detailLoading ? (
@@ -165,8 +168,8 @@ export default function SellerDisputesScreen() {
                       <Text style={styles.detailLabel}>Description</Text>
                       <Text style={styles.detailValue}>{detail.description}</Text>
                       <Text style={styles.detailLabel}>Status</Text>
-                      <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                        <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status}</Text>
+                      <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
+                        <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status}</Text>
                       </View>
                       {detail.refund_amount !== '0' && (
                         <>
@@ -192,30 +195,30 @@ export default function SellerDisputesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  reason: { fontSize: 14, fontWeight: '700', color: Brand.text, marginBottom: 4 },
-  description: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  reason: { fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 4 },
+  description: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  dateText: { fontSize: 12, color: c.textTertiary },
   refundAmount: { fontSize: 12, fontWeight: '700', color: Brand.danger },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
 });

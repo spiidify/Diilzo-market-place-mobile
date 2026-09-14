@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   authenticateWithBiometrics,
   enableBiometric,
@@ -31,6 +32,8 @@ import { isValidEmail, sanitizeEmail, sanitizeString } from '@/utils/validation'
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -152,13 +155,13 @@ export default function LoginScreen() {
 
             {/* Email input */}
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="email-outline" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="email-outline" size={20} color={colors.textTertiary} />
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -167,13 +170,13 @@ export default function LoginScreen() {
 
             {/* Password input */}
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="lock-outline" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="lock-outline" size={20} color={colors.textTertiary} />
               <TextInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
@@ -181,7 +184,7 @@ export default function LoginScreen() {
                 <MaterialCommunityIcons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
-                  color={Brand.textTertiary}
+                  color={colors.textTertiary}
                 />
               </Pressable>
             </View>
@@ -251,15 +254,15 @@ export default function LoginScreen() {
           {/* Trust badges */}
           <View style={styles.trustRow}>
             <View style={styles.trustItem}>
-              <MaterialCommunityIcons name="shield-check-outline" size={14} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="shield-check-outline" size={14} color={colors.textTertiary} />
               <Text style={styles.trustText}>SSL Secured</Text>
             </View>
             <View style={styles.trustItem}>
-              <MaterialCommunityIcons name="handshake-outline" size={14} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="handshake-outline" size={14} color={colors.textTertiary} />
               <Text style={styles.trustText}>Buyer Protection</Text>
             </View>
             <View style={styles.trustItem}>
-              <MaterialCommunityIcons name="headset" size={14} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="headset" size={14} color={colors.textTertiary} />
               <Text style={styles.trustText}>24/7 Support</Text>
             </View>
           </View>
@@ -269,15 +272,15 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.background },
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingTop: 16 },
   card: {
     marginHorizontal: 16,
     padding: 20,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -301,17 +304,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginBottom: 12,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: Brand.text,
+    color: c.text,
     padding: 0,
   },
   forgotBtn: {
@@ -344,7 +347,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.primary,
     borderRadius: 12,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   biometricText: {
     color: Brand.primary,
@@ -362,7 +365,7 @@ const styles = StyleSheet.create({
   },
   newText: {
     fontSize: 14,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   createAccountText: {
     color: Brand.primary,
@@ -371,7 +374,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   guestText: {
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontSize: 13,
     marginTop: 16,
   },
@@ -389,6 +392,6 @@ const styles = StyleSheet.create({
   },
   trustText: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
 });

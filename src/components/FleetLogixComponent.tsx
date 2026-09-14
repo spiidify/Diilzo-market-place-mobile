@@ -6,7 +6,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   isValidCollectionPin,
   isValidOrderId,
@@ -33,6 +34,8 @@ type ResultState =
 
 export function FleetLogixComponent() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [orderId, setOrderId] = useState('');
   const [collectionPin, setCollectionPin] = useState('');
   const [result, setResult] = useState<ResultState>({ type: 'idle' });
@@ -119,7 +122,7 @@ export function FleetLogixComponent() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Order ID</Text>
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="clipboard-list" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="clipboard-list" size={20} color={colors.textTertiary} />
               <TextInput
                 style={styles.input}
                 value={orderId}
@@ -129,7 +132,7 @@ export function FleetLogixComponent() {
                   setValidationError(null);
                 }}
                 placeholder="e.g. 12345"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="numeric"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -141,7 +144,7 @@ export function FleetLogixComponent() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>6-Digit Collection PIN</Text>
             <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="lock" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="lock" size={20} color={colors.textTertiary} />
               <TextInput
                 style={styles.input}
                 value={collectionPin}
@@ -151,7 +154,7 @@ export function FleetLogixComponent() {
                   setValidationError(null);
                 }}
                 placeholder="e.g. 123456"
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="numeric"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -233,10 +236,10 @@ export function FleetLogixComponent() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F2F4F6',
+    backgroundColor: c.background,
   },
   safeArea: {
     backgroundColor: Brand.dark,
@@ -289,13 +292,13 @@ const styles = StyleSheet.create({
   },
   bannerSub: {
     fontSize: 13,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 18,
   },
   formCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -318,7 +321,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     gap: 8,
@@ -355,7 +358,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   submitBtnDisabled: {
-    backgroundColor: Brand.textTertiary,
+    backgroundColor: c.textTertiary,
   },
   submitBtnText: {
     fontSize: 15,
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
   clearBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   successCard: {
     backgroundColor: 'rgba(39,174,96,0.08)',
@@ -400,7 +403,7 @@ const styles = StyleSheet.create({
   },
   successTimestamp: {
     fontSize: 12,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     marginTop: 8,
   },
   errorCard: {

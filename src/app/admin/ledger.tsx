@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,12 +13,15 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getLedger, type LedgerAccount } from '@/services/financial';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function AdminLedgerScreen() {
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
     try {
@@ -75,7 +78,7 @@ export default function AdminLedgerScreen() {
         <View style={styles.body}>
           {accounts.length === 0 ? (
             <View style={styles.centerBody}>
-              <MaterialCommunityIcons name="book-open" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="book-open" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyText}>No ledger accounts</Text>
             </View>
           ) : (
@@ -123,38 +126,38 @@ export default function AdminLedgerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  emptyText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
 
   body: { padding: 12, paddingBottom: 32 },
 
   accountCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   accountHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   accountInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   codeBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  codeText: { fontSize: 11, fontFamily: 'monospace', color: Brand.text },
-  accountName: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  accountType: { fontSize: 10, color: Brand.textTertiary, textTransform: 'uppercase' },
+  codeText: { fontSize: 11, fontFamily: 'monospace', color: c.text },
+  accountName: { fontSize: 15, fontWeight: '700', color: c.text },
+  accountType: { fontSize: 10, color: c.textTertiary, textTransform: 'uppercase' },
   accountBalance: { fontSize: 16, fontWeight: '800' },
 
   entryRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   entryTypeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   entryTypeText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   entryInfo: { flex: 1, gap: 2 },
-  entryDesc: { fontSize: 12, fontWeight: '600', color: Brand.text },
-  entryRef: { fontSize: 10, color: Brand.textTertiary, fontFamily: 'monospace' },
+  entryDesc: { fontSize: 12, fontWeight: '600', color: c.text },
+  entryRef: { fontSize: 10, color: c.textTertiary, fontFamily: 'monospace' },
   entryAmount: { fontSize: 13, fontWeight: '800' },
 
-  noEntries: { fontSize: 12, color: Brand.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
+  noEntries: { fontSize: 12, color: c.textTertiary, fontStyle: 'italic', paddingVertical: 8 },
 });

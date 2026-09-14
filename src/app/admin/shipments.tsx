@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminShipmentDetail,
   getAdminShipments,
@@ -37,6 +38,8 @@ const STATUS_OPTIONS = ['pending', 'shipped', 'in_transit', 'delivered'] as cons
 
 export default function AdminShipmentsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [shipments, setShipments] = useState<AdminShipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,7 +108,7 @@ export default function AdminShipmentsScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminShipment }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -120,7 +123,7 @@ export default function AdminShipmentsScreen() {
             <Text style={styles.metaText}>{item.carrier}</Text>
             <Text style={styles.metaText} numberOfLines={1}>{item.tracking_number}</Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
         </View>
       </Pressable>
     );
@@ -155,7 +158,7 @@ export default function AdminShipmentsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(filter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="truck-fast-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="truck-fast-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No shipments found</Text>
                 <Text style={styles.emptySub}>No shipments match this filter</Text>
               </View>
@@ -169,7 +172,7 @@ export default function AdminShipmentsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Shipment Details</Text>
                 <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               {detailLoading ? (
@@ -189,8 +192,8 @@ export default function AdminShipmentsScreen() {
                   <Text style={styles.detailLabel}>Fulfillment Type</Text>
                   <Text style={styles.detailValue}>{detail.fulfillment_type}</Text>
                   <Text style={styles.detailLabel}>Status</Text>
-                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status.replace('_', ' ')}</Text>
+                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status.replace('_', ' ')}</Text>
                   </View>
                   <Text style={styles.detailLabel}>Shipping Cost</Text>
                   <Text style={styles.detailValue}>UGX {Number(detail.shipping_cost).toLocaleString()}</Text>
@@ -239,36 +242,36 @@ export default function AdminShipmentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   filterContainer: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   filterTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   filterTextActive: { color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  storeName: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  storeName: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
   statusOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  statusBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: Brand.surfaceAlt, borderWidth: 1, borderColor: Brand.border },
+  statusBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border },
   statusBtnActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  statusBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  statusBtnText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   statusBtnTextActive: { color: '#FFFFFF' },
 });

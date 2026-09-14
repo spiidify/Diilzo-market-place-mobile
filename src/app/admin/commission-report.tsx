@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -13,6 +13,7 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getCommissionReport } from '@/services/adminApi';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface CommissionReport {
   top_stores?: { store__name: string; store__slug: string; total_commission: string; order_count: number }[];
@@ -24,6 +25,8 @@ interface CommissionReport {
 
 export default function AdminCommissionReportScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [report, setReport] = useState<CommissionReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,7 +67,7 @@ export default function AdminCommissionReportScreen() {
               </View>
               <View style={styles.summaryCard}>
                 <Text style={styles.summaryLabel}>Total Orders</Text>
-                <Text style={[styles.summaryValue, { color: Brand.text }]}>{report?.total_orders || 0}</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{report?.total_orders || 0}</Text>
               </View>
               <View style={styles.summaryCard}>
                 <Text style={styles.summaryLabel}>Avg Rate</Text>
@@ -106,7 +109,7 @@ export default function AdminCommissionReportScreen() {
                 ))
               ) : (
                 <View style={styles.emptyState}>
-                  <MaterialCommunityIcons name="chart-bar" size={48} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="chart-bar" size={48} color={colors.textTertiary} />
                   <Text style={styles.emptyText}>No data available</Text>
                   <Text style={styles.emptySub}>Commission data will appear here</Text>
                 </View>
@@ -119,30 +122,30 @@ export default function AdminCommissionReportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { padding: 12, paddingBottom: 40 },
   summaryContainer: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  summaryCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  summaryLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
+  summaryCard: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  summaryLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', marginBottom: 4 },
   summaryValue: { fontSize: 14, fontWeight: '800' },
   section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: '800', color: Brand.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
-  chartCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'flex-end', minHeight: 160, gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: c.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
+  chartCard: { backgroundColor: c.surface, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'flex-end', minHeight: 160, gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   chartBar: { flex: 1, alignItems: 'center' },
   barContainer: { width: '100%', height: 100, justifyContent: 'flex-end', marginBottom: 4 },
   barFill: { width: '100%', borderRadius: 4, minHeight: 2 },
-  barLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600' },
-  barValue: { fontSize: 10, color: Brand.textSecondary, fontWeight: '700' },
-  storeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, gap: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  barLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
+  barValue: { fontSize: 10, color: c.textSecondary, fontWeight: '700' },
+  storeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 8, gap: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
   storeRank: { width: 32, height: 32, borderRadius: 16, backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
   storeRankText: { fontSize: 14, fontWeight: '900', color: '#FFFFFF' },
-  storeName: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  storeMeta: { fontSize: 12, color: Brand.textTertiary },
+  storeName: { fontSize: 14, fontWeight: '700', color: c.text },
+  storeMeta: { fontSize: 12, color: c.textTertiary },
   storeCommission: { fontSize: 14, fontWeight: '800', color: Brand.primary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

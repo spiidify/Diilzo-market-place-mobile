@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminSupplierDetail,
   getAdminSuppliers,
@@ -28,11 +29,12 @@ const VERIFICATION_COLORS: Record<string, string> = {
   verified: Brand.primary,
   gold: Brand.rating,
   pending: '#3B82F6',
-  unverified: Brand.textTertiary,
 };
 
 export default function AdminSuppliersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [suppliers, setSuppliers] = useState<AdminSupplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,7 +116,7 @@ export default function AdminSuppliersScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminSupplier }) => {
-    const vColor = VERIFICATION_COLORS[item.verification_status] || Brand.textTertiary;
+    const vColor = VERIFICATION_COLORS[item.verification_status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -158,7 +160,7 @@ export default function AdminSuppliersScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="domain" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="domain" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No suppliers found</Text>
                 <Text style={styles.emptySub}>No suppliers registered yet</Text>
               </View>
@@ -172,7 +174,7 @@ export default function AdminSuppliersScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Supplier Details</Text>
                 <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               {detailLoading ? (
@@ -188,8 +190,8 @@ export default function AdminSuppliersScreen() {
                   <Text style={styles.detailLabel}>Business Type</Text>
                   <Text style={styles.detailValue}>{detail.business_type}</Text>
                   <Text style={styles.detailLabel}>Verification</Text>
-                  <View style={[styles.badge, { backgroundColor: (VERIFICATION_COLORS[detail.verification_status] || Brand.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: VERIFICATION_COLORS[detail.verification_status] || Brand.textTertiary }]}>{detail.verification_status}</Text>
+                  <View style={[styles.badge, { backgroundColor: (VERIFICATION_COLORS[detail.verification_status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={[styles.badgeText, { color: VERIFICATION_COLORS[detail.verification_status] || colors.textTertiary }]}>{detail.verification_status}</Text>
                   </View>
                   <Text style={styles.detailLabel}>Trade Assurance</Text>
                   <Text style={styles.detailValue}>{detail.trade_assurance ? 'Yes' : 'No'}</Text>
@@ -237,28 +239,28 @@ export default function AdminSuppliersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  supplierName: { fontSize: 15, fontWeight: '800', color: Brand.text, flex: 1, marginRight: 8 },
+  supplierName: { fontSize: 15, fontWeight: '800', color: c.text, flex: 1, marginRight: 8 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  businessType: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  businessType: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
   modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   actionBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   verifyBtn: { backgroundColor: Brand.primary },

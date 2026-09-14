@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,6 +19,7 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { fetchCategories } from '@/services/catalog';
 import { fetchProducts } from '@/services/products';
@@ -28,6 +29,8 @@ const LEFT_PANEL_WIDTH = 100;
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user, isAuthenticated } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -180,19 +183,19 @@ export default function CategoriesScreen() {
       {/* ── Search bar (white, below gradient header) ──────────────── */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search categories..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -210,7 +213,7 @@ export default function CategoriesScreen() {
           </View>
         ) : categories.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="package-variant-closed" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant-closed" size={48} color={colors.textTertiary} />
             <Text style={styles.emptyText}>No categories found</Text>
             <Pressable style={styles.retryBtn} onPress={() => { setLoading(true); load(); }}>
               <Text style={styles.retryBtnText}>Reload</Text>
@@ -313,7 +316,7 @@ export default function CategoriesScreen() {
                     </View>
                   ) : (
                     <View style={styles.emptySubs}>
-                      <MaterialCommunityIcons name="package-variant-closed" size={44} color={Brand.textTertiary} />
+                      <MaterialCommunityIcons name="package-variant-closed" size={44} color={colors.textTertiary} />
                       <Text style={styles.emptySubsText}>No subcategories yet</Text>
                       <Pressable
                         style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.85 }]}
@@ -344,7 +347,7 @@ export default function CategoriesScreen() {
                                 />
                               ) : (
                                 <View style={styles.productNoImage}>
-                                  <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
+                                  <MaterialCommunityIcons name="image-outline" size={32} color={colors.textTertiary} />
                                 </View>
                               )}
                               {item.is_on_sale && (
@@ -384,21 +387,21 @@ export default function CategoriesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   // ── Search bar (white, below gradient header) ───────────────────
   searchWrap: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8EDF0',
+    borderBottomColor: c.borderLight,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F4F6',
+    backgroundColor: c.background,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -407,13 +410,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     padding: 0,
   },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F4F6', gap: 10 },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background, gap: 10 },
   loadingText: { marginTop: 8, color: Brand.primary, fontSize: 14 },
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', paddingHorizontal: 20 },
-  emptyText: { fontSize: 14, color: Brand.textTertiary },
+  emptyText: { fontSize: 14, color: c.textTertiary },
   retryBtn: {
     marginTop: 8,
     backgroundColor: Brand.primary,
@@ -429,16 +432,16 @@ const styles = StyleSheet.create({
   // ── Left panel ─────────────────────────────────────────────────
   leftPanel: {
     width: 100,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRightWidth: 1,
-    borderRightColor: '#E8EDF0',
+    borderRightColor: c.borderLight,
   },
   parentList: { paddingVertical: 4, paddingHorizontal: 4 },
   parentItem: {
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     position: 'relative',
     width: '100%',
     borderRadius: 12,
@@ -461,7 +464,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1.5,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
   },
   parentCircleActive: {
     borderColor: Brand.primary,
@@ -479,7 +482,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 11,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 13,
   },
@@ -491,7 +494,7 @@ const styles = StyleSheet.create({
   // ── Right panel ────────────────────────────────────────────────
   rightPanel: {
     flex: 1,
-    backgroundColor: '#F2F4F6',
+    backgroundColor: c.background,
   },
   rightContent: { paddingBottom: 24 },
 
@@ -585,12 +588,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   subCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
   },
   subCardIcon: {
     width: 48,
@@ -598,7 +601,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
     marginBottom: 6,
   },
   subCardImg: { width: '100%', height: '100%' },
@@ -612,13 +615,13 @@ const styles = StyleSheet.create({
   subCardName: {
     fontSize: 9.5,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 11,
   },
   subCardCount: {
     fontSize: 8,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 1,
   },
 
@@ -628,7 +631,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     gap: 8,
   },
-  emptySubsText: { fontSize: 14, color: Brand.textTertiary },
+  emptySubsText: { fontSize: 14, color: c.textTertiary },
   browseBtn: {
     marginTop: 8,
     backgroundColor: Brand.primary,
@@ -646,7 +649,7 @@ const styles = StyleSheet.create({
   productsSectionTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
     marginBottom: 10,
   },
   productGrid: {
@@ -657,11 +660,11 @@ const styles = StyleSheet.create({
   productCard: {
     width: '48%',
     flex: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -671,7 +674,7 @@ const styles = StyleSheet.create({
   productImageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: '#F8FAFB',
+    backgroundColor: c.surfaceAlt,
     position: 'relative',
   },
   productImage: {
@@ -705,7 +708,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.text,
+    color: c.text,
     lineHeight: 15,
   },
   productPriceRow: {
@@ -715,13 +718,13 @@ const styles = StyleSheet.create({
   },
   productCurrency: {
     fontSize: 10,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '600',
   },
   productPrice: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   productsLoading: {
     alignItems: 'center',
@@ -730,6 +733,6 @@ const styles = StyleSheet.create({
   },
   productsLoadingText: {
     fontSize: 13,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
 });

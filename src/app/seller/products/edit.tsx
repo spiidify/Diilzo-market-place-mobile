@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +20,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
 import { getProductDetail, updateProduct } from '@/services/seller';
@@ -36,6 +37,8 @@ export default function EditProductScreen() {
   const params = useLocalSearchParams<{ id?: string; product_id?: string; slug?: string }>();
   const productId = params.id || params.product_id;
   const slug = params.slug;
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // ── Form state ──────────────────────────────────────────────────
   const [name, setName] = useState('');
@@ -319,7 +322,7 @@ export default function EditProductScreen() {
                   value={name}
                   onChangeText={setName}
                   placeholder="e.g. Organic Avocado"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                 />
 
                 <Text style={styles.label}>Description</Text>
@@ -328,7 +331,7 @@ export default function EditProductScreen() {
                   value={description}
                   onChangeText={setDescription}
                   placeholder="Describe your product..."
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -346,7 +349,7 @@ export default function EditProductScreen() {
                       value={price}
                       onChangeText={setPrice}
                       placeholder="0"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       keyboardType="numeric"
                     />
                   </View>
@@ -357,7 +360,7 @@ export default function EditProductScreen() {
                       value={salePrice}
                       onChangeText={setSalePrice}
                       placeholder="0"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       keyboardType="numeric"
                     />
                   </View>
@@ -371,7 +374,7 @@ export default function EditProductScreen() {
                       value={stock}
                       onChangeText={setStock}
                       placeholder="0"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       keyboardType="numeric"
                     />
                   </View>
@@ -382,7 +385,7 @@ export default function EditProductScreen() {
                       value={sku}
                       onChangeText={setSku}
                       placeholder="Optional"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       autoCapitalize="characters"
                     />
                   </View>
@@ -396,7 +399,7 @@ export default function EditProductScreen() {
                       value={minOrderQty}
                       onChangeText={setMinOrderQty}
                       placeholder="1"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       keyboardType="numeric"
                     />
                   </View>
@@ -407,7 +410,7 @@ export default function EditProductScreen() {
                       value={weight}
                       onChangeText={setWeight}
                       placeholder="0.0"
-                      placeholderTextColor={Brand.textTertiary}
+                      placeholderTextColor={colors.textTertiary}
                       keyboardType="decimal-pad"
                     />
                   </View>
@@ -428,7 +431,7 @@ export default function EditProductScreen() {
                   >
                     {selectedCategory ? selectedCategory.name : 'Select category'}
                   </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={Brand.textSecondary} />
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
                 </Pressable>
 
                 <Text style={styles.label}>Brand</Text>
@@ -442,7 +445,7 @@ export default function EditProductScreen() {
                   >
                     {selectedBrand ? selectedBrand.name : 'Select brand (optional)'}
                   </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={Brand.textSecondary} />
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
 
@@ -451,9 +454,9 @@ export default function EditProductScreen() {
               <View style={styles.card}>
                 <Text style={styles.label}>Product Video (Upload)</Text>
                 {existingVideoUrl && !videoFile && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, padding: 8, backgroundColor: Brand.surfaceAlt, borderRadius: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, padding: 8, backgroundColor: colors.surfaceAlt, borderRadius: 8 }}>
                     <MaterialCommunityIcons name="video" size={20} color={Brand.primary} />
-                    <Text style={{ flex: 1, fontSize: 12, color: Brand.textSecondary }} numberOfLines={1}>
+                    <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary }} numberOfLines={1}>
                       Current video: {existingVideoUrl.split('/').pop()}
                     </Text>
                   </View>
@@ -482,7 +485,7 @@ export default function EditProductScreen() {
                   value={videoUrl}
                   onChangeText={setVideoUrl}
                   placeholder="https://youtube.com/..."
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   autoCapitalize="none"
                   keyboardType="url"
                 />
@@ -492,7 +495,7 @@ export default function EditProductScreen() {
                   <Switch
                     value={isActive}
                     onValueChange={setIsActive}
-                    trackColor={{ false: Brand.border, true: Brand.primary }}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -535,7 +538,7 @@ export default function EditProductScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Select Category</Text>
                 <Pressable onPress={() => setShowCategoryModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.text} />
                 </Pressable>
               </View>
               <ScrollView style={styles.modalList}>
@@ -544,7 +547,7 @@ export default function EditProductScreen() {
                     key={`cat-${cat.id}`}
                     style={[
                       styles.modalItem,
-                      cat.id === categoryId && { backgroundColor: Brand.surfaceAlt },
+                      cat.id === categoryId && { backgroundColor: colors.surfaceAlt },
                     ]}
                     onPress={() => {
                       setCategoryId(cat.id);
@@ -569,14 +572,14 @@ export default function EditProductScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Select Brand</Text>
                 <Pressable onPress={() => setShowBrandModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.text} />
                 </Pressable>
               </View>
               <ScrollView style={styles.modalList}>
                 <Pressable
                   style={[
                     styles.modalItem,
-                    brandId === null && { backgroundColor: Brand.surfaceAlt },
+                    brandId === null && { backgroundColor: colors.surfaceAlt },
                   ]}
                   onPress={() => {
                     setBrandId(null);
@@ -593,7 +596,7 @@ export default function EditProductScreen() {
                     key={`brand-${br.id}`}
                     style={[
                       styles.modalItem,
-                      br.id === brandId && { backgroundColor: Brand.surfaceAlt },
+                      br.id === brandId && { backgroundColor: colors.surfaceAlt },
                     ]}
                     onPress={() => {
                       setBrandId(br.id);
@@ -615,25 +618,25 @@ export default function EditProductScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
 
   body: { flex: 1 },
   bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: Spacing.two, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: Spacing.two, color: c.textSecondary, fontSize: 14 },
 
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     marginTop: Spacing.three,
     marginBottom: Spacing.two,
   },
 
   card: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     gap: Spacing.two + Spacing.half,
@@ -644,16 +647,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
 
-  label: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  label: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   input: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: Spacing.three - Spacing.half,
     paddingVertical: Spacing.two + Spacing.half,
     fontSize: 15,
-    color: Brand.text,
-    backgroundColor: Brand.surfaceAlt,
+    color: c.text,
+    backgroundColor: c.surfaceAlt,
   },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
 
@@ -665,14 +668,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: Spacing.three - Spacing.half,
     paddingVertical: Spacing.two + Spacing.half,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
-  dropdownText: { fontSize: 15, color: Brand.text, flex: 1 },
-  dropdownPlaceholder: { color: Brand.textTertiary },
+  dropdownText: { fontSize: 15, color: c.text, flex: 1 },
+  dropdownPlaceholder: { color: c.textTertiary },
 
   imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   thumbWrap: { width: 84, height: 84, borderRadius: 12, overflow: 'visible' },
@@ -683,11 +686,11 @@ const styles = StyleSheet.create({
     height: 84,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
   },
   addImageText: { fontSize: 11, color: Brand.primary, fontWeight: '600', marginTop: 2 },
 
@@ -697,7 +700,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Spacing.one,
   },
-  switchLabel: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  switchLabel: { fontSize: 14, fontWeight: '600', color: c.text },
 
   errorBox: {
     flexDirection: 'row',
@@ -724,7 +727,7 @@ const styles = StyleSheet.create({
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
@@ -736,9 +739,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three + Spacing.half,
     paddingVertical: Spacing.three,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: c.borderLight,
   },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: c.text },
   modalList: { paddingVertical: Spacing.two },
   modalItem: {
     flexDirection: 'row',
@@ -747,5 +750,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three + Spacing.half,
     paddingVertical: Spacing.three - Spacing.half,
   },
-  modalItemText: { fontSize: 15, color: Brand.text },
+  modalItemText: { fontSize: 15, color: c.text },
 });

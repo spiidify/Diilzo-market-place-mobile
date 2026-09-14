@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   createCurrency,
   getAdminCurrencies,
@@ -26,6 +27,8 @@ import {
 
 export default function AdminCurrenciesScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [currencies, setCurrencies] = useState<AdminCurrency[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -109,8 +112,8 @@ export default function AdminCurrenciesScreen() {
             <Text style={styles.currencyName}>{item.currency_name}</Text>
           </View>
         </View>
-        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : Brand.textTertiary) + '20' }]}>
-          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : Brand.textTertiary }]}>
+        <View style={[styles.badge, { backgroundColor: (item.is_active ? Brand.primary : colors.textTertiary) + '20' }]}>
+          <Text style={[styles.badgeText, { color: item.is_active ? Brand.primary : colors.textTertiary }]}>
             {item.is_active ? 'Active' : 'Inactive'}
           </Text>
         </View>
@@ -141,7 +144,7 @@ export default function AdminCurrenciesScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="currency-usd-off" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="currency-usd-off" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No currencies found</Text>
                 <Text style={styles.emptySub}>Create one to get started</Text>
               </View>
@@ -155,20 +158,20 @@ export default function AdminCurrenciesScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>New Currency</Text>
                 <Pressable onPress={() => setModalVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               <Text style={styles.fieldLabel}>Currency Code</Text>
-              <TextInput style={styles.input} value={form.currency_code} onChangeText={(v) => setForm({ ...form, currency_code: v })} placeholder="e.g. USD" placeholderTextColor={Brand.textTertiary} autoCapitalize="characters" />
+              <TextInput style={styles.input} value={form.currency_code} onChangeText={(v) => setForm({ ...form, currency_code: v })} placeholder="e.g. USD" placeholderTextColor={colors.textTertiary} autoCapitalize="characters" />
               <Text style={styles.fieldLabel}>Currency Name</Text>
-              <TextInput style={styles.input} value={form.currency_name} onChangeText={(v) => setForm({ ...form, currency_name: v })} placeholder="e.g. US Dollar" placeholderTextColor={Brand.textTertiary} />
+              <TextInput style={styles.input} value={form.currency_name} onChangeText={(v) => setForm({ ...form, currency_name: v })} placeholder="e.g. US Dollar" placeholderTextColor={colors.textTertiary} />
               <Text style={styles.fieldLabel}>Currency Symbol</Text>
-              <TextInput style={styles.input} value={form.currency_symbol} onChangeText={(v) => setForm({ ...form, currency_symbol: v })} placeholder="e.g. $" placeholderTextColor={Brand.textTertiary} />
+              <TextInput style={styles.input} value={form.currency_symbol} onChangeText={(v) => setForm({ ...form, currency_symbol: v })} placeholder="e.g. $" placeholderTextColor={colors.textTertiary} />
               <Text style={styles.fieldLabel}>Rate to UGX</Text>
-              <TextInput style={styles.input} value={form.rate_to_ugx} onChangeText={(v) => setForm({ ...form, rate_to_ugx: v })} placeholder="e.g. 3800" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+              <TextInput style={styles.input} value={form.rate_to_ugx} onChangeText={(v) => setForm({ ...form, rate_to_ugx: v })} placeholder="e.g. 3800" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
               <View style={styles.switchRow}>
                 <Text style={styles.fieldLabel}>Active</Text>
-                <Switch value={form.is_active} onValueChange={(v) => setForm({ ...form, is_active: v })} trackColor={{ false: Brand.border, true: Brand.primary }} />
+                <Switch value={form.is_active} onValueChange={(v) => setForm({ ...form, is_active: v })} trackColor={{ false: colors.border, true: Brand.primary }} />
               </View>
               <Pressable style={[styles.saveBtn, saving && { opacity: 0.5 }]} disabled={saving} onPress={handleCreate}>
                 <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Create'}</Text>
@@ -183,11 +186,11 @@ export default function AdminCurrenciesScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Update Rate — {rateCurrency?.currency_code}</Text>
                 <Pressable onPress={() => setRateModalVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               <Text style={styles.fieldLabel}>New Rate to UGX</Text>
-              <TextInput style={styles.input} value={newRate} onChangeText={setNewRate} placeholder="e.g. 3800" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+              <TextInput style={styles.input} value={newRate} onChangeText={setNewRate} placeholder="e.g. 3800" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
               <Pressable style={[styles.saveBtn, saving && { opacity: 0.5 }]} disabled={saving} onPress={handleUpdateRate}>
                 <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Update Rate'}</Text>
               </Pressable>
@@ -199,33 +202,33 @@ export default function AdminCurrenciesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  symbolBadge: { width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  symbolBadge: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   symbolText: { fontSize: 18, fontWeight: '900', color: Brand.accent },
-  currencyCode: { fontSize: 15, fontWeight: '800', color: Brand.text },
-  currencyName: { fontSize: 12, color: Brand.textSecondary },
+  currencyCode: { fontSize: 15, fontWeight: '800', color: c.text },
+  currencyName: { fontSize: 12, color: c.textSecondary },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  rateLabel: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  rateValue: { fontSize: 16, fontWeight: '800', color: Brand.text },
+  rateLabel: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  rateValue: { fontSize: 16, fontWeight: '800', color: c.text },
   actionHint: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   actionHintText: { fontSize: 12, fontWeight: '600', color: Brand.primary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24 },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  fieldLabel: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, fontSize: 14, color: Brand.text, marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginBottom: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },

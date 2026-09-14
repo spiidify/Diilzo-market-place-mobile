@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   createRestrictedGood,
   getAdminRestrictedGoods,
@@ -33,6 +34,8 @@ const LEVEL_COLORS: Record<string, string> = {
 
 export default function AdminRestrictedGoodsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [goods, setGoods] = useState<AdminRestrictedGood[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,7 +95,7 @@ export default function AdminRestrictedGoodsScreen() {
   };
 
   const renderItem = ({ item }: { item: AdminRestrictedGood }) => {
-    const color = LEVEL_COLORS[item.restriction_level] || Brand.textTertiary;
+    const color = LEVEL_COLORS[item.restriction_level] || colors.textTertiary;
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -112,8 +115,8 @@ export default function AdminRestrictedGoodsScreen() {
             <Text style={styles.dutyText}>Duty: {item.duty_rate}%</Text>
           </View>
           {!item.is_active && (
-            <View style={[styles.badge, { backgroundColor: Brand.textTertiary + '20' }]}>
-              <Text style={[styles.badgeText, { color: Brand.textTertiary }]}>Inactive</Text>
+            <View style={[styles.badge, { backgroundColor: colors.textTertiary + '20' }]}>
+              <Text style={[styles.badgeText, { color: colors.textTertiary }]}>Inactive</Text>
             </View>
           )}
         </View>
@@ -127,11 +130,11 @@ export default function AdminRestrictedGoodsScreen() {
       <ModernHeader title="Restricted Goods" rightIcon="plus" onRightPress={() => setModalVisible(true)} />
       <View style={styles.body}>
         <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Filter by country..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             value={countryFilter}
             onChangeText={handleSearch}
             autoCapitalize="none"
@@ -139,7 +142,7 @@ export default function AdminRestrictedGoodsScreen() {
           />
           {countryFilter.length > 0 && (
             <Pressable onPress={() => { setCountryFilter(''); load(); }} hitSlop={12}>
-              <MaterialCommunityIcons name="close-circle" size={20} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={20} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -155,7 +158,7 @@ export default function AdminRestrictedGoodsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(countryFilter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="shield-alert-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="shield-alert-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No restricted goods found</Text>
                 <Text style={styles.emptySub}>Try a different country or create one</Text>
               </View>
@@ -169,12 +172,12 @@ export default function AdminRestrictedGoodsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>New Restricted Good</Text>
                 <Pressable onPress={() => setModalVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
                 </Pressable>
               </View>
               <ScrollView style={{ maxHeight: '75%' }} showsVerticalScrollIndicator={false}>
                 <Text style={styles.fieldLabel}>Country</Text>
-                <TextInput style={styles.input} value={form.country} onChangeText={(v) => setForm({ ...form, country: v })} placeholder="e.g. Uganda" placeholderTextColor={Brand.textTertiary} />
+                <TextInput style={styles.input} value={form.country} onChangeText={(v) => setForm({ ...form, country: v })} placeholder="e.g. Uganda" placeholderTextColor={colors.textTertiary} />
                 <Text style={styles.fieldLabel}>Restriction Level</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
                   {['banned', 'restricted', 'conditional', 'permitted'].map((l) => (
@@ -184,18 +187,18 @@ export default function AdminRestrictedGoodsScreen() {
                   ))}
                 </ScrollView>
                 <Text style={styles.fieldLabel}>Description</Text>
-                <TextInput style={[styles.input, { minHeight: 80 }]} value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} placeholder="Description" placeholderTextColor={Brand.textTertiary} multiline textAlignVertical="top" />
+                <TextInput style={[styles.input, { minHeight: 80 }]} value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} placeholder="Description" placeholderTextColor={colors.textTertiary} multiline textAlignVertical="top" />
                 <Text style={styles.fieldLabel}>Duty Rate (%)</Text>
-                <TextInput style={styles.input} value={form.duty_rate} onChangeText={(v) => setForm({ ...form, duty_rate: v })} placeholder="e.g. 25" placeholderTextColor={Brand.textTertiary} keyboardType="numeric" />
+                <TextInput style={styles.input} value={form.duty_rate} onChangeText={(v) => setForm({ ...form, duty_rate: v })} placeholder="e.g. 25" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
                 <Text style={styles.fieldLabel}>Permit Authority</Text>
-                <TextInput style={styles.input} value={form.permit_authority} onChangeText={(v) => setForm({ ...form, permit_authority: v })} placeholder="e.g. URA" placeholderTextColor={Brand.textTertiary} />
+                <TextInput style={styles.input} value={form.permit_authority} onChangeText={(v) => setForm({ ...form, permit_authority: v })} placeholder="e.g. URA" placeholderTextColor={colors.textTertiary} />
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>Permit Required</Text>
-                  <Switch value={form.permit_required} onValueChange={(v) => setForm({ ...form, permit_required: v })} trackColor={{ false: Brand.border, true: Brand.accent }} />
+                  <Switch value={form.permit_required} onValueChange={(v) => setForm({ ...form, permit_required: v })} trackColor={{ false: colors.border, true: Brand.accent }} />
                 </View>
                 <View style={styles.switchRow}>
                   <Text style={styles.fieldLabel}>Active</Text>
-                  <Switch value={form.is_active} onValueChange={(v) => setForm({ ...form, is_active: v })} trackColor={{ false: Brand.border, true: Brand.primary }} />
+                  <Switch value={form.is_active} onValueChange={(v) => setForm({ ...form, is_active: v })} trackColor={{ false: colors.border, true: Brand.primary }} />
                 </View>
                 <Pressable style={[styles.saveBtn, saving && { opacity: 0.5 }]} disabled={saving} onPress={handleCreate}>
                   <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Create'}</Text>
@@ -209,34 +212,34 @@ export default function AdminRestrictedGoodsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, marginLeft: 8, paddingVertical: 0 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, marginHorizontal: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, marginLeft: 8, paddingVertical: 0 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  countryText: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  countryText: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  description: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  description: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dutyText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  authorityText: { fontSize: 12, color: Brand.textTertiary, marginTop: 4 },
+  dutyText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  authorityText: { fontSize: 12, color: c.textTertiary, marginTop: 4 },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, maxHeight: '90%' },
+  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  fieldLabel: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Brand.border, borderRadius: 10, padding: 12, fontSize: 14, color: Brand.text, marginBottom: 16 },
-  levelTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: Brand.surfaceAlt, borderWidth: 1, borderColor: Brand.border, marginRight: 8 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginBottom: 16 },
+  levelTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border, marginRight: 8 },
   levelTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  levelTabText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  levelTabText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   levelTabTextActive: { color: '#FFFFFF' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },

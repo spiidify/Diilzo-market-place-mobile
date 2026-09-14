@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +14,7 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getAdminDashboard, getSidebarCounts, type AdminDashboard, type SidebarCounts } from '@/services/adminApi';
 
 interface MenuItem {
@@ -97,6 +98,8 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [counts, setCounts] = useState<SidebarCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,7 +199,7 @@ export default function AdminDashboardScreen() {
                     <Text style={styles.roleSwitchTitle}>Switch to Buyer Mode</Text>
                     <Text style={styles.roleSwitchSub}>Browse and shop products</Text>
                   </View>
-                  <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
                 </Pressable>
                 {user?.has_store && (
                   <Pressable
@@ -210,7 +213,7 @@ export default function AdminDashboardScreen() {
                       <Text style={styles.roleSwitchTitle}>Switch to Seller Mode</Text>
                       <Text style={styles.roleSwitchSub}>Manage your store and products</Text>
                     </View>
-                    <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                    <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
                   </Pressable>
                 )}
               </View>
@@ -222,23 +225,23 @@ export default function AdminDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12, paddingBottom: 40 },
   kpiSection: { marginBottom: 8 },
-  sectionTitle: { fontSize: 13, fontWeight: '800', color: Brand.textSecondary, marginBottom: 10, paddingHorizontal: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: { fontSize: 13, fontWeight: '800', color: c.textSecondary, marginBottom: 10, paddingHorizontal: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpiCard: { flex: 1, minWidth: '31%', backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, gap: 6, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  kpiCard: { flex: 1, minWidth: '31%', backgroundColor: c.surface, borderRadius: 14, padding: 14, gap: 6, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   kpiIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  kpiValue: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  kpiLabel: { fontSize: 11, color: Brand.textTertiary },
+  kpiValue: { fontSize: 16, fontWeight: '800', color: c.text },
+  kpiLabel: { fontSize: 11, color: c.textTertiary },
   section: { marginBottom: 16 },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  menuCard: { flex: 1, minWidth: '31%', backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  menuCard: { flex: 1, minWidth: '31%', backgroundColor: c.surface, borderRadius: 14, padding: 14, alignItems: 'center', gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   menuIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  menuLabel: { fontSize: 12, fontWeight: '600', color: Brand.text, textAlign: 'center' },
+  menuLabel: { fontSize: 12, fontWeight: '600', color: c.text, textAlign: 'center' },
   badge: { position: 'absolute', top: 8, right: 8, backgroundColor: Brand.danger, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, justifyContent: 'center', alignItems: 'center' },
   badgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
 
@@ -246,8 +249,8 @@ const styles = StyleSheet.create({
   roleSwitchSection: { marginTop: 16, marginBottom: 8, gap: 8 },
   roleSwitchBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 14,
-    borderWidth: 1, borderColor: '#E8EDF0',
+    backgroundColor: c.surface, padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: c.borderLight,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   roleSwitchIcon: {
@@ -255,6 +258,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   roleSwitchInfo: { flex: 1, gap: 2 },
-  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  roleSwitchSub: { fontSize: 13, color: Brand.textTertiary },
+  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  roleSwitchSub: { fontSize: 13, color: c.textTertiary },
 });

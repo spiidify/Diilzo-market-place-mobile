@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,9 +19,12 @@ import { addToCart } from '@/services/cart';
 import { fetchBuyAgain } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { Product } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function BuyAgainScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +70,7 @@ export default function BuyAgainScreen() {
         <Image source={{ uri: item.images[0].image }} style={styles.image} />
       ) : (
         <View style={[styles.image, styles.imagePlaceholder]}>
-          <MaterialCommunityIcons name="image-off" size={24} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="image-off" size={24} color={colors.textTertiary} />
         </View>
       )}
       <View style={styles.cardBody}>
@@ -86,7 +89,7 @@ export default function BuyAgainScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Buy Again</Text>
           <View style={{ width: 24 }} />
@@ -102,7 +105,7 @@ export default function BuyAgainScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Buy Again</Text>
         <View style={{ width: 24 }} />
@@ -116,7 +119,7 @@ export default function BuyAgainScreen() {
         </View>
       ) : products.length === 0 ? (
         <View style={styles.centerContent}>
-          <MaterialCommunityIcons name="history" size={48} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="history" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyTitle}>No previous purchases</Text>
           <Text style={styles.emptySubtitle}>Products you've ordered will appear here for quick repurchase</Text>
         </View>
@@ -134,24 +137,24 @@ export default function BuyAgainScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Brand.surface },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.surface },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.three, paddingVertical: Spacing.two,
-    borderBottomWidth: 1, borderBottomColor: Brand.border,
+    borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
   centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   list: { padding: Spacing.two },
   card: {
-    flex: 1, margin: Spacing.one, backgroundColor: Brand.surface,
-    borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: Brand.border,
+    flex: 1, margin: Spacing.one, backgroundColor: c.surface,
+    borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: c.border,
   },
   image: { width: '100%', height: 140, resizeMode: 'cover' },
-  imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: Brand.border },
+  imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: c.border },
   cardBody: { padding: Spacing.two },
-  name: { fontSize: 13, fontWeight: '600', color: Brand.text, marginBottom: 4 },
+  name: { fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 4 },
   price: { fontSize: 14, fontWeight: '700', color: Brand.primary, marginBottom: 8 },
   buyAgainBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -161,6 +164,6 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
   retryBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Brand.primary, borderRadius: 8 },
   retryText: { color: '#fff', fontWeight: '600' },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: Brand.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: Brand.textSecondary, marginTop: 4, textAlign: 'center' },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: c.text, marginTop: 12 },
+  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 4, textAlign: 'center' },
 });

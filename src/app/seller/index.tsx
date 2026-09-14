@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
 // ── Stat card data ──────────────────────────────────────────────────
@@ -51,6 +52,8 @@ export default function SellerDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { chatUnread, refreshBadges } = useBadges();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
     try {
@@ -149,9 +152,9 @@ export default function SellerDashboardScreen() {
       title: 'Store Management',
       items: [
         { icon: 'account-group', label: 'Staff', color: '#3B82F6', route: '/seller/staff' },
-        { icon: 'shield-check-outline', label: 'Verification', color: Brand.textSecondary, route: '/seller/verification' },
+        { icon: 'shield-check-outline', label: 'Verification', color: colors.textSecondary, route: '/seller/verification' },
         { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages', count: chatUnread },
-        { icon: 'store-settings-outline', label: 'Settings', color: Brand.textSecondary, route: '/seller/settings' },
+        { icon: 'store-settings-outline', label: 'Settings', color: colors.textSecondary, route: '/seller/settings' },
       ],
     },
     {
@@ -279,7 +282,7 @@ export default function SellerDashboardScreen() {
               <Text style={styles.roleSwitchTitle}>Switch to Buyer Mode</Text>
               <Text style={styles.roleSwitchSub}>Browse and shop products</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
           </Pressable>
 
           {/* Admin access for superusers */}
@@ -296,7 +299,7 @@ export default function SellerDashboardScreen() {
                   <Text style={styles.roleSwitchTitle}>Admin Dashboard</Text>
                   <Text style={styles.roleSwitchSub}>Full platform management</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
@@ -309,7 +312,7 @@ export default function SellerDashboardScreen() {
                   <Text style={styles.roleSwitchTitle}>AdminOps Central</Text>
                   <Text style={styles.roleSwitchSub}>Operations dashboard</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
               </Pressable>
             </>
           )}
@@ -357,6 +360,8 @@ function formatShort(n: number): string {
 // ── Gradient hero header component ──────────────────────────────────
 function GradientHero({ title, store, stats }: { title: string; store: any; stats?: any }) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const location = [store?.city, store?.country].filter(Boolean).join(', ');
   const rating = stats?.rating ? parseFloat(stats.rating).toFixed(1) : null;
   const followers = store?.follower_count || 0;
@@ -460,13 +465,13 @@ function GradientHero({ title, store, stats }: { title: string; store: any; stat
 }
 
 // ── Styles ──────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
 
   body: { flex: 1 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center' },
   retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -522,7 +527,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%', marginHorizontal: '1%',
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16,
     marginBottom: 10,
     elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
@@ -530,23 +535,23 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 12,
     justifyContent: 'center', alignItems: 'center', marginBottom: 10,
   },
-  statValue: { fontSize: 24, fontWeight: '900', color: Brand.text, letterSpacing: -0.5 },
-  statSublabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600', marginTop: -2 },
-  statLabel: { fontSize: 12, color: Brand.textSecondary, fontWeight: '600', marginTop: 4 },
+  statValue: { fontSize: 24, fontWeight: '900', color: c.text, letterSpacing: -0.5 },
+  statSublabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600', marginTop: -2 },
+  statLabel: { fontSize: 12, color: c.textSecondary, fontWeight: '600', marginTop: 4 },
 
   // ── Sales + rating banner ──────────────────────────────────────────
   salesBanner: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#FFFFFF', marginHorizontal: 14, marginBottom: 12,
+    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 12,
     padding: 16, borderRadius: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   salesLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  salesDivider: { width: 1, height: 36, backgroundColor: Brand.borderLight, marginHorizontal: 8 },
+  salesDivider: { width: 1, height: 36, backgroundColor: c.borderLight, marginHorizontal: 8 },
   salesRight: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  salesLabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
-  salesValue: { fontSize: 16, fontWeight: '800', color: Brand.text, marginTop: 2 },
-  reviewText: { fontSize: 12, color: Brand.textTertiary, fontWeight: '500' },
+  salesLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600' },
+  salesValue: { fontSize: 16, fontWeight: '800', color: c.text, marginTop: 2 },
+  reviewText: { fontSize: 12, color: c.textTertiary, fontWeight: '500' },
 
   // ── Quick action buttons ───────────────────────────────────────────
   quickActions: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 20 },
@@ -554,7 +559,7 @@ const styles = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Brand.primary, paddingVertical: 14, borderRadius: 14,
   },
-  quickBtnSecondary: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: Brand.primary },
+  quickBtnSecondary: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: Brand.primary },
   quickBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
   quickBtnTextDark: { fontSize: 14, fontWeight: '800', color: Brand.primary },
 
@@ -562,8 +567,8 @@ const styles = StyleSheet.create({
   roleSwitchSection: { paddingHorizontal: 14, marginBottom: 18, gap: 8 },
   roleSwitchBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 14,
-    borderWidth: 1, borderColor: '#E8EDF0',
+    backgroundColor: c.surface, padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: c.borderLight,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   roleSwitchIcon: {
@@ -572,18 +577,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   roleSwitchInfo: { flex: 1, gap: 2 },
-  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
-  roleSwitchSub: { fontSize: 13, color: Brand.textTertiary },
+  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  roleSwitchSub: { fontSize: 13, color: c.textTertiary },
 
   // ── Menu groups ────────────────────────────────────────────────────
   menuGroup: { paddingHorizontal: 14, marginBottom: 18 },
   groupTitle: {
-    fontSize: 13, fontWeight: '800', color: Brand.textSecondary,
+    fontSize: 13, fontWeight: '800', color: c.textSecondary,
     marginBottom: 10, marginLeft: 2, textTransform: 'uppercase', letterSpacing: 0.5,
   },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   menuCard: {
-    width: '47%', backgroundColor: '#FFFFFF', borderRadius: 14,
+    width: '47%', backgroundColor: c.surface, borderRadius: 14,
     padding: 16, alignItems: 'flex-start',
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -591,7 +596,7 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 12,
     justifyContent: 'center', alignItems: 'center', marginBottom: 10,
   },
-  menuLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  menuLabel: { fontSize: 14, fontWeight: '700', color: c.text },
   menuBadge: {
     position: 'absolute', top: 12, right: 12,
     backgroundColor: Brand.primary, minWidth: 22, height: 22, borderRadius: 11,

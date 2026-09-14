@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   fetchSellerCustomerDetail,
   updateSellerCustomer,
@@ -32,6 +33,8 @@ export default function SellerCustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const customerId = Number(id);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [customer, setCustomer] = useState<StoreCustomer | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,7 +80,7 @@ export default function SellerCustomerDetailScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Customer</Text>
           <View style={{ width: 24 }} />
@@ -94,7 +97,7 @@ export default function SellerCustomerDetailScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Customer</Text>
           <View style={{ width: 24 }} />
@@ -115,7 +118,7 @@ export default function SellerCustomerDetailScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Customer</Text>
         <View style={{ width: 24 }} />
@@ -169,7 +172,7 @@ export default function SellerCustomerDetailScreen() {
             value={tags}
             onChangeText={setTags}
             placeholder="vip, wholesale, frequent"
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
           />
           <Text style={styles.inputLabel}>Notes</Text>
           <TextInput
@@ -177,7 +180,7 @@ export default function SellerCustomerDetailScreen() {
             value={notes}
             onChangeText={setNotes}
             placeholder="Add private notes about this customer..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -221,20 +224,20 @@ export default function SellerCustomerDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Brand.surface },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.surface },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.three, paddingVertical: Spacing.two,
-    borderBottomWidth: 1, borderBottomColor: Brand.border,
+    borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
   centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   scrollContent: { padding: Spacing.three },
   profileCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
-    backgroundColor: Brand.surface, borderRadius: 12, padding: Spacing.three,
-    borderWidth: 1, borderColor: Brand.border, marginBottom: Spacing.two,
+    backgroundColor: c.surface, borderRadius: 12, padding: Spacing.three,
+    borderWidth: 1, borderColor: c.border, marginBottom: Spacing.two,
   },
   avatar: {
     width: 56, height: 56, borderRadius: 28, backgroundColor: Brand.primary,
@@ -242,26 +245,26 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontSize: 20, fontWeight: '700' },
   profileInfo: { flex: 1 },
-  name: { fontSize: 18, fontWeight: '700', color: Brand.text, marginBottom: 2 },
-  email: { fontSize: 13, color: Brand.textSecondary, marginBottom: 6 },
+  name: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 2 },
+  email: { fontSize: 13, color: c.textSecondary, marginBottom: 6 },
   statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   statusText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.two },
   statCard: {
-    flex: 1, minWidth: '45%', backgroundColor: Brand.surface, borderRadius: 10,
-    padding: Spacing.two, borderWidth: 1, borderColor: Brand.border,
+    flex: 1, minWidth: '45%', backgroundColor: c.surface, borderRadius: 10,
+    padding: Spacing.two, borderWidth: 1, borderColor: c.border,
   },
-  statValue: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 2 },
-  statLabel: { fontSize: 11, color: Brand.textSecondary },
+  statValue: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 2 },
+  statLabel: { fontSize: 11, color: c.textSecondary },
   sectionCard: {
-    backgroundColor: Brand.surface, borderRadius: 12, padding: Spacing.three,
-    borderWidth: 1, borderColor: Brand.border, marginBottom: Spacing.two,
+    backgroundColor: c.surface, borderRadius: 12, padding: Spacing.three,
+    borderWidth: 1, borderColor: c.border, marginBottom: Spacing.two,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Brand.text, marginBottom: 12 },
-  inputLabel: { fontSize: 12, color: Brand.textSecondary, marginBottom: 4, marginTop: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 12 },
+  inputLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4, marginTop: 8 },
   input: {
-    borderWidth: 1, borderColor: Brand.border, borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: Brand.text,
+    borderWidth: 1, borderColor: c.border, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: c.text,
   },
   textArea: { minHeight: 80 },
   saveBtn: {
@@ -271,15 +274,15 @@ const styles = StyleSheet.create({
   saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   orderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   orderInfo: { flex: 1 },
-  orderNumber: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  orderDate: { fontSize: 12, color: Brand.textSecondary, marginTop: 2 },
+  orderNumber: { fontSize: 14, fontWeight: '600', color: c.text },
+  orderDate: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
   orderRight: { alignItems: 'flex-end' },
   orderTotal: { fontSize: 13, fontWeight: '700', color: Brand.primary },
-  orderStatus: { fontSize: 11, color: Brand.textSecondary, marginTop: 2, textTransform: 'capitalize' },
-  emptyText: { fontSize: 13, color: Brand.textTertiary, textAlign: 'center', paddingVertical: 16 },
+  orderStatus: { fontSize: 11, color: c.textSecondary, marginTop: 2, textTransform: 'capitalize' },
+  emptyText: { fontSize: 13, color: c.textTertiary, textAlign: 'center', paddingVertical: 16 },
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
   retryBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Brand.primary, borderRadius: 8 },
   retryText: { color: '#fff', fontWeight: '600' },

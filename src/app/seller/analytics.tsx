@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getAnalytics, getMyStore } from '@/services/seller';
 
 type Period = '7d' | '30d' | '90d';
@@ -35,6 +36,8 @@ const PERIODS: { key: Period; label: string }[] = [
 
 export default function SellerAnalyticsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [period, setPeriod] = useState<Period>('30d');
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,7 +201,7 @@ export default function SellerAnalyticsScreen() {
                 </View>
               ) : (
                 <View style={styles.emptyChart}>
-                  <MaterialCommunityIcons name="chart-bar" size={36} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="chart-bar" size={36} color={colors.textTertiary} />
                   <Text style={styles.emptyChartText}>No revenue data for this period</Text>
                 </View>
               )}
@@ -271,13 +274,13 @@ export default function SellerAnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
 
   // ── Period selector ───────────────────────────────────────────
   periodRow: {
     flexDirection: 'row',
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     marginHorizontal: Spacing.three,
     marginTop: Spacing.three - Spacing.half,
     borderRadius: 12,
@@ -290,14 +293,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodBtnActive: { backgroundColor: Brand.primary },
-  periodText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  periodText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   periodTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   body: { flex: 1 },
   bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  loadingText: { marginTop: Spacing.two, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: Spacing.two, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: Spacing.three - Spacing.half, fontSize: 14, color: Brand.danger, textAlign: 'center' },
   retryBtn: {
     marginTop: Spacing.three + Spacing.half,
@@ -318,7 +321,7 @@ const styles = StyleSheet.create({
   kpiCard: {
     flex: 1,
     minWidth: '47%',
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three - Spacing.half,
     gap: Spacing.one + Spacing.half,
@@ -335,12 +338,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  kpiValue: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  kpiLabel: { fontSize: 12, color: Brand.textSecondary, fontWeight: '500' },
+  kpiValue: { fontSize: 18, fontWeight: '800', color: c.text },
+  kpiLabel: { fontSize: 12, color: c.textSecondary, fontWeight: '500' },
 
   // ── Card ──────────────────────────────────────────────────────
   card: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three + Spacing.half,
     marginBottom: Spacing.three - Spacing.half,
@@ -350,7 +353,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: Brand.text, marginBottom: Spacing.three - Spacing.half },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: Spacing.three - Spacing.half },
 
   // ── Chart ─────────────────────────────────────────────────────
   chart: {
@@ -362,10 +365,10 @@ const styles = StyleSheet.create({
   barCol: { flex: 1, alignItems: 'center', gap: Spacing.one + Spacing.half },
   barTrack: { flex: 1, width: '100%', justifyContent: 'flex-end', alignItems: 'center' },
   bar: { width: '80%', borderRadius: 6, minHeight: 4 },
-  barLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '500' },
+  barLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '500' },
 
   emptyChart: { alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.four, gap: Spacing.two },
-  emptyChartText: { fontSize: 13, color: Brand.textTertiary },
+  emptyChartText: { fontSize: 13, color: c.textTertiary },
 
   // ── Top products ──────────────────────────────────────────────
   listInner: { gap: Spacing.two + Spacing.half },
@@ -380,8 +383,8 @@ const styles = StyleSheet.create({
   },
   rankText: { fontSize: 13, fontWeight: '800', color: Brand.primary },
   topProductInfo: { flex: 1, gap: Spacing.half },
-  topProductName: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  topProductMeta: { fontSize: 12, color: Brand.textSecondary },
+  topProductName: { fontSize: 14, fontWeight: '600', color: c.text },
+  topProductMeta: { fontSize: 12, color: c.textSecondary },
 
   // ── Category ──────────────────────────────────────────────────
   categoryRow: { gap: Spacing.one + Spacing.half },
@@ -390,15 +393,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  categoryName: { flex: 1, fontSize: 13, fontWeight: '600', color: Brand.text },
+  categoryName: { flex: 1, fontSize: 13, fontWeight: '600', color: c.text },
   categoryValue: { fontSize: 12, fontWeight: '700', color: Brand.primary },
   progressTrack: {
     height: 8,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressBar: { height: '100%', backgroundColor: Brand.primary, borderRadius: 4 },
 
-  emptyText: { fontSize: 13, color: Brand.textTertiary, paddingVertical: Spacing.two },
+  emptyText: { fontSize: 13, color: c.textTertiary, paddingVertical: Spacing.two },
 });

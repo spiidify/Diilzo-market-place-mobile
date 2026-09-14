@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,10 +17,13 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { createCoupon, deleteCoupon, getCoupons, type SellerCoupon } from '@/services/seller';
 
 export default function SellerCouponsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [coupons, setCoupons] = useState<SellerCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -147,7 +150,7 @@ export default function SellerCouponsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="ticket-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="ticket-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No coupons yet</Text>
                 <Text style={styles.emptySub}>Tap + to create one</Text>
               </View>
@@ -160,10 +163,10 @@ export default function SellerCouponsScreen() {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Create Coupon</Text>
-                <Pressable onPress={() => setShowModal(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} /></Pressable>
+                <Pressable onPress={() => setShowModal(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} /></Pressable>
               </View>
               <Text style={styles.formLabel}>Code *</Text>
-              <TextInput style={styles.formInput} value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="SUMMER2026" placeholderTextColor={Brand.textTertiary} autoCapitalize="characters" />
+              <TextInput style={styles.formInput} value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="SUMMER2026" placeholderTextColor={colors.textTertiary} autoCapitalize="characters" />
               <Text style={styles.formLabel}>Discount Type</Text>
               <View style={styles.typeRow}>
                 <Pressable style={[styles.typeBtn, discountType === 'percentage' && styles.typeBtnActive]} onPress={() => setDiscountType('percentage')}>
@@ -174,15 +177,15 @@ export default function SellerCouponsScreen() {
                 </Pressable>
               </View>
               <Text style={styles.formLabel}>Discount Value *</Text>
-              <TextInput style={styles.formInput} value={discountValue} onChangeText={setDiscountValue} placeholder="10" keyboardType="numeric" placeholderTextColor={Brand.textTertiary} />
+              <TextInput style={styles.formInput} value={discountValue} onChangeText={setDiscountValue} placeholder="10" keyboardType="numeric" placeholderTextColor={colors.textTertiary} />
               <View style={styles.formRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.formLabel}>Min Order (UGX)</Text>
-                  <TextInput style={styles.formInput} value={minOrder} onChangeText={setMinOrder} placeholder="0" keyboardType="numeric" placeholderTextColor={Brand.textTertiary} />
+                  <TextInput style={styles.formInput} value={minOrder} onChangeText={setMinOrder} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textTertiary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.formLabel}>Max Uses (0=∞)</Text>
-                  <TextInput style={styles.formInput} value={maxUses} onChangeText={setMaxUses} placeholder="0" keyboardType="numeric" placeholderTextColor={Brand.textTertiary} />
+                  <TextInput style={styles.formInput} value={maxUses} onChangeText={setMaxUses} placeholder="0" keyboardType="numeric" placeholderTextColor={colors.textTertiary} />
                 </View>
               </View>
               <View style={styles.switchRow}>
@@ -200,37 +203,37 @@ export default function SellerCouponsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   codeWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  code: { fontSize: 16, fontWeight: '800', color: Brand.text },
-  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: Brand.borderLight },
+  code: { fontSize: 16, fontWeight: '800', color: c.text },
+  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.borderLight },
   metricCol: { flex: 1 },
-  metricValue: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  metricLabel: { fontSize: 10, color: Brand.textTertiary, marginTop: 2 },
+  metricValue: { fontSize: 14, fontWeight: '700', color: c.text },
+  metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(220,38,38,0.08)' },
   deleteText: { fontSize: 13, fontWeight: '600', color: Brand.danger },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  formLabel: { fontSize: 13, fontWeight: '700', color: Brand.text, marginBottom: 6, marginTop: 12 },
-  formInput: { borderWidth: 1.5, borderColor: Brand.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 12 },
+  formInput: { borderWidth: 1.5, borderColor: c.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text },
   formRow: { flexDirection: 'row', gap: 12 },
   typeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: Brand.border, alignItems: 'center' },
+  typeBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: c.border, alignItems: 'center' },
   typeBtnActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '12' },
-  typeBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary },
+  typeBtnText: { fontSize: 13, fontWeight: '600', color: c.textTertiary },
   typeBtnTextActive: { color: Brand.primary },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   createBtn: { backgroundColor: Brand.primary, marginTop: 20, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },

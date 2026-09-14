@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -15,6 +15,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   confirmPackagedItem,
   getMerchantOrders,
@@ -27,6 +28,8 @@ type Tab = 'inventory' | 'orders';
 
 export default function MerchantStudioScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<Tab>('inventory');
   const [products, setProducts] = useState<MerchantProduct[]>([]);
   const [orders, setOrders] = useState<MerchantOrder[]>([]);
@@ -111,7 +114,7 @@ export default function MerchantStudioScreen() {
           <Image source={{ uri: item.primary_image }} style={styles.productImage} resizeMode="contain" />
         ) : (
           <View style={styles.productImageFallback}>
-            <MaterialCommunityIcons name="package-variant" size={24} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant" size={24} color={colors.textTertiary} />
           </View>
         )}
       </View>
@@ -149,11 +152,11 @@ export default function MerchantStudioScreen() {
           </View>
         </View>
         <View style={styles.orderMeta}>
-          <MaterialCommunityIcons name="account-outline" size={14} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="account-outline" size={14} color={colors.textTertiary} />
           <Text style={styles.orderMetaText}>{item.customer_email || item.customer_name || 'Customer'}</Text>
         </View>
         <View style={styles.orderMeta}>
-          <MaterialCommunityIcons name="package-variant" size={14} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="package-variant" size={14} color={colors.textTertiary} />
           <Text style={styles.orderMetaText}>{item.items_count || 0} items · UGX {Number(item.total || 0).toLocaleString()}</Text>
         </View>
         {(item.status === 'pending' || item.status === 'accepted') && (
@@ -189,7 +192,7 @@ export default function MerchantStudioScreen() {
           style={[styles.tab, tab === 'inventory' && styles.tabActive]}
           onPress={() => setTab('inventory')}
         >
-          <MaterialCommunityIcons name="package-variant-closed" size={20} color={tab === 'inventory' ? Brand.primary : Brand.textTertiary} />
+          <MaterialCommunityIcons name="package-variant-closed" size={20} color={tab === 'inventory' ? Brand.primary : colors.textTertiary} />
           <Text style={[styles.tabText, tab === 'inventory' && styles.tabTextActive]}>
             Inventory ({products.length})
           </Text>
@@ -198,7 +201,7 @@ export default function MerchantStudioScreen() {
           style={[styles.tab, tab === 'orders' && styles.tabActive]}
           onPress={() => setTab('orders')}
         >
-          <MaterialCommunityIcons name="clipboard-list-outline" size={20} color={tab === 'orders' ? Brand.primary : Brand.textTertiary} />
+          <MaterialCommunityIcons name="clipboard-list-outline" size={20} color={tab === 'orders' ? Brand.primary : colors.textTertiary} />
           <Text style={[styles.tabText, tab === 'orders' && styles.tabTextActive]}>
             Orders ({orders.length})
           </Text>
@@ -242,7 +245,7 @@ export default function MerchantStudioScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="package-variant" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="package-variant" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyText}>No products yet</Text>
               <Text style={styles.emptySub}>Use the web dashboard to add products</Text>
             </View>
@@ -257,7 +260,7 @@ export default function MerchantStudioScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="clipboard-check-outline" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="clipboard-check-outline" size={48} color={colors.textTertiary} />
               <Text style={styles.emptyText}>No pending orders</Text>
               <Text style={styles.emptySub}>All caught up!</Text>
             </View>
@@ -268,24 +271,24 @@ export default function MerchantStudioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
 
   // ── Tab bar ────────────────────────────────────────────────────
   tabBar: {
-    flexDirection: 'row', backgroundColor: '#FFFFFF',
+    flexDirection: 'row', backgroundColor: c.surface,
     paddingHorizontal: 12, paddingTop: 8, gap: 8,
-    borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingVertical: 10, borderRadius: 10,
   },
-  tabActive: { backgroundColor: Brand.surfaceAlt },
-  tabText: { fontSize: 13, fontWeight: '600', color: Brand.textTertiary },
+  tabActive: { backgroundColor: c.surfaceAlt },
+  tabText: { fontSize: 13, fontWeight: '600', color: c.textTertiary },
   tabTextActive: { color: Brand.primary, fontWeight: '700' },
 
   // ── Stats row ──────────────────────────────────────────────────
@@ -293,11 +296,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 12,
   },
   statPill: {
-    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, alignItems: 'center',
+    flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, alignItems: 'center',
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2, shadowOffset: { width: 0, height: 1 },
   },
-  statValue: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  statLabel: { fontSize: 10, color: Brand.textSecondary, fontWeight: '600', marginTop: 2 },
+  statValue: { fontSize: 18, fontWeight: '800', color: c.text },
+  statLabel: { fontSize: 10, color: c.textSecondary, fontWeight: '600', marginTop: 2 },
 
   // ── Error banner ───────────────────────────────────────────────
   errorBanner: {
@@ -312,18 +315,18 @@ const styles = StyleSheet.create({
 
   // ── Product card ───────────────────────────────────────────────
   productCard: {
-    flexDirection: 'row', gap: 12, backgroundColor: '#FFFFFF',
+    flexDirection: 'row', gap: 12, backgroundColor: c.surface,
     borderRadius: 14, padding: 14, marginBottom: 10,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   productImageWrap: { width: 60, height: 60, borderRadius: 10, overflow: 'hidden' },
   productImage: { width: '100%', height: '100%' },
   productImageFallback: {
-    width: '100%', height: '100%', backgroundColor: Brand.surfaceAlt,
+    width: '100%', height: '100%', backgroundColor: c.surfaceAlt,
     justifyContent: 'center', alignItems: 'center',
   },
   productInfo: { flex: 1, gap: 4 },
-  productName: { fontSize: 14, fontWeight: '700', color: Brand.text },
+  productName: { fontSize: 14, fontWeight: '700', color: c.text },
   productPrice: { fontSize: 14, fontWeight: '800', color: Brand.primary },
   productMetaRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
   stockBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
@@ -333,15 +336,15 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   statusActive: { backgroundColor: 'rgba(50,199,0,0.15)' },
   statusInactive: { backgroundColor: 'rgba(220,38,38,0.15)' },
-  statusBadgeText: { fontSize: 10, fontWeight: '700', color: Brand.text },
+  statusBadgeText: { fontSize: 10, fontWeight: '700', color: c.text },
 
   // ── Order card ──────────────────────────────────────────────────
   orderCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   orderStatusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   status_pending: { backgroundColor: 'rgba(245,158,11,0.15)' },
   status_accepted: { backgroundColor: 'rgba(59,130,246,0.15)' },
@@ -349,9 +352,9 @@ const styles = StyleSheet.create({
   status_shipped: { backgroundColor: 'rgba(139,92,246,0.15)' },
   status_delivered: { backgroundColor: 'rgba(50,199,0,0.2)' },
   status_cancelled: { backgroundColor: 'rgba(220,38,38,0.15)' },
-  orderStatusText: { fontSize: 11, fontWeight: '700', color: Brand.text },
+  orderStatusText: { fontSize: 11, fontWeight: '700', color: c.text },
   orderMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  orderMetaText: { fontSize: 12, color: Brand.textSecondary },
+  orderMetaText: { fontSize: 12, color: c.textSecondary },
 
   confirmBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -361,6 +364,6 @@ const styles = StyleSheet.create({
 
   // ── Empty state ────────────────────────────────────────────────
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

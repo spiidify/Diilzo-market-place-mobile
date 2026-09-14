@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,6 +19,7 @@ import {
 import { GradientHeader } from '@/components/GradientHeader';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchStoresPage, submitRFQ } from '@/services/catalog';
 import type { PaginatedResponse, Store } from '@/types';
 
@@ -41,6 +42,8 @@ const BUSINESS_ICONS: Record<string, string> = {
 
 export default function SuppliersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ rfq?: string; product_name?: string; store?: string }>();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,7 +245,7 @@ export default function SuppliersScreen() {
                 <MaterialCommunityIcons name={iconName} size={13} color={Brand.primary} />
                 <Text style={styles.typeText}>{businessLabel}</Text>
                 <Text style={styles.dot}>•</Text>
-                <MaterialCommunityIcons name="map-marker" size={13} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="map-marker" size={13} color={colors.textTertiary} />
                 <Text style={styles.locationText}>{item.city}, {item.country}</Text>
               </View>
             </View>
@@ -262,13 +265,13 @@ export default function SuppliersScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <MaterialCommunityIcons name="package-variant-closed" size={14} color={Brand.textSecondary} />
+              <MaterialCommunityIcons name="package-variant-closed" size={14} color={colors.textSecondary} />
               <Text style={styles.statValue}>{item.product_count || 0}</Text>
               <Text style={styles.statSub}>products</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <MaterialCommunityIcons name="clock-outline" size={14} color={Brand.textSecondary} />
+              <MaterialCommunityIcons name="clock-outline" size={14} color={colors.textSecondary} />
               <Text style={styles.statSub}>Responds fast</Text>
             </View>
           </View>
@@ -302,18 +305,18 @@ export default function SuppliersScreen() {
       {/* ── Search bar (white) ──────────────────────────────────── */}
       <View style={styles.searchWrap}>
         <View style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
             placeholder="Search suppliers, products..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             autoCapitalize="none"
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch('')} hitSlop={8}>
-              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -392,7 +395,7 @@ export default function SuppliersScreen() {
       ) : stores.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIconWrap}>
-            <MaterialCommunityIcons name="store-off-outline" size={48} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="store-off-outline" size={48} color={colors.textTertiary} />
           </View>
           <Text style={styles.emptyTitle}>No suppliers found</Text>
           <Text style={styles.emptySubtext}>Try adjusting your filters or search</Text>
@@ -466,7 +469,7 @@ export default function SuppliersScreen() {
                 <View style={styles.rfqModalHeader}>
                   <Text style={styles.rfqModalTitle}>Request for Quotation</Text>
                   <Pressable onPress={closeRfq} hitSlop={8}>
-                    <MaterialCommunityIcons name="close" size={22} color={Brand.textSecondary} />
+                    <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
                   </Pressable>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.rfqForm}>
@@ -520,33 +523,33 @@ export default function SuppliersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   // ── Search bar (white, below gradient header) ───────────────────
   searchWrap: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8EDF0',
+    borderBottomColor: c.borderLight,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F2F4F6',
+    backgroundColor: c.background,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
     gap: 8,
   },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 0, height: '100%' },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, paddingVertical: 0, height: '100%' },
 
   // ── Filter bar ──────────────────────────────────────────────────
   filterBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8EDF0',
+    borderBottomColor: c.borderLight,
   },
   filterStats: {
     flexDirection: 'row',
@@ -555,8 +558,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
-  filterStatNum: { fontSize: 15, fontWeight: '800', color: Brand.text },
-  filterStatLabel: { fontSize: 12, color: Brand.textSecondary },
+  filterStatNum: { fontSize: 15, fontWeight: '800', color: c.text },
+  filterStatLabel: { fontSize: 12, color: c.textSecondary },
   filterChips: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   filterChip: {
     flexDirection: 'row',
@@ -568,20 +571,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterChipInactive: { backgroundColor: '#F8FAFB', borderColor: '#E8EDF0' },
+  filterChipInactive: { backgroundColor: c.surfaceAlt, borderColor: c.borderLight },
   filterChipText: { fontSize: 13, fontWeight: '600' },
   filterChipTextActive: { color: '#FFFFFF' },
-  filterChipTextInactive: { color: Brand.textSecondary },
+  filterChipTextInactive: { color: c.textSecondary },
 
   // ── List ────────────────────────────────────────────────────────
   list: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 20 },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     marginBottom: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -624,19 +627,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Brand.primary,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: c.surface,
   },
   logo: { width: '100%', height: '100%' },
   logoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   identity: { flex: 1, justifyContent: 'flex-end', paddingBottom: 4 },
-  storeName: { fontSize: 16, fontWeight: '700', color: Brand.text, lineHeight: 21 },
+  storeName: { fontSize: 16, fontWeight: '700', color: c.text, lineHeight: 21 },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
   typeText: { fontSize: 12, color: Brand.primary, fontWeight: '600' },
-  dot: { fontSize: 12, color: Brand.textTertiary },
-  locationText: { fontSize: 12, color: Brand.textSecondary },
+  dot: { fontSize: 12, color: c.textTertiary },
+  locationText: { fontSize: 12, color: c.textSecondary },
 
   // ── Tagline ─────────────────────────────────────────────────────
-  tagline: { fontSize: 13, color: Brand.textSecondary, lineHeight: 18, marginTop: 10 },
+  tagline: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginTop: 10 },
 
   // ── Stats row ───────────────────────────────────────────────────
   statsRow: {
@@ -645,13 +648,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#F8FAFB',
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
   },
   statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  statSub: { fontSize: 11, color: Brand.textSecondary },
-  statDivider: { width: 1, height: 20, backgroundColor: '#E8EDF0' },
+  statValue: { fontSize: 13, fontWeight: '700', color: c.text },
+  statSub: { fontSize: 11, color: c.textSecondary },
+  statDivider: { width: 1, height: 20, backgroundColor: c.borderLight },
 
   // ── Footer ──────────────────────────────────────────────────────
   cardFooter: {
@@ -669,7 +672,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Brand.primary,
-    backgroundColor: '#F8FAFB',
+    backgroundColor: c.surfaceAlt,
   },
   contactText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   visitBtn: {
@@ -686,24 +689,24 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#F8FAFB',
+    width: 80, height: 80, borderRadius: 40, backgroundColor: c.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   emptyBtn: {
     marginTop: 20, backgroundColor: Brand.primary,
     paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10,
   },
   emptyBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   footer: { paddingVertical: 16 },
-  endText: { textAlign: 'center', paddingVertical: 16, color: Brand.textTertiary, fontSize: 13 },
+  endText: { textAlign: 'center', paddingVertical: 16, color: c.textTertiary, fontSize: 13 },
 
   // ── RFQ floating button ──────────────────────────────────────────
   rfqFab: {
@@ -732,7 +735,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   rfqModalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
@@ -745,20 +748,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8EDF0',
+    borderBottomColor: c.borderLight,
   },
-  rfqModalTitle: { fontSize: 17, fontWeight: '800', color: Brand.text },
+  rfqModalTitle: { fontSize: 17, fontWeight: '800', color: c.text },
   rfqForm: { paddingHorizontal: 16, paddingTop: 12, gap: 4 },
-  rfqLabel: { fontSize: 12, fontWeight: '600', color: Brand.textSecondary, marginTop: 8, marginBottom: 2 },
+  rfqLabel: { fontSize: 12, fontWeight: '600', color: c.textSecondary, marginTop: 8, marginBottom: 2 },
   rfqInput: {
     borderWidth: 1,
-    borderColor: '#E8EDF0',
+    borderColor: c.borderLight,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: Brand.text,
-    backgroundColor: '#F8FAFB',
+    color: c.text,
+    backgroundColor: c.surfaceAlt,
   },
   rfqTextarea: { minHeight: 70 },
   rfqRow: { flexDirection: 'row' },
@@ -772,8 +775,8 @@ const styles = StyleSheet.create({
   },
   rfqSubmitBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   rfqSuccessWrap: { alignItems: 'center', padding: 30, gap: 8 },
-  rfqSuccessTitle: { fontSize: 18, fontWeight: '800', color: Brand.text, marginTop: 8 },
-  rfqSuccessSub: { fontSize: 13, color: Brand.textSecondary, textAlign: 'center' },
+  rfqSuccessTitle: { fontSize: 18, fontWeight: '800', color: c.text, marginTop: 8 },
+  rfqSuccessSub: { fontSize: 13, color: c.textSecondary, textAlign: 'center' },
   rfqCloseBtn: {
     backgroundColor: Brand.primary,
     borderRadius: 12,

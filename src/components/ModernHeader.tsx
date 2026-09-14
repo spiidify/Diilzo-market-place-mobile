@@ -4,10 +4,12 @@
  */
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface ModernHeaderProps {
   title: string;
@@ -33,6 +35,8 @@ export function ModernHeader({
   style,
 }: ModernHeaderProps) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const handleBack = onBack || (() => router.back());
 
   return (
@@ -40,7 +44,7 @@ export function ModernHeader({
       <View style={[styles.header, style]}>
         {showBack ? (
           <Pressable onPress={handleBack} hitSlop={12} style={styles.backBtn}>
-            <MaterialCommunityIcons name="arrow-left" size={22} color={Brand.text} />
+            <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
           </Pressable>
         ) : (
           <View style={styles.backBtn} />
@@ -66,9 +70,9 @@ export function ModernHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   safeArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
   },
   header: {
     flexDirection: 'row',
@@ -76,9 +80,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: c.borderLight,
     minHeight: 52,
   },
   backBtn: {
@@ -96,12 +100,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 1,
     fontWeight: '500',
   },

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +14,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   getAdminOrders,
   type AdminOrder,
@@ -25,14 +26,12 @@ const STATUS_COLORS: Record<string, string> = {
   shipped: '#8B5CF6',
   delivered: Brand.primary,
   cancelled: Brand.danger,
-  refunded: Brand.textTertiary,
 };
 
 const PAYMENT_COLORS: Record<string, string> = {
   paid: Brand.primary,
   pending: Brand.rating,
   failed: Brand.danger,
-  refunded: Brand.textTertiary,
   unpaid: Brand.danger,
 };
 
@@ -40,6 +39,8 @@ const FILTERS = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancel
 
 export default function AdminOrdersScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,8 +62,8 @@ export default function AdminOrdersScreen() {
   useEffect(() => { load(filter); }, [load, filter]);
 
   const renderItem = ({ item }: { item: AdminOrder }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
-    const payColor = PAYMENT_COLORS[item.payment_status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
+    const payColor = PAYMENT_COLORS[item.payment_status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}>
         <View style={styles.cardHeader}>
@@ -115,7 +116,7 @@ export default function AdminOrdersScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(filter)} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="clipboard-list-outline" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="clipboard-list-outline" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No orders found</Text>
                 <Text style={styles.emptySub}>No orders match this filter</Text>
               </View>
@@ -127,27 +128,27 @@ export default function AdminOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   filterContainer: { paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border },
+  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
   filterTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   filterTextActive: { color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  userEmail: { fontSize: 13, color: Brand.textSecondary, marginBottom: 8 },
+  userEmail: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  metaText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
-  totalText: { fontSize: 14, fontWeight: '800', color: Brand.text },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  metaText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
+  totalText: { fontSize: 14, fontWeight: '800', color: c.text },
+  dateText: { fontSize: 12, color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
 });

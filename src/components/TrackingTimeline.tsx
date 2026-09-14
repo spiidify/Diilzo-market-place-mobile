@@ -8,7 +8,7 @@
 //   <TrackingTimeline orderId={123} />
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   fetchShipmentTracking,
   type GlobalShipment,
@@ -30,19 +31,23 @@ import {
 // AfterShip uses standard tags: Info, InTransit, OutForDelivery,
 // Delivered, AttemptFail, Exception, Pending. We map each to an
 // icon and color for the timeline dot.
-const TAG_CONFIG: Record<string, { icon: string; color: string }> = {
-  delivered: { icon: 'check-circle', color: Brand.success || '#16a34a' },
+const TAG_CONFIG: Record<string, { icon: string; color?: string }> = {
+  delivered: { icon: 'check-circle', color: Brand.success },
   out_for_delivery: { icon: 'truck-fast', color: '#3B82F6' },
   in_transit: { icon: 'truck', color: '#06B6D4' },
-  info: { icon: 'information', color: Brand.rating || '#F59E0B' },
-  attempt_fail: { icon: 'alert-circle', color: Brand.danger || '#EF4444' },
-  exception: { icon: 'alert', color: Brand.danger || '#EF4444' },
-  pending: { icon: 'clock-outline', color: Brand.textTertiary || '#9CA3AF' },
+  info: { icon: 'information', color: Brand.rating },
+  attempt_fail: { icon: 'alert-circle', color: Brand.danger },
+  exception: { icon: 'alert', color: Brand.danger },
+  pending: { icon: 'clock-outline' },
 };
 
-function getTagConfig(tag: string) {
+function getTagConfig(tag: string, fallbackColor: string) {
   const key = (tag || '').toLowerCase().replace(/-/g, '_');
-  return TAG_CONFIG[key] || { icon: 'circle-medium', color: Brand.textTertiary || '#9CA3AF' };
+  const entry = TAG_CONFIG[key];
+  if (entry) {
+    return { icon: entry.icon, color: entry.color ?? fallbackColor };
+  }
+  return { icon: 'circle-medium', color: fallbackColor };
 }
 
 // ── Format a checkpoint timestamp for display ──────────────────────
@@ -78,7 +83,9 @@ function formatEstimatedDelivery(dateStr: string | null): string {
 
 // ── Single timeline checkpoint row ─────────────────────────────────
 function MilestoneRow({ item, isLast, index }: { item: ShipmentMilestone; isLast: boolean; index: number }) {
-  const config = getTagConfig(item.tag);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const config = getTagConfig(item.tag, colors.textTertiary);
   const isFirst = index === 0;
 
   return (
@@ -105,7 +112,7 @@ function MilestoneRow({ item, isLast, index }: { item: ShipmentMilestone; isLast
         </Text>
         {(item.location || item.city || item.country_name) && (
           <View style={styles.milestoneLocationRow}>
-            <MaterialCommunityIcons name="map-marker-outline" size={13} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="map-marker-outline" size={13} color={colors.textTertiary} />
             <Text style={styles.milestoneLocation} numberOfLines={1}>
               {[item.location, item.city, item.state, item.country_name].filter(Boolean).join(', ')}
             </Text>
@@ -123,6 +130,8 @@ function MilestoneRow({ item, isLast, index }: { item: ShipmentMilestone; isLast
 
 // ── Main TrackingTimeline component ────────────────────────────────
 export default function TrackingTimeline({ orderId }: { orderId: number }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [shipment, setShipment] = useState<GlobalShipment | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -166,7 +175,7 @@ export default function TrackingTimeline({ orderId }: { orderId: number }) {
   if (error && !shipment) {
     return (
       <View style={styles.centerContainer}>
-        <MaterialCommunityIcons name="map-marker-off" size={48} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="map-marker-off" size={48} color={colors.textTertiary} />
         <Text style={styles.errorTitle}>Tracking Unavailable</Text>
         <Text style={styles.errorSubtext}>{error}</Text>
         <Pressable style={styles.retryBtn} onPress={load}>
@@ -179,7 +188,7 @@ export default function TrackingTimeline({ orderId }: { orderId: number }) {
   if (!shipment) {
     return (
       <View style={styles.centerContainer}>
-        <MaterialCommunityIcons name="package-variant-closed" size={48} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="package-variant-closed" size={48} color={colors.textTertiary} />
         <Text style={styles.errorTitle}>No Shipment Data</Text>
         <Text style={styles.errorSubtext}>Tracking information will appear here once your order is shipped.</Text>
       </View>
@@ -219,7 +228,7 @@ export default function TrackingTimeline({ orderId }: { orderId: number }) {
       )}
       {sortedMilestones.length === 0 && (
         <View style={styles.noMilestones}>
-          <MaterialCommunityIcons name="clock-outline" size={28} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="clock-outline" size={28} color={colors.textTertiary} />
           <Text style={styles.noMilestonesText}>
             No tracking updates yet. Check back soon.
           </Text>
@@ -262,33 +271,33 @@ export default function TrackingTimeline({ orderId }: { orderId: number }) {
 }
 
 // ── Styles ──────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Brand.surfaceAlt || '#F7F8F9',
+    backgroundColor: c.surfaceAlt,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-    backgroundColor: Brand.surfaceAlt || '#F7F8F9',
+    backgroundColor: c.surfaceAlt,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: Brand.textSecondary || '#666',
+    color: c.textSecondary,
   },
   errorTitle: {
     marginTop: 16,
     fontSize: 18,
     fontWeight: '700',
-    color: Brand.text || '#1a1a1a',
+    color: c.text,
   },
   errorSubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: Brand.textSecondary || '#666',
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -310,7 +319,7 @@ const styles = StyleSheet.create({
   },
   // Header card
   headerCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 16,
@@ -332,7 +341,7 @@ const styles = StyleSheet.create({
   headerLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: Brand.textTertiary || '#9CA3AF',
+    color: c.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -340,13 +349,13 @@ const styles = StyleSheet.create({
   headerValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text || '#1a1a1a',
+    color: c.text,
   },
   eddBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: (Brand.primary || '#32C700') + '10',
+    backgroundColor: Brand.primary + '10',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -355,7 +364,7 @@ const styles = StyleSheet.create({
   eddText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Brand.primary || '#32C700',
+    color: Brand.primary,
   },
   noMilestones: {
     alignItems: 'center',
@@ -364,7 +373,7 @@ const styles = StyleSheet.create({
   },
   noMilestonesText: {
     fontSize: 13,
-    color: Brand.textTertiary || '#9CA3AF',
+    color: c.textTertiary,
     textAlign: 'center',
   },
   // Milestone row
@@ -399,7 +408,7 @@ const styles = StyleSheet.create({
   milestoneMessage: {
     fontSize: 14,
     fontWeight: '600',
-    color: Brand.text || '#1a1a1a',
+    color: c.text,
     lineHeight: 20,
   },
   milestoneLocationRow: {
@@ -410,12 +419,12 @@ const styles = StyleSheet.create({
   },
   milestoneLocation: {
     fontSize: 12,
-    color: Brand.textSecondary || '#666',
+    color: c.textSecondary,
     flex: 1,
   },
   milestoneTime: {
     fontSize: 12,
-    color: Brand.textTertiary || '#9CA3AF',
+    color: c.textTertiary,
     marginTop: 4,
   },
 });

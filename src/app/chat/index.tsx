@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { createSupportChat, fetchChatThreads } from '@/services/chat';
 import type { ChatThread } from '@/types';
 
@@ -57,6 +58,8 @@ export default function ChatListScreen() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
   const { refreshBadges } = useBadges();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -153,7 +156,7 @@ export default function ChatListScreen() {
       >
         <View style={styles.avatarWrap}>
           {isSupport ? (
-            <View style={[styles.avatarFallback, { backgroundColor: Brand.text }]}>
+            <View style={[styles.avatarFallback, { backgroundColor: colors.text }]}>
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
           ) : isBuyer ? (
@@ -192,7 +195,7 @@ export default function ChatListScreen() {
               <MaterialCommunityIcons
                 name={item.unread_count > 0 ? 'check' : 'check-all'}
                 size={14}
-                color={item.unread_count > 0 ? Brand.textTertiary : Brand.primary}
+                color={item.unread_count > 0 ? colors.textTertiary : Brand.primary}
                 style={styles.tickIcon}
               />
             )}
@@ -251,17 +254,17 @@ export default function ChatListScreen() {
         {/* ── Search bar ──────────────────────────────────────────── */}
         {isAuthenticated && threads.length > 0 && (
           <View style={styles.searchWrap}>
-            <MaterialCommunityIcons name="magnify" size={18} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search conversations..."
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
             )}
           </View>
@@ -271,7 +274,7 @@ export default function ChatListScreen() {
         {!isAuthenticated ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconWrap}>
-              <MaterialCommunityIcons name="message-outline" size={48} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="message-outline" size={48} color={colors.textTertiary} />
             </View>
             <Text style={styles.emptyTitle}>Sign in to view messages</Text>
             <Text style={styles.emptySubtext}>Chat with suppliers and Diilzo staff</Text>
@@ -320,7 +323,7 @@ export default function ChatListScreen() {
                   <MaterialCommunityIcons
                     name={searchQuery ? "magnify" : "message-off-outline"}
                     size={48}
-                    color={Brand.textTertiary}
+                    color={colors.textTertiary}
                   />
                 </View>
                 <Text style={styles.emptyTitle}>
@@ -360,9 +363,9 @@ export default function ChatListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
-  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surface },
+  safeArea: { flex: 1, backgroundColor: c.surface },
 
   // ── Header ──────────────────────────────────────────────────────
   header: {
@@ -387,20 +390,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: 12, marginVertical: 8,
     paddingHorizontal: 12, paddingVertical: 10,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 12,
+    backgroundColor: c.surfaceAlt, borderRadius: 12,
   },
-  searchInput: { flex: 1, fontSize: 14, color: Brand.text, padding: 0 },
+  searchInput: { flex: 1, fontSize: 14, color: c.text, padding: 0 },
 
   // ── List ────────────────────────────────────────────────────────
   list: { paddingVertical: 4 },
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: Brand.surfaceAlt, marginLeft: 76 },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: c.surfaceAlt, marginLeft: 76 },
 
   // ── Support banner ──────────────────────────────────────────────
   supportBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginHorizontal: 12, marginTop: 8, marginBottom: 4,
     paddingHorizontal: 14, paddingVertical: 12,
-    borderRadius: 14, backgroundColor: Brand.text,
+    borderRadius: 14, backgroundColor: c.text,
     elevation: 3, shadowColor: '#000000', shadowOpacity: 0.12,
     shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
@@ -436,15 +439,15 @@ const styles = StyleSheet.create({
   },
   cardBody: { flex: 1, gap: 3 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  storeName: { flex: 1, fontSize: 15, fontWeight: '700', color: Brand.text },
-  time: { fontSize: 11, color: Brand.textTertiary },
+  storeName: { flex: 1, fontSize: 15, fontWeight: '700', color: c.text },
+  time: { fontSize: 11, color: c.textTertiary },
   timeUnread: { color: Brand.primary, fontWeight: '700' },
   productRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   productName: { fontSize: 12, color: Brand.primary, fontWeight: '500' },
   lastMsgRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   tickIcon: { marginTop: 1 },
-  lastMsg: { flex: 1, fontSize: 13, color: Brand.textSecondary },
-  lastMsgUnread: { color: Brand.text, fontWeight: '500' },
+  lastMsg: { flex: 1, fontSize: 13, color: c.textSecondary },
+  lastMsgUnread: { color: c.text, fontWeight: '500' },
   unreadBadge: {
     minWidth: 20, height: 20, borderRadius: 10,
     backgroundColor: Brand.danger,
@@ -455,15 +458,15 @@ const styles = StyleSheet.create({
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: Brand.surfaceAlt,
+    width: 80, height: 80, borderRadius: 40, backgroundColor: c.surfaceAlt,
     justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Brand.text },
-  emptySubtext: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: c.text },
+  emptySubtext: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   signInBtn: {
     marginTop: 20, backgroundColor: Brand.primary,
     paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8,

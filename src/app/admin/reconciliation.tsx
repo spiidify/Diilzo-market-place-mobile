@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { runReconciliation, type ReconciliationResult } from '@/services/financial';
 
 export default function AdminReconciliationScreen() {
@@ -19,6 +20,8 @@ export default function AdminReconciliationScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
     try {
@@ -93,12 +96,12 @@ export default function AdminReconciliationScreen() {
 
           {/* Summary KPIs */}
           <View style={styles.kpiRow}>
-            <KpiCard icon="store" label="Balance Mismatches" value={result?.store_balances?.length || 0} color="#16A34A" />
-            <KpiCard icon="percent" label="Commission Mismatches" value={result?.commissions?.length || 0} color="#F59E0B" />
+            <KpiCard icon="store" label="Balance Mismatches" value={result?.store_balances?.length || 0} color="#16A34A" styles={styles} />
+            <KpiCard icon="percent" label="Commission Mismatches" value={result?.commissions?.length || 0} color="#F59E0B" styles={styles} />
           </View>
           <View style={styles.kpiRow}>
-            <KpiCard icon="file-document" label="Missing Payments" value={result?.payments_vs_ledger?.length || 0} color="#3B82F6" />
-            <KpiCard icon="paper-plane" label="Missing Payouts" value={result?.payouts?.length || 0} color="#8B5CF6" />
+            <KpiCard icon="file-document" label="Missing Payments" value={result?.payments_vs_ledger?.length || 0} color="#3B82F6" styles={styles} />
+            <KpiCard icon="paper-plane" label="Missing Payouts" value={result?.payouts?.length || 0} color="#8B5CF6" styles={styles} />
           </View>
 
           {/* Store balance mismatches */}
@@ -112,6 +115,7 @@ export default function AdminReconciliationScreen() {
                 <Text style={styles.dispValue}>Diff: UGX {fmt(item.difference)}</Text>
               </>
             )}
+            styles={styles}
           />
 
           {/* Commission mismatches */}
@@ -125,6 +129,7 @@ export default function AdminReconciliationScreen() {
                 <Text style={styles.dispValue}>Diff: UGX {fmt(item.difference)}</Text>
               </>
             )}
+            styles={styles}
           />
 
           {/* Missing payments */}
@@ -138,6 +143,7 @@ export default function AdminReconciliationScreen() {
                 <Text style={styles.dispValue}>Order: {item.order_number} · UGX {fmt(item.amount)}</Text>
               </>
             )}
+            styles={styles}
           />
 
           {/* Missing payouts */}
@@ -151,6 +157,7 @@ export default function AdminReconciliationScreen() {
                 <Text style={styles.dispValue}>{item.store_name} · UGX {fmt(item.amount)}</Text>
               </>
             )}
+            styles={styles}
           />
         </View>
       </ScrollView>
@@ -158,7 +165,7 @@ export default function AdminReconciliationScreen() {
   );
 }
 
-function KpiCard({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+function KpiCard({ icon, label, value, color, styles }: { icon: string; label: string; value: number; color: string; styles: ReturnType<typeof createStyles> }) {
   return (
     <View style={[styles.kpiCard, { backgroundColor: color }]}>
       <MaterialCommunityIcons name={icon as any} size={22} color="#FFFFFF" />
@@ -173,11 +180,13 @@ function DiscrepancySection({
   items,
   emptyText,
   renderRow,
+  styles,
 }: {
   title: string;
   items: any[];
   emptyText: string;
   renderRow: (item: any) => React.ReactNode;
+  styles: ReturnType<typeof createStyles>;
 }) {
   return (
     <View style={styles.sectionCard}>
@@ -198,10 +207,10 @@ function DiscrepancySection({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  loadingText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -213,7 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: 16, padding: 16, marginBottom: 12,
   },
   statusTitle: { fontSize: 16, fontWeight: '800' },
-  statusSub: { fontSize: 12, color: Brand.textSecondary, marginTop: 2 },
+  statusSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
 
   kpiRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   kpiCard: {
@@ -224,18 +233,18 @@ const styles = StyleSheet.create({
   kpiValue: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   sectionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Brand.text, marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 10 },
 
   dispRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Brand.borderLight,
+    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  dispLabel: { fontSize: 13, fontWeight: '600', color: Brand.text, flex: 1 },
+  dispLabel: { fontSize: 13, fontWeight: '600', color: c.text, flex: 1 },
   dispValue: { fontSize: 12, color: Brand.danger, fontWeight: '700' },
 
   emptyState: { alignItems: 'center', paddingVertical: 16 },
-  emptyText: { marginTop: 6, fontSize: 13, color: Brand.textSecondary },
+  emptyText: { marginTop: 6, fontSize: 13, color: c.textSecondary },
 });

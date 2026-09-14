@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,11 +14,14 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { getDashboardMetrics, type DashboardMetrics } from '@/services/dashboardApi';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const POLL_INTERVAL_MS = 30000;
 
 export default function AdminOpsCentralScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,7 +117,7 @@ export default function AdminOpsCentralScreen() {
 
         <View style={styles.infoCard}>
           <View style={styles.infoHeader}>
-            <MaterialCommunityIcons name="information-outline" size={20} color={Brand.textSecondary} />
+            <MaterialCommunityIcons name="information-outline" size={20} color={colors.textSecondary} />
             <Text style={styles.infoTitle}>About AdminOps Central</Text>
           </View>
           <Text style={styles.infoText}>
@@ -129,18 +132,18 @@ export default function AdminOpsCentralScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   body: { flex: 1 },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center' },
   retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700' },
 
-  lastUpdated: { fontSize: 11, color: Brand.textTertiary, paddingHorizontal: 16, paddingTop: 12, fontWeight: '600' },
+  lastUpdated: { fontSize: 11, color: c.textTertiary, paddingHorizontal: 16, paddingTop: 12, fontWeight: '600' },
 
   errorBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -154,20 +157,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingTop: 12,
   },
   metricCard: {
-    flex: 1, minWidth: '46%', backgroundColor: '#FFFFFF',
+    flex: 1, minWidth: '46%', backgroundColor: c.surface,
     borderRadius: 14, padding: 16, gap: 8,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   metricIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  metricValue: { fontSize: 28, fontWeight: '900', color: Brand.text },
-  metricLabel: { fontSize: 12, color: Brand.textSecondary, fontWeight: '600' },
+  metricValue: { fontSize: 28, fontWeight: '900', color: c.text },
+  metricLabel: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
 
   infoCard: {
-    backgroundColor: '#FFFFFF', marginHorizontal: 12, marginTop: 16, marginBottom: 32,
+    backgroundColor: c.surface, marginHorizontal: 12, marginTop: 16, marginBottom: 32,
     padding: 16, borderRadius: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   infoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  infoTitle: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  infoText: { fontSize: 13, color: Brand.textSecondary, lineHeight: 20 },
+  infoTitle: { fontSize: 14, fontWeight: '700', color: c.text },
+  infoText: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
 });

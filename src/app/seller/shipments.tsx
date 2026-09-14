@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,20 +14,23 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getShipmentDetail, getShipments, type SellerShipment, type SellerShipmentDetail } from '@/services/seller';
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: Brand.rating,
-  picked_up: '#3B82F6',
-  in_transit: '#8B5CF6',
-  out_for_delivery: '#06B6D4',
-  delivered: Brand.primary,
-  failed: Brand.danger,
-  cancelled: Brand.textTertiary,
-};
 
 export default function SellerShipmentsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: Brand.rating,
+    picked_up: '#3B82F6',
+    in_transit: '#8B5CF6',
+    out_for_delivery: '#06B6D4',
+    delivered: Brand.primary,
+    failed: Brand.danger,
+    cancelled: colors.textTertiary,
+  };
   const [shipments, setShipments] = useState<SellerShipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +70,7 @@ export default function SellerShipmentsScreen() {
   };
 
   const renderItem = ({ item }: { item: SellerShipment }) => {
-    const color = STATUS_COLORS[item.status] || Brand.textTertiary;
+    const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
         <View style={styles.cardHeader}>
@@ -87,7 +90,7 @@ export default function SellerShipmentsScreen() {
           </View>
         </View>
         <View style={styles.cardFooter}>
-          <MaterialCommunityIcons name="truck-fast-outline" size={14} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="truck-fast-outline" size={14} color={colors.textTertiary} />
           <Text style={styles.footerText}>{item.shipping_method}</Text>
           <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString()}</Text>
         </View>
@@ -119,7 +122,7 @@ export default function SellerShipmentsScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="package-variant-closed" size={48} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="package-variant-closed" size={48} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No shipments</Text>
                 <Text style={styles.emptySub}>Shipments will appear here</Text>
               </View>
@@ -132,7 +135,7 @@ export default function SellerShipmentsScreen() {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Shipment Details</Text>
-                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={Brand.textTertiary} /></Pressable>
+                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} /></Pressable>
               </View>
               {detailLoading ? (
                 <ActivityIndicator size="large" color={Brand.primary} style={{ padding: 40 }} />
@@ -145,8 +148,8 @@ export default function SellerShipmentsScreen() {
                   <Text style={styles.detailLabel}>Tracking Number</Text>
                   <Text style={styles.detailValue}>{detail.tracking_number || '—'}</Text>
                   <Text style={styles.detailLabel}>Status</Text>
-                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || Brand.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || Brand.textTertiary }]}>{detail.status.replace(/_/g, ' ')}</Text>
+                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status.replace(/_/g, ' ')}</Text>
                   </View>
                   <Text style={styles.detailLabel}>Shipping Method</Text>
                   <Text style={styles.detailValue}>{detail.shipping_method}</Text>
@@ -188,32 +191,32 @@ export default function SellerShipmentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderNumber: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: Brand.borderLight },
+  cardBody: { flexDirection: 'row', gap: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.borderLight },
   metricCol: { flex: 1 },
-  metricValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  metricLabel: { fontSize: 10, color: Brand.textTertiary, marginTop: 2 },
+  metricValue: { fontSize: 13, fontWeight: '700', color: c.text },
+  metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
   cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  footerText: { fontSize: 12, color: Brand.textSecondary, flex: 1 },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
+  footerText: { fontSize: 12, color: c.textSecondary, flex: 1 },
+  dateText: { fontSize: 12, color: c.textTertiary },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyText: { fontSize: 16, fontWeight: '700', color: Brand.textSecondary },
-  emptySub: { fontSize: 13, color: Brand.textTertiary },
+  emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 13, color: c.textTertiary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, maxHeight: '85%' },
+  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: Brand.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: Brand.text },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
+  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
+  detailValue: { fontSize: 14, color: c.text },
 });

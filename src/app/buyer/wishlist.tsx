@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,9 +18,12 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { fetchWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { WishlistItem } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function BuyerWishlistScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +65,7 @@ export default function BuyerWishlistScreen() {
           <Image source={{ uri: item.product.primary_image_url }} style={styles.image} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
-            <MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="image-outline" size={32} color={colors.textTertiary} />
           </View>
         )}
       </View>
@@ -101,7 +104,7 @@ export default function BuyerWishlistScreen() {
           </View>
         ) : items.length === 0 ? (
           <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="heart-outline" size={56} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="heart-outline" size={56} color={colors.textTertiary} />
             <Text style={styles.title}>Your wishlist is empty</Text>
             <Text style={styles.subtitle}>Save products you love by tapping the heart icon</Text>
             <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
@@ -126,26 +129,26 @@ export default function BuyerWishlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
   safeArea: { flex: 1, backgroundColor: Brand.primary },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: Brand.text },
-  subtitle: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
+  title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: c.text },
+  subtitle: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   shopBtn: { marginTop: 20, backgroundColor: Brand.primary, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   list: { padding: Spacing.two, gap: Spacing.two },
-  card: { flexDirection: 'row', backgroundColor: Brand.surface, borderRadius: 12, padding: Spacing.two, gap: Spacing.two, alignItems: 'center', borderWidth: 1, borderColor: Brand.borderLight },
+  card: { flexDirection: 'row', backgroundColor: c.surface, borderRadius: 12, padding: Spacing.two, gap: Spacing.two, alignItems: 'center', borderWidth: 1, borderColor: c.borderLight },
   imageWrap: { width: 60, height: 60, borderRadius: 8, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
-  noImage: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: Brand.surfaceAlt },
+  noImage: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: c.surfaceAlt },
   cardBody: { flex: 1, gap: 4 },
-  name: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  name: { fontSize: 14, fontWeight: '600', color: c.text },
   price: { fontSize: 14, fontWeight: '700', color: Brand.primary },
   removeBtn: { padding: Spacing.one },
 });

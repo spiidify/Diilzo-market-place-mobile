@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -38,6 +38,7 @@ import {
 } from '@/services/payments';
 import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const PAYMENT_OPTIONS: {
   method: string;
@@ -90,6 +91,8 @@ const DEFAULT_SHIPPING_FEE = 5000; // Fallback only — actual cost fetched from
 
 export default function CheckoutScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { user, isAuthenticated } = useAuth();
   const { setCartCount: setGlobalCartCount } = useCart();
 
@@ -588,11 +591,11 @@ export default function CheckoutScreen() {
 
             {/* Inline delivery notes */}
             <View style={styles.notesWrap}>
-              <MaterialCommunityIcons name="note-text-outline" size={16} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="note-text-outline" size={16} color={colors.textTertiary} />
               <TextInput
                 style={styles.notesInput}
                 placeholder="Delivery notes (optional)..."
-                placeholderTextColor={Brand.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={orderNote}
                 onChangeText={setOrderNote}
                 maxLength={200}
@@ -622,7 +625,7 @@ export default function CheckoutScreen() {
                 <MaterialCommunityIcons
                   name="truck"
                   size={18}
-                  color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : Brand.textTertiary}
+                  color={fulfillmentMethod === 'home_delivery' ? '#FFFFFF' : colors.textTertiary}
                 />
                 <Text style={[
                   styles.fulfillmentPillText,
@@ -641,7 +644,7 @@ export default function CheckoutScreen() {
                 <MaterialCommunityIcons
                   name="store"
                   size={18}
-                  color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : Brand.textTertiary}
+                  color={fulfillmentMethod === 'pickup_station' ? '#FFFFFF' : colors.textTertiary}
                 />
                 <Text style={[
                   styles.fulfillmentPillText,
@@ -673,7 +676,7 @@ export default function CheckoutScreen() {
                       <MaterialCommunityIcons
                         name="map-marker"
                         size={12}
-                        color={selectedRegion === region ? '#FFFFFF' : Brand.textTertiary}
+                        color={selectedRegion === region ? '#FFFFFF' : colors.textTertiary}
                       />
                       <Text style={[
                         styles.regionTabText,
@@ -743,7 +746,7 @@ export default function CheckoutScreen() {
                     })}
                     {regionStations.length === 0 && (
                       <View style={styles.stationEmpty}>
-                        <MaterialCommunityIcons name="store-off-outline" size={28} color={Brand.textTertiary} />
+                        <MaterialCommunityIcons name="store-off-outline" size={28} color={colors.textTertiary} />
                         <Text style={styles.stationEmptyText}>
                           No pickup stations in this region
                         </Text>
@@ -834,7 +837,7 @@ export default function CheckoutScreen() {
                   <TextInput
                     style={styles.phoneInput}
                     placeholder="07XXXXXXXX"
-                    placeholderTextColor={Brand.textTertiary}
+                    placeholderTextColor={colors.textTertiary}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -932,11 +935,11 @@ export default function CheckoutScreen() {
             {/* Coupon */}
             <View style={styles.couponRow}>
               <View style={styles.couponInputWrap}>
-                <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="ticket-percent-outline" size={16} color={colors.textTertiary} />
                 <TextInput
                   style={styles.couponInput}
                   placeholder="Coupon code"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   value={couponCode}
                   onChangeText={setCouponCode}
                   autoCapitalize="characters"
@@ -1054,12 +1057,12 @@ export default function CheckoutScreen() {
 const RADIUS = 14;
 const RADIUS_SM = 10;
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F2F4F6' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
 
   // ── Center states ───────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  loadingText: { marginTop: Spacing.two, fontSize: 14, color: Brand.textSecondary, textAlign: 'center', lineHeight: 20 },
+  loadingText: { marginTop: Spacing.two, fontSize: 14, color: c.textSecondary, textAlign: 'center', lineHeight: 20 },
   errorText: { marginTop: Spacing.two, fontSize: 17, fontWeight: '700', color: Brand.danger, textAlign: 'center' },
   lockCircle: {
     width: 80,
@@ -1099,11 +1102,11 @@ const styles = StyleSheet.create({
 
   // ── Card (shared) ──────────────────────────────────────────
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: RADIUS,
     padding: Spacing.three - 2,
     borderWidth: 1,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1120,7 +1123,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepPillText: { color: Brand.primary, fontWeight: '800', fontSize: 12 },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: '800', color: Brand.text },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '800', color: c.text },
   cardAction: {
     width: 28,
     height: 28,
@@ -1142,16 +1145,16 @@ const styles = StyleSheet.create({
     borderColor: Brand.primary + '30',
   },
   addAddressTitle: { fontSize: 14, fontWeight: '700', color: Brand.primary },
-  addAddressSub: { fontSize: 12, color: Brand.textTertiary },
+  addAddressSub: { fontSize: 12, color: c.textTertiary },
 
   addressList: { gap: Spacing.one + 2 },
   addressCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two + 2,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     padding: Spacing.two + 2,
     borderRadius: RADIUS_SM,
   },
@@ -1165,7 +1168,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#D0D0D0',
+    borderColor: c.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 1,
@@ -1174,8 +1177,8 @@ const styles = StyleSheet.create({
   radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Brand.primary },
   addressInfo: { flex: 1, gap: 2 },
   addressLabelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
-  addressLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  addressText: { fontSize: 12, color: Brand.textSecondary, lineHeight: 16 },
+  addressLabel: { fontSize: 14, fontWeight: '700', color: c.text },
+  addressText: { fontSize: 12, color: c.textSecondary, lineHeight: 16 },
   addressPhoneRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 },
   addressPhone: { fontSize: 12, color: Brand.primary, fontWeight: '600' },
   defaultBadge: {
@@ -1192,17 +1195,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one + 2,
     marginTop: Spacing.two + 2,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: RADIUS_SM,
     paddingHorizontal: Spacing.two + 2,
     paddingVertical: Platform.select({ ios: 12, android: 10 }),
     borderWidth: 1,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
   },
   notesInput: {
     flex: 1,
     fontSize: 13,
-    color: Brand.text,
+    color: c.text,
     padding: 0,
   },
 
@@ -1217,14 +1220,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two + 2,
     borderRadius: RADIUS_SM,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
-    backgroundColor: Brand.surfaceAlt,
+    borderColor: c.borderLight,
+    backgroundColor: c.surfaceAlt,
   },
   fulfillmentPillActive: {
     borderColor: Brand.primary,
     backgroundColor: Brand.primary,
   },
-  fulfillmentPillText: { fontSize: 13, fontWeight: '700', color: Brand.textTertiary },
+  fulfillmentPillText: { fontSize: 13, fontWeight: '700', color: c.textTertiary },
   fulfillmentPillTextActive: { color: '#FFFFFF' },
 
   // ── Pickup section ─────────────────────────────────────────
@@ -1241,14 +1244,14 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
-    backgroundColor: '#FFFFFF',
+    borderColor: c.borderLight,
+    backgroundColor: c.surface,
   },
   regionTabActive: {
     borderColor: Brand.primary,
     backgroundColor: Brand.primary,
   },
-  regionTabText: { fontSize: 12, fontWeight: '600', color: Brand.textTertiary },
+  regionTabText: { fontSize: 12, fontWeight: '600', color: c.textTertiary },
   regionTabTextActive: { color: '#FFFFFF' },
 
   // Loading / error
@@ -1259,7 +1262,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 24,
   },
-  pickupLoadingText: { fontSize: 13, color: Brand.textTertiary },
+  pickupLoadingText: { fontSize: 13, color: c.textTertiary },
   pickupError: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1285,9 +1288,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     padding: Spacing.two,
     borderRadius: RADIUS_SM,
   },
@@ -1306,10 +1309,10 @@ const styles = StyleSheet.create({
   },
   stationCardIconSelected: { backgroundColor: Brand.primary },
   stationCardBody: { flex: 1, gap: 1 },
-  stationCardName: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  stationCardMeta: { fontSize: 11, color: Brand.textTertiary },
+  stationCardName: { fontSize: 13, fontWeight: '700', color: c.text },
+  stationCardMeta: { fontSize: 11, color: c.textTertiary },
   stationEmpty: { alignItems: 'center', paddingVertical: 24, gap: 6 },
-  stationEmptyText: { fontSize: 13, color: Brand.textTertiary, textAlign: 'center' },
+  stationEmptyText: { fontSize: 13, color: c.textTertiary, textAlign: 'center' },
 
   // Station detail
   stationDetail: {
@@ -1339,7 +1342,7 @@ const styles = StyleSheet.create({
   },
   stationDetailBody: { paddingHorizontal: Spacing.two + 2, paddingVertical: Spacing.two, gap: 6 },
   stationDetailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  stationDetailText: { flex: 1, fontSize: 12, color: Brand.textSecondary },
+  stationDetailText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
   // ── Payment ────────────────────────────────────────────────
   paymentList: { gap: Spacing.one + 2 },
@@ -1347,9 +1350,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two + 2,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two + 2,
     borderRadius: RADIUS_SM,
@@ -1367,8 +1370,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paymentInfo: { flex: 1, gap: 1 },
-  paymentLabel: { fontSize: 14, fontWeight: '700', color: Brand.text },
-  paymentSub: { fontSize: 11, color: Brand.textTertiary },
+  paymentLabel: { fontSize: 14, fontWeight: '700', color: c.text },
+  paymentSub: { fontSize: 11, color: c.textTertiary },
 
   // Phone input
   phoneSection: { marginTop: Spacing.two },
@@ -1376,9 +1379,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one + 2,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     borderRadius: RADIUS_SM,
     paddingHorizontal: Spacing.two + 2,
   },
@@ -1386,7 +1389,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: Platform.select({ ios: 12, android: 10 }),
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '600',
   },
 
@@ -1407,22 +1410,22 @@ const styles = StyleSheet.create({
   productItem: {
     flexDirection: 'row',
     gap: Spacing.two,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: RADIUS_SM,
     padding: Spacing.two,
     borderWidth: 1,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
   },
   productItemImage: {
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: c.surfaceAlt,
   },
   productNoImage: { justifyContent: 'center', alignItems: 'center' },
   productItemInfo: { flex: 1, gap: 2 },
-  productItemName: { fontSize: 13, fontWeight: '700', color: Brand.text, lineHeight: 16 },
-  productItemStore: { fontSize: 11, color: Brand.textTertiary },
+  productItemName: { fontSize: 13, fontWeight: '700', color: c.text, lineHeight: 16 },
+  productItemStore: { fontSize: 11, color: c.textTertiary },
   productItemBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1432,8 +1435,8 @@ const styles = StyleSheet.create({
   productItemQty: {
     fontSize: 11,
     fontWeight: '600',
-    color: Brand.textSecondary,
-    backgroundColor: '#FFFFFF',
+    color: c.textSecondary,
+    backgroundColor: c.surface,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -1442,15 +1445,15 @@ const styles = StyleSheet.create({
 
   // Cost breakdown
   costBreakdown: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: RADIUS_SM,
     padding: Spacing.two + 2,
     gap: 5,
   },
   costRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  costLabel: { fontSize: 13, color: Brand.textSecondary },
-  costValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
-  shippingEstimate: { fontSize: 11, color: Brand.textTertiary, marginTop: 2, marginBottom: 4 },
+  costLabel: { fontSize: 13, color: c.textSecondary },
+  costValue: { fontSize: 13, fontWeight: '600', color: c.text },
+  shippingEstimate: { fontSize: 11, color: c.textTertiary, marginTop: 2, marginBottom: 4 },
 
   // Total bar — full width green gradient feel
   totalBar: {
@@ -1473,9 +1476,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one + 2,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
-    borderColor: Brand.borderLight,
+    borderColor: c.borderLight,
     borderRadius: RADIUS_SM,
     paddingHorizontal: Spacing.two + 2,
   },
@@ -1483,7 +1486,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: Platform.select({ ios: 12, android: 10 }),
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '600',
   },
   couponBtn: {
@@ -1512,12 +1515,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     paddingHorizontal: Spacing.three - 2,
     paddingVertical: Spacing.two,
     paddingBottom: Platform.select({ ios: Spacing.two + 4, android: Spacing.two }),
     borderTopWidth: 1,
-    borderTopColor: Brand.borderLight,
+    borderTopColor: c.borderLight,
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.08,
@@ -1525,7 +1528,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
   },
   footerLeft: { gap: 1 },
-  footerLabel: { fontSize: 11, color: Brand.textTertiary, fontWeight: '600' },
+  footerLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600' },
   footerTotalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
   footerCurrency: { fontSize: 12, fontWeight: '700', color: Brand.primary },
   footerTotalValue: { fontSize: 20, fontWeight: '900', color: Brand.primary },
@@ -1560,7 +1563,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   successCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 22,
     padding: Spacing.four,
     alignItems: 'center',
@@ -1579,8 +1582,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  successTitle: { fontSize: 21, fontWeight: '900', color: Brand.text },
-  successSub: { fontSize: 14, color: Brand.textSecondary, marginTop: Spacing.one, textAlign: 'center' },
+  successTitle: { fontSize: 21, fontWeight: '900', color: c.text },
+  successSub: { fontSize: 14, color: c.textSecondary, marginTop: Spacing.one, textAlign: 'center' },
   successBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1598,5 +1601,5 @@ const styles = StyleSheet.create({
   },
   successBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
   successSecondary: { marginTop: Spacing.two },
-  successSecondaryText: { color: Brand.textSecondary, fontWeight: '600', fontSize: 14 },
+  successSecondaryText: { color: c.textSecondary, fontWeight: '600', fontSize: 14 },
 });

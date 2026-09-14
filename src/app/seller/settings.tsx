@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,7 @@ import {
 import { LocationPicker } from '@/components/LocationPicker';
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { getMyStore, updateStoreSettings } from '@/services/seller';
 
 interface StoreSettings {
@@ -55,6 +56,8 @@ const PAYOUT_METHODS = [
 
 export default function SellerSettingsScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   // ── Form state ──────────────────────────────────────────────────
   const [name, setName] = useState('');
@@ -262,7 +265,7 @@ export default function SellerSettingsScreen() {
                     <Image source={{ uri: bannerUri }} style={styles.banner} resizeMode="cover" />
                   ) : (
                     <View style={[styles.banner, styles.bannerFallback]}>
-                      <MaterialCommunityIcons name="image-plus" size={28} color={Brand.textTertiary} />
+                      <MaterialCommunityIcons name="image-plus" size={28} color={colors.textTertiary} />
                       <Text style={styles.bannerText}>Add Banner</Text>
                     </View>
                   )}
@@ -287,7 +290,7 @@ export default function SellerSettingsScreen() {
                   value={name}
                   onChangeText={setName}
                   placeholder="My Store"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                 />
 
                 <Text style={styles.label}>Description</Text>
@@ -296,7 +299,7 @@ export default function SellerSettingsScreen() {
                   value={description}
                   onChangeText={setDescription}
                   placeholder="Tell buyers about your store..."
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
@@ -312,7 +315,7 @@ export default function SellerSettingsScreen() {
                   value={contactEmail}
                   onChangeText={setContactEmail}
                   placeholder="store@example.com"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -323,7 +326,7 @@ export default function SellerSettingsScreen() {
                   value={contactPhone}
                   onChangeText={setContactPhone}
                   placeholder="+256 7XX XXX XXX"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="phone-pad"
                 />
               </View>
@@ -342,7 +345,7 @@ export default function SellerSettingsScreen() {
                   <Text style={styles.dropdownText} numberOfLines={1}>
                     {selectedBusiness?.label || 'Select type'}
                   </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={Brand.textSecondary} />
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
                 </Pressable>
               </View>
 
@@ -357,7 +360,7 @@ export default function SellerSettingsScreen() {
                   <Switch
                     value={shippingEnabled}
                     onValueChange={setShippingEnabled}
-                    trackColor={{ false: Brand.border, true: Brand.primary }}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -368,7 +371,7 @@ export default function SellerSettingsScreen() {
                   value={freeShipThreshold}
                   onChangeText={setFreeShipThreshold}
                   placeholder="e.g. 100000"
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="numeric"
                 />
               </View>
@@ -384,7 +387,7 @@ export default function SellerSettingsScreen() {
                   <Switch
                     value={notifOrders}
                     onValueChange={setNotifOrders}
-                    trackColor={{ false: Brand.border, true: Brand.primary }}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -397,7 +400,7 @@ export default function SellerSettingsScreen() {
                   <Switch
                     value={notifMessages}
                     onValueChange={setNotifMessages}
-                    trackColor={{ false: Brand.border, true: Brand.primary }}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -410,7 +413,7 @@ export default function SellerSettingsScreen() {
                   <Switch
                     value={notifMarketing}
                     onValueChange={setNotifMarketing}
-                    trackColor={{ false: Brand.border, true: Brand.primary }}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
@@ -431,7 +434,7 @@ export default function SellerSettingsScreen() {
                       {selectedPayout?.label || 'Select method'}
                     </Text>
                   </View>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={Brand.textSecondary} />
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
                 </Pressable>
 
                 <Text style={styles.label}>Payout Details</Text>
@@ -446,7 +449,7 @@ export default function SellerSettingsScreen() {
                         ? 'Bank name, account number, account name'
                         : 'PayPal email address'
                   }
-                  placeholderTextColor={Brand.textTertiary}
+                  placeholderTextColor={colors.textTertiary}
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -490,7 +493,7 @@ export default function SellerSettingsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Business Type</Text>
                 <Pressable onPress={() => setShowBusinessModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.text} />
                 </Pressable>
               </View>
               <ScrollView style={styles.modalList}>
@@ -499,7 +502,7 @@ export default function SellerSettingsScreen() {
                     key={bt.key}
                     style={[
                       styles.modalItem,
-                      bt.key === businessType && { backgroundColor: Brand.surfaceAlt },
+                      bt.key === businessType && { backgroundColor: colors.surfaceAlt },
                     ]}
                     onPress={() => {
                       setBusinessType(bt.key);
@@ -524,7 +527,7 @@ export default function SellerSettingsScreen() {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Payout Method</Text>
                 <Pressable onPress={() => setShowPayoutModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={Brand.text} />
+                  <MaterialCommunityIcons name="close" size={24} color={colors.text} />
                 </Pressable>
               </View>
               <ScrollView style={styles.modalList}>
@@ -533,7 +536,7 @@ export default function SellerSettingsScreen() {
                     key={pm.key}
                     style={[
                       styles.modalItem,
-                      pm.key === payoutMethod && { backgroundColor: Brand.surfaceAlt },
+                      pm.key === payoutMethod && { backgroundColor: colors.surfaceAlt },
                     ]}
                     onPress={() => {
                       setPayoutMethod(pm.key);
@@ -558,25 +561,25 @@ export default function SellerSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
 
   body: { flex: 1 },
   bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
 
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: Spacing.two, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: Spacing.two, color: c.textSecondary, fontSize: 14 },
 
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     marginTop: Spacing.three,
     marginBottom: Spacing.two,
   },
 
   card: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
     gap: Spacing.two + Spacing.half,
@@ -587,16 +590,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
 
-  label: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  label: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   input: {
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: Spacing.three - Spacing.half,
     paddingVertical: Spacing.two + Spacing.half,
     fontSize: 15,
-    color: Brand.text,
-    backgroundColor: Brand.surfaceAlt,
+    color: c.text,
+    backgroundColor: c.surfaceAlt,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
 
@@ -607,12 +610,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   bannerFallback: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.one + Spacing.half,
   },
-  bannerText: { fontSize: 13, color: Brand.textTertiary, fontWeight: '600' },
+  bannerText: { fontSize: 13, color: c.textTertiary, fontWeight: '600' },
 
   logoWrap: {
     width: 76,
@@ -626,7 +629,7 @@ const styles = StyleSheet.create({
     height: 76,
     borderRadius: 16,
     borderWidth: 3,
-    borderColor: Brand.surface,
+    borderColor: c.surface,
   },
   logoFallback: {
     backgroundColor: Brand.primary,
@@ -644,7 +647,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Brand.surface,
+    borderColor: c.surface,
   },
 
   // ── Dropdown ──────────────────────────────────────────────────
@@ -653,14 +656,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: Spacing.three - Spacing.half,
     paddingVertical: Spacing.two + Spacing.half,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   dropdownLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flex: 1 },
-  dropdownText: { fontSize: 15, color: Brand.text },
+  dropdownText: { fontSize: 15, color: c.text },
 
   // ── Switch ────────────────────────────────────────────────────
   switchRow: {
@@ -670,7 +673,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   switchInfo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + Spacing.half },
-  switchLabel: { fontSize: 14, fontWeight: '600', color: Brand.text },
+  switchLabel: { fontSize: 14, fontWeight: '600', color: c.text },
 
   // ── Error ─────────────────────────────────────────────────────
   errorBox: {
@@ -700,7 +703,7 @@ const styles = StyleSheet.create({
   // ── Modal ─────────────────────────────────────────────────────
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '70%',
@@ -712,9 +715,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three + Spacing.half,
     paddingVertical: Spacing.three,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.borderLight,
+    borderBottomColor: c.borderLight,
   },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Brand.text },
+  modalTitle: { fontSize: 16, fontWeight: '700', color: c.text },
   modalList: { paddingVertical: Spacing.two },
   modalItem: {
     flexDirection: 'row',
@@ -724,5 +727,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three - Spacing.half,
   },
   modalItemLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + Spacing.half },
-  modalItemText: { fontSize: 15, color: Brand.text },
+  modalItemText: { fontSize: 15, color: c.text },
 });

@@ -7,7 +7,7 @@ import {
   requestForegroundPermissionsAsync,
 } from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -28,6 +28,7 @@ import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { fetchCountries } from '@/services/locations';
 import {
@@ -96,6 +97,8 @@ const SponsoredProductCard = memo(function SponsoredProductCard({
   badgeText: string;
   badgeColor: string;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={styles.sponsoredCard}
@@ -105,8 +108,8 @@ const SponsoredProductCard = memo(function SponsoredProductCard({
         {item.primary_image_url ? (
           <Image source={{ uri: item.primary_image_url }} style={styles.sponsoredImg} resizeMode="contain" />
         ) : (
-          <View style={[styles.sponsoredImg, { backgroundColor: Brand.surfaceAlt }]}>
-            <MaterialCommunityIcons name="image-off-outline" size={28} color={Brand.textTertiary} />
+          <View style={[styles.sponsoredImg, { backgroundColor: colors.surfaceAlt }]}>
+            <MaterialCommunityIcons name="image-off-outline" size={28} color={colors.textTertiary} />
           </View>
         )}
         <View style={[styles.sponsoredBadge, { backgroundColor: badgeColor }]}>
@@ -131,6 +134,8 @@ const SearchProductCard = memo(function SearchProductCard({
   buyerCountry?: string;
   onSeeVideo?: (slug: string) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const onSale = item.is_on_sale && item.sale_price;
   const rating = parseFloat(item.rating) || 0;
   // Determine if product is local or international based on store country
@@ -148,7 +153,7 @@ const SearchProductCard = memo(function SearchProductCard({
           <Image source={{ uri: item.primary_image_url }} style={styles.image} resizeMode="contain" />
         ) : (
           <View style={styles.noImage}>
-            <MaterialCommunityIcons name="package-variant-closed" size={36} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="package-variant-closed" size={36} color={colors.textTertiary} />
           </View>
         )}
         {onSale && (
@@ -202,7 +207,7 @@ const SearchProductCard = memo(function SearchProductCard({
             <MaterialCommunityIcons
               name={isLocal ? 'map-marker-radius' : 'earth'}
               size={10}
-              color={isLocal ? Brand.primary : Brand.textTertiary}
+              color={isLocal ? Brand.primary : colors.textTertiary}
             />
             <Text style={styles.storeLocationText} numberOfLines={1}>
               {item.store_city || item.store?.city || ''}{item.store_city || item.store?.city ? ', ' : ''}{storeCountry}
@@ -235,6 +240,8 @@ export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
   const { isAuthenticated } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const categorySlug = params.category || null;
   const brandSlug = params.brand || null;
   const contextTitle = categorySlug ? (params.categoryName || 'Category') : brandSlug ? (params.brandName || 'Brand') : null;
@@ -643,17 +650,17 @@ export default function SearchScreen() {
     <View style={styles.headerWrap}>
       <View style={styles.searchRow}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={Brand.text} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
         <View style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
           <TextInput
             ref={inputRef}
             style={styles.searchInput}
             value={query}
             onChangeText={setQuery}
             placeholder="Search products on Diilzo..."
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -662,7 +669,7 @@ export default function SearchScreen() {
           />
           {query.length > 0 && (
             <Pressable onPress={clearQuery} hitSlop={8}>
-              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </Pressable>
           )}
         </View>
@@ -673,7 +680,7 @@ export default function SearchScreen() {
           <MaterialCommunityIcons
             name="tune"
             size={20}
-            color={(showFilters || sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly) ? '#FFFFFF' : Brand.text}
+            color={(showFilters || sortBy || minPrice || maxPrice || onSaleOnly || inStockOnly || verifiedOnly) ? '#FFFFFF' : colors.text}
           />
         </Pressable>
       </View>
@@ -689,9 +696,9 @@ export default function SearchScreen() {
                 setShowAutocomplete(false);
               }}
             >
-              <MaterialCommunityIcons name="magnify" size={16} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="magnify" size={16} color={colors.textTertiary} />
               <Text style={styles.autocompleteText} numberOfLines={1}>{item}</Text>
-              <MaterialCommunityIcons name="arrow-top-left" size={14} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="arrow-top-left" size={14} color={colors.textTertiary} />
             </Pressable>
           ))}
         </View>
@@ -723,7 +730,7 @@ export default function SearchScreen() {
           onChangeText={setMinPrice}
           placeholder="Min"
           keyboardType="numeric"
-          placeholderTextColor={Brand.textTertiary}
+          placeholderTextColor={colors.textTertiary}
         />
         <Text style={styles.priceDash}>—</Text>
         <TextInput
@@ -732,7 +739,7 @@ export default function SearchScreen() {
           onChangeText={setMaxPrice}
           placeholder="Max"
           keyboardType="numeric"
-          placeholderTextColor={Brand.textTertiary}
+          placeholderTextColor={colors.textTertiary}
         />
         <Pressable style={styles.applyBtn} onPress={() => load(true)}>
           <Text style={styles.applyBtnText}>Apply</Text>
@@ -747,7 +754,7 @@ export default function SearchScreen() {
             <MaterialCommunityIcons
               name={onSaleOnly ? 'checkbox-marked' : 'checkbox-blank-outline'}
               size={20}
-              color={onSaleOnly ? Brand.primary : Brand.textTertiary}
+              color={onSaleOnly ? Brand.primary : colors.textTertiary}
             />
             <Text style={styles.saleToggleText}>On Sale</Text>
           </Pressable>
@@ -758,7 +765,7 @@ export default function SearchScreen() {
             <MaterialCommunityIcons
               name={inStockOnly ? 'checkbox-marked' : 'checkbox-blank-outline'}
               size={20}
-              color={inStockOnly ? Brand.primary : Brand.textTertiary}
+              color={inStockOnly ? Brand.primary : colors.textTertiary}
             />
             <Text style={styles.saleToggleText}>In Stock</Text>
           </Pressable>
@@ -769,7 +776,7 @@ export default function SearchScreen() {
             <MaterialCommunityIcons
               name={verifiedOnly ? 'checkbox-marked' : 'checkbox-blank-outline'}
               size={20}
-              color={verifiedOnly ? Brand.primary : Brand.textTertiary}
+              color={verifiedOnly ? Brand.primary : colors.textTertiary}
             />
             <Text style={styles.saleToggleText}>Verified</Text>
           </Pressable>
@@ -785,7 +792,7 @@ export default function SearchScreen() {
               load(true);
             }}
           >
-            <MaterialCommunityIcons name="map-marker-radius" size={16} color={localOnly ? '#FFFFFF' : Brand.textSecondary} />
+            <MaterialCommunityIcons name="map-marker-radius" size={16} color={localOnly ? '#FFFFFF' : colors.textSecondary} />
             <Text style={[styles.locChipText, localOnly && styles.locChipTextActive]}>Local ({buyerCountryName})</Text>
           </Pressable>
           <Pressable
@@ -796,7 +803,7 @@ export default function SearchScreen() {
               load(true);
             }}
           >
-            <MaterialCommunityIcons name="earth" size={16} color={internationalOnly ? '#FFFFFF' : Brand.textSecondary} />
+            <MaterialCommunityIcons name="earth" size={16} color={internationalOnly ? '#FFFFFF' : colors.textSecondary} />
             <Text style={[styles.locChipText, internationalOnly && styles.locChipTextActive]}>International</Text>
           </Pressable>
         </View>
@@ -806,16 +813,16 @@ export default function SearchScreen() {
           style={styles.filterInputRow}
           onPress={() => { setShowCountryModal(true); setCountrySearch(''); }}
         >
-          <MaterialCommunityIcons name="earth" size={18} color={Brand.textTertiary} />
+          <MaterialCommunityIcons name="earth" size={18} color={colors.textTertiary} />
           <Text style={[styles.filterInputText, !sellerCountryName && styles.filterInputPlaceholder]}>
             {sellerCountryName || 'All countries'}
           </Text>
           {sellerCountry ? (
             <Pressable hitSlop={8} onPress={() => { setSellerCountry(''); setSellerCountryName(''); setSellerRegion(''); setSellerCity(''); load(true); }}>
-              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </Pressable>
           ) : (
-            <MaterialCommunityIcons name="chevron-right" size={18} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
           )}
         </Pressable>
         <View style={styles.filterRowTwo}>
@@ -824,7 +831,7 @@ export default function SearchScreen() {
             value={sellerRegion}
             onChangeText={setSellerRegion}
             placeholder="Region/state"
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             returnKeyType="next"
           />
           <TextInput
@@ -832,7 +839,7 @@ export default function SearchScreen() {
             value={sellerCity}
             onChangeText={setSellerCity}
             placeholder="City"
-            placeholderTextColor={Brand.textTertiary}
+            placeholderTextColor={colors.textTertiary}
             returnKeyType="search"
             onSubmitEditing={() => load(true)}
           />
@@ -874,15 +881,15 @@ export default function SearchScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Country</Text>
             <Pressable onPress={() => setShowCountryModal(false)}>
-              <MaterialCommunityIcons name="close" size={24} color={Brand.textSecondary} />
+              <MaterialCommunityIcons name="close" size={24} color={colors.textSecondary} />
             </Pressable>
           </View>
           <View style={styles.searchBar}>
-            <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search..."
-              placeholderTextColor={Brand.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={countrySearch}
               onChangeText={setCountrySearch}
               autoFocus
@@ -909,7 +916,7 @@ export default function SearchScreen() {
             )}
             ListEmptyComponent={
               <View style={{ padding: 40, alignItems: 'center' }}>
-                <Text style={{ color: Brand.textTertiary }}>No countries found</Text>
+                <Text style={{ color: colors.textTertiary }}>No countries found</Text>
               </View>
             }
             contentContainerStyle={{ paddingBottom: 20 }}
@@ -932,7 +939,7 @@ export default function SearchScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <MaterialCommunityIcons name="history" size={18} color={Brand.textSecondary} />
+              <MaterialCommunityIcons name="history" size={18} color={colors.textSecondary} />
               <Text style={styles.sectionTitle}>Recent Searches</Text>
             </View>
             <Pressable onPress={clearAllRecent} hitSlop={8}>
@@ -946,10 +953,10 @@ export default function SearchScreen() {
                 style={({ pressed }) => [styles.recentChip, pressed && { opacity: 0.8 }]}
                 onPress={() => setQuery(term)}
               >
-                <MaterialCommunityIcons name="history" size={13} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="history" size={13} color={colors.textTertiary} />
                 <Text style={styles.recentChipText} numberOfLines={1}>{term}</Text>
                 <Pressable onPress={() => removeRecentSearch(term)} hitSlop={6}>
-                  <MaterialCommunityIcons name="close" size={13} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="close" size={13} color={colors.textTertiary} />
                 </Pressable>
               </Pressable>
             ))}
@@ -980,7 +987,7 @@ export default function SearchScreen() {
                 )}
                 <View style={styles.trendingLabelRow}>
                   <Text style={styles.trendingLabel} numberOfLines={1}>{item.term}</Text>
-                  <MaterialCommunityIcons name="arrow-top-right" size={14} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="arrow-top-right" size={14} color={colors.textTertiary} />
                 </View>
               </Pressable>
             );
@@ -1060,7 +1067,7 @@ export default function SearchScreen() {
             {showMinHint ? (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIconWrap}>
-                  <MaterialCommunityIcons name="keyboard-outline" size={40} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="keyboard-outline" size={40} color={colors.textTertiary} />
                 </View>
                 <Text style={styles.emptyTitle}>Keep typing</Text>
                 <Text style={styles.emptySubtext}>
@@ -1070,7 +1077,7 @@ export default function SearchScreen() {
             ) : showEmpty ? (
               <View style={styles.emptyState}>
                 <View style={styles.emptyIconWrap}>
-                  <MaterialCommunityIcons name="magnify-close" size={40} color={Brand.textTertiary} />
+                  <MaterialCommunityIcons name="magnify-close" size={40} color={colors.textTertiary} />
                 </View>
                 <Text style={styles.emptyTitle}>No items found</Text>
                 <Text style={styles.emptySubtext}>
@@ -1177,18 +1184,18 @@ export default function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7F8F9' },
-  safeArea: { flex: 1, backgroundColor: '#F7F8F9' },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.background },
+  safeArea: { flex: 1, backgroundColor: c.background },
 
   // ── Header (modern, always visible, no gradient) ───────────────
   headerWrap: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     paddingHorizontal: 12,
     paddingTop: 6,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.surfaceAlt,
+    borderBottomColor: c.surfaceAlt,
   },
   searchRow: {
     flexDirection: 'row',
@@ -1206,7 +1213,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F3F4',
+    backgroundColor: c.surfaceAlt,
     borderRadius: 24,
     paddingHorizontal: 14,
     height: 44,
@@ -1215,7 +1222,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     paddingVertical: 0,
     height: '100%',
   },
@@ -1223,7 +1230,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#F1F3F4',
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1234,7 +1241,7 @@ const styles = StyleSheet.create({
   // ── Autocomplete dropdown ───────────────────────────────────────
   autocompleteDropdown: {
     marginTop: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     paddingVertical: 4,
     elevation: 4,
@@ -1250,12 +1257,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    borderBottomColor: c.surfaceAlt,
   },
   autocompleteText: {
     flex: 1,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '500',
   },
 
@@ -1273,7 +1280,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 13,
-    color: Brand.text,
+    color: c.text,
   },
   suggestionLink: {
     fontWeight: '800',
@@ -1308,27 +1315,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.surfaceAlt,
+    borderBottomColor: c.surfaceAlt,
   },
   contextTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
   },
   contextCount: {
     fontSize: 12,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontWeight: '600',
   },
 
   // ── Filter panel ────────────────────────────────────────────────
   filterPanel: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginHorizontal: 12,
     marginTop: 10,
     borderRadius: 14,
@@ -1343,7 +1350,7 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
@@ -1353,19 +1360,19 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     marginTop: 6,
   },
   filterInputText: {
     flex: 1,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
   },
   filterInputPlaceholder: {
-    color: Brand.textTertiary,
+    color: c.textTertiary,
   },
   filterRowTwo: {
     flexDirection: 'row',
@@ -1375,12 +1382,12 @@ const styles = StyleSheet.create({
   filterInput: {
     height: 40,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: Brand.text,
-    backgroundColor: Brand.surface,
+    color: c.text,
+    backgroundColor: c.surface,
   },
   modalOverlay: {
     flex: 1,
@@ -1388,7 +1395,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -1400,30 +1407,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.border,
+    borderBottomColor: c.border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   countryListItem: {
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.border,
+    borderBottomColor: c.border,
   },
   countryListItemPressed: {
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   countryListText: {
     fontSize: 15,
     fontWeight: '500',
-    color: Brand.text,
+    color: c.text,
   },
   countryListCode: {
     fontSize: 12,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 2,
   },
   sortRow: {
@@ -1435,7 +1442,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#F1F3F4',
+    backgroundColor: c.surfaceAlt,
   },
   sortChipActive: {
     backgroundColor: Brand.primary,
@@ -1443,7 +1450,7 @@ const styles = StyleSheet.create({
   sortChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   sortChipTextActive: {
     color: '#FFFFFF',
@@ -1455,15 +1462,15 @@ const styles = StyleSheet.create({
   },
   priceInput: {
     flex: 1,
-    backgroundColor: '#F1F3F4',
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
     fontSize: 14,
-    color: Brand.text,
+    color: c.text,
   },
   priceDash: {
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontSize: 16,
   },
   applyBtn: {
@@ -1488,7 +1495,7 @@ const styles = StyleSheet.create({
   },
   saleToggleText: {
     fontSize: 13,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '500',
   },
   clearFiltersText: {
@@ -1501,7 +1508,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.surfaceAlt,
+    borderTopColor: c.surfaceAlt,
   },
 
   // ── Idle state sections ─────────────────────────────────────────
@@ -1522,7 +1529,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: c.text },
   clearAllText: { fontSize: 12, fontWeight: '700', color: Brand.danger },
 
   // Recent searches as chips
@@ -1535,17 +1542,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     maxWidth: '100%',
   },
   recentChipText: {
     fontSize: 13,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -1559,18 +1566,18 @@ const styles = StyleSheet.create({
   trendingCard: {
     width: '31%',
     flexGrow: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Brand.surfaceAlt,
+    borderColor: c.surfaceAlt,
   },
   trendingImg: {
     width: '100%',
     height: 74,
   },
   trendingImgFallback: {
-    backgroundColor: '#E7F5EF',
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1584,7 +1591,7 @@ const styles = StyleSheet.create({
   trendingLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     flex: 1,
   },
 
@@ -1596,8 +1603,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  countText: { fontSize: 13, color: Brand.textSecondary, fontWeight: '500', flex: 1 },
-  countQuery: { fontWeight: '800', color: Brand.text },
+  countText: { fontSize: 13, color: c.textSecondary, fontWeight: '500', flex: 1 },
+  countQuery: { fontWeight: '800', color: c.text },
   clearQueryText: { fontSize: 13, fontWeight: '700', color: Brand.primary },
 
   // ── List ────────────────────────────────────────────────────────
@@ -1610,7 +1617,7 @@ const styles = StyleSheet.create({
   // ── Card ────────────────────────────────────────────────────────
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 1,
@@ -1622,7 +1629,7 @@ const styles = StyleSheet.create({
   cardPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
   imageWrap: {
     position: 'relative',
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     aspectRatio: 1,
   },
   image: { width: '100%', height: '100%' },
@@ -1630,7 +1637,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   saleBadge: {
     position: 'absolute',
@@ -1708,7 +1715,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     alignSelf: 'flex-start',
   },
-  seeVideoBtnText: { color: Brand.text, fontSize: 11, fontWeight: '700' },
+  seeVideoBtnText: { color: c.text, fontSize: 11, fontWeight: '700' },
   // ── Store location row in card body ─────────────────────────────
   storeLocationRow: {
     flexDirection: 'row',
@@ -1718,7 +1725,7 @@ const styles = StyleSheet.create({
   },
   storeLocationText: {
     fontSize: 10,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontWeight: '500',
     flexShrink: 1,
   },
@@ -1740,7 +1747,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F1F3F4',
+    backgroundColor: c.surfaceAlt,
     flex: 1,
     justifyContent: 'center',
   },
@@ -1753,18 +1760,18 @@ const styles = StyleSheet.create({
   locChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
   },
   locChipTextActive: {
     color: '#FFFFFF',
   },
   cardBody: { padding: 10, gap: 4 },
-  name: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: Brand.text },
+  name: { fontSize: 13, fontWeight: '600', lineHeight: 18, color: c.text },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   ratingText: { fontSize: 11, fontWeight: '600', color: Brand.rating, marginLeft: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 },
-  currency: { fontSize: 11, fontWeight: '600', color: Brand.text },
-  price: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  currency: { fontSize: 11, fontWeight: '600', color: c.text },
+  price: { fontSize: 15, fontWeight: '800', color: c.text },
 
   // ── Empty state ─────────────────────────────────────────────────
   emptyState: {
@@ -1777,16 +1784,16 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#EDF2F0',
+    backgroundColor: c.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: Brand.text },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: c.text },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -1801,14 +1808,14 @@ const styles = StyleSheet.create({
 
   // ── Loading ─────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, color: Brand.textSecondary, fontSize: 14 },
+  loadingText: { marginTop: 8, color: c.textSecondary, fontSize: 14 },
 
   // ── Footer ──────────────────────────────────────────────────────
   footer: { paddingVertical: 16 },
   endText: {
     textAlign: 'center',
     paddingVertical: 16,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontSize: 12,
   },
 
@@ -1818,11 +1825,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 4, marginBottom: 8,
   },
-  promoSectionTitle: { fontSize: 13, fontWeight: '700', color: Brand.textSecondary },
+  promoSectionTitle: { fontSize: 13, fontWeight: '700', color: c.textSecondary },
   sponsoredCard: {
     width: 140,
     marginRight: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 1,
@@ -1835,7 +1842,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 120,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   sponsoredImg: { width: '100%', height: '100%' },
   sponsoredBadge: {
@@ -1850,7 +1857,7 @@ const styles = StyleSheet.create({
   sponsoredName: {
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.text,
+    color: c.text,
     paddingHorizontal: 8,
     paddingTop: 6,
     lineHeight: 16,
@@ -1858,7 +1865,7 @@ const styles = StyleSheet.create({
   sponsoredPrice: {
     fontSize: 13,
     fontWeight: '800',
-    color: Brand.text,
+    color: c.text,
     paddingHorizontal: 8,
     paddingBottom: 8,
     paddingTop: 2,

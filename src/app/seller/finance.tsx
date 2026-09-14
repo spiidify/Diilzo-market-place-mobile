@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
   getFinancialDashboard,
@@ -21,6 +22,8 @@ import {
 
 export default function SellerFinanceDashboardScreen() {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [data, setData] = useState<FinancialDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,13 +126,13 @@ export default function SellerFinanceDashboardScreen() {
           </View>
 
           <View style={styles.balanceRow}>
-            <View style={[styles.balanceCard, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border }]}>
-              <Text style={[styles.balanceLabel, { color: Brand.textSecondary }]}>Total Paid Out</Text>
-              <Text style={[styles.balanceValue, { color: Brand.text, fontSize: 16 }]}>UGX {fmt(data?.total_paid_out)}</Text>
+            <View style={[styles.balanceCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}>
+              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Total Paid Out</Text>
+              <Text style={[styles.balanceValue, { color: colors.text, fontSize: 16 }]}>UGX {fmt(data?.total_paid_out)}</Text>
             </View>
-            <View style={[styles.balanceCard, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Brand.border }]}>
-              <Text style={[styles.balanceLabel, { color: Brand.textSecondary }]}>Commission Rate</Text>
-              <Text style={[styles.balanceValue, { color: Brand.text, fontSize: 16 }]}>{data?.commission_rate || '0'}%</Text>
+            <View style={[styles.balanceCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}>
+              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Commission Rate</Text>
+              <Text style={[styles.balanceValue, { color: colors.text, fontSize: 16 }]}>{data?.commission_rate || '0'}%</Text>
             </View>
           </View>
 
@@ -161,7 +164,7 @@ export default function SellerFinanceDashboardScreen() {
                 <Text style={styles.holdsAlertText}>UGX {fmt(data.hold_amount)} held</Text>
               </View>
               <Pressable onPress={() => router.push('/seller/payout-holds')}>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={Brand.textSecondary} />
+                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textSecondary} />
               </Pressable>
             </View>
           ) : null}
@@ -199,7 +202,7 @@ export default function SellerFinanceDashboardScreen() {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="receipt" size={36} color={Brand.textTertiary} />
+                <MaterialCommunityIcons name="receipt" size={36} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No transactions yet</Text>
                 <Text style={styles.emptySubtext}>Activity appears when orders are settled</Text>
               </View>
@@ -211,10 +214,10 @@ export default function SellerFinanceDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: Brand.textSecondary },
+  loadingText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
@@ -230,17 +233,17 @@ const styles = StyleSheet.create({
   balanceValue: { fontSize: 18, fontWeight: '900', color: '#FFFFFF', marginTop: 4 },
 
   sectionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Brand.text, marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   viewAllText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
 
   summaryGrid: { flexDirection: 'row', gap: 8 },
-  summaryCell: { flex: 1, backgroundColor: Brand.surfaceAlt, borderRadius: 10, padding: 10, alignItems: 'center' },
+  summaryCell: { flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 10, alignItems: 'center' },
   summaryValue: { fontSize: 13, fontWeight: '800' },
-  summaryLabel: { fontSize: 10, color: Brand.textSecondary, marginTop: 4 },
+  summaryLabel: { fontSize: 10, color: c.textSecondary, marginTop: 4 },
 
   holdsAlert: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -252,19 +255,19 @@ const styles = StyleSheet.create({
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   actionItem: { alignItems: 'center', width: 90 },
   actionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  actionLabel: { fontSize: 11, color: Brand.text, marginTop: 6, fontWeight: '500' },
+  actionLabel: { fontSize: 11, color: c.text, marginTop: 6, fontWeight: '500' },
 
   txRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Brand.surfaceAlt, borderRadius: 12, padding: 12, marginBottom: 6,
+    backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 12, marginBottom: 6,
   },
   txIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   txInfo: { flex: 1, gap: 2 },
-  txRef: { fontSize: 14, fontWeight: '600', color: Brand.text },
-  txRule: { fontSize: 11, color: Brand.textTertiary },
+  txRef: { fontSize: 14, fontWeight: '600', color: c.text },
+  txRule: { fontSize: 11, color: c.textTertiary },
   txCommission: { fontSize: 14, fontWeight: '700' },
 
   emptyState: { alignItems: 'center', paddingVertical: 24 },
-  emptyText: { marginTop: 8, fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
-  emptySubtext: { marginTop: 4, fontSize: 12, color: Brand.textTertiary },
+  emptyText: { marginTop: 8, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
+  emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 });

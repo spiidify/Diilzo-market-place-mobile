@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -26,6 +26,7 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { useCart } from '@/context/CartContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import {
   fetchBecauseYouViewed,
@@ -59,6 +60,8 @@ const ProductCard = memo(function ProductCard({
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isSupplier = item.store?.is_wholesaler === true;
 
   return (
@@ -75,7 +78,7 @@ const ProductCard = memo(function ProductCard({
           />
         ) : (
           <View style={styles.noImage}>
-            <MaterialCommunityIcons name="image-outline" size={40} color={Brand.textTertiary} />
+            <MaterialCommunityIcons name="image-outline" size={40} color={colors.textTertiary} />
           </View>
         )}
         {item.is_on_sale && (
@@ -95,7 +98,7 @@ const ProductCard = memo(function ProductCard({
           {item.name}
         </Text>
         <View style={styles.ratingRow}>
-          {renderStarsStatic(item.rating)}
+          {renderStarsStatic(item.rating, styles)}
           <Text style={styles.reviewCount}>{item.review_count}</Text>
         </View>
         <View style={styles.priceRow}>
@@ -162,7 +165,7 @@ const ProductCard = memo(function ProductCard({
   );
 });
 
-function renderStarsStatic(rating: string) {
+function renderStarsStatic(rating: string, styles: ReturnType<typeof createStyles>) {
   const value = parseFloat(rating) || 0;
   const full = Math.floor(value);
   const stars: React.ReactNode[] = [];
@@ -184,6 +187,8 @@ function renderStarsStatic(rating: string) {
 // (which was resetting the category ScrollView position).
 const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] }) {
   const router = useRouter();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: windowWidth } = useWindowDimensions();
   // Single source of truth: carousel has Spacing.two (8px) horizontal margin
   // on each side, so the visible ScrollView viewport = windowWidth - 16.
@@ -340,6 +345,8 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
   endsAt: string | null;
   onPress: (slug: string) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const cd = useCountdown(endsAt);
   if (!products.length) return null;
   return (
@@ -383,7 +390,7 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
               {item.primary_image_url ? (
                 <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
               ) : (
-                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
+                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={colors.textTertiary} /></View>
               )}
               <View style={styles.flashBadge}><Text style={styles.flashBadgeText}>-{item.discount_percentage}%</Text></View>
             </View>
@@ -404,6 +411,8 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
 
 // ── Voucher banner (claimable coupons) ─────────────────────────────
 const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: ClaimableCoupon[] }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!vouchers.length) return null;
   return (
     <View style={styles.voucherSection}>
@@ -448,6 +457,8 @@ const DualBannerTiles = memo(function DualBannerTiles({
   tileB: Slide[];
   onPress: (slide: Slide) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!tileA.length && !tileB.length) return null;
   return (
     <View style={styles.dualTilesWrap}>
@@ -493,6 +504,8 @@ const CategorySection = memo(function CategorySection({
   categories: Category[];
   onPressCategory: (cat: Category) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!categories.length) return null;
   return (
     <View style={styles.categoriesSection}>
@@ -562,6 +575,8 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
   data: Product[];
   onPress: (slug: string) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!data || data.length === 0) return null;
   return (
     <View style={styles.section}>
@@ -590,7 +605,7 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
               {item.primary_image_url ? (
                 <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
               ) : (
-                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={Brand.textTertiary} /></View>
+                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={colors.textTertiary} /></View>
               )}
               {item.is_on_sale && (
                 <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>-{item.discount_percentage}%</Text></View>
@@ -621,6 +636,8 @@ const TopStoresSection = memo(function TopStoresSection({
   onPressStore: (slug: string) => void;
   onPressSeeAll: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!stores.length) return null;
   return (
     <View style={styles.storesSection}>
@@ -657,7 +674,7 @@ const TopStoresSection = memo(function TopStoresSection({
             <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
             <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
             <View style={styles.storeMetaRow}>
-              <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.textSecondary} />
+              <MaterialCommunityIcons name="package-variant-closed" size={11} color={colors.textSecondary} />
               <Text style={styles.storeMetaText}>{s.product_count || 0} products</Text>
             </View>
             {s.is_wholesaler && (
@@ -681,6 +698,8 @@ const TopBrandsSection = memo(function TopBrandsSection({
   brands: BrandType[];
   onPressBrand: (slug: string, name: string) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!brands.length) return null;
   return (
     <View style={styles.brandsSection}>
@@ -726,6 +745,8 @@ const TopBrandsSection = memo(function TopBrandsSection({
 
 // ── Supplier banner (memoized) ──────────────────────────────────────
 const SupplierBanner = memo(function SupplierBanner({ onPress }: { onPress: () => void }) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Pressable
       style={({ pressed }) => [styles.supplierBanner, pressed && { opacity: 0.9 }]}
@@ -750,6 +771,8 @@ const SupplierBanner = memo(function SupplierBanner({ onPress }: { onPress: () =
 export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1037,7 +1060,7 @@ export default function ProductFeedScreen() {
         style={({ pressed }) => [styles.searchBar, pressed && styles.searchBarPressed]}
         onPress={handleSearchPress}
       >
-        <MaterialCommunityIcons name="magnify" size={26} color={Brand.textTertiary} />
+        <MaterialCommunityIcons name="magnify" size={26} color={colors.textTertiary} />
         <Text style={styles.searchPlaceholder}>Search Diilzo</Text>
         <View style={styles.searchIconRight}>
           <MaterialCommunityIcons name="camera-outline" size={26} color={Brand.primary} />
@@ -1334,8 +1357,8 @@ export default function ProductFeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
+const createStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   safeArea: { flex: 0, backgroundColor: 'transparent' },
   headerBg: {
     width: '100%',
@@ -1348,7 +1371,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two + 2,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -1380,7 +1403,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: -2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
@@ -1473,7 +1496,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 16,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1483,10 +1506,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Brand.border,
+    borderColor: c.border,
     marginHorizontal: Spacing.two,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
@@ -1497,12 +1520,12 @@ const styles = StyleSheet.create({
   searchBarPressed: { opacity: 0.85 },
   searchPlaceholder: {
     flex: 1,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontSize: 14,
   },
   searchIconRight: {
     borderLeftWidth: 1,
-    borderLeftColor: Brand.borderLight,
+    borderLeftColor: c.borderLight,
     paddingLeft: Spacing.two,
   },
 
@@ -1521,7 +1544,7 @@ const styles = StyleSheet.create({
   slideCard: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: Brand.surface,
+    backgroundColor: c.surface,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1586,13 +1609,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
   },
   carouselDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: Brand.border,
+    backgroundColor: c.border,
   },
   carouselDotActive: {
     width: 22,
@@ -1606,7 +1629,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     gap: Spacing.two,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginHorizontal: Spacing.two,
     marginVertical: Spacing.one,
     borderRadius: 12,
@@ -1622,8 +1645,8 @@ const styles = StyleSheet.create({
     borderColor: Brand.primary,
   },
   chipInactive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: Brand.border,
+    backgroundColor: c.surface,
+    borderColor: c.border,
   },
   chipPressed: { opacity: 0.8 },
   chipText: {
@@ -1631,13 +1654,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chipTextActive: { color: '#FFFFFF' },
-  chipTextInactive: { color: Brand.textSecondary },
+  chipTextInactive: { color: c.textSecondary },
 
   // ── Horizontal sliding sections ─────────────────────────────────
   section: {
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: Spacing.two,
     marginHorizontal: Spacing.two,
@@ -1662,7 +1685,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   seeAllBtn: {
     flexDirection: 'row',
@@ -1681,7 +1704,7 @@ const styles = StyleSheet.create({
   },
   carouselCard: {
     width: 150,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 6,
     overflow: 'hidden',
     elevation: 2,
@@ -1693,14 +1716,14 @@ const styles = StyleSheet.create({
   carouselImageWrap: {
     width: '100%',
     height: 150,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     position: 'relative',
   },
   carouselImage: { width: '100%', height: '100%' },
   carouselName: {
     fontSize: 12,
     fontWeight: '600',
-    color: Brand.text,
+    color: c.text,
     paddingHorizontal: Spacing.two,
     paddingTop: Spacing.two,
     lineHeight: 16,
@@ -1716,11 +1739,11 @@ const styles = StyleSheet.create({
   carouselPrice: {
     fontSize: 15,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   carouselOrigPrice: {
     fontSize: 11,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     textDecorationLine: 'line-through',
     paddingHorizontal: Spacing.two,
     paddingBottom: Spacing.two,
@@ -1737,7 +1760,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     marginHorizontal: 0,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 6,
     borderLeftWidth: 4,
     borderLeftColor: Brand.primary,
@@ -1745,12 +1768,12 @@ const styles = StyleSheet.create({
   allProductsTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
 
   // ── Shop by Category — round horizontal carousel ────────────────
   categoriesSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
     marginHorizontal: Spacing.two,
@@ -1783,7 +1806,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: Brand.surfaceAlt,
+    borderColor: c.surfaceAlt,
     elevation: 2,
     shadowColor: '#000000',
     shadowOpacity: 0.1,
@@ -1805,13 +1828,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 11,
     fontWeight: '700',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
   },
 
   // ── Top Stores section ──────────────────────────────────────────
   storesSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     marginHorizontal: Spacing.two,
@@ -1826,13 +1849,13 @@ const styles = StyleSheet.create({
   storesCarousel: { paddingHorizontal: Spacing.three, gap: 12 },
   storeCard: {
     width: 120,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: Brand.surfaceAlt,
+    borderColor: c.surfaceAlt,
   },
   storeLogoWrap: {
     width: 56,
@@ -1844,10 +1867,10 @@ const styles = StyleSheet.create({
   },
   storeLogo: { width: '100%', height: '100%' },
   storeLogoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  storeName: { fontSize: 13, fontWeight: '700', color: Brand.text, textAlign: 'center' },
-  storeLocation: { fontSize: 11, color: Brand.textSecondary, textAlign: 'center' },
+  storeName: { fontSize: 13, fontWeight: '700', color: c.text, textAlign: 'center' },
+  storeLocation: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
   storeMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  storeMetaText: { fontSize: 11, color: Brand.textSecondary },
+  storeMetaText: { fontSize: 11, color: c.textSecondary },
   storeWholesaleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1862,14 +1885,14 @@ const styles = StyleSheet.create({
 
   // ── Top Brands section ──────────────────────────────────────────
   brandsSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     paddingVertical: Spacing.three,
     borderTopWidth: 1,
-    borderTopColor: Brand.border,
+    borderTopColor: c.border,
     borderBottomWidth: 1,
-    borderBottomColor: Brand.border,
+    borderBottomColor: c.border,
   },
   brandsScroll: { paddingHorizontal: Spacing.three, gap: 12 },
   brandCard: {
@@ -1881,9 +1904,9 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderWidth: 1.5,
-    borderColor: Brand.border,
+    borderColor: c.border,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 2,
@@ -1904,12 +1927,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 12,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
     textAlign: 'center',
   },
   brandCount: {
     fontSize: 10,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     marginTop: 1,
   },
 
@@ -1946,7 +1969,7 @@ const styles = StyleSheet.create({
 
   card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 3,
@@ -1960,7 +1983,7 @@ const styles = StyleSheet.create({
   imageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     position: 'relative',
   },
   image: { width: '100%', height: '100%' },
@@ -1968,7 +1991,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
   saleBadge: {
     position: 'absolute',
@@ -1992,7 +2015,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 13,
     fontWeight: '600',
-    color: Brand.text,
+    color: c.text,
     lineHeight: 17,
   },
   ratingRow: {
@@ -2017,13 +2040,13 @@ const styles = StyleSheet.create({
   },
   currency: {
     fontSize: 11,
-    color: Brand.text,
+    color: c.text,
     fontWeight: '600',
   },
   price: {
     fontSize: 17,
     fontWeight: '700',
-    color: Brand.text,
+    color: c.text,
   },
   saleText: {
     color: Brand.danger,
@@ -2059,7 +2082,7 @@ const styles = StyleSheet.create({
   },
   inquiryBtn: {
     flex: 1,
-    backgroundColor: Brand.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 6,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
@@ -2069,7 +2092,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Brand.primary,
   },
-  inquiryBtnPressed: { backgroundColor: Brand.border },
+  inquiryBtnPressed: { backgroundColor: c.border },
   inquiryBtnText: {
     color: Brand.primary,
     fontSize: 10,
@@ -2087,7 +2110,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Brand.primary,
   },
-  viewBtnPressed: { backgroundColor: Brand.surfaceAlt, transform: [{ scale: 0.96 }] },
+  viewBtnPressed: { backgroundColor: c.surfaceAlt, transform: [{ scale: 0.96 }] },
   viewBtnText: {
     color: Brand.primary,
     fontSize: 10,
@@ -2120,7 +2143,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: Spacing.two,
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     fontSize: 14,
   },
   errorTitle: {
@@ -2132,7 +2155,7 @@ const styles = StyleSheet.create({
   },
   errorMsg: {
     textAlign: 'center',
-    color: Brand.textSecondary,
+    color: c.textSecondary,
     fontSize: 13,
     marginBottom: Spacing.three,
   },
@@ -2151,7 +2174,7 @@ const styles = StyleSheet.create({
   endText: {
     textAlign: 'center',
     paddingVertical: Spacing.three,
-    color: Brand.textTertiary,
+    color: c.textTertiary,
     fontSize: 12,
   },
 
@@ -2161,7 +2184,7 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.two,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     elevation: 3,
     shadowColor: '#000000',
     shadowOpacity: 0.1,
@@ -2202,7 +2225,7 @@ const styles = StyleSheet.create({
 
   // ── Voucher banner ───────────────────────────────────────────────
   voucherSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.one,
     marginHorizontal: Spacing.two,
@@ -2251,7 +2274,7 @@ const styles = StyleSheet.create({
 
   // ── Dual promo banner tiles ──────────────────────────────────────
   dualTilesWrap: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
     marginHorizontal: Spacing.two,
