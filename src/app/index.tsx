@@ -771,7 +771,7 @@ const SupplierBanner = memo(function SupplierBanner({ onPress }: { onPress: () =
 export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1127,12 +1127,12 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.headerBar}>
-              <DiilzoLogo size={22} variant="color" />
+              <DiilzoLogo size={22} variant={isDark ? "white" : "color"} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
               >
-                <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
+                <MaterialCommunityIcons name="cart-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -1143,7 +1143,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/chat')}
               >
-                <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+                <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {chatUnreadCount > 0 && (
                   <View style={styles.chatBadge}>
                     <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
@@ -1154,7 +1154,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
-                <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
+                <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {notificationCount > 0 && (
                   <View style={styles.notifBadge}>
                     <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1170,7 +1170,7 @@ export default function ProductFeedScreen() {
                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
+                      <MaterialCommunityIcons name="account" size={18} color={isDark ? "#FFFFFF" : Brand.dark} />
                     </View>
                   )}
                 </View>
@@ -1191,12 +1191,12 @@ export default function ProductFeedScreen() {
         <LinearGradient colors={[Brand.dark, Brand.accent, Brand.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
           <SafeAreaView style={styles.safeArea} edges={['top']}>
             <View style={styles.headerBar}>
-              <DiilzoLogo size={22} variant="color" />
+              <DiilzoLogo size={22} variant={isDark ? "white" : "color"} />
               <Pressable
                 style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
                 onPress={() => router.push('/cart')}
               >
-                <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
+                <MaterialCommunityIcons name="cart-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {cartCount > 0 && (
                   <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -1207,7 +1207,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/chat')}
               >
-                <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+                <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {chatUnreadCount > 0 && (
                   <View style={styles.chatBadge}>
                     <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
@@ -1218,7 +1218,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/account')}
               >
-                <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
+                <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {notificationCount > 0 && (
                   <View style={styles.notifBadge}>
                     <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1234,7 +1234,7 @@ export default function ProductFeedScreen() {
                     <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
+                      <MaterialCommunityIcons name="account" size={18} color={isDark ? "#FFFFFF" : Brand.dark} />
                     </View>
                   )}
                 </View>
@@ -1260,13 +1260,13 @@ export default function ProductFeedScreen() {
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <View style={styles.headerBar}>
             {/* Logo on left */}
-            <DiilzoLogo size={22} variant="color" />
+            <DiilzoLogo size={22} variant={isDark ? "white" : "color"} />
             {/* Cart icon */}
             <Pressable
               style={({ pressed }) => [styles.cartIcon, pressed && styles.iconPressed]}
               onPress={() => router.push('/cart')}
             >
-              <MaterialCommunityIcons name="cart-outline" size={22} color={Brand.dark} />
+              <MaterialCommunityIcons name="cart-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
               {cartCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -1278,7 +1278,7 @@ export default function ProductFeedScreen() {
               style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
               onPress={() => router.push('/chat')}
             >
-              <MaterialCommunityIcons name="chat-outline" size={22} color={Brand.dark} />
+              <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
               {chatUnreadCount > 0 && (
                 <View style={styles.chatBadge}>
                   <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
@@ -1290,7 +1290,7 @@ export default function ProductFeedScreen() {
               style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
               onPress={() => router.push('/account')}
             >
-              <MaterialCommunityIcons name="bell" size={20} color={Brand.dark} />
+              <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
               {notificationCount > 0 && (
                 <View style={styles.notifBadge}>
                   <Text style={styles.notifBadgeText}>{notificationCount > 9 ? '9+' : notificationCount}</Text>
@@ -1307,7 +1307,7 @@ export default function ProductFeedScreen() {
                   <Image source={{ uri: user.avatar_url }} style={styles.avatar} resizeMode="cover" />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <MaterialCommunityIcons name="account" size={18} color={Brand.dark} />
+                    <MaterialCommunityIcons name="account" size={18} color={isDark ? "#FFFFFF" : Brand.dark} />
                   </View>
                 )}
               </View>
@@ -1474,7 +1474,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     maxWidth: 140,
   },
   userName: {
-    color: Brand.dark,
+    color: c.text,
     fontSize: 13,
     fontWeight: '600',
   },
