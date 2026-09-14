@@ -300,36 +300,83 @@ export default function StoreDetailScreen() {
 
             {/* ── About section ──────────────────────────────────── */}
             {store.description ? (
-              <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>About {store.name}</Text>
-                <Text style={styles.descText}>{store.description}</Text>
+              <View style={styles.sectionWrap}>
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>About {store.name}</Text>
+                  <Text style={styles.descText}>{store.description}</Text>
+                </View>
               </View>
             ) : null}
 
             {/* ── Store info ─────────────────────────────────────── */}
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Store Information</Text>
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="map-marker" size={16} color={Brand.textSecondary} />
-                <Text style={styles.infoText}>{store.city}, {store.country}</Text>
-              </View>
-              {store.phone ? (
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="phone" size={16} color={Brand.textSecondary} />
-                  <Text style={styles.infoText}>{store.phone}</Text>
+            <View style={styles.sectionWrap}>
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Store Information</Text>
+                <View style={styles.infoGrid}>
+                  <View style={styles.infoItem}>
+                    <View style={styles.infoIconWrap}>
+                      <MaterialCommunityIcons name="map-marker" size={18} color={Brand.primary} />
+                    </View>
+                    <View style={styles.infoContent}>
+                      <Text style={styles.infoLabel}>Location</Text>
+                      <Text style={styles.infoValue} numberOfLines={2}>{store.city}, {store.country}</Text>
+                    </View>
+                  </View>
+
+                  {store.phone ? (
+                    <View style={styles.infoItem}>
+                      <View style={styles.infoIconWrap}>
+                        <MaterialCommunityIcons name="phone" size={18} color={Brand.primary} />
+                      </View>
+                      <View style={styles.infoContent}>
+                        <Text style={styles.infoLabel}>Phone</Text>
+                        <Text style={styles.infoValue} numberOfLines={1}>{store.phone}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {store.email ? (
+                    <View style={styles.infoItem}>
+                      <View style={styles.infoIconWrap}>
+                        <MaterialCommunityIcons name="email" size={18} color={Brand.primary} />
+                      </View>
+                      <View style={styles.infoContent}>
+                        <Text style={styles.infoLabel}>Email</Text>
+                        <Text style={styles.infoValue} numberOfLines={1}>{store.email}</Text>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  <View style={styles.infoItem}>
+                    <View style={styles.infoIconWrap}>
+                      <MaterialCommunityIcons name="calendar" size={18} color={Brand.primary} />
+                    </View>
+                    <View style={styles.infoContent}>
+                      <Text style={styles.infoLabel}>Member Since</Text>
+                      <Text style={styles.infoValue}>{new Date(store.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <View style={styles.infoIconWrap}>
+                      <MaterialCommunityIcons name="package-variant-closed" size={18} color={Brand.primary} />
+                    </View>
+                    <View style={styles.infoContent}>
+                      <Text style={styles.infoLabel}>Products</Text>
+                      <Text style={styles.infoValue}>{store.product_count} items</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <View style={styles.infoIconWrap}>
+                      <MaterialCommunityIcons name="star" size={18} color={Brand.primary} />
+                    </View>
+                    <View style={styles.infoContent}>
+                      <Text style={styles.infoLabel}>Rating</Text>
+                      <Text style={styles.infoValue}>{rating.toFixed(1)} ({store.review_count || 0} reviews)</Text>
+                    </View>
+                  </View>
                 </View>
-              ) : null}
-              {store.email ? (
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="email" size={16} color={Brand.textSecondary} />
-                  <Text style={styles.infoText}>{store.email}</Text>
-                </View>
-              ) : null}
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="calendar" size={16} color={Brand.textSecondary} />
-                <Text style={styles.infoText}>
-                  Member since {new Date(store.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </Text>
               </View>
             </View>
 
@@ -416,18 +463,26 @@ const styles = StyleSheet.create({
   actionBtnText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
 
   // ── Section cards ───────────────────────────────────────────────
+  sectionWrap: { paddingHorizontal: 16, paddingTop: 14 },
   sectionCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Brand.surfaceAlt,
-    gap: 8,
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, gap: 14,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
   descText: { fontSize: 13, lineHeight: 20, color: Brand.textSecondary },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  infoText: { fontSize: 13, color: Brand.textSecondary },
+
+  // Info grid (2 columns)
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  infoItem: {
+    width: '48%', flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+  },
+  infoIconWrap: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: Brand.primary + '12',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  infoContent: { flex: 1, gap: 2 },
+  infoLabel: { fontSize: 10, fontWeight: '700', color: Brand.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoValue: { fontSize: 13, fontWeight: '600', color: Brand.text },
 
   // ── Products ────────────────────────────────────────────────────
   productsHeader: {
