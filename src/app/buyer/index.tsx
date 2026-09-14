@@ -452,8 +452,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Theme section
   themeSection: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginTop: 16,
+    backgroundColor: c.background, borderRadius: 14, padding: 16, marginTop: 16,
     gap: 12,
+    borderWidth: 1, borderColor: c.border,
   },
   themeHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   themeTitle: { fontSize: 15, fontWeight: '700', color: c.text },
@@ -461,9 +462,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   themeOption: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     paddingVertical: 10, borderRadius: 10,
-    backgroundColor: c.surfaceAlt, borderWidth: 1.5, borderColor: 'transparent',
+    backgroundColor: c.surface, borderWidth: 1.5, borderColor: 'transparent',
   },
-  themeOptionActive: { backgroundColor: Brand.dark, borderColor: Brand.dark },
+  themeOptionActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   themeOptionText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   themeOptionTextActive: { color: '#FFFFFF', fontWeight: '700' },
 });
