@@ -170,10 +170,10 @@ const styles = StyleSheet.create({
 
   // Filters
   filterRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border },
-  filterContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 8 },
-  filterTab: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: Brand.surfaceAlt, minWidth: 60, alignItems: 'center' },
+  filterContent: { paddingHorizontal: 12, gap: 10, paddingVertical: 12 },
+  filterTab: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, backgroundColor: Brand.surfaceAlt, minWidth: 70, alignItems: 'center', justifyContent: 'center' },
   filterTabActive: { backgroundColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary, textAlign: 'center' },
+  filterText: { fontSize: 14, fontWeight: '600', color: Brand.textSecondary, textAlign: 'center' },
   filterTextActive: { color: '#FFFFFF' },
 
   list: { padding: 12, gap: 10 },
