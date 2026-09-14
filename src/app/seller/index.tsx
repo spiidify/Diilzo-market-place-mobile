@@ -356,6 +356,11 @@ function formatShort(n: number): string {
 
 // ── Gradient hero header component ──────────────────────────────────
 function GradientHero({ title, store, stats }: { title: string; store: any; stats?: any }) {
+  const location = [store?.city, store?.country].filter(Boolean).join(', ');
+  const rating = stats?.rating ? parseFloat(stats.rating).toFixed(1) : null;
+  const followers = store?.follower_count || 0;
+  const products = stats?.total_products || 0;
+
   return (
     <LinearGradient
       colors={[Brand.dark, Brand.accent, Brand.primary]}
@@ -391,6 +396,9 @@ function GradientHero({ title, store, stats }: { title: string; store: any; stat
           </View>
           <View style={styles.heroStoreInfo}>
             <Text style={styles.heroStoreName} numberOfLines={1}>{store?.name || 'My Store'}</Text>
+            {store?.tagline ? (
+              <Text style={styles.heroTagline} numberOfLines={1}>{store.tagline}</Text>
+            ) : null}
             <View style={styles.heroStatusRow}>
               <View style={[
                 styles.heroStatusDot,
@@ -407,6 +415,34 @@ function GradientHero({ title, store, stats }: { title: string; store: any; stat
               ) : null}
             </View>
           </View>
+        </View>
+
+        {/* Store metrics row */}
+        <View style={styles.heroMetricsRow}>
+          {location ? (
+            <View style={styles.heroMetric}>
+              <MaterialCommunityIcons name="map-marker-outline" size={14} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.heroMetricText} numberOfLines={1}>{location}</Text>
+            </View>
+          ) : null}
+          {rating ? (
+            <View style={styles.heroMetric}>
+              <MaterialCommunityIcons name="star" size={14} color="#FBBF24" />
+              <Text style={styles.heroMetricText}>{rating} ({stats?.review_count || 0})</Text>
+            </View>
+          ) : null}
+          {followers > 0 ? (
+            <View style={styles.heroMetric}>
+              <MaterialCommunityIcons name="account-group-outline" size={14} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.heroMetricText}>{followers} followers</Text>
+            </View>
+          ) : null}
+          {products > 0 ? (
+            <View style={styles.heroMetric}>
+              <MaterialCommunityIcons name="package-variant-closed" size={14} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.heroMetricText}>{products} products</Text>
+            </View>
+          ) : null}
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -452,8 +488,9 @@ const styles = StyleSheet.create({
     width: '100%', height: '100%', backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center', alignItems: 'center', borderRadius: 14,
   },
-  heroStoreInfo: { flex: 1, gap: 5 },
+  heroStoreInfo: { flex: 1, gap: 4 },
   heroStoreName: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  heroTagline: { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
   heroStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroStatusDot: { width: 8, height: 8, borderRadius: 4 },
   heroStatusText: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
@@ -462,6 +499,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 4,
   },
   heroSupplierText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
+
+  // Store metrics row
+  heroMetricsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 4 },
+  heroMetric: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  heroMetricText: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
 
   // ── 2-column stats grid ────────────────────────────────────────────
   statsGrid: {
