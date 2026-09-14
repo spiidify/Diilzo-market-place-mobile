@@ -61,7 +61,7 @@ export default function AppTabs() {
           ),
         }}
       />
-      {/* Hidden routes */}
+      {/* Hidden top-level routes — each subdirectory has its own Stack layout */}
       <Tabs.Screen name="cart" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="checkout" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="search" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
@@ -71,82 +71,11 @@ export default function AppTabs() {
       <Tabs.Screen name="(auth)/register" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="(auth)/forgot-password" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="(auth)/reset-password" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="chat/index" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="chat/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      {/* Subdirectory routes — handled by their own Stack layouts */}
+      <Tabs.Screen name="chat" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/orders/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/wishlist" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/addresses" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/notifications" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/payments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/privacy" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/support" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/tracking" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/reviews" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/coupons" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/my-sellers" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="buyer/buy-again" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/products" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/products/add" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/products/edit" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/promotions" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/earnings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/analytics" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/settings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/disputes" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/refunds" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/coupons" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/rfqs" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/shipping" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/shipments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/verification" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/messages" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/customers" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/customers/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/payouts" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/staff" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/finance" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/commissions" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/payout-holds" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/subscription" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/ad-wallet" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="seller/billing" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="admin" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/users" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/staff" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/staff/[id]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/stores" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/products" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/orders" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/payouts" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/disputes" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/kyc" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/escrow" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/shipments" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/suppliers" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/categories" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/brands" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/tax" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/commission-config" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/commission-report" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/settings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/announcements" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/slides" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/subscriptions" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/memberships" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/currencies" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/hs-codes" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/restricted-goods" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/verification-logs" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/warehouses" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/revenue-report" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/reconciliation" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/ledger" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/accounting-export" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin/audit-log" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="adminops" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="merchant-studio" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="adpulse" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
