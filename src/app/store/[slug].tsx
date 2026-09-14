@@ -534,6 +534,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginTop: 14,
+    marginBottom: 12,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Brand.surfaceAlt,
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 2 },
-  list: { paddingBottom: 20, paddingTop: 10 },
+  list: { paddingBottom: 20 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
   productCard: {
     flex: 1,
