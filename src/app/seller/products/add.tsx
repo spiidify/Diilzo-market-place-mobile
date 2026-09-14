@@ -60,7 +60,6 @@ export default function AddProductScreen() {
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('Uganda');
-  const [videoUrl, setVideoUrl] = useState('');
   const [videoFile, setVideoFile] = useState<PickedImage | null>(null);
   const [isActive, setIsActive] = useState(true);
 
@@ -230,7 +229,6 @@ export default function AddProductScreen() {
       if (width.trim()) formData.append('width', width.trim());
       if (height.trim()) formData.append('height', height.trim());
       formData.append('country_of_origin', countryOfOrigin.trim() || 'Uganda');
-      if (videoUrl.trim()) formData.append('video_url', videoUrl.trim());
       if (videoFile) {
         formData.append('video_file', {
           uri: videoFile.uri,
@@ -718,38 +716,39 @@ export default function AddProductScreen() {
 
               {/* ── Media ──────────────────────────────────────────── */}
               <SectionCard
-                title="Video"
+                title="Product Video"
                 icon="video-outline"
                 expanded={expandedSection === 'media'}
                 onToggle={() => toggleSection('media')}
                 styles={styles}
                 colors={colors}
               >
-                <Pressable
-                  style={({ pressed }) => [styles.videoBtn, pressed && { opacity: 0.7 }]}
-                  onPress={pickVideo}
-                >
-                  <MaterialCommunityIcons name="video-plus-outline" size={22} color={Brand.primary} />
-                  <Text style={styles.videoBtnText}>
-                    {videoFile ? `Selected: ${videoFile.name}` : 'Upload Video (MP4, MOV)'}
-                  </Text>
-                </Pressable>
-                {videoFile && (
-                  <Pressable style={styles.removeVideoBtn} onPress={() => setVideoFile(null)}>
-                    <Text style={styles.removeVideoText}>Remove video</Text>
+                <Text style={styles.label}>Product Showcase Video (optional)</Text>
+                {videoFile ? (
+                  <View style={styles.videoPreviewCard}>
+                    <View style={styles.videoPreviewThumb}>
+                      <MaterialCommunityIcons name="play-circle" size={36} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.videoPreviewInfo}>
+                      <Text style={styles.videoPreviewName} numberOfLines={1}>{videoFile.name}</Text>
+                      <Text style={styles.videoPreviewHint}>Video ready to upload</Text>
+                    </View>
+                    <Pressable style={styles.videoRemoveIcon} onPress={() => setVideoFile(null)} hitSlop={8}>
+                      <MaterialCommunityIcons name="close-circle" size={24} color={Brand.danger} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [styles.videoBtn, pressed && { opacity: 0.7 }]}
+                    onPress={pickVideo}
+                  >
+                    <MaterialCommunityIcons name="video-plus-outline" size={26} color={Brand.primary} />
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={styles.videoBtnText}>Upload Video</Text>
+                      <Text style={styles.videoBtnSub}>MP4 or MOV · max 50MB</Text>
+                    </View>
                   </Pressable>
                 )}
-
-                <Text style={[styles.label, { marginTop: 8 }]}>Or YouTube URL</Text>
-                <TextInput
-                  style={styles.input}
-                  value={videoUrl}
-                  onChangeText={setVideoUrl}
-                  placeholder="https://youtube.com/..."
-                  placeholderTextColor={colors.textTertiary}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                />
               </SectionCard>
 
               {error && (
@@ -1057,15 +1056,34 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    paddingVertical: Spacing.three - Spacing.half,
+    paddingVertical: Spacing.four,
     borderWidth: 1.5,
     borderColor: c.border,
     borderStyle: 'dashed',
     borderRadius: 12,
   },
-  videoBtnText: { fontSize: 13, color: Brand.primary, fontWeight: '600' },
-  removeVideoBtn: { alignSelf: 'flex-end', marginTop: Spacing.one },
-  removeVideoText: { color: Brand.danger, fontSize: 13, fontWeight: '600' },
+  videoBtnText: { fontSize: 14, color: Brand.primary, fontWeight: '700' },
+  videoBtnSub: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+  videoPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.half,
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 12,
+    padding: Spacing.three - Spacing.half,
+  },
+  videoPreviewThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: Brand.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoPreviewInfo: { flex: 1, gap: 2 },
+  videoPreviewName: { fontSize: 14, fontWeight: '600', color: c.text },
+  videoPreviewHint: { fontSize: 12, color: Brand.primary },
+  videoRemoveIcon: { padding: 4 },
 
   // ── Switch ─────────────────────────────────────────────────────
   switchRow: {
