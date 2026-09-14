@@ -117,7 +117,7 @@ export default function AdPulseStudioScreen() {
   const analyticsCards = [
     { icon: 'bullhorn', label: 'Total Campaigns', value: analytics?.total_campaigns, color: '#3B82F6' },
     { icon: 'play-circle', label: 'Active', value: analytics?.active_campaigns, color: Brand.primary },
-    { icon: 'mouse-pointer', label: 'Total Clicks', value: analytics?.total_clicks, color: '#EC4899' },
+    { icon: 'cursor-default-click', label: 'Total Clicks', value: analytics?.total_clicks, color: '#EC4899' },
     { icon: 'eye', label: 'Impressions', value: analytics?.total_impressions, color: '#8B5CF6' },
     { icon: 'percent', label: 'Avg CTR', value: analytics ? `${analytics.avg_ctr.toFixed(2)}%` : '—', color: '#F59E0B' },
     { icon: 'wallet', label: 'Total Spend', value: analytics ? Number(analytics.total_spend).toLocaleString() : '—', color: '#06B6D4' },
