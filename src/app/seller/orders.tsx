@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   // Filters
-  filterRow: { backgroundColor: '#FFFFFF', maxHeight: 50, borderBottomWidth: 1, borderBottomColor: Brand.border },
+  filterRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border },
   filterContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 8 },
-  filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: Brand.surfaceAlt },
+  filterTab: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: Brand.surfaceAlt, minWidth: 60, alignItems: 'center' },
   filterTabActive: { backgroundColor: Brand.primary },
-  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  filterText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary, textAlign: 'center' },
   filterTextActive: { color: '#FFFFFF' },
 
   list: { padding: 12, gap: 10 },
