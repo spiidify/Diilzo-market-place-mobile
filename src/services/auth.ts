@@ -82,6 +82,19 @@ export async function updateProfile(data: Partial<Pick<User, 'first_name' | 'las
 }
 
 /**
+ * Update profile with avatar (multipart upload).
+ * PATCH /api/v1/auth/profile/
+ */
+export async function updateProfileWithAvatar(formData: FormData): Promise<User> {
+  return apiRequest<User>({
+    method: 'PATCH',
+    url: '/auth/profile/',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+
+/**
  * Check if the user is authenticated (has a stored access token).
  */
 export async function isAuthenticated(): Promise<boolean> {

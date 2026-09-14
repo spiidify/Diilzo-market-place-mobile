@@ -117,6 +117,15 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.buyerBadgeText}>Buyer</Text>
               </View>
             </View>
+            {isAuthenticated && (
+              <Pressable
+                style={({ pressed }) => [styles.editProfileBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/buyer/profile' as any)}
+              >
+                <MaterialCommunityIcons name="pencil" size={16} color="#FFFFFF" />
+                <Text style={styles.editProfileBtnText}>Edit</Text>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -385,6 +394,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 2,
   },
   buyerBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editProfileBtnText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
 
   // Seller CTA
   sellerCta: {
