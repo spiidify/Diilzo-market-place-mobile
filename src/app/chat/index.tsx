@@ -156,7 +156,7 @@ export default function ChatListScreen() {
       >
         <View style={styles.avatarWrap}>
           {isSupport ? (
-            <View style={[styles.avatarFallback, { backgroundColor: colors.text }]}>
+            <View style={[styles.avatarFallback, { backgroundColor: Brand.dark }]}>
               <MaterialCommunityIcons name="headset" size={22} color="#FFFFFF" />
             </View>
           ) : isBuyer ? (
@@ -403,7 +403,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginHorizontal: 12, marginTop: 8, marginBottom: 4,
     paddingHorizontal: 14, paddingVertical: 12,
-    borderRadius: 14, backgroundColor: c.text,
+    borderRadius: 14, backgroundColor: Brand.dark,
     elevation: 3, shadowColor: '#000000', shadowOpacity: 0.12,
     shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
@@ -422,7 +422,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
   },
   supportCard: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: c.surfaceAlt,
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   avatarWrap: { position: 'relative' },
