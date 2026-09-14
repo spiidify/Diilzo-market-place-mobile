@@ -123,7 +123,7 @@ export default function SellerDashboardScreen() {
         { icon: 'account-group-outline', label: 'Customers', color: '#10B981', route: '/seller/customers' },
         { icon: 'truck-fast', label: 'Shipments', color: '#3B82F6', route: '/seller/shipments' },
         { icon: 'alert-circle-outline', label: 'Disputes', color: Brand.danger, route: '/seller/disputes' },
-        { icon: 'refund', label: 'Refunds', color: '#F59E0B', route: '/seller/refunds' },
+        { icon: 'cash-refund', label: 'Refunds', color: '#F59E0B', route: '/seller/refunds' },
         { icon: 'file-document-outline', label: 'RFQs', color: '#8B5CF6', route: '/seller/rfqs' },
       ],
     },
