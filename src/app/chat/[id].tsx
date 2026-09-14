@@ -289,13 +289,28 @@ export default function ChatThreadScreen() {
             if (data) {
               try {
                 const msg = JSON.parse(data);
+                // Normalize SSE message format to match ChatMessage type.
+                // SSE returns sender_id; the serializer returns sender.
+                const normalized: ChatMessage = {
+                  id: msg.id,
+                  thread: msg.thread ?? threadId,
+                  sender: msg.sender ?? msg.sender_id ?? 0,
+                  sender_name: msg.sender_name ?? '',
+                  sender_avatar: msg.sender_avatar ?? null,
+                  message: msg.message ?? '',
+                  message_type: msg.message_type ?? 'text',
+                  audio_url: msg.audio_url ?? null,
+                  audio_duration: msg.audio_duration ?? 0,
+                  is_read: msg.is_read ?? false,
+                  created_at: msg.created_at,
+                };
                 setMessages((prev) => {
-                  if (prev.some((m) => m.id === msg.id)) return prev;
+                  if (prev.some((m) => m.id === normalized.id)) return prev;
                   // Play message sound only for incoming messages (not our own)
-                  if (msg.sender_id !== user?.id) {
+                  if (normalized.sender !== user?.id) {
                     playSound(Sounds.MESSAGE);
                   }
-                  return [...prev, msg];
+                  return [...prev, normalized];
                 });
                 setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
               } catch { }
