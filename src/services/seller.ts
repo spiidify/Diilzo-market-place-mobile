@@ -192,7 +192,7 @@ export async function deleteProductImage(imageId: number): Promise<void> {
 // ── Orders ─────────────────────────────────────────────────────────
 
 /** GET /seller/my_orders/ — seller's sub-orders list */
-export async function getMyOrders(params?: { status?: string }): Promise<SellerOrder[]> {
+export async function getMyOrders(params?: { status?: string; search?: string; period?: string }): Promise<SellerOrder[]> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/my_orders/`, params });
   return Array.isArray(data) ? data : data.results || [];
 }

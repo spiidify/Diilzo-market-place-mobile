@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +9,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  TextInput,
+  View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -35,29 +36,69 @@ const STATUS_FILTERS = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
+const PERIOD_FILTERS = [
+  { key: '', label: 'All Time' },
+  { key: 'today', label: 'Today' },
+  { key: 'this_week', label: 'This Week' },
+  { key: 'this_month', label: 'This Month' },
+  { key: 'this_year', label: 'This Year' },
+];
+
 export default function SellerOrdersScreen() {
   const router = useRouter();
   const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
+  const [periodFilter, setPeriodFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [searchVisible, setSearchVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Debounce search
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, [search]);
 
   const load = useCallback(async () => {
     try {
       setError(null);
       setRefreshing(true);
-      const data = await getMyOrders(statusFilter ? { status: statusFilter } : undefined);
+      const params: { status?: string; search?: string; period?: string } = {};
+      if (statusFilter) params.status = statusFilter;
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (periodFilter) params.period = periodFilter;
+      const data = await getMyOrders(Object.keys(params).length ? params : undefined);
       setOrders(data);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load data');
+      setError(e?.message || 'Failed to load orders');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, debouncedSearch, periodFilter]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Summary stats ──────────────────────────────────────────────
+  const totalRevenue = orders
+    .filter((o) => o.status !== 'cancelled' && o.status !== 'refunded')
+    .reduce((sum, o) => sum + Number(o.seller_amount), 0);
+  const pendingCount = orders.filter((o) => o.status === 'pending').length;
+  const deliveredCount = orders.filter((o) => o.status === 'delivered').length;
+
+  const clearAllFilters = () => {
+    setStatusFilter('');
+    setPeriodFilter('');
+    setSearch('');
+  };
+
+  const hasActiveFilters = statusFilter || periodFilter || search;
 
   const renderItem = ({ item }: { item: SellerOrder }) => {
     const statusColor = STATUS_COLORS[item.status] || Brand.textTertiary;
@@ -67,12 +108,21 @@ export default function SellerOrdersScreen() {
         onPress={() => router.push(`/seller/orders/${item.id}` as any)}
       >
         <View style={styles.cardTop}>
-          <Text style={styles.orderNumber}>#{item.order_number}</Text>
+          <View style={styles.cardTopLeft}>
+            <Text style={styles.orderNumber}>#{item.order_number}</Text>
+            {item.customer_name ? (
+              <View style={styles.customerRow}>
+                <MaterialCommunityIcons name="account-outline" size={13} color={Brand.textTertiary} />
+                <Text style={styles.customerName} numberOfLines={1}>{item.customer_name}</Text>
+              </View>
+            ) : null}
+          </View>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
             <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
           </View>
         </View>
+
         <View style={styles.cardBody}>
           <View style={styles.amountCol}>
             <Text style={styles.amountLabel}>Subtotal</Text>
@@ -80,28 +130,24 @@ export default function SellerOrdersScreen() {
           </View>
           <View style={styles.amountCol}>
             <Text style={styles.amountLabel}>Commission</Text>
-            <Text style={styles.amountValue}>UGX {Number(item.commission_amount).toLocaleString()}</Text>
+            <Text style={[styles.amountValue, { color: Brand.danger }]}>UGX {Number(item.commission_amount).toLocaleString()}</Text>
           </View>
           <View style={styles.amountCol}>
-            <Text style={styles.amountLabel}>Your earnings</Text>
+            <Text style={styles.amountLabel}>Earnings</Text>
             <Text style={[styles.amountValue, { color: Brand.primary }]}>UGX {Number(item.seller_amount).toLocaleString()}</Text>
           </View>
         </View>
+
         <View style={styles.cardFooter}>
           <View style={styles.footerLeft}>
-            {item.customer_name && (
-              <View style={styles.customerRow}>
-                <MaterialCommunityIcons name="account-outline" size={14} color={Brand.textTertiary} />
-                <Text style={styles.customerName} numberOfLines={1}>{item.customer_name}</Text>
+            {item.item_count !== undefined && (
+              <View style={styles.itemCountBadge}>
+                <MaterialCommunityIcons name="package-variant-closed" size={11} color={Brand.primary} />
+                <Text style={styles.itemCountText}>{item.item_count} {item.item_count === 1 ? 'item' : 'items'}</Text>
               </View>
             )}
-            <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString()}</Text>
           </View>
-          {item.item_count !== undefined && (
-            <View style={styles.itemCountBadge}>
-              <Text style={styles.itemCountText}>{item.item_count} {item.item_count === 1 ? 'item' : 'items'}</Text>
-            </View>
-          )}
+          <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
         </View>
       </Pressable>
     );
@@ -109,21 +155,90 @@ export default function SellerOrdersScreen() {
 
   return (
     <View style={styles.screen}>
-      <ModernHeader title="Orders" />
+      <ModernHeader
+        title="Orders"
+        rightIcon={searchVisible ? 'magnify-close' : 'magnify'}
+        onRightPress={() => {
+          setSearchVisible(!searchVisible);
+          if (searchVisible) setSearch('');
+        }}
+      />
 
-      {/* Status filter tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
-        {STATUS_FILTERS.map((f) => (
+      {/* Search bar */}
+      {searchVisible && (
+        <View style={styles.searchContainer}>
+          <MaterialCommunityIcons name="magnify" size={20} color={Brand.textTertiary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by order # or customer name..."
+            placeholderTextColor={Brand.textTertiary}
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={12}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {/* Summary stats */}
+      {!loading && orders.length > 0 && (
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>UGX {totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
+            <Text style={styles.statLabel}>Revenue</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={[styles.statValue, { color: Brand.rating }]}>{pendingCount}</Text>
+            <Text style={styles.statLabel}>Pending</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={[styles.statValue, { color: '#16A34A' }]}>{deliveredCount}</Text>
+            <Text style={styles.statLabel}>Delivered</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Period filter row */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodRow} contentContainerStyle={styles.periodContent}>
+        {PERIOD_FILTERS.map((f) => (
           <Pressable
             key={f.key}
-            style={[styles.filterTab, statusFilter === f.key && styles.filterTabActive]}
-            onPress={() => setStatusFilter(f.key)}
+            style={[styles.periodTab, periodFilter === f.key && styles.periodTabActive]}
+            onPress={() => setPeriodFilter(f.key)}
           >
-            <Text style={[styles.filterText, statusFilter === f.key && styles.filterTextActive]}>{f.label}</Text>
+            <Text style={[styles.periodText, periodFilter === f.key && styles.periodTextActive]}>{f.label}</Text>
           </Pressable>
         ))}
       </ScrollView>
 
+      {/* Status filter row */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusRow} contentContainerStyle={styles.statusContent}>
+        {STATUS_FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            style={[styles.statusTab, statusFilter === f.key && styles.statusTabActive]}
+            onPress={() => setStatusFilter(f.key)}
+          >
+            <Text style={[styles.statusText2, statusFilter === f.key && styles.statusText2Active]}>{f.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Clear filters */}
+      {hasActiveFilters ? (
+        <Pressable style={styles.clearBar} onPress={clearAllFilters}>
+          <MaterialCommunityIcons name="filter-remove-outline" size={14} color={Brand.primary} />
+          <Text style={styles.clearBarText}>Clear all filters</Text>
+        </Pressable>
+      ) : null}
+
+      {/* Orders list */}
       {loading ? (
         <View style={styles.centerBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
@@ -138,9 +253,14 @@ export default function SellerOrdersScreen() {
         </View>
       ) : orders.length === 0 ? (
         <View style={styles.centerBody}>
-          <MaterialCommunityIcons name="clipboard-list-outline" size={56} color={Brand.textTertiary} />
-          <Text style={styles.emptyText}>No orders yet</Text>
-          <Text style={styles.emptySub}>Orders from buyers will appear here</Text>
+          <MaterialCommunityIcons name={hasActiveFilters ? "filter-remove-outline" : "clipboard-list-outline"} size={56} color={Brand.textTertiary} />
+          <Text style={styles.emptyText}>{hasActiveFilters ? 'No orders match your filters' : 'No orders yet'}</Text>
+          <Text style={styles.emptySub}>{hasActiveFilters ? 'Try adjusting your search or filters' : 'Orders from buyers will appear here'}</Text>
+          {hasActiveFilters && (
+            <Pressable style={styles.retryBtn} onPress={clearAllFilters}>
+              <Text style={styles.retryBtnText}>Clear Filters</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <FlatList
@@ -161,40 +281,85 @@ export default function SellerOrdersScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Brand.surfaceAlt },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
   emptyText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.text },
   emptySub: { marginTop: 4, fontSize: 14, color: Brand.textSecondary, textAlign: 'center' },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
-  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, marginTop: 8 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
-  // Filters
-  filterRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border },
-  filterContent: { paddingHorizontal: 12, gap: 10, paddingVertical: 12 },
-  filterTab: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 24, backgroundColor: Brand.surfaceAlt, minWidth: 70, alignItems: 'center', justifyContent: 'center' },
-  filterTabActive: { backgroundColor: Brand.primary },
-  filterText: { fontSize: 14, fontWeight: '600', color: Brand.textSecondary, textAlign: 'center' },
-  filterTextActive: { color: '#FFFFFF' },
+  // Search bar
+  searchContainer: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 14, paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: Brand.border,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: Brand.text, paddingVertical: 4 },
 
+  // Stats row
+  statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 12 },
+  statCard: {
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
+    alignItems: 'center', gap: 2,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  },
+  statValue: { fontSize: 14, fontWeight: '800', color: Brand.text },
+  statLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600' },
+
+  // Period filter row
+  periodRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border, marginTop: 8 },
+  periodContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 10 },
+  periodTab: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18,
+    backgroundColor: Brand.surfaceAlt, minHeight: 36, justifyContent: 'center',
+  },
+  periodTabActive: { backgroundColor: Brand.dark },
+  periodText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  periodTextActive: { color: '#FFFFFF', fontWeight: '700' },
+
+  // Status filter row
+  statusRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border },
+  statusContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 10 },
+  statusTab: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18,
+    backgroundColor: Brand.surfaceAlt, minHeight: 36, justifyContent: 'center',
+    borderWidth: 1, borderColor: 'transparent',
+  },
+  statusTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  statusText2: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  statusText2Active: { color: '#FFFFFF', fontWeight: '700' },
+
+  // Clear filters bar
+  clearBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 8, marginHorizontal: 12, marginTop: 8,
+    backgroundColor: Brand.primary + '10', borderRadius: 8,
+  },
+  clearBarText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
+
+  // Orders list
   list: { padding: 12, gap: 10 },
   card: {
     backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  cardTopLeft: { gap: 4, flex: 1 },
   orderNumber: { fontSize: 16, fontWeight: '700', color: Brand.text },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  cardBody: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  amountCol: { flex: 1, gap: 2 },
-  amountLabel: { fontSize: 11, color: Brand.textTertiary },
-  amountValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  footerLeft: { gap: 4 },
   customerRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   customerName: { fontSize: 12, color: Brand.textSecondary, fontWeight: '500' },
-  dateText: { fontSize: 12, color: Brand.textTertiary },
-  itemCountBadge: { backgroundColor: Brand.primary + '15', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
+
+  cardBody: { flexDirection: 'row', gap: 8, marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F0F2F4' },
+  amountCol: { flex: 1, gap: 2 },
+  amountLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600', textTransform: 'uppercase' },
+  amountValue: { fontSize: 13, fontWeight: '700', color: Brand.text },
+
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerLeft: { flexDirection: 'row', gap: 6 },
+  itemCountBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.primary + '12', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   itemCountText: { fontSize: 11, fontWeight: '600', color: Brand.primary },
+  dateText: { fontSize: 12, color: Brand.textTertiary },
 });
