@@ -283,10 +283,24 @@ export default function AddProductScreen() {
     }
   };
 
-  const selectedCategory = categories.find((c) => c.id === categoryId);
+  // Build a flat list of all categories (parents + children) for lookups.
+  // fetchCategories() only returns roots with children nested, so we
+  // need this to find child categories by id.
+  const allCategories = useMemo(() => {
+    const flat: Category[] = [];
+    for (const parent of categories) {
+      flat.push(parent);
+      if (parent.children) {
+        for (const child of parent.children) flat.push(child);
+      }
+    }
+    return flat;
+  }, [categories]);
+
+  const selectedCategory = allCategories.find((c) => c.id === categoryId);
   const selectedBrand = brands.find((b) => b.id === brandId);
 
-  // Find selected parent category and its children
+  // Find selected parent category (the root that contains the selected category)
   const selectedParent = selectedCategory?.parent
     ? categories.find((c) => c.id === selectedCategory.parent)
     : null;
@@ -908,26 +922,6 @@ export default function AddProductScreen() {
                       Sub-categories in {displayCategory.name}
                     </Text>
                     <View style={styles.catChildList}>
-                      {/* Option to use the parent itself */}
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.catChildItem,
-                          categoryId === displayCategory.id && styles.catChildItemActive,
-                          pressed && { opacity: 0.8 },
-                        ]}
-                        onPress={() => { setCategoryId(displayCategory.id); setShowCategoryModal(false); }}
-                      >
-                        <View style={styles.catChildItemLeft}>
-                          <View style={[styles.catChildDot, categoryId === displayCategory.id && styles.catChildDotActive]} />
-                          <Text style={[styles.catChildText, categoryId === displayCategory.id && styles.catChildTextActive]}>
-                            Use {displayCategory.name} (no sub-category)
-                          </Text>
-                        </View>
-                        {categoryId === displayCategory.id && (
-                          <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
-                        )}
-                      </Pressable>
-
                       {displayCategory.children.map((child) => (
                         <Pressable
                           key={`child-${child.id}`}
@@ -950,6 +944,15 @@ export default function AddProductScreen() {
                         </Pressable>
                       ))}
                     </View>
+                    <Pressable
+                      style={({ pressed }) => [styles.catUseParentBtn, pressed && { opacity: 0.7 }]}
+                      onPress={() => { setCategoryId(displayCategory.id); setShowCategoryModal(false); }}
+                    >
+                      <MaterialCommunityIcons name="folder-open-outline" size={16} color={colors.textTertiary} />
+                      <Text style={styles.catUseParentText}>
+                        Use {displayCategory.name} directly
+                      </Text>
+                    </Pressable>
                   </View>
                 )}
 
@@ -1395,6 +1398,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   catChildText: { fontSize: 15, color: c.textSecondary, fontWeight: '500' },
   catChildTextActive: { color: c.text, fontWeight: '700' },
+
+  catUseParentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two - 2,
+    paddingVertical: Spacing.two + Spacing.half,
+    marginTop: Spacing.two,
+  },
+  catUseParentText: { fontSize: 13, color: c.textTertiary, fontWeight: '500' },
 
   catSelectedConfirm: {
     alignItems: 'center',
