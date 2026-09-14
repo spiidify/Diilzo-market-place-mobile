@@ -319,6 +319,29 @@ export async function getDisputes(): Promise<SellerDispute[]> {
   return Array.isArray(data) ? data : data.results || [];
 }
 
+// ── Refunds ─────────────────────────────────────────────────────────
+export interface SellerRefund {
+  id: number;
+  amount: string;
+  currency: string;
+  reason: string;
+  status: string;
+  order_number: string;
+  order_id: number | null;
+  payment_id: string;
+  payment_method: string;
+  dispute_id: number | null;
+  dispute_reason: string;
+  gateway_reference: string;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export async function getRefunds(): Promise<SellerRefund[]> {
+  const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/refunds/` });
+  return Array.isArray(data) ? data : data.results || [];
+}
+
 export async function getDisputeDetail(id: number): Promise<SellerDisputeDetail> {
   return apiRequest<SellerDisputeDetail>({ method: 'GET', url: `${SELLER_BASE}/${id}/dispute_detail/` });
 }

@@ -97,6 +97,7 @@ export default function AppTabs() {
       <Tabs.Screen name="seller/analytics" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/settings" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/disputes" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="seller/refunds" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/coupons" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/rfqs" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller/shipping" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
