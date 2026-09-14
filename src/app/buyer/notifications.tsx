@@ -108,7 +108,15 @@ export default function NotificationsScreen() {
     // Navigate if link_url present
     if (item.link_url) {
       // link_url may be a route path like /buyer/orders/123
-      const route = item.link_url.startsWith('/') ? item.link_url : `/${item.link_url}`;
+      let route = item.link_url.startsWith('/') ? item.link_url : `/${item.link_url}`;
+      // Strip trailing slash
+      route = route.replace(/\/$/, '');
+      // Map backend web routes to mobile routes
+      // Order: /orders/{id} → /buyer/orders/{id}
+      route = route.replace(/^\/orders\/(\d+)$/, '/buyer/orders/$1');
+      // Order tracking: /orders/{id}/track → /buyer/orders/{id}
+      route = route.replace(/^\/orders\/(\d+)\/track$/, '/buyer/orders/$1');
+      // Chat: /chat/{id} → /chat/{id} (already correct)
       try {
         router.push(route as any);
       } catch {
