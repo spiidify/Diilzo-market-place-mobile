@@ -1302,7 +1302,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '85%',
   },
   catHeader: {
     flexDirection: 'row',
@@ -1331,7 +1330,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   catCrumb: { fontSize: 13, color: c.textTertiary, fontWeight: '500' },
   catCrumbActive: { color: Brand.primary, fontWeight: '700' },
 
-  catBody: { flex: 1, padding: Spacing.three },
+  catBody: { padding: Spacing.three, maxHeight: 420 },
 
   catGrid: {
     flexDirection: 'row',
