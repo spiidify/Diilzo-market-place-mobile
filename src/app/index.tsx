@@ -1152,7 +1152,7 @@ export default function ProductFeedScreen() {
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-                onPress={() => router.push('/account')}
+                onPress={() => router.push('/buyer/notifications')}
               >
                 <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {notificationCount > 0 && (
@@ -1161,7 +1161,7 @@ export default function ProductFeedScreen() {
                   </View>
                 )}
               </Pressable>
-              <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+              <Pressable onPress={() => router.push('/buyer')} style={styles.profileBtn}>
                 <Text style={styles.userName} numberOfLines={1}>
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
@@ -1216,7 +1216,7 @@ export default function ProductFeedScreen() {
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-                onPress={() => router.push('/account')}
+                onPress={() => router.push('/buyer/notifications')}
               >
                 <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {notificationCount > 0 && (
@@ -1225,7 +1225,7 @@ export default function ProductFeedScreen() {
                   </View>
                 )}
               </Pressable>
-              <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+              <Pressable onPress={() => router.push('/buyer')} style={styles.profileBtn}>
                 <Text style={styles.userName} numberOfLines={1}>
                   {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
                 </Text>
@@ -1288,7 +1288,7 @@ export default function ProductFeedScreen() {
             {/* Notification bell */}
             <Pressable
               style={({ pressed }) => [styles.notifBtn, pressed && styles.iconPressed]}
-              onPress={() => router.push('/account')}
+              onPress={() => router.push('/buyer/notifications')}
             >
               <MaterialCommunityIcons name="bell" size={20} color={isDark ? "#FFFFFF" : Brand.dark} />
               {notificationCount > 0 && (
@@ -1298,7 +1298,7 @@ export default function ProductFeedScreen() {
               )}
             </Pressable>
             {/* User name + profile picture on the far right */}
-            <Pressable onPress={() => router.push('/account')} style={styles.profileBtn}>
+            <Pressable onPress={() => router.push('/buyer')} style={styles.profileBtn}>
               <Text style={styles.userName} numberOfLines={1}>
                 {isAuthenticated ? (user?.first_name || user?.full_name?.split(' ')[0] || 'Account') : 'Sign in'}
               </Text>
