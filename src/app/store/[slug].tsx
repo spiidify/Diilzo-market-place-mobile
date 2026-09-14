@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,6 +10,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -42,6 +43,16 @@ export default function StoreDetailScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const { isAuthenticated } = useAuth();
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, [search]);
 
   const load = useCallback(async (reset = false) => {
     if (!slug) return;
@@ -64,7 +75,7 @@ export default function StoreDetailScreen() {
       } else {
         setLoadingMore(true);
       }
-      const data: PaginatedResponse<Product> = await fetchStoreProducts(slug, targetPage);
+      const data: PaginatedResponse<Product> = await fetchStoreProducts(slug, targetPage, debouncedSearch || undefined);
       setProducts((prev) => {
         if (reset) return data.results;
         const existingIds = new Set(prev.map((p) => p.id));
@@ -80,11 +91,16 @@ export default function StoreDetailScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
-  }, [slug, page, store]);
+  }, [slug, page, store, debouncedSearch]);
 
   useEffect(() => {
     load(true);
   }, []);
+
+  // Re-fetch when debounced search changes
+  useEffect(() => {
+    if (store) load(true);
+  }, [debouncedSearch]);
 
   const handleFollow = useCallback(async () => {
     if (!store?.slug) return;
@@ -381,10 +397,30 @@ export default function StoreDetailScreen() {
               </View>
             </View>
 
-            {/* ── Products header ────────────────────────────────── */}
+            {/* ── Products header + search ─────────────────────── */}
             <View style={styles.productsHeader}>
-              <MaterialCommunityIcons name="view-grid" size={20} color={Brand.primary} />
-              <Text style={styles.productsTitle}>Products ({store.product_count})</Text>
+              <View style={styles.productsHeaderRow}>
+                <MaterialCommunityIcons name="view-grid" size={20} color={Brand.primary} />
+                <Text style={styles.productsTitle}>Products ({store.product_count})</Text>
+              </View>
+              <View style={styles.searchBar}>
+                <MaterialCommunityIcons name="magnify" size={18} color={Brand.textTertiary} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search products in this store..."
+                  placeholderTextColor={Brand.textTertiary}
+                  value={search}
+                  onChangeText={setSearch}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                />
+                {search.length > 0 ? (
+                  <Pressable onPress={() => setSearch('')} hitSlop={12}>
+                    <MaterialCommunityIcons name="close-circle" size={18} color={Brand.textTertiary} />
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           </View>
         }
@@ -495,17 +531,21 @@ const styles = StyleSheet.create({
 
   // ── Products ────────────────────────────────────────────────────
   productsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginTop: 14,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Brand.surfaceAlt,
+    gap: 12,
   },
+  productsHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   productsTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Brand.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 2 },
   list: { paddingBottom: 20 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
   productCard: {

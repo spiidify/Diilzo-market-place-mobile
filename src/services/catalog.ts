@@ -209,11 +209,13 @@ export async function fetchStoreBySlug(slug: string): Promise<StoreDetail> {
 }
 
 /** GET /api/v1/stores/<slug>/products/ — products from a store */
-export async function fetchStoreProducts(slug: string, page = 1): Promise<PaginatedResponse<Product>> {
+export async function fetchStoreProducts(slug: string, page = 1, search?: string): Promise<PaginatedResponse<Product>> {
+  const params: any = { page };
+  if (search) params.search = search;
   return apiRequest<PaginatedResponse<Product>>({
     method: 'GET',
     url: `/stores/${slug}/products/`,
-    params: { page },
+    params,
   });
 }
 
