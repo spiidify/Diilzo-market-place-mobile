@@ -114,7 +114,15 @@ export async function getMyStore(): Promise<SellerDashboard> {
 // ── Products ───────────────────────────────────────────────────────
 
 /** GET /seller/my_products/ — seller's products list */
-export async function getMyProducts(params?: { search?: string; active?: string }): Promise<any[]> {
+export async function getMyProducts(params?: {
+  search?: string;
+  active?: string;
+  category?: string;
+  brand?: string;
+  stock?: 'in' | 'out' | 'low';
+  on_sale?: string;
+  sort?: 'newest' | 'price_low' | 'price_high' | 'name' | 'stock_low';
+}): Promise<any[]> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/my_products/`, params });
   return Array.isArray(data) ? data : data.results || [];
 }
