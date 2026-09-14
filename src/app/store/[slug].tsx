@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     backgroundColor: Brand.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: Brand.text, paddingVertical: 2 },
-  list: { paddingBottom: 20 },
+  list: { paddingBottom: 20, paddingTop: 10 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
   productCard: {
     flex: 1,
