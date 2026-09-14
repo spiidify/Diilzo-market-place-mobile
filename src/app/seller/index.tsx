@@ -400,21 +400,30 @@ function GradientHero({ title, store, stats }: { title: string; store: any; stat
             {store?.tagline ? (
               <Text style={styles.heroTagline} numberOfLines={1}>{store.tagline}</Text>
             ) : null}
-            <View style={styles.heroStatusRow}>
-              <View style={[
-                styles.heroStatusDot,
-                { backgroundColor: store?.status === 'approved' ? '#4ADE80' : '#FBBF24' },
-              ]} />
-              <Text style={styles.heroStatusText}>
-                {store?.status === 'approved' ? 'Active' : store?.status === 'pending' ? 'Pending Review' : (store?.status || '—')}
-              </Text>
-              {store?.is_wholesaler ? (
+            {store?.status ? (
+              <View style={styles.heroStatusRow}>
+                <View style={[
+                  styles.heroStatusDot,
+                  { backgroundColor: store.status === 'approved' ? '#4ADE80' : '#FBBF24' },
+                ]} />
+                <Text style={styles.heroStatusText}>
+                  {store.status === 'approved' ? 'Active' : store.status === 'pending' ? 'Pending Review' : store.status}
+                </Text>
+                {store?.is_wholesaler ? (
+                  <View style={styles.heroSupplierBadge}>
+                    <MaterialCommunityIcons name="factory" size={9} color="#FFFFFF" />
+                    <Text style={styles.heroSupplierText}>Supplier</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : store?.is_wholesaler ? (
+              <View style={styles.heroStatusRow}>
                 <View style={styles.heroSupplierBadge}>
                   <MaterialCommunityIcons name="factory" size={9} color="#FFFFFF" />
                   <Text style={styles.heroSupplierText}>Supplier</Text>
                 </View>
-              ) : null}
-            </View>
+              </View>
+            ) : null}
           </View>
         </View>
 
