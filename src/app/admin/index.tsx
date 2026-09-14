@@ -13,6 +13,7 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { getAdminDashboard, getSidebarCounts, type AdminDashboard, type SidebarCounts } from '@/services/adminApi';
 
 interface MenuItem {
@@ -95,6 +96,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [counts, setCounts] = useState<SidebarCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,6 +182,39 @@ export default function AdminDashboardScreen() {
                 </View>
               </View>
             }
+            ListFooterComponent={
+              <View style={styles.roleSwitchSection}>
+                <Text style={styles.sectionTitle}>Switch Role</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+                  onPress={() => router.push('/buyer' as any)}
+                >
+                  <View style={[styles.roleSwitchIcon, { backgroundColor: Brand.primary + '12' }]}>
+                    <MaterialCommunityIcons name="shopping" size={22} color={Brand.primary} />
+                  </View>
+                  <View style={styles.roleSwitchInfo}>
+                    <Text style={styles.roleSwitchTitle}>Switch to Buyer Mode</Text>
+                    <Text style={styles.roleSwitchSub}>Browse and shop products</Text>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                </Pressable>
+                {user?.has_store && (
+                  <Pressable
+                    style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+                    onPress={() => router.push('/seller' as any)}
+                  >
+                    <View style={[styles.roleSwitchIcon, { backgroundColor: '#16A34A12' }]}>
+                      <MaterialCommunityIcons name="store" size={22} color="#16A34A" />
+                    </View>
+                    <View style={styles.roleSwitchInfo}>
+                      <Text style={styles.roleSwitchTitle}>Switch to Seller Mode</Text>
+                      <Text style={styles.roleSwitchSub}>Manage your store and products</Text>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+                  </Pressable>
+                )}
+              </View>
+            }
           />
         )}
       </View>
@@ -206,4 +241,20 @@ const styles = StyleSheet.create({
   menuLabel: { fontSize: 12, fontWeight: '600', color: Brand.text, textAlign: 'center' },
   badge: { position: 'absolute', top: 8, right: 8, backgroundColor: Brand.danger, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 5, justifyContent: 'center', alignItems: 'center' },
   badgeText: { fontSize: 10, fontWeight: '800', color: '#FFFFFF' },
+
+  // ── Role switching ──────────────────────────────────────────────────
+  roleSwitchSection: { marginTop: 16, marginBottom: 8, gap: 8 },
+  roleSwitchBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: '#E8EDF0',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  roleSwitchIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  roleSwitchInfo: { flex: 1, gap: 2 },
+  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  roleSwitchSub: { fontSize: 13, color: Brand.textTertiary },
 });

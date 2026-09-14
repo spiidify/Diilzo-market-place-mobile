@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
@@ -44,6 +45,7 @@ interface MenuGroup {
 
 export default function SellerDashboardScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState<SellerDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -262,6 +264,56 @@ export default function SellerDashboardScreen() {
           </Pressable>
         </View>
 
+        {/* ── Role switching ─────────────────────────────────────────── */}
+        <View style={styles.roleSwitchSection}>
+          {/* Switch to Buyer Mode */}
+          <Pressable
+            style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/buyer' as any)}
+          >
+            <View style={styles.roleSwitchIcon}>
+              <MaterialCommunityIcons name="shopping" size={22} color={Brand.primary} />
+            </View>
+            <View style={styles.roleSwitchInfo}>
+              <Text style={styles.roleSwitchTitle}>Switch to Buyer Mode</Text>
+              <Text style={styles.roleSwitchSub}>Browse and shop products</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+          </Pressable>
+
+          {/* Admin access for superusers */}
+          {user?.is_superuser && (
+            <>
+              <Pressable
+                style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/admin' as any)}
+              >
+                <View style={[styles.roleSwitchIcon, { backgroundColor: '#8B5CF612' }]}>
+                  <MaterialCommunityIcons name="view-dashboard" size={22} color="#8B5CF6" />
+                </View>
+                <View style={styles.roleSwitchInfo}>
+                  <Text style={styles.roleSwitchTitle}>Admin Dashboard</Text>
+                  <Text style={styles.roleSwitchSub}>Full platform management</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push('/adminops' as any)}
+              >
+                <View style={[styles.roleSwitchIcon, { backgroundColor: '#0A2E1A12' }]}>
+                  <MaterialCommunityIcons name="shield-crown-outline" size={22} color="#0A2E1A" />
+                </View>
+                <View style={styles.roleSwitchInfo}>
+                  <Text style={styles.roleSwitchTitle}>AdminOps Central</Text>
+                  <Text style={styles.roleSwitchSub}>Operations dashboard</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={Brand.textTertiary} />
+              </Pressable>
+            </>
+          )}
+        </View>
+
         {/* ── Menu groups (2-column grid per section) ──────────────── */}
         {menuGroups.map((group, gi) => (
           <View key={`group-${gi}`} style={styles.menuGroup}>
@@ -452,6 +504,23 @@ const styles = StyleSheet.create({
   quickBtnSecondary: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: Brand.primary },
   quickBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
   quickBtnTextDark: { fontSize: 14, fontWeight: '800', color: Brand.primary },
+
+  // ── Role switching ──────────────────────────────────────────────────
+  roleSwitchSection: { paddingHorizontal: 14, marginBottom: 18, gap: 8 },
+  roleSwitchBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 14,
+    borderWidth: 1, borderColor: '#E8EDF0',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  roleSwitchIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: Brand.primary + '12',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  roleSwitchInfo: { flex: 1, gap: 2 },
+  roleSwitchTitle: { fontSize: 15, fontWeight: '700', color: Brand.text },
+  roleSwitchSub: { fontSize: 13, color: Brand.textTertiary },
 
   // ── Menu groups ────────────────────────────────────────────────────
   menuGroup: { paddingHorizontal: 14, marginBottom: 18 },
