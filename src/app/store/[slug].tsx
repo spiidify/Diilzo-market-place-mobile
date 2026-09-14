@@ -219,6 +219,19 @@ export default function StoreDetailScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.heroBanner}
             >
+              {/* Verification badge — top right corner */}
+              {store.verification_status === 'gold' ? (
+                <View style={[styles.heroCornerBadge, styles.heroBadgeGold]}>
+                  <MaterialCommunityIcons name="crown" size={14} color="#FFFFFF" />
+                  <Text style={styles.heroCornerBadgeText}>Gold</Text>
+                </View>
+              ) : store.verification_status === 'verified' ? (
+                <View style={[styles.heroCornerBadge, styles.heroBadgeVerified]}>
+                  <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
+                  <Text style={styles.heroCornerBadgeText}>Verified</Text>
+                </View>
+              ) : null}
+
               <View style={styles.heroContent}>
                 <View style={styles.heroLogoWrap}>
                   {store.logo_url ? (
@@ -249,20 +262,8 @@ export default function StoreDetailScreen() {
                 </View>
               </View>
 
-              {/* Badges */}
+              {/* Business type badges — bottom of hero */}
               <View style={styles.heroBadges}>
-                {store.verification_status === 'gold' && (
-                  <View style={[styles.heroBadge, styles.heroBadgeGold]}>
-                    <MaterialCommunityIcons name="crown" size={12} color="#FFFFFF" />
-                    <Text style={styles.heroBadgeText}>Gold Supplier</Text>
-                  </View>
-                )}
-                {store.verification_status === 'verified' && (
-                  <View style={[styles.heroBadge, styles.heroBadgeVerified]}>
-                    <MaterialCommunityIcons name="check-circle" size={12} color="#FFFFFF" />
-                    <Text style={styles.heroBadgeText}>Verified</Text>
-                  </View>
-                )}
                 {isSupplier && (
                   <View style={[styles.heroBadge, styles.heroBadgeType]}>
                     <MaterialCommunityIcons name={iconName} size={12} color="#FFFFFF" />
@@ -406,7 +407,15 @@ const styles = StyleSheet.create({
   heroBanner: {
     paddingHorizontal: 16,
     paddingVertical: 20,
+    position: 'relative',
   },
+  heroCornerBadge: {
+    position: 'absolute', top: 12, right: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
+    elevation: 3, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+  },
+  heroCornerBadgeText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
   heroContent: { flexDirection: 'row', gap: 14, marginBottom: 14 },
   heroLogoWrap: {
     width: 70, height: 70, borderRadius: 12, overflow: 'hidden',
@@ -491,6 +500,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    marginTop: 14,
     backgroundColor: '#FFFFFF',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Brand.surfaceAlt,
