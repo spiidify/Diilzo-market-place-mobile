@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { createChatThread } from '@/services/chat';
 import {
   cancelOrder,
@@ -25,7 +26,6 @@ import {
   requestReturn,
 } from '@/services/orders';
 import type { Order } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
@@ -34,8 +34,6 @@ const STATUS_COLORS: Record<string, string> = {
   shipped: '#06B6D4',
   delivered: Brand.success,
   cancelled: Brand.danger,
-  refunded: Brand.textTertiary,
-  returned: Brand.textTertiary,
 };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
@@ -43,7 +41,6 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
   unpaid: Brand.danger,
   failed: Brand.danger,
-  refunded: Brand.textTertiary,
 };
 
 export default function OrderDetailScreen() {

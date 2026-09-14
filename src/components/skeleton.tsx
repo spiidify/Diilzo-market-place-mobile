@@ -11,8 +11,8 @@
  * performance boost and a more polished UX.
  */
 import React from 'react';
-import { View, StyleSheet, Animated, Easing, useColorScheme } from 'react-native';
-import { Brand } from '../constants/theme';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { useAppTheme } from '../context/ThemeContext';
 
 // ── Shimmer animation ──────────────────────────────────────────────
 // A single shared Animated.Value drives the shimmer pulse for all skeletons.
@@ -48,9 +48,10 @@ interface SkeletonProps {
 
 export function Skeleton({ width = '100%', height = 16, borderRadius = 6, style }: SkeletonProps) {
   const shimmer = useShimmer();
-  const scheme = useColorScheme();
-  const baseColor = scheme === 'dark' ? Brand.surfaceAlt : '#E8E8EA';
-  const highlightColor = scheme === 'dark' ? Brand.surface : '#F2F2F4';
+  const { colors } = useAppTheme();
+  const isDark = colors.background !== '#FFFFFF';
+  const baseColor = isDark ? colors.surfaceAlt : '#E8E8EA';
+  const highlightColor = isDark ? colors.surface : '#F2F2F4';
 
   const bg = shimmer.interpolate({
     inputRange: [0, 1],
@@ -93,8 +94,9 @@ export function ProductListSkeleton({ count = 6 }: { count?: number }) {
 
 // ── Order skeleton ─────────────────────────────────────────────────
 export function OrderSkeleton() {
+  const { colors } = useAppTheme();
   return (
-    <View style={styles.orderCard}>
+    <View style={[styles.orderCard, { backgroundColor: colors.surface }]}>
       <Skeleton width="60%" height={16} />
       <Skeleton width="40%" height={12} style={{ marginTop: 6 }} />
       <View style={styles.orderRow}>
@@ -122,8 +124,9 @@ export function OrderListSkeleton({ count = 4 }: { count?: number }) {
 
 // ── Chat list skeleton ─────────────────────────────────────────────
 export function ChatSkeleton() {
+  const { colors } = useAppTheme();
   return (
-    <View style={styles.chatRow}>
+    <View style={[styles.chatRow, { borderBottomColor: colors.border }]}>
       <Skeleton width={48} height={48} borderRadius={24} />
       <View style={{ flex: 1, marginLeft: 12 }}>
         <Skeleton width="50%" height={14} />
@@ -156,7 +159,6 @@ const styles = StyleSheet.create({
   orderCard: {
     padding: 16,
     marginBottom: 12,
-    backgroundColor: Brand.surface,
     borderRadius: 12,
   },
   orderRow: {
@@ -169,7 +171,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Brand.border,
   },
 });
 

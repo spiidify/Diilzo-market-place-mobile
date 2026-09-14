@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -14,8 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OrderListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
-import { apiRequest } from '@/services/api';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { apiRequest } from '@/services/api';
 
 interface Order {
   id: number;
@@ -32,7 +32,6 @@ const STATUS_COLORS: Record<string, string> = {
   shipped: '#06B6D4',
   delivered: '#16A34A',
   cancelled: Brand.danger,
-  refunded: Brand.textTertiary,
 };
 
 export default function BuyerOrdersScreen() {
