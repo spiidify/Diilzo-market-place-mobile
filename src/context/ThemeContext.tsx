@@ -82,19 +82,19 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  mode: 'system',
+  mode: 'light',
   isDark: false,
   colors: lightColors,
   brand: Brand,
-  setMode: () => {},
-  toggle: () => {},
+  setMode: () => { },
+  toggle: () => { },
 });
 
 const STORAGE_KEY = 'diilzo_theme_mode';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>('light');
 
   // Load saved preference on mount
   useEffect(() => {
