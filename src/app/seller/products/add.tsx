@@ -88,7 +88,7 @@ export default function AddProductScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>('basic');
+  const [expandedSection, setExpandedSection] = useState<string | null>('images');
 
   // ── Load categories, brands, and store slug ─────────────────────
   const loadMeta = useCallback(async () => {
@@ -314,33 +314,57 @@ export default function AddProductScreen() {
               showsVerticalScrollIndicator={false}
             >
               {/* ── Image gallery ─────────────────────────────────── */}
-              <View style={styles.imageSection}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageScroll}>
-                  {images.map((img, idx) => (
-                    <View key={`img-${idx}`} style={styles.thumbWrap}>
-                      <Image source={{ uri: img.uri }} style={styles.thumb} resizeMode="cover" />
-                      {idx === 0 && <View style={styles.primaryBadge}><Text style={styles.primaryBadgeText}>Primary</Text></View>}
-                      <View style={styles.thumbActions}>
-                        {idx > 0 && (
-                          <Pressable style={styles.thumbActionBtn} onPress={() => makePrimaryImage(idx)}>
-                            <MaterialCommunityIcons name="star-outline" size={14} color="#FFFFFF" />
-                          </Pressable>
+              <SectionCard
+                title="Product Photos"
+                icon="camera-outline"
+                expanded={expandedSection === 'images'}
+                onToggle={() => toggleSection('images')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.label}>Product Images (up to 8)</Text>
+                {images.length > 0 ? (
+                  <View style={styles.imageGrid}>
+                    {images.map((img, idx) => (
+                      <View key={`img-${idx}`} style={styles.gridThumbWrap}>
+                        <Image source={{ uri: img.uri }} style={styles.gridThumb} resizeMode="cover" />
+                        {idx === 0 && (
+                          <View style={styles.gridPrimaryBadge}>
+                            <Text style={styles.gridPrimaryBadgeText}>Primary</Text>
+                          </View>
                         )}
-                        <Pressable style={styles.thumbActionBtn} onPress={() => removeImage(idx)}>
-                          <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
-                        </Pressable>
+                        <View style={styles.gridThumbActions}>
+                          {idx > 0 && (
+                            <Pressable style={styles.gridThumbActionBtn} onPress={() => makePrimaryImage(idx)}>
+                              <MaterialCommunityIcons name="star" size={14} color="#FFFFFF" />
+                            </Pressable>
+                          )}
+                          <Pressable style={styles.gridThumbActionBtn} onPress={() => removeImage(idx)}>
+                            <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
+                          </Pressable>
+                        </View>
                       </View>
+                    ))}
+                    {images.length < 8 && (
+                      <Pressable style={styles.gridAddBtn} onPress={pickImages}>
+                        <MaterialCommunityIcons name="camera-plus" size={24} color={Brand.primary} />
+                        <Text style={styles.gridAddText}>Add</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [styles.videoBtn, pressed && { opacity: 0.7 }]}
+                    onPress={pickImages}
+                  >
+                    <MaterialCommunityIcons name="camera-plus" size={26} color={Brand.primary} />
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={styles.videoBtnText}>Upload Photos</Text>
+                      <Text style={styles.videoBtnSub}>Up to 8 images · JPG or PNG</Text>
                     </View>
-                  ))}
-                  {images.length < 8 && (
-                    <Pressable style={styles.addImageBtn} onPress={pickImages}>
-                      <MaterialCommunityIcons name="camera-plus" size={28} color={Brand.primary} />
-                      <Text style={styles.addImageText}>Add Photos</Text>
-                      <Text style={styles.addImageSub}>{images.length}/8</Text>
-                    </Pressable>
-                  )}
-                </ScrollView>
-              </View>
+                  </Pressable>
+                )}
+              </SectionCard>
 
               {/* ── Basic Information ─────────────────────────────── */}
               <SectionCard
@@ -905,35 +929,37 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: Spacing.two, color: c.textSecondary, fontSize: 14 },
 
-  // ── Image gallery ──────────────────────────────────────────────
-  imageSection: { marginBottom: Spacing.three },
-  imageScroll: { gap: Spacing.two },
-  thumbWrap: { width: 100, height: 100, borderRadius: 14, overflow: 'hidden' },
-  thumb: { width: 100, height: 100, borderRadius: 14 },
-  primaryBadge: {
+  // ── Image grid ─────────────────────────────────────────────────
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  gridThumbWrap: { width: 100, height: 100, borderRadius: 14, overflow: 'hidden' },
+  gridThumb: { width: 100, height: 100, borderRadius: 14 },
+  gridPrimaryBadge: {
     position: 'absolute', top: 4, left: 4,
     backgroundColor: Brand.primary,
     paddingHorizontal: 6, paddingVertical: 2,
     borderRadius: 6,
   },
-  primaryBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
-  thumbActions: {
+  gridPrimaryBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  gridThumbActions: {
     position: 'absolute', bottom: 4, right: 4,
     flexDirection: 'row', gap: 4,
   },
-  thumbActionBtn: {
+  gridThumbActionBtn: {
     width: 24, height: 24, borderRadius: 12,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center', alignItems: 'center',
   },
-  addImageBtn: {
+  gridAddBtn: {
     width: 100, height: 100, borderRadius: 14,
     borderWidth: 1.5, borderColor: c.border, borderStyle: 'dashed',
     justifyContent: 'center', alignItems: 'center',
-    backgroundColor: c.surface,
+    backgroundColor: c.surfaceAlt,
   },
-  addImageText: { fontSize: 12, color: Brand.primary, fontWeight: '700', marginTop: 4 },
-  addImageSub: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
+  gridAddText: { fontSize: 12, color: Brand.primary, fontWeight: '700', marginTop: 4 },
 
   // ── Section card ───────────────────────────────────────────────
   sectionCard: {
