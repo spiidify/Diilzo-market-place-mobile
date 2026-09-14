@@ -286,6 +286,7 @@ export interface User {
   is_superuser: boolean;
   has_store: boolean;
   date_joined: string;
+  two_factor_enabled?: boolean;
 }
 
 export interface LoginResponse {

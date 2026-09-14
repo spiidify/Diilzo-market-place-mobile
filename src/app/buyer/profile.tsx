@@ -20,7 +20,7 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { changePassword, updateProfileWithAvatar } from '@/services/auth';
+import { changePassword, toggleTwoFactor, updateProfileWithAvatar } from '@/services/auth';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -40,6 +40,12 @@ export default function ProfileEditScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // 2FA
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
+  const [twoFactorPassword, setTwoFactorPassword] = useState('');
+  const [toggling2FA, setToggling2FA] = useState(false);
+  const [show2FAPassword, setShow2FAPassword] = useState(false);
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -108,6 +114,25 @@ export default function ProfileEditScreen() {
       Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to change password');
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleToggle2FA = async () => {
+    if (!twoFactorPassword) {
+      Alert.alert('Missing field', 'Please enter your password to confirm');
+      return;
+    }
+    try {
+      setToggling2FA(true);
+      const result = await toggleTwoFactor(!twoFactorEnabled, twoFactorPassword);
+      setTwoFactorEnabled(result.two_factor_enabled);
+      setTwoFactorPassword('');
+      setShow2FAPassword(false);
+      Alert.alert('Success', result.detail);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to update 2FA');
+    } finally {
+      setToggling2FA(false);
     }
   };
 
@@ -253,6 +278,76 @@ export default function ProfileEditScreen() {
               )}
             </Pressable>
           </View>
+
+          {/* ── Two-Factor Authentication (2FA) ─────────────────────── */}
+          <View style={styles.card}>
+            <View style={styles.passwordHeader}>
+              <Text style={styles.cardTitle}>Two-Factor Authentication</Text>
+              <MaterialCommunityIcons
+                name={twoFactorEnabled ? 'shield-check' : 'shield-outline'}
+                size={22}
+                color={twoFactorEnabled ? Brand.primary : colors.textTertiary}
+              />
+            </View>
+
+            <View style={styles.twoFactorStatusRow}>
+              <View style={styles.twoFactorStatusInfo}>
+                <Text style={styles.twoFactorStatusText}>
+                  {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                </Text>
+                <Text style={styles.twoFactorStatusSub}>
+                  {twoFactorEnabled
+                    ? 'A 6-digit code is sent to your email on every login.'
+                    : 'Add an extra layer of security. When enabled, a 6-digit code is sent to your email on every login.'}
+                </Text>
+              </View>
+              <View style={[styles.twoFactorBadge, twoFactorEnabled ? styles.twoFactorBadgeOn : styles.twoFactorBadgeOff]}>
+                <Text style={styles.twoFactorBadgeText}>
+                  {twoFactorEnabled ? 'ON' : 'OFF'}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.fieldLabel}>
+              Password (required to {twoFactorEnabled ? 'disable' : 'enable'})
+            </Text>
+            <View style={styles.passwordInputRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                value={twoFactorPassword}
+                onChangeText={setTwoFactorPassword}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.textTertiary}
+                secureTextEntry={!show2FAPassword}
+                autoCapitalize="none"
+              />
+              <Pressable onPress={() => setShow2FAPassword(!show2FAPassword)} hitSlop={8} style={styles.eyeBtn}>
+                <MaterialCommunityIcons
+                  name={show2FAPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </Pressable>
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveBtn,
+                twoFactorEnabled ? styles.disableBtn : styles.passwordBtn,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={handleToggle2FA}
+              disabled={toggling2FA}
+            >
+              {toggling2FA ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  {twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+                </Text>
+              )}
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -341,4 +436,43 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   passwordBtn: { backgroundColor: Brand.dark },
   saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  // ── 2FA ──────────────────────────────────────────────────────────
+  twoFactorStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  twoFactorStatusInfo: { flex: 1 },
+  twoFactorStatusText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.text,
+    marginBottom: 4,
+  },
+  twoFactorStatusSub: {
+    fontSize: 13,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+  twoFactorBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  twoFactorBadgeOn: { backgroundColor: 'rgba(22,163,74,0.12)' },
+  twoFactorBadgeOff: { backgroundColor: c.surfaceAlt },
+  twoFactorBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Brand.primary,
+  },
+  passwordInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eyeBtn: { padding: 4 },
+  disableBtn: { backgroundColor: Brand.danger },
 });

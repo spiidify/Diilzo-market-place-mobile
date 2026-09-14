@@ -146,3 +146,83 @@ export async function changePassword(
     data: { current_password: currentPassword, new_password: newPassword },
   });
 }
+
+// ── 2FA (Email-based) ──────────────────────────────────────────────
+
+/** Response from login when 2FA is required. */
+export interface TwoFactorRequiredResponse {
+  requires_2fa: true;
+  temp_token: string;
+  email: string;
+}
+
+/** Response from login when 2FA is not required (normal JWT). */
+export interface LoginSuccessResponse {
+  user: User;
+  access: string;
+  refresh: string;
+}
+
+/**
+ * Login with email/phone + password. Returns either JWT tokens or a 2FA challenge.
+ * POST /api/v1/auth/login/
+ */
+export async function loginWithCredentials(
+  emailOrPhone: string,
+  password: string
+): Promise<LoginSuccessResponse | TwoFactorRequiredResponse> {
+  // Detect if the input looks like a phone number
+  const isPhone = /^\+?[\d\s-]{7,}$/.test(emailOrPhone.trim());
+  const data = isPhone
+    ? { phone: emailOrPhone.trim(), password }
+    : { email: emailOrPhone.trim(), password };
+  return apiRequest<LoginSuccessResponse | TwoFactorRequiredResponse>({
+    method: 'POST',
+    url: '/auth/login/',
+    data,
+  });
+}
+
+/**
+ * Verify 2FA OTP code and get JWT tokens.
+ * POST /api/v1/auth/2fa/verify/
+ */
+export async function verifyTwoFactor(
+  tempToken: string,
+  code: string
+): Promise<LoginSuccessResponse> {
+  return apiRequest<LoginSuccessResponse>({
+    method: 'POST',
+    url: '/auth/2fa/verify/',
+    data: { temp_token: tempToken, code },
+  });
+}
+
+/**
+ * Resend 2FA OTP code.
+ * POST /api/v1/auth/2fa/resend/
+ */
+export async function resendTwoFactor(
+  tempToken: string
+): Promise<{ detail: string; temp_token: string }> {
+  return apiRequest<{ detail: string; temp_token: string }>({
+    method: 'POST',
+    url: '/auth/2fa/resend/',
+    data: { temp_token: tempToken },
+  });
+}
+
+/**
+ * Enable or disable 2FA. Requires current password.
+ * POST /api/v1/auth/2fa/toggle/
+ */
+export async function toggleTwoFactor(
+  enabled: boolean,
+  password: string
+): Promise<{ detail: string; two_factor_enabled: boolean }> {
+  return apiRequest<{ detail: string; two_factor_enabled: boolean }>({
+    method: 'POST',
+    url: '/auth/2fa/toggle/',
+    data: { enabled, password },
+  });
+}

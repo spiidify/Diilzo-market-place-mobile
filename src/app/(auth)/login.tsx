@@ -17,7 +17,7 @@ import {
 import { GradientHeader } from '@/components/GradientHeader';
 import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 import { Brand } from '@/constants/theme';
-import { useAuth } from '@/context/AuthContext';
+import { TwoFactorRequiredError, useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   authenticateWithBiometrics,
@@ -30,12 +30,16 @@ import {
 import { getSafeErrorMessage } from '@/utils/errors';
 import { isValidEmail, sanitizeEmail, sanitizeString } from '@/utils/validation';
 
+type LoginMode = 'email' | 'phone';
+
 export default function LoginScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { login } = useAuth();
+  const { login, loginWithEmailOrPhone } = useAuth();
+  const [loginMode, setLoginMode] = useState<LoginMode>('email');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -83,24 +87,47 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     // Validate inputs
-    if (!email || !password) {
-      setError('Please enter your email and password.');
-      return;
+    if (loginMode === 'email') {
+      if (!email || !password) {
+        setError('Please enter your email and password.');
+        return;
+      }
+      if (!isValidEmail(email)) {
+        setError('Please enter a valid email address.');
+        return;
+      }
+    } else {
+      if (!phone || !password) {
+        setError('Please enter your phone number and password.');
+        return;
+      }
+      if (phone.replace(/[^0-9]/g, '').length < 7) {
+        setError('Please enter a valid phone number.');
+        return;
+      }
     }
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    // Note: no minimum password length on login — existing accounts with
-    // shorter passwords should be able to sign in. The server validates.
 
     setLoading(true);
     setError(null);
     try {
-      // Sanitize inputs before sending
-      const cleanEmail = sanitizeEmail(email);
+      const identifier = loginMode === 'email'
+        ? sanitizeEmail(email)
+        : sanitizeString(phone, 20);
       const cleanPassword = sanitizeString(password, 128);
-      await login(cleanEmail, cleanPassword);
+
+      try {
+        await loginWithEmailOrPhone(identifier, cleanPassword);
+      } catch (e: any) {
+        if (e instanceof TwoFactorRequiredError) {
+          // Navigate to 2FA verification screen
+          router.push({
+            pathname: '/(auth)/two-factor',
+            params: { temp_token: e.tempToken, email: e.email },
+          } as any);
+          return;
+        }
+        throw e;
+      }
 
       // After successful login, offer to enable biometric if available and not yet enabled
       if (bioAvailable && !bioEnabled) {
@@ -113,7 +140,7 @@ export default function LoginScreen() {
               text: 'Enable',
               onPress: async () => {
                 try {
-                  await enableBiometric(cleanEmail, cleanPassword);
+                  await enableBiometric(sanitizeEmail(email), cleanPassword);
                   setBioEnabled(true);
                 } catch {
                   // Non-critical — just skip enabling
@@ -153,20 +180,65 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Email input */}
-            <View style={styles.inputWrap}>
-              <MaterialCommunityIcons name="email-outline" size={20} color={colors.textTertiary} />
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="you@example.com"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+            {/* Email / Phone tab toggle */}
+            <View style={styles.tabRow}>
+              <Pressable
+                style={[styles.tab, loginMode === 'email' && styles.tabActive]}
+                onPress={() => { setLoginMode('email'); setError(null); }}
+              >
+                <MaterialCommunityIcons
+                  name="email-outline"
+                  size={16}
+                  color={loginMode === 'email' ? '#FFFFFF' : colors.textTertiary}
+                />
+                <Text style={[styles.tabText, loginMode === 'email' && styles.tabTextActive]}>Email</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.tab, loginMode === 'phone' && styles.tabActive]}
+                onPress={() => { setLoginMode('phone'); setError(null); }}
+              >
+                <MaterialCommunityIcons
+                  name="phone-outline"
+                  size={16}
+                  color={loginMode === 'phone' ? '#FFFFFF' : colors.textTertiary}
+                />
+                <Text style={[styles.tabText, loginMode === 'phone' && styles.tabTextActive]}>Phone</Text>
+              </Pressable>
             </View>
+
+            {/* Email input (email mode) */}
+            {loginMode === 'email' && (
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons name="email-outline" size={20} color={colors.textTertiary} />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+
+            {/* Phone input (phone mode) */}
+            {loginMode === 'phone' && (
+              <View style={styles.inputWrap}>
+                <MaterialCommunityIcons name="phone-outline" size={20} color={colors.textTertiary} />
+                <TextInput
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="+256 700 000 000"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
 
             {/* Password input */}
             <View style={styles.inputWrap}>
@@ -298,6 +370,36 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   errorText: {
     color: Brand.danger,
     fontSize: 13,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: c.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  tabActive: {
+    backgroundColor: Brand.primary,
+    borderColor: Brand.primary,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   inputWrap: {
     flexDirection: 'row',
