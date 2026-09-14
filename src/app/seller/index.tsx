@@ -356,6 +356,7 @@ function formatShort(n: number): string {
 
 // ── Gradient hero header component ──────────────────────────────────
 function GradientHero({ title, store, stats }: { title: string; store: any; stats?: any }) {
+  const router = useRouter();
   const location = [store?.city, store?.country].filter(Boolean).join(', ');
   const rating = stats?.rating ? parseFloat(stats.rating).toFixed(1) : null;
   const followers = store?.follower_count || 0;
@@ -375,7 +376,7 @@ function GradientHero({ title, store, stats }: { title: string; store: any; stat
           {store?.slug ? (
             <Pressable
               style={styles.heroViewStore}
-              onPress={() => { }}
+              onPress={() => router.push(`/store/${store.slug}` as any)}
             >
               <MaterialCommunityIcons name="open-in-new" size={14} color="#FFFFFF" />
               <Text style={styles.heroViewStoreText}>View Store</Text>
