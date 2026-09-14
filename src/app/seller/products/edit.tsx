@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,12 +24,18 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
 import { getProductDetail, updateProduct } from '@/services/seller';
-import type { Brand as BrandType, Category, Product } from '@/types';
+import type { Brand as BrandType, Category } from '@/types';
 
 interface PickedImage {
   uri: string;
   name: string;
   type: string;
+}
+
+interface ExistingImage {
+  id: number;
+  url: string;
+  is_primary: boolean;
 }
 
 export default function EditProductScreen() {
@@ -42,6 +48,7 @@ export default function EditProductScreen() {
 
   // ── Form state ──────────────────────────────────────────────────
   const [name, setName] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
@@ -51,12 +58,17 @@ export default function EditProductScreen() {
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
   const [weight, setWeight] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [countryOfOrigin, setCountryOfOrigin] = useState('Uganda');
+  const [isActive, setIsActive] = useState(true);
+
+  // Images
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
+  const [newImages, setNewImages] = useState<PickedImage[]>([]);
+
+  // Video
   const [videoFile, setVideoFile] = useState<PickedImage | null>(null);
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
-  const [isActive, setIsActive] = useState(true);
-  const [images, setImages] = useState<PickedImage[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [removeVideo, setRemoveVideo] = useState(false);
 
   // ── Dropdown data ───────────────────────────────────────────────
   const [categories, setCategories] = useState<Category[]>([]);
@@ -69,6 +81,7 @@ export default function EditProductScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>('images');
 
   // ── Load categories & brands ────────────────────────────────────
   const loadMeta = useCallback(async () => {
@@ -92,9 +105,10 @@ export default function EditProductScreen() {
     }
     try {
       const product = slug
-        ? await apiRequest<Product>({ method: 'GET', url: `/products/${slug}/` })
+        ? await apiRequest<any>({ method: 'GET', url: `/products/${slug}/` })
         : await getProductDetail(Number(productId));
       setName(product.name || '');
+      setShortDescription(product.short_description || '');
       setDescription(product.description || '');
       setPrice(product.price || '');
       setSalePrice(product.sale_price || '');
@@ -104,12 +118,12 @@ export default function EditProductScreen() {
       setBrandId(product.brand?.id ?? null);
       setMinOrderQty(String(product.min_order_quantity || 1));
       setWeight(product.weight || '');
-      setVideoUrl(product.video_url || '');
-      setExistingVideoUrl(product.video_file_url || null);
+      setCountryOfOrigin(product.country_of_origin || 'Uganda');
       setIsActive(product.is_active);
-      const imgs = ((product.images || []) as Array<{ image_url?: string }>)
-        .map((img) => img.image_url)
-        .filter((u): u is string => Boolean(u));
+      setExistingVideoUrl(product.video_file_url || null);
+      const imgs = ((product.images || []) as Array<{ id: number; image_url?: string; is_primary?: boolean }>)
+        .filter((img) => img.image_url)
+        .map((img) => ({ id: img.id, url: img.image_url!, is_primary: !!img.is_primary }));
       setExistingImages(imgs);
     } catch (e: any) {
       setError(e?.message || 'Failed to load product');
@@ -130,7 +144,7 @@ export default function EditProductScreen() {
         mediaTypes: ['images'],
         allowsMultipleSelection: true,
         quality: 0.8,
-        selectionLimit: 6,
+        selectionLimit: 8,
       });
       if (result.canceled) return;
       const picked: PickedImage[] = result.assets.map((asset, idx) => ({
@@ -138,13 +152,12 @@ export default function EditProductScreen() {
         name: `image_${Date.now()}_${idx}.jpg`,
         type: 'image/jpeg',
       }));
-      setImages((prev) => [...prev, ...picked].slice(0, 6));
+      setNewImages((prev) => [...prev, ...picked].slice(0, 8));
     } catch {
       Alert.alert('Error', 'Could not pick images');
     }
   };
 
-  // ── Video picker ────────────────────────────────────────────────
   const pickVideo = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -159,17 +172,36 @@ export default function EditProductScreen() {
         name: `video_${Date.now()}.mp4`,
         type: 'video/mp4',
       });
+      setRemoveVideo(false);
     } catch {
       Alert.alert('Error', 'Could not pick video');
     }
   };
 
   const removeNewImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeExistingImage = (index: number) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const makeExistingPrimary = (index: number) => {
+    setExistingImages((prev) => prev.map((img, i) => ({ ...img, is_primary: i === index })));
+  };
+
+  const makeNewPrimary = (index: number) => {
+    setNewImages((prev) => {
+      const arr = [...prev];
+      const [img] = arr.splice(index, 1);
+      arr.unshift(img);
+      return arr;
+    });
+  };
+
+  // ── Section toggle ──────────────────────────────────────────────
+  const toggleSection = (key: string) => {
+    setExpandedSection((prev) => (prev === key ? null : key));
   };
 
   // ── Submit ──────────────────────────────────────────────────────
@@ -190,6 +222,7 @@ export default function EditProductScreen() {
       const formData = new FormData();
       formData.append('name', name.trim());
       formData.append('description', description.trim());
+      formData.append('short_description', shortDescription.trim());
       formData.append('price', price.trim());
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
@@ -198,17 +231,15 @@ export default function EditProductScreen() {
       if (brandId) formData.append('brand', String(brandId));
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
       if (weight.trim()) formData.append('weight', weight.trim());
-      if (videoUrl.trim()) formData.append('video_url', videoUrl.trim());
-      if (videoFile) {
-        formData.append('video_file', {
-          uri: videoFile.uri,
-          name: videoFile.name,
-          type: videoFile.type,
-        } as any);
-      }
+      formData.append('country_of_origin', countryOfOrigin.trim() || 'Uganda');
       formData.append('is_active', isActive ? 'true' : 'false');
 
-      images.forEach((img) => {
+      // Existing images to keep
+      const keepIds = existingImages.map((img) => img.id);
+      formData.append('keep_image_ids', JSON.stringify(keepIds));
+
+      // New images
+      newImages.forEach((img) => {
         formData.append('images', {
           uri: img.uri,
           name: img.name,
@@ -216,10 +247,20 @@ export default function EditProductScreen() {
         } as any);
       });
 
+      // Video
+      if (videoFile) {
+        formData.append('video_file', {
+          uri: videoFile.uri,
+          name: videoFile.name,
+          type: videoFile.type,
+        } as any);
+      } else if (removeVideo) {
+        formData.append('remove_video', 'true');
+      }
+
       if (productId) {
         await updateProduct(Number(productId), formData);
       } else if (slug) {
-        // Fallback: use public product endpoint (read-only, won't work for PATCH)
         await apiRequest<any>({
           method: 'PATCH',
           url: `/products/${slug}/`,
@@ -247,7 +288,11 @@ export default function EditProductScreen() {
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedBrand = brands.find((b) => b.id === brandId);
+  const selectedParent = selectedCategory?.parent
+    ? categories.find((c) => c.id === selectedCategory.parent)
+    : null;
   const isLoading = loadingMeta || loadingProduct;
+  const totalImages = existingImages.length + newImages.length;
 
   return (
     <View style={styles.screen}>
@@ -268,54 +313,74 @@ export default function EditProductScreen() {
               style={styles.body}
               contentContainerStyle={styles.bodyContent}
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
             >
-              {/* ── Existing images ───────────────────────────────── */}
-              {existingImages.length > 0 && (
-                <>
-                  <Text style={styles.sectionTitle}>Current Images</Text>
-                  <View style={styles.imageRow}>
-                    {existingImages.map((uri, idx) => (
-                      <View key={`ex-${idx}`} style={styles.thumbWrap}>
-                        <Image source={{ uri }} style={styles.thumb} resizeMode="contain" />
-                        <Pressable
-                          style={styles.thumbRemove}
-                          onPress={() => removeExistingImage(idx)}
-                          hitSlop={8}
-                        >
-                          <MaterialCommunityIcons name="close-circle" size={20} color={Brand.danger} />
+              {/* ── Photos ─────────────────────────────────────────── */}
+              <SectionCard
+                title="Product Photos"
+                icon="camera-outline"
+                expanded={expandedSection === 'images'}
+                onToggle={() => toggleSection('images')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.label}>Current + New Images (up to 8 total)</Text>
+                <View style={styles.imageGrid}>
+                  {/* Existing images */}
+                  {existingImages.map((img, idx) => (
+                    <View key={`ex-${img.id}`} style={styles.gridThumbWrap}>
+                      <Image source={{ uri: img.url }} style={styles.gridThumb} resizeMode="cover" />
+                      {img.is_primary && (
+                        <View style={styles.gridPrimaryBadge}>
+                          <Text style={styles.gridPrimaryBadgeText}>Primary</Text>
+                        </View>
+                      )}
+                      <View style={styles.gridThumbActions}>
+                        {!img.is_primary && (
+                          <Pressable style={styles.gridThumbActionBtn} onPress={() => makeExistingPrimary(idx)}>
+                            <MaterialCommunityIcons name="star" size={14} color="#FFFFFF" />
+                          </Pressable>
+                        )}
+                        <Pressable style={styles.gridThumbActionBtn} onPress={() => removeExistingImage(idx)}>
+                          <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
                         </Pressable>
                       </View>
-                    ))}
-                  </View>
-                </>
-              )}
-
-              {/* ── New images ─────────────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Add New Images</Text>
-              <View style={styles.imageRow}>
-                {images.map((img, idx) => (
-                  <View key={`new-${idx}`} style={styles.thumbWrap}>
-                    <Image source={{ uri: img.uri }} style={styles.thumb} resizeMode="contain" />
-                    <Pressable
-                      style={styles.thumbRemove}
-                      onPress={() => removeNewImage(idx)}
-                      hitSlop={8}
-                    >
-                      <MaterialCommunityIcons name="close-circle" size={20} color={Brand.danger} />
+                    </View>
+                  ))}
+                  {/* New images */}
+                  {newImages.map((img, idx) => (
+                    <View key={`new-${idx}`} style={styles.gridThumbWrap}>
+                      <Image source={{ uri: img.uri }} style={styles.gridThumb} resizeMode="cover" />
+                      {idx === 0 && existingImages.length === 0 && (
+                        <View style={styles.gridPrimaryBadge}>
+                          <Text style={styles.gridPrimaryBadgeText}>Primary</Text>
+                        </View>
+                      )}
+                      <View style={styles.gridThumbActions}>
+                        <Pressable style={styles.gridThumbActionBtn} onPress={() => removeNewImage(idx)}>
+                          <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                  {totalImages < 8 && (
+                    <Pressable style={styles.gridAddBtn} onPress={pickImages}>
+                      <MaterialCommunityIcons name="camera-plus" size={24} color={Brand.primary} />
+                      <Text style={styles.gridAddText}>Add</Text>
                     </Pressable>
-                  </View>
-                ))}
-                {images.length < 6 && (
-                  <Pressable style={styles.addImageBtn} onPress={pickImages}>
-                    <MaterialCommunityIcons name="camera-plus" size={26} color={Brand.primary} />
-                    <Text style={styles.addImageText}>Add</Text>
-                  </Pressable>
-                )}
-              </View>
+                  )}
+                </View>
+              </SectionCard>
 
-              {/* ── Basic info ─────────────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Basic Information</Text>
-              <View style={styles.card}>
+              {/* ── Basic Information ─────────────────────────────── */}
+              <SectionCard
+                title="Basic Information"
+                icon="package-variant-closed"
+                expanded={expandedSection === 'basic'}
+                onToggle={() => toggleSection('basic')}
+                styles={styles}
+                colors={colors}
+              >
                 <Text style={styles.label}>Product Name *</Text>
                 <TextInput
                   style={styles.input}
@@ -325,25 +390,41 @@ export default function EditProductScreen() {
                   placeholderTextColor={colors.textTertiary}
                 />
 
-                <Text style={styles.label}>Description</Text>
+                <Text style={styles.label}>Short Description</Text>
+                <TextInput
+                  style={styles.input}
+                  value={shortDescription}
+                  onChangeText={setShortDescription}
+                  placeholder="One-line summary (max 300 chars)"
+                  placeholderTextColor={colors.textTertiary}
+                  maxLength={300}
+                />
+
+                <Text style={styles.label}>Full Description</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="Describe your product..."
+                  placeholder="Describe your product in detail..."
                   placeholderTextColor={colors.textTertiary}
                   multiline
                   numberOfLines={4}
                   textAlignVertical="top"
                 />
-              </View>
+              </SectionCard>
 
-              {/* ── Pricing & inventory ────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Pricing & Inventory</Text>
-              <View style={styles.card}>
+              {/* ── Pricing & Inventory ────────────────────────────── */}
+              <SectionCard
+                title="Pricing & Inventory"
+                icon="currency-usd"
+                expanded={expandedSection === 'pricing'}
+                onToggle={() => toggleSection('pricing')}
+                styles={styles}
+                colors={colors}
+              >
                 <View style={styles.row}>
                   <View style={styles.halfCol}>
-                    <Text style={styles.label}>Price (UGX) *</Text>
+                    <Text style={styles.label}>Price *</Text>
                     <TextInput
                       style={styles.input}
                       value={price}
@@ -390,7 +471,54 @@ export default function EditProductScreen() {
                     />
                   </View>
                 </View>
+              </SectionCard>
 
+              {/* ── Category & Brand ───────────────────────────────── */}
+              <SectionCard
+                title="Organization"
+                icon="format-list-bulleted-type"
+                expanded={expandedSection === 'org'}
+                onToggle={() => toggleSection('org')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.label}>Category</Text>
+                <Pressable style={styles.dropdown} onPress={() => setShowCategoryModal(true)}>
+                  <Text
+                    style={[styles.dropdownText, !selectedCategory && styles.dropdownPlaceholder]}
+                    numberOfLines={1}
+                  >
+                    {selectedCategory ? selectedCategory.name : 'Select category'}
+                  </Text>
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
+                </Pressable>
+                {selectedParent && (
+                  <Text style={styles.breadcrumb}>
+                    {selectedParent.name} → {selectedCategory?.name}
+                  </Text>
+                )}
+
+                <Text style={styles.label}>Brand</Text>
+                <Pressable style={styles.dropdown} onPress={() => setShowBrandModal(true)}>
+                  <Text
+                    style={[styles.dropdownText, !selectedBrand && styles.dropdownPlaceholder]}
+                    numberOfLines={1}
+                  >
+                    {selectedBrand ? selectedBrand.name : 'Select brand (optional)'}
+                  </Text>
+                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
+                </Pressable>
+              </SectionCard>
+
+              {/* ── Shipping & Dimensions ─────────────────────────── */}
+              <SectionCard
+                title="Shipping & Dimensions"
+                icon="truck-fast-outline"
+                expanded={expandedSection === 'shipping'}
+                onToggle={() => toggleSection('shipping')}
+                styles={styles}
+                colors={colors}
+              >
                 <View style={styles.row}>
                   <View style={styles.halfCol}>
                     <Text style={styles.label}>Min Order Qty</Text>
@@ -415,83 +543,87 @@ export default function EditProductScreen() {
                     />
                   </View>
                 </View>
-              </View>
 
-              {/* ── Category & brand ───────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Organization</Text>
-              <View style={styles.card}>
-                <Text style={styles.label}>Category</Text>
-                <Pressable style={styles.dropdown} onPress={() => setShowCategoryModal(true)}>
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      !selectedCategory && styles.dropdownPlaceholder,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedCategory ? selectedCategory.name : 'Select category'}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
-                </Pressable>
-
-                <Text style={styles.label}>Brand</Text>
-                <Pressable style={styles.dropdown} onPress={() => setShowBrandModal(true)}>
-                  <Text
-                    style={[
-                      styles.dropdownText,
-                      !selectedBrand && styles.dropdownPlaceholder,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {selectedBrand ? selectedBrand.name : 'Select brand (optional)'}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
-                </Pressable>
-              </View>
-
-              {/* ── Media & status ─────────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Media & Status</Text>
-              <View style={styles.card}>
-                <Text style={styles.label}>Product Video (Upload)</Text>
-                {existingVideoUrl && !videoFile && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, padding: 8, backgroundColor: colors.surfaceAlt, borderRadius: 8 }}>
-                    <MaterialCommunityIcons name="video" size={20} color={Brand.primary} />
-                    <Text style={{ flex: 1, fontSize: 12, color: colors.textSecondary }} numberOfLines={1}>
-                      Current video: {existingVideoUrl.split('/').pop()}
-                    </Text>
-                  </View>
-                )}
-                <Pressable
-                  style={({ pressed }) => [styles.addImageBtn, { paddingVertical: 12, marginBottom: 8 }, pressed && { opacity: 0.7 }]}
-                  onPress={pickVideo}
-                >
-                  <MaterialCommunityIcons name="video-plus-outline" size={22} color={Brand.primary} />
-                  <Text style={[styles.addImageText, { color: Brand.primary }]}>
-                    {videoFile ? `Video selected: ${videoFile.name}` : 'Upload New Video (MP4, MOV)'}
-                  </Text>
-                </Pressable>
-                {videoFile && (
-                  <Pressable
-                    style={{ alignSelf: 'flex-end', marginBottom: 8 }}
-                    onPress={() => setVideoFile(null)}
-                  >
-                    <Text style={{ color: Brand.danger, fontSize: 13, fontWeight: '600' }}>Remove video</Text>
-                  </Pressable>
-                )}
-
-                <Text style={[styles.label, { marginTop: 8 }]}>Or YouTube URL (legacy)</Text>
+                <Text style={styles.label}>Country of Origin</Text>
                 <TextInput
                   style={styles.input}
-                  value={videoUrl}
-                  onChangeText={setVideoUrl}
-                  placeholder="https://youtube.com/..."
+                  value={countryOfOrigin}
+                  onChangeText={setCountryOfOrigin}
+                  placeholder="Uganda"
                   placeholderTextColor={colors.textTertiary}
-                  autoCapitalize="none"
-                  keyboardType="url"
                 />
+              </SectionCard>
 
+              {/* ── Video ──────────────────────────────────────────── */}
+              <SectionCard
+                title="Product Video"
+                icon="video-outline"
+                expanded={expandedSection === 'media'}
+                onToggle={() => toggleSection('media')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.label}>Product Showcase Video (optional)</Text>
+                {videoFile ? (
+                  <View style={styles.videoPreviewCard}>
+                    <View style={styles.videoPreviewThumb}>
+                      <MaterialCommunityIcons name="play-circle" size={36} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.videoPreviewInfo}>
+                      <Text style={styles.videoPreviewName} numberOfLines={1}>{videoFile.name}</Text>
+                      <Text style={styles.videoPreviewHint}>New video ready to upload</Text>
+                    </View>
+                    <Pressable style={styles.videoRemoveIcon} onPress={() => setVideoFile(null)} hitSlop={8}>
+                      <MaterialCommunityIcons name="close-circle" size={24} color={Brand.danger} />
+                    </Pressable>
+                  </View>
+                ) : existingVideoUrl && !removeVideo ? (
+                  <View style={styles.videoPreviewCard}>
+                    <View style={styles.videoPreviewThumb}>
+                      <MaterialCommunityIcons name="play-circle" size={36} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.videoPreviewInfo}>
+                      <Text style={styles.videoPreviewName} numberOfLines={1}>
+                        {existingVideoUrl.split('/').pop() || 'Current video'}
+                      </Text>
+                      <Text style={styles.videoPreviewHint}>Current video</Text>
+                    </View>
+                    <Pressable
+                      style={styles.videoRemoveIcon}
+                      onPress={() => setRemoveVideo(true)}
+                      hitSlop={8}
+                    >
+                      <MaterialCommunityIcons name="close-circle" size={24} color={Brand.danger} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    style={({ pressed }) => [styles.videoBtn, pressed && { opacity: 0.7 }]}
+                    onPress={pickVideo}
+                  >
+                    <MaterialCommunityIcons name="video-plus-outline" size={26} color={Brand.primary} />
+                    <View style={{ alignItems: 'center' }}>
+                      <Text style={styles.videoBtnText}>Upload Video</Text>
+                      <Text style={styles.videoBtnSub}>MP4 or MOV · max 50MB</Text>
+                    </View>
+                  </Pressable>
+                )}
+              </SectionCard>
+
+              {/* ── Status ─────────────────────────────────────────── */}
+              <SectionCard
+                title="Visibility"
+                icon="eye-outline"
+                expanded={expandedSection === 'status'}
+                onToggle={() => toggleSection('status')}
+                styles={styles}
+                colors={colors}
+              >
                 <View style={styles.switchRow}>
-                  <Text style={styles.switchLabel}>Active (visible to buyers)</Text>
+                  <View style={styles.switchInfo}>
+                    <Text style={styles.switchLabel}>Active (visible to buyers)</Text>
+                    <Text style={styles.switchSub}>Inactive products are hidden from search</Text>
+                  </View>
                   <Switch
                     value={isActive}
                     onValueChange={setIsActive}
@@ -499,7 +631,7 @@ export default function EditProductScreen() {
                     thumbColor="#FFFFFF"
                   />
                 </View>
-              </View>
+              </SectionCard>
 
               {error && (
                 <View style={styles.errorBox}>
@@ -510,11 +642,7 @@ export default function EditProductScreen() {
 
               {/* ── Submit ─────────────────────────────────────────── */}
               <Pressable
-                style={({ pressed }) => [
-                  styles.submitBtn,
-                  pressed && { opacity: 0.85 },
-                  submitting && { opacity: 0.6 },
-                ]}
+                style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }, submitting && { opacity: 0.6 }]}
                 onPress={handleSubmit}
                 disabled={submitting}
               >
@@ -531,7 +659,7 @@ export default function EditProductScreen() {
           </KeyboardAvoidingView>
         )}
 
-        {/* ── Category modal ─────────────────────────────────────── */}
+        {/* ── Category modal (hierarchical) ─────────────────────── */}
         <Modal visible={showCategoryModal} transparent animationType="slide" onRequestClose={() => setShowCategoryModal(false)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalSheet}>
@@ -542,23 +670,47 @@ export default function EditProductScreen() {
                 </Pressable>
               </View>
               <ScrollView style={styles.modalList}>
-                {categories.map((cat) => (
-                  <Pressable
-                    key={`cat-${cat.id}`}
-                    style={[
-                      styles.modalItem,
-                      cat.id === categoryId && { backgroundColor: colors.surfaceAlt },
-                    ]}
-                    onPress={() => {
-                      setCategoryId(cat.id);
-                      setShowCategoryModal(false);
-                    }}
-                  >
-                    <Text style={styles.modalItemText}>{cat.name}</Text>
-                    {cat.id === categoryId && (
-                      <MaterialCommunityIcons name="check" size={20} color={Brand.primary} />
+                {categories.filter((c) => !c.parent).map((cat) => (
+                  <View key={`cat-${cat.id}`}>
+                    <Pressable
+                      style={[styles.modalItem, cat.id === categoryId && styles.modalItemSelected]}
+                      onPress={() => {
+                        setCategoryId(cat.id);
+                        if (!cat.children || cat.children.length === 0) {
+                          setShowCategoryModal(false);
+                        }
+                      }}
+                    >
+                      <View style={styles.modalItemLeft}>
+                        {cat.children && cat.children.length > 0 && (
+                          <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
+                        )}
+                        <Text style={styles.modalItemText}>{cat.name}</Text>
+                      </View>
+                      {cat.id === categoryId && (
+                        <MaterialCommunityIcons name="check" size={20} color={Brand.primary} />
+                      )}
+                    </Pressable>
+                    {cat.children && cat.children.length > 0 && (cat.id === categoryId || (selectedCategory?.parent === cat.id)) && (
+                      <View style={styles.subCategoryList}>
+                        {cat.children.map((child) => (
+                          <Pressable
+                            key={`child-${child.id}`}
+                            style={[styles.modalSubItem, child.id === categoryId && styles.modalItemSelected]}
+                            onPress={() => {
+                              setCategoryId(child.id);
+                              setShowCategoryModal(false);
+                            }}
+                          >
+                            <Text style={styles.modalSubItemText}>{child.name}</Text>
+                            {child.id === categoryId && (
+                              <MaterialCommunityIcons name="check" size={18} color={Brand.primary} />
+                            )}
+                          </Pressable>
+                        ))}
+                      </View>
                     )}
-                  </Pressable>
+                  </View>
                 ))}
               </ScrollView>
             </View>
@@ -577,10 +729,7 @@ export default function EditProductScreen() {
               </View>
               <ScrollView style={styles.modalList}>
                 <Pressable
-                  style={[
-                    styles.modalItem,
-                    brandId === null && { backgroundColor: colors.surfaceAlt },
-                  ]}
+                  style={[styles.modalItem, brandId === null && styles.modalItemSelected]}
                   onPress={() => {
                     setBrandId(null);
                     setShowBrandModal(false);
@@ -594,10 +743,7 @@ export default function EditProductScreen() {
                 {brands.map((br) => (
                   <Pressable
                     key={`brand-${br.id}`}
-                    style={[
-                      styles.modalItem,
-                      br.id === brandId && { backgroundColor: colors.surfaceAlt },
-                    ]}
+                    style={[styles.modalItem, br.id === brandId && styles.modalItemSelected]}
                     onPress={() => {
                       setBrandId(br.id);
                       setShowBrandModal(false);
@@ -618,8 +764,49 @@ export default function EditProductScreen() {
   );
 }
 
+// ── Collapsible Section Card ────────────────────────────────────────
+function SectionCard({
+  title,
+  icon,
+  expanded,
+  onToggle,
+  children,
+  styles,
+  colors,
+}: {
+  title: string;
+  icon: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  styles: any;
+  colors: ThemeColors;
+}) {
+  return (
+    <View style={styles.sectionCard}>
+      <Pressable
+        style={({ pressed }) => [styles.sectionHeader, pressed && { opacity: 0.7 }]}
+        onPress={onToggle}
+      >
+        <View style={styles.sectionHeaderLeft}>
+          <View style={styles.sectionIcon}>
+            <MaterialCommunityIcons name={icon as any} size={18} color={Brand.primary} />
+          </View>
+          <Text style={styles.sectionTitle}>{title}</Text>
+        </View>
+        <MaterialCommunityIcons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={22}
+          color={colors.textSecondary}
+        />
+      </Pressable>
+      {expanded && <View style={styles.sectionBody}>{children}</View>}
+    </View>
+  );
+}
+
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  screen: { flex: 1, backgroundColor: c.background },
 
   body: { flex: 1 },
   bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
@@ -627,26 +814,66 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { marginTop: Spacing.two, color: c.textSecondary, fontSize: 14 },
 
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: c.text,
-    marginTop: Spacing.three,
-    marginBottom: Spacing.two,
+  // ── Image grid ─────────────────────────────────────────────────
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
+  gridThumbWrap: { width: 100, height: 100, borderRadius: 14, overflow: 'hidden' },
+  gridThumb: { width: 100, height: 100, borderRadius: 14 },
+  gridPrimaryBadge: {
+    position: 'absolute', top: 4, left: 4,
+    backgroundColor: Brand.primary,
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6,
+  },
+  gridPrimaryBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  gridThumbActions: {
+    position: 'absolute', bottom: 4, right: 4,
+    flexDirection: 'row', gap: 4,
+  },
+  gridThumbActionBtn: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  gridAddBtn: {
+    width: 100, height: 100, borderRadius: 14,
+    borderWidth: 1.5, borderColor: c.border, borderStyle: 'dashed',
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: c.surfaceAlt,
+  },
+  gridAddText: { fontSize: 12, color: Brand.primary, fontWeight: '700', marginTop: 4 },
 
-  card: {
+  // ── Section card ───────────────────────────────────────────────
+  sectionCard: {
     backgroundColor: c.surface,
-    borderRadius: 14,
-    padding: Spacing.three,
-    gap: Spacing.two + Spacing.half,
+    borderRadius: 16,
+    marginBottom: Spacing.two + Spacing.half,
+    overflow: 'hidden',
     elevation: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing.three,
+  },
+  sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  sectionIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: Brand.primary + '15',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  sectionBody: { padding: Spacing.three, paddingTop: 0, gap: Spacing.two + Spacing.half },
 
+  // ── Form ───────────────────────────────────────────────────────
   label: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
   input: {
     borderWidth: 1,
@@ -676,43 +903,64 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   dropdownText: { fontSize: 15, color: c.text, flex: 1 },
   dropdownPlaceholder: { color: c.textTertiary },
+  breadcrumb: { fontSize: 12, color: c.textTertiary, marginTop: 4, fontStyle: 'italic' },
 
-  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  thumbWrap: { width: 84, height: 84, borderRadius: 12, overflow: 'visible' },
-  thumb: { width: 84, height: 84, borderRadius: 12 },
-  thumbRemove: { position: 'absolute', top: -6, right: -6, backgroundColor: '#FFFFFF', borderRadius: 10 },
-  addImageBtn: {
-    width: 84,
-    height: 84,
-    borderRadius: 12,
+  // ── Video ──────────────────────────────────────────────────────
+  videoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.four,
     borderWidth: 1.5,
     borderColor: c.border,
     borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: c.surface,
+    borderRadius: 12,
   },
-  addImageText: { fontSize: 11, color: Brand.primary, fontWeight: '600', marginTop: 2 },
+  videoBtnText: { fontSize: 14, color: Brand.primary, fontWeight: '700' },
+  videoBtnSub: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+  videoPreviewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.half,
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 12,
+    padding: Spacing.three - Spacing.half,
+  },
+  videoPreviewThumb: {
+    width: 56, height: 56, borderRadius: 12,
+    backgroundColor: Brand.primary,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  videoPreviewInfo: { flex: 1, gap: 2 },
+  videoPreviewName: { fontSize: 14, fontWeight: '600', color: c.text },
+  videoPreviewHint: { fontSize: 12, color: Brand.primary },
+  videoRemoveIcon: { padding: 4 },
 
+  // ── Switch ─────────────────────────────────────────────────────
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Spacing.one,
   },
+  switchInfo: { flex: 1, gap: 2 },
   switchLabel: { fontSize: 14, fontWeight: '600', color: c.text },
+  switchSub: { fontSize: 12, color: c.textTertiary },
 
+  // ── Error ──────────────────────────────────────────────────────
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'rgba(220,38,38,0.08)',
     borderRadius: 10,
     padding: Spacing.three - Spacing.half,
     marginTop: Spacing.three,
   },
   errorText: { flex: 1, fontSize: 13, color: Brand.danger, fontWeight: '500' },
 
+  // ── Submit ─────────────────────────────────────────────────────
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -725,12 +973,17 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   submitText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  // ── Modal ──────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
   modalSheet: {
     backgroundColor: c.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '75%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -750,5 +1003,20 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.three + Spacing.half,
     paddingVertical: Spacing.three - Spacing.half,
   },
-  modalItemText: { fontSize: 15, color: c.text },
+  modalItemSelected: { backgroundColor: c.surfaceAlt },
+  modalItemLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two - 2 },
+  modalItemText: { fontSize: 15, color: c.text, fontWeight: '500' },
+  subCategoryList: {
+    marginLeft: Spacing.four,
+    borderLeftWidth: 2,
+    borderLeftColor: c.borderLight,
+  },
+  modalSubItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + Spacing.half,
+  },
+  modalSubItemText: { fontSize: 14, color: c.textSecondary },
 });
