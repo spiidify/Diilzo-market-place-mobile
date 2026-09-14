@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,8 +12,8 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
-import { getLedger, type LedgerAccount } from '@/services/financial';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { getLedger, type LedgerAccount } from '@/services/financial';
 
 export default function AdminLedgerScreen() {
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
@@ -142,7 +142,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   accountHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   accountInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  codeBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  codeBadge: { backgroundColor: c.surfaceAlt, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   codeText: { fontSize: 11, fontFamily: 'monospace', color: c.text },
   accountName: { fontSize: 15, fontWeight: '700', color: c.text },
   accountType: { fontSize: 10, color: c.textTertiary, textTransform: 'uppercase' },

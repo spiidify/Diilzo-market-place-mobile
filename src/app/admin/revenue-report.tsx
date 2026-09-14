@@ -207,7 +207,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   netBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#DCF5EC', borderRadius: 16, padding: 16,
+    backgroundColor: c.surfaceAlt, borderRadius: 16, padding: 16,
   },
   netBannerTitle: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
   netBannerValue: { fontSize: 22, fontWeight: '900', color: Brand.success },

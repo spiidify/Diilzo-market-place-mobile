@@ -56,7 +56,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
     items: [
       { icon: 'shield-check', label: 'KYC Review', route: '/admin/kyc', color: '#06B6D4', badgeKey: 'pending_kyc' },
       { icon: 'account-check', label: 'Suppliers', route: '/admin/suppliers', color: '#16A34A', badgeKey: 'pending_verification' },
-      { icon: 'history', label: 'Verification Logs', route: '/admin/verification-logs', color: Brand.textSecondary },
+      { icon: 'history', label: 'Verification Logs', route: '/admin/verification-logs', color: '#64748B' },
     ],
   },
   {
@@ -78,7 +78,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Platform',
     items: [
-      { icon: 'cog', label: 'Settings', route: '/admin/settings', color: Brand.textSecondary },
+      { icon: 'cog', label: 'Settings', route: '/admin/settings', color: '#64748B' },
       { icon: 'bullhorn', label: 'Announcements', route: '/admin/announcements', color: '#06B6D4' },
       { icon: 'image-multiple', label: 'Slides', route: '/admin/slides', color: '#EC4899' },
       { icon: 'credit-card', label: 'Subscriptions', route: '/admin/subscriptions', color: '#3B82F6' },
@@ -90,7 +90,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
       { icon: 'scale-balance', label: 'Reconciliation', route: '/admin/reconciliation', color: '#F59E0B' },
       { icon: 'book-open', label: 'Ledger', route: '/admin/ledger', color: '#8B5CF6' },
       { icon: 'file-export', label: 'Accounting Export', route: '/admin/accounting-export', color: '#06B6D4' },
-      { icon: 'clipboard-list', label: 'Audit Log', route: '/admin/audit-log', color: Brand.textSecondary },
+      { icon: 'clipboard-list', label: 'Audit Log', route: '/admin/audit-log', color: '#64748B' },
     ],
   },
 ];
@@ -206,8 +206,8 @@ export default function AdminDashboardScreen() {
                     style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
                     onPress={() => router.push('/seller' as any)}
                   >
-                    <View style={[styles.roleSwitchIcon, { backgroundColor: '#16A34A12' }]}>
-                      <MaterialCommunityIcons name="store" size={22} color="#16A34A" />
+                    <View style={[styles.roleSwitchIcon, { backgroundColor: Brand.primary + '12' }]}>
+                      <MaterialCommunityIcons name="store" size={22} color={Brand.primary} />
                     </View>
                     <View style={styles.roleSwitchInfo}>
                       <Text style={styles.roleSwitchTitle}>Switch to Seller Mode</Text>

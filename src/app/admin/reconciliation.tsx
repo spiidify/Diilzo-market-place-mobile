@@ -80,14 +80,14 @@ export default function AdminReconciliationScreen() {
       >
         <View style={styles.body}>
           {/* Status banner */}
-          <View style={[styles.statusBanner, { backgroundColor: allClear ? '#DCF5EC' : '#FEF3C7' }]}>
+          <View style={[styles.statusBanner, { backgroundColor: allClear ? colors.surfaceAlt : Brand.rating + '20' }]}>
             <MaterialCommunityIcons
               name={allClear ? 'check-circle' : 'alert-outline'}
               size={28}
               color={allClear ? Brand.success : Brand.rating}
             />
             <View>
-              <Text style={[styles.statusTitle, { color: allClear ? Brand.success : '#92400E' }]}>
+              <Text style={[styles.statusTitle, { color: allClear ? Brand.success : Brand.rating }]}>
                 {allClear ? 'All Clear — No Discrepancies' : `${result?.total_issues || 0} Discrepancies Found`}
               </Text>
               <Text style={styles.statusSub}>Last run: {result?.timestamp?.slice(0, 19)}</Text>

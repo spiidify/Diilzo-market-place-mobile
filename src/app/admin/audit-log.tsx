@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,8 +12,8 @@ import {
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
-import { getAuditLog, type AuditLog } from '@/services/financial';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { getAuditLog, type AuditLog } from '@/services/financial';
 
 export default function AdminAuditLogScreen() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -129,7 +129,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   logHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  logIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#DCF5EC', justifyContent: 'center', alignItems: 'center' },
+  logIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: c.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   logInfo: { flex: 1, gap: 2 },
   logAction: { fontSize: 13, fontWeight: '700', color: c.text },
   logUser: { fontSize: 11, color: c.textTertiary },
