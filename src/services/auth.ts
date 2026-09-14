@@ -8,11 +8,14 @@ import { apiRequest, clearTokens, getAccessToken, setTokens } from './api';
  * POST /api/v1/auth/login/
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const data = await apiRequest<LoginResponse>({
+  const data = await apiRequest<LoginResponse & { requires_2fa?: boolean }>({
     method: 'POST',
     url: '/auth/login/',
     data: { email, password },
   });
+  if (data.requires_2fa) {
+    throw new Error('This account has two-factor authentication enabled. Please sign in with email/phone to receive a code.');
+  }
   await setTokens(data.access, data.refresh);
   return data;
 }
