@@ -487,22 +487,33 @@ export default function AddProductScreen() {
               >
                 <Text style={styles.label}>Category *</Text>
                 <Pressable
-                  style={styles.dropdown}
+                  style={({ pressed }) => [styles.dropdown, pressed && { opacity: 0.85 }]}
                   onPress={() => setShowCategoryModal(true)}
                 >
-                  <Text
-                    style={[styles.dropdownText, !selectedCategory && styles.dropdownPlaceholder]}
-                    numberOfLines={1}
-                  >
-                    {selectedCategory ? selectedCategory.name : 'Select category'}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
+                  <View style={styles.catPickerLeft}>
+                    <View style={styles.catPickerIcon}>
+                      <MaterialCommunityIcons
+                        name={selectedCategory ? "folder-open-outline" : "folder-outline"}
+                        size={18}
+                        color={selectedCategory ? Brand.primary : colors.textTertiary}
+                      />
+                    </View>
+                    <View style={styles.catPickerTexts}>
+                      <Text
+                        style={[styles.dropdownText, !selectedCategory && styles.dropdownPlaceholder]}
+                        numberOfLines={1}
+                      >
+                        {selectedCategory ? selectedCategory.name : 'Select category'}
+                      </Text>
+                      {selectedParent && (
+                        <Text style={styles.catPickerSub} numberOfLines={1}>
+                          in {selectedParent.name}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
                 </Pressable>
-                {selectedParent && (
-                  <Text style={styles.breadcrumb}>
-                    {selectedParent.name} → {selectedCategory?.name}
-                  </Text>
-                )}
 
                 <Text style={styles.label}>Brand</Text>
                 <Pressable style={styles.dropdown} onPress={() => setShowBrandModal(true)}>
@@ -801,73 +812,170 @@ export default function AddProductScreen() {
           </KeyboardAvoidingView>
         )}
 
-        {/* ── Category modal (hierarchical) ─────────────────────── */}
+        {/* ── Category modal (step-based picker) ──────────────── */}
         <Modal visible={showCategoryModal} transparent animationType="slide" onRequestClose={() => setShowCategoryModal(false)}>
           <View style={styles.modalOverlay}>
-            <View style={styles.modalSheet}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Category</Text>
-                <Pressable onPress={() => setShowCategoryModal(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={colors.text} />
-                </Pressable>
+            <View style={styles.catSheet}>
+              {/* Header */}
+              <View style={styles.catHeader}>
+                <View style={styles.catHeaderLeft}>
+                  <Pressable onPress={() => setShowCategoryModal(false)} hitSlop={12} style={styles.catBackBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+                  </Pressable>
+                  <Text style={styles.catTitle}>Select Category</Text>
+                </View>
+                {categoryId && (
+                  <Pressable onPress={() => { setCategoryId(null); }} hitSlop={8} style={styles.catClearBtn}>
+                    <MaterialCommunityIcons name="close" size={20} color={colors.textTertiary} />
+                  </Pressable>
+                )}
               </View>
-              <ScrollView style={styles.modalList}>
-                {/* Parent categories */}
-                {categories.filter((c) => !c.parent).map((cat) => (
-                  <View key={`cat-${cat.id}`}>
-                    <Pressable
-                      style={[
-                        styles.modalItem,
-                        cat.id === categoryId && styles.modalItemSelected,
-                      ]}
-                      onPress={() => {
-                        setCategoryId(cat.id);
-                        // If no children, close modal
-                        if (!cat.children || cat.children.length === 0) {
-                          setShowCategoryModal(false);
-                        }
-                      }}
-                    >
-                      <View style={styles.modalItemLeft}>
-                        {cat.children && cat.children.length > 0 && (
-                          <MaterialCommunityIcons
-                            name="chevron-right"
-                            size={18}
-                            color={colors.textTertiary}
-                          />
-                        )}
-                        <Text style={styles.modalItemText}>{cat.name}</Text>
-                      </View>
-                      {cat.id === categoryId && (
-                        <MaterialCommunityIcons name="check" size={20} color={Brand.primary} />
-                      )}
+
+              {/* Breadcrumb path */}
+              <View style={styles.catBreadcrumb}>
+                <Pressable onPress={() => { setCategoryId(null); }}>
+                  <Text style={[styles.catCrumb, !categoryId && styles.catCrumbActive]}>All</Text>
+                </Pressable>
+                {selectedParent && (
+                  <>
+                    <MaterialCommunityIcons name="chevron-right" size={14} color={colors.textTertiary} />
+                    <Pressable onPress={() => setCategoryId(selectedParent.id)}>
+                      <Text style={[styles.catCrumb, categoryId === selectedParent.id && styles.catCrumbActive]} numberOfLines={1}>
+                        {selectedParent.name}
+                      </Text>
                     </Pressable>
-                    {/* Children — show if parent is selected or if a child of this parent is selected */}
-                    {cat.children && cat.children.length > 0 && (cat.id === categoryId || (selectedCategory?.parent === cat.id)) && (
-                      <View style={styles.subCategoryList}>
-                        {cat.children.map((child) => (
-                          <Pressable
-                            key={`child-${child.id}`}
-                            style={[
-                              styles.modalSubItem,
-                              child.id === categoryId && styles.modalItemSelected,
-                            ]}
-                            onPress={() => {
-                              setCategoryId(child.id);
-                              setShowCategoryModal(false);
-                            }}
-                          >
-                            <Text style={styles.modalSubItemText}>{child.name}</Text>
-                            {child.id === categoryId && (
-                              <MaterialCommunityIcons name="check" size={18} color={Brand.primary} />
-                            )}
-                          </Pressable>
-                        ))}
-                      </View>
-                    )}
+                  </>
+                )}
+                {selectedCategory && !selectedParent && (
+                  <>
+                    <MaterialCommunityIcons name="chevron-right" size={14} color={colors.textTertiary} />
+                    <Text style={[styles.catCrumb, styles.catCrumbActive]} numberOfLines={1}>
+                      {selectedCategory.name}
+                    </Text>
+                  </>
+                )}
+                {selectedCategory && selectedParent && (
+                  <>
+                    <MaterialCommunityIcons name="chevron-right" size={14} color={colors.textTertiary} />
+                    <Text style={[styles.catCrumb, styles.catCrumbActive]} numberOfLines={1}>
+                      {selectedCategory.name}
+                    </Text>
+                  </>
+                )}
+              </View>
+
+              <ScrollView style={styles.catBody} showsVerticalScrollIndicator={false}>
+                {/* If no parent selected, show root categories */}
+                {!selectedParent && !selectedCategory && (
+                  <View style={styles.catGrid}>
+                    {categories.filter((c) => !c.parent).map((cat) => (
+                      <Pressable
+                        key={`root-${cat.id}`}
+                        style={({ pressed }) => [styles.catCard, pressed && { opacity: 0.8 }]}
+                        onPress={() => {
+                          if (cat.children && cat.children.length > 0) {
+                            setCategoryId(cat.id);
+                          } else {
+                            setCategoryId(cat.id);
+                            setShowCategoryModal(false);
+                          }
+                        }}
+                      >
+                        <View style={[styles.catCardIcon, { backgroundColor: Brand.primary + '12' }]}>
+                          <MaterialCommunityIcons name="folder-outline" size={24} color={Brand.primary} />
+                        </View>
+                        <Text style={styles.catCardName} numberOfLines={2}>{cat.name}</Text>
+                        {cat.children && cat.children.length > 0 && (
+                          <View style={styles.catCardCount}>
+                            <Text style={styles.catCardCountText}>{cat.children.length} sub</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    ))}
                   </View>
-                ))}
+                )}
+
+                {/* If a parent is selected and has children, show children */}
+                {selectedParent && selectedParent.children && selectedParent.children.length > 0 && (
+                  <View>
+                    <Text style={styles.catSectionLabel}>
+                      Sub-categories in {selectedParent.name}
+                    </Text>
+                    <View style={styles.catChildList}>
+                      {/* Option to use the parent itself */}
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.catChildItem,
+                          categoryId === selectedParent.id && styles.catChildItemActive,
+                          pressed && { opacity: 0.8 },
+                        ]}
+                        onPress={() => { setCategoryId(selectedParent.id); setShowCategoryModal(false); }}
+                      >
+                        <View style={styles.catChildItemLeft}>
+                          <View style={[styles.catChildDot, categoryId === selectedParent.id && styles.catChildDotActive]} />
+                          <Text style={[styles.catChildText, categoryId === selectedParent.id && styles.catChildTextActive]}>
+                            Use {selectedParent.name} (no sub-category)
+                          </Text>
+                        </View>
+                        {categoryId === selectedParent.id && (
+                          <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
+                        )}
+                      </Pressable>
+
+                      {selectedParent.children.map((child) => (
+                        <Pressable
+                          key={`child-${child.id}`}
+                          style={({ pressed }) => [
+                            styles.catChildItem,
+                            categoryId === child.id && styles.catChildItemActive,
+                            pressed && { opacity: 0.8 },
+                          ]}
+                          onPress={() => { setCategoryId(child.id); setShowCategoryModal(false); }}
+                        >
+                          <View style={styles.catChildItemLeft}>
+                            <View style={[styles.catChildDot, categoryId === child.id && styles.catChildDotActive]} />
+                            <Text style={[styles.catChildText, categoryId === child.id && styles.catChildTextActive]}>
+                              {child.name}
+                            </Text>
+                          </View>
+                          {categoryId === child.id && (
+                            <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
+                          )}
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* If a parent with no children is selected */}
+                {selectedCategory && !selectedParent && (
+                  <View style={styles.catSelectedConfirm}>
+                    <MaterialCommunityIcons name="check-circle" size={48} color={Brand.primary} />
+                    <Text style={styles.catSelectedName}>{selectedCategory.name}</Text>
+                    <Pressable
+                      style={styles.catConfirmBtn}
+                      onPress={() => setShowCategoryModal(false)}
+                    >
+                      <Text style={styles.catConfirmBtnText}>Use this category</Text>
+                    </Pressable>
+                  </View>
+                )}
               </ScrollView>
+
+              {/* Footer */}
+              {categoryId && (
+                <View style={styles.catFooter}>
+                  <View style={styles.catFooterInfo}>
+                    <MaterialCommunityIcons name="check-circle" size={16} color={Brand.primary} />
+                    <Text style={styles.catFooterText} numberOfLines={1}>
+                      {selectedCategory?.name}
+                    </Text>
+                  </View>
+                  <Pressable style={styles.catDoneBtn} onPress={() => setShowCategoryModal(false)}>
+                    <Text style={styles.catDoneBtnText}>Done</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -1021,7 +1129,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   dropdownText: { fontSize: 15, color: c.text, flex: 1 },
   dropdownPlaceholder: { color: c.textTertiary },
-  breadcrumb: { fontSize: 12, color: c.textTertiary, marginTop: 4, fontStyle: 'italic' },
 
   // ── Variants ───────────────────────────────────────────────────
   variantList: { gap: Spacing.two, marginBottom: Spacing.two },
@@ -1180,19 +1287,143 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   modalItemSelected: { backgroundColor: c.surfaceAlt },
   modalItemLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two - 2 },
   modalItemText: { fontSize: 15, color: c.text, fontWeight: '500' },
-  subCategoryList: {
-    marginLeft: Spacing.four,
-    borderLeftWidth: 2,
-    borderLeftColor: c.borderLight,
+
+  // ── Category picker (new design) ─────────────────────────────
+  catPickerLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + Spacing.half, flex: 1 },
+  catPickerIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: c.surfaceAlt,
+    justifyContent: 'center', alignItems: 'center',
   },
-  modalSubItem: {
+  catPickerTexts: { flex: 1, gap: 1 },
+  catPickerSub: { fontSize: 11, color: c.textTertiary },
+
+  catSheet: {
+    backgroundColor: c.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+  },
+  catHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.three - 2,
+    borderBottomWidth: 1,
+    borderBottomColor: c.borderLight,
+  },
+  catHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  catBackBtn: { padding: 4 },
+  catTitle: { fontSize: 17, fontWeight: '700', color: c.text },
+  catClearBtn: { padding: 4 },
+
+  catBreadcrumb: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one + 2,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + Spacing.half,
+    backgroundColor: c.surfaceAlt,
+    borderBottomWidth: 1,
+    borderBottomColor: c.borderLight,
+  },
+  catCrumb: { fontSize: 13, color: c.textTertiary, fontWeight: '500' },
+  catCrumbActive: { color: Brand.primary, fontWeight: '700' },
+
+  catBody: { flex: 1, padding: Spacing.three },
+
+  catGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two + Spacing.half,
+  },
+  catCard: {
+    width: '47%',
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 14,
+    padding: Spacing.three - 2,
+    alignItems: 'center',
+    gap: Spacing.two - 2,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  catCardIcon: {
+    width: 48, height: 48, borderRadius: 14,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  catCardName: { fontSize: 14, fontWeight: '600', color: c.text, textAlign: 'center' },
+  catCardCount: {
+    backgroundColor: c.surface,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  catCardCountText: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
+
+  catSectionLabel: { fontSize: 14, fontWeight: '700', color: c.text, marginBottom: Spacing.two + Spacing.half },
+  catChildList: { gap: Spacing.two - 2 },
+  catChildItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.three - 4,
+    paddingHorizontal: Spacing.three - Spacing.half,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: c.border,
+    backgroundColor: c.surfaceAlt,
+  },
+  catChildItemActive: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '08',
+  },
+  catChildItemLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2, flex: 1 },
+  catChildDot: {
+    width: 18, height: 18, borderRadius: 9,
+    borderWidth: 2, borderColor: c.border,
+    backgroundColor: 'transparent',
+  },
+  catChildDotActive: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary,
+  },
+  catChildText: { fontSize: 15, color: c.textSecondary, fontWeight: '500' },
+  catChildTextActive: { color: c.text, fontWeight: '700' },
+
+  catSelectedConfirm: {
+    alignItems: 'center',
+    gap: Spacing.two + Spacing.half,
+    paddingVertical: Spacing.four,
+  },
+  catSelectedName: { fontSize: 18, fontWeight: '700', color: c.text },
+  catConfirmBtn: {
+    backgroundColor: Brand.primary,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three - 2,
+    borderRadius: 12,
+  },
+  catConfirmBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  catFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + Spacing.half,
+    borderTopWidth: 1,
+    borderTopColor: c.borderLight,
+    gap: Spacing.two,
   },
-  modalSubItemText: { fontSize: 14, color: c.textSecondary },
+  catFooterInfo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two - 2, flex: 1 },
+  catFooterText: { fontSize: 14, fontWeight: '600', color: c.text, flex: 1 },
+  catDoneBtn: {
+    backgroundColor: Brand.primary,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two + Spacing.half,
+    borderRadius: 12,
+  },
+  catDoneBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });
 
 // ── Collapsible Section Card ────────────────────────────────────────
