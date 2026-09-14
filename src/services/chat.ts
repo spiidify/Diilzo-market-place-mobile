@@ -44,6 +44,11 @@ export async function fetchChatMessages(threadId: number): Promise<ChatMessage[]
   });
   // Handle both paginated and non-paginated responses
   if (Array.isArray(data)) return data;
+  // Safety: if results is missing or not an array, return empty
+  if (!data || !Array.isArray(data.results)) {
+    console.warn('[chat] Unexpected messages response format:', typeof data, data);
+    return [];
+  }
   return data.results;
 }
 

@@ -217,6 +217,7 @@ export default function ChatThreadScreen() {
         fetchChatMessages(threadId),
         fetchChatThread(threadId).catch(() => null as ChatThread | null),
       ]);
+      console.log('[chat] Loaded messages:', msgs.length, 'for thread', threadId);
       setMessages(msgs);
       // Refresh badge counts since loading messages marks them as read
       refreshBadges();
@@ -251,9 +252,12 @@ export default function ChatThreadScreen() {
 
     async function connectSSE() {
       abortController = new AbortController();
+      const ac = abortController;
       try {
         const token = await getAccessToken();
         const since = new Date(Date.now() - 1000).toISOString();
+        // Add a 5-second timeout — if SSE doesn't connect quickly, fall back to polling
+        const timeoutId = setTimeout(() => ac.abort(), 5000);
         const response = await fetch(`${BASE_URL}/chat/threads/${threadId}/stream/?since=${encodeURIComponent(since)}`, {
           method: 'GET',
           headers: {
@@ -261,8 +265,9 @@ export default function ChatThreadScreen() {
             'Accept': 'text/event-stream',
             'Cache-Control': 'no-cache',
           },
-          signal: abortController.signal,
+          signal: ac.signal,
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok || !response.body) {
           throw new Error('SSE unavailable');
@@ -283,9 +288,13 @@ export default function ChatThreadScreen() {
             if (evt.startsWith(':')) continue; // Heartbeat comment
             const lines = evt.split('\n');
             let data = '';
+            let eventType = '';
             for (const line of lines) {
+              if (line.startsWith('event: ')) eventType = line.slice(7).trim();
               if (line.startsWith('data: ')) data = line.slice(6);
             }
+            // Only process message events — skip presence, heartbeat, etc.
+            if (!data || eventType === 'presence') continue;
             if (data) {
               try {
                 const msg = JSON.parse(data);
