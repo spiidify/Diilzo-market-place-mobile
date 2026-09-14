@@ -76,6 +76,7 @@ export default function AppTabs() {
       <Tabs.Screen name="(auth)/register" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="(auth)/forgot-password" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="(auth)/reset-password" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="(auth)/two-factor" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       {/* Subdirectory routes — handled by their own Stack layouts */}
       <Tabs.Screen name="chat" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
