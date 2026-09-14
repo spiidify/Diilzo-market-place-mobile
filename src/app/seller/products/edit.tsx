@@ -291,6 +291,9 @@ export default function EditProductScreen() {
   const selectedParent = selectedCategory?.parent
     ? categories.find((c) => c.id === selectedCategory.parent)
     : null;
+  const displayCategory = selectedCategory?.children && selectedCategory.children.length > 0
+    ? selectedCategory
+    : selectedParent;
   const isLoading = loadingMeta || loadingProduct;
   const totalImages = existingImages.length + newImages.length;
 
@@ -726,8 +729,8 @@ export default function EditProductScreen() {
               </View>
 
               <ScrollView style={styles.catBody} showsVerticalScrollIndicator={false}>
-                {/* If no parent selected, show root categories */}
-                {!selectedParent && !selectedCategory && (
+                {/* If no category selected, show root categories */}
+                {!categoryId && (
                   <View style={styles.catGrid}>
                     {categories.filter((c) => !c.parent).map((cat) => (
                       <Pressable
@@ -756,34 +759,34 @@ export default function EditProductScreen() {
                   </View>
                 )}
 
-                {/* If a parent is selected and has children, show children */}
-                {selectedParent && selectedParent.children && selectedParent.children.length > 0 && (
+                {/* If a category with children is selected, show its children */}
+                {displayCategory && displayCategory.children && displayCategory.children.length > 0 && (
                   <View>
                     <Text style={styles.catSectionLabel}>
-                      Sub-categories in {selectedParent.name}
+                      Sub-categories in {displayCategory.name}
                     </Text>
                     <View style={styles.catChildList}>
                       {/* Option to use the parent itself */}
                       <Pressable
                         style={({ pressed }) => [
                           styles.catChildItem,
-                          categoryId === selectedParent.id && styles.catChildItemActive,
+                          categoryId === displayCategory.id && styles.catChildItemActive,
                           pressed && { opacity: 0.8 },
                         ]}
-                        onPress={() => { setCategoryId(selectedParent.id); setShowCategoryModal(false); }}
+                        onPress={() => { setCategoryId(displayCategory.id); setShowCategoryModal(false); }}
                       >
                         <View style={styles.catChildItemLeft}>
-                          <View style={[styles.catChildDot, categoryId === selectedParent.id && styles.catChildDotActive]} />
-                          <Text style={[styles.catChildText, categoryId === selectedParent.id && styles.catChildTextActive]}>
-                            Use {selectedParent.name} (no sub-category)
+                          <View style={[styles.catChildDot, categoryId === displayCategory.id && styles.catChildDotActive]} />
+                          <Text style={[styles.catChildText, categoryId === displayCategory.id && styles.catChildTextActive]}>
+                            Use {displayCategory.name} (no sub-category)
                           </Text>
                         </View>
-                        {categoryId === selectedParent.id && (
+                        {categoryId === displayCategory.id && (
                           <MaterialCommunityIcons name="check-circle" size={22} color={Brand.primary} />
                         )}
                       </Pressable>
 
-                      {selectedParent.children.map((child) => (
+                      {displayCategory.children.map((child) => (
                         <Pressable
                           key={`child-${child.id}`}
                           style={({ pressed }) => [
@@ -808,11 +811,11 @@ export default function EditProductScreen() {
                   </View>
                 )}
 
-                {/* If a parent with no children is selected */}
-                {selectedCategory && !selectedParent && (
+                {/* If a leaf category (no children) is selected, show confirmation */}
+                {categoryId && !displayCategory && (
                   <View style={styles.catSelectedConfirm}>
                     <MaterialCommunityIcons name="check-circle" size={48} color={Brand.primary} />
-                    <Text style={styles.catSelectedName}>{selectedCategory.name}</Text>
+                    <Text style={styles.catSelectedName}>{selectedCategory?.name}</Text>
                     <Pressable
                       style={styles.catConfirmBtn}
                       onPress={() => setShowCategoryModal(false)}
