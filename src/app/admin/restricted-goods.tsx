@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -33,7 +32,6 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 export default function AdminRestrictedGoodsScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [goods, setGoods] = useState<AdminRestrictedGood[]>([]);

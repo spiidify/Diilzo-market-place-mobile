@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -26,7 +25,6 @@ import {
 const STATUS_FILTERS = ['all', 'active', 'inactive'] as const;
 
 export default function AdminProductsScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] = useState<AdminProduct[]>([]);

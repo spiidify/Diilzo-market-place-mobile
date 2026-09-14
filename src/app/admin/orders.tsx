@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -38,7 +37,6 @@ const PAYMENT_COLORS: Record<string, string> = {
 const FILTERS = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
 
 export default function AdminOrdersScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);

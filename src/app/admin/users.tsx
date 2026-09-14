@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -23,7 +22,6 @@ import {
 } from '@/services/adminApi';
 
 export default function AdminUsersScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [users, setUsers] = useState<AdminUser[]>([]);

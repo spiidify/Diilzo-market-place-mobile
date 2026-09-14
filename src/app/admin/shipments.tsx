@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -37,7 +36,6 @@ const FILTERS = ['all', 'pending', 'shipped', 'in_transit', 'delivered'] as cons
 const STATUS_OPTIONS = ['pending', 'shipped', 'in_transit', 'delivered'] as const;
 
 export default function AdminShipmentsScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [shipments, setShipments] = useState<AdminShipment[]>([]);

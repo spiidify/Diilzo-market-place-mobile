@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -22,7 +21,6 @@ import {
 } from '@/services/adminApi';
 
 export default function AdminSettingsScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [settings, setSettings] = useState<AdminSettings | null>(null);

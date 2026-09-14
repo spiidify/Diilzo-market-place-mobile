@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -30,7 +29,6 @@ import {
 const POSITION_OPTIONS = ['home_top', 'home_mid', 'home_bottom', 'category_top'] as const;
 
 export default function AdminSlidesScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [slides, setSlides] = useState<AdminSlide[]>([]);

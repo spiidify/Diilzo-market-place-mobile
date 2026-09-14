@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -35,7 +34,6 @@ const STATUS_COLORS: Record<string, string> = {
 const FILTERS = ['pending', 'approved', 'rejected'] as const;
 
 export default function AdminKYCScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [kycs, setKycs] = useState<AdminKYC[]>([]);

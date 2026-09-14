@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -19,7 +18,6 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 const POLL_INTERVAL_MS = 30000;
 
 export default function AdminOpsCentralScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);

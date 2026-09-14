@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -37,7 +36,6 @@ const VERIFICATION_COLORS: Record<string, string> = {
 const FILTERS = ['all', 'pending', 'approved', 'suspended', 'rejected'] as const;
 
 export default function AdminStoresScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [stores, setStores] = useState<AdminStore[]>([]);

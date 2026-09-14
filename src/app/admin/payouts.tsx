@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -32,7 +31,6 @@ const STATUS_COLORS: Record<string, string> = {
 const FILTERS = ['all', 'pending', 'processing', 'completed', 'failed'] as const;
 
 export default function AdminPayoutsScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [payouts, setPayouts] = useState<AdminPayout[]>([]);
