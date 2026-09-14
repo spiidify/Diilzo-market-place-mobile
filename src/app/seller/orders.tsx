@@ -204,39 +204,53 @@ export default function SellerOrdersScreen() {
         </View>
       )}
 
-      {/* Period filter row */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodRow} contentContainerStyle={styles.periodContent}>
-        {PERIOD_FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            style={[styles.periodTab, periodFilter === f.key && styles.periodTabActive]}
-            onPress={() => setPeriodFilter(f.key)}
-          >
-            <Text style={[styles.periodText, periodFilter === f.key && styles.periodTextActive]}>{f.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      {/* Filter panel */}
+      <View style={styles.filterPanel}>
+        <View style={styles.filterHeader}>
+          <View style={styles.filterHeaderLeft}>
+            <MaterialCommunityIcons name="filter-variant" size={16} color={Brand.text} />
+            <Text style={styles.filterHeaderText}>Filters</Text>
+          </View>
+          {hasActiveFilters ? (
+            <Pressable style={styles.clearBtn} onPress={clearAllFilters} hitSlop={8}>
+              <MaterialCommunityIcons name="close" size={14} color={Brand.primary} />
+              <Text style={styles.clearBtnText}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
 
-      {/* Status filter row */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusRow} contentContainerStyle={styles.statusContent}>
-        {STATUS_FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            style={[styles.statusTab, statusFilter === f.key && styles.statusTabActive]}
-            onPress={() => setStatusFilter(f.key)}
-          >
-            <Text style={[styles.statusText2, statusFilter === f.key && styles.statusText2Active]}>{f.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+        {/* Period chips */}
+        <View style={styles.chipSection}>
+          <Text style={styles.chipSectionLabel}>PERIOD</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+            {PERIOD_FILTERS.map((f) => (
+              <Pressable
+                key={f.key}
+                style={[styles.chip, periodFilter === f.key && styles.chipActiveDark]}
+                onPress={() => setPeriodFilter(f.key)}
+              >
+                <Text style={[styles.chipText, periodFilter === f.key && styles.chipTextActive]}>{f.label}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
 
-      {/* Clear filters */}
-      {hasActiveFilters ? (
-        <Pressable style={styles.clearBar} onPress={clearAllFilters}>
-          <MaterialCommunityIcons name="filter-remove-outline" size={14} color={Brand.primary} />
-          <Text style={styles.clearBarText}>Clear all filters</Text>
-        </Pressable>
-      ) : null}
+        {/* Status chips */}
+        <View style={styles.chipSection}>
+          <Text style={styles.chipSectionLabel}>STATUS</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+            {STATUS_FILTERS.map((f) => (
+              <Pressable
+                key={f.key}
+                style={[styles.chip, statusFilter === f.key && styles.chipActivePrimary]}
+                onPress={() => setStatusFilter(f.key)}
+              >
+                <Text style={[styles.chipText, statusFilter === f.key && styles.chipTextActive]}>{f.label}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
 
       {/* Orders list */}
       {loading ? (
@@ -306,36 +320,35 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 14, fontWeight: '800', color: Brand.text },
   statLabel: { fontSize: 10, color: Brand.textTertiary, fontWeight: '600' },
 
-  // Period filter row
-  periodRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border, marginTop: 8 },
-  periodContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 10 },
-  periodTab: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18,
-    backgroundColor: Brand.surfaceAlt, minHeight: 36, justifyContent: 'center',
+  // Filter panel
+  filterPanel: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 6,
+    borderRadius: 16,
+    padding: 14,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  periodTabActive: { backgroundColor: Brand.dark },
-  periodText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
-  periodTextActive: { color: '#FFFFFF', fontWeight: '700' },
+  filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  filterHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  filterHeaderText: { fontSize: 15, fontWeight: '800', color: Brand.text },
+  clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Brand.primary + '12', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  clearBtnText: { fontSize: 12, fontWeight: '700', color: Brand.primary },
 
-  // Status filter row
-  statusRow: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Brand.border },
-  statusContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 10 },
-  statusTab: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18,
-    backgroundColor: Brand.surfaceAlt, minHeight: 36, justifyContent: 'center',
-    borderWidth: 1, borderColor: 'transparent',
-  },
-  statusTabActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  statusText2: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
-  statusText2Active: { color: '#FFFFFF', fontWeight: '700' },
+  chipSection: { marginBottom: 12 },
+  chipSectionLabel: { fontSize: 10, fontWeight: '800', color: Brand.textTertiary, letterSpacing: 1, marginBottom: 8 },
+  chipScroll: { gap: 8 },
 
-  // Clear filters bar
-  clearBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 8, marginHorizontal: 12, marginTop: 8,
-    backgroundColor: Brand.primary + '10', borderRadius: 8,
+  chip: {
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20,
+    backgroundColor: Brand.surfaceAlt, minHeight: 40, justifyContent: 'center',
+    borderWidth: 1.5, borderColor: 'transparent',
   },
-  clearBarText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
+  chipActiveDark: { backgroundColor: Brand.dark, borderColor: Brand.dark },
+  chipActivePrimary: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  chipText: { fontSize: 13, fontWeight: '600', color: Brand.textSecondary },
+  chipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   // Orders list
   list: { padding: 12, gap: 10 },
