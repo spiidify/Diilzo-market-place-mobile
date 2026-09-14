@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +16,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
+import { toggleTwoFactor } from '@/services/auth';
 import {
   authenticateWithBiometrics,
   disableBiometric,
@@ -27,12 +30,12 @@ import {
   setBiometricEnabled,
 } from '@/services/biometric';
 import { isSoundEnabled, playSound, setSoundEnabled, Sounds } from '@/services/sound';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function PrivacyScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { user, refreshUser } = useAuth();
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState('Biometric');
@@ -40,6 +43,10 @@ export default function PrivacyScreen() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(true);
   const [loading, setLoading] = useState(true);
+
+  // 2FA
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.two_factor_enabled || false);
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
 
   // Notification preferences
   const [notifPrefs, setNotifPrefs] = useState<Array<{
@@ -168,6 +175,43 @@ export default function PrivacyScreen() {
     });
   };
 
+  const handleTwoFactorToggle = async (value: boolean) => {
+    // Prompt for password to confirm the change
+    Alert.alert(
+      value ? 'Enable Two-Factor Authentication' : 'Disable Two-Factor Authentication',
+      value
+        ? 'When enabled, a 6-digit code will be sent to your email on every login.'
+        : 'Are you sure you want to disable 2FA? Your account will be less secure.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            Alert.prompt(
+              'Enter Password',
+              `Enter your password to ${value ? 'enable' : 'disable'} 2FA`,
+              async (password) => {
+                if (!password) return;
+                setTwoFactorLoading(true);
+                try {
+                  const result = await toggleTwoFactor(value, password);
+                  setTwoFactorEnabled(result.two_factor_enabled);
+                  await refreshUser();
+                  Alert.alert('Success', result.detail);
+                } catch (e: any) {
+                  Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to update 2FA');
+                } finally {
+                  setTwoFactorLoading(false);
+                }
+              },
+              'secure-text',
+            );
+          },
+        },
+      ]
+    );
+  };
+
   const handlePrivacyPolicy = () => {
     Linking.openURL('https://diilzo.com/privacy').catch(() => {
       Alert.alert('Error', 'Could not open Privacy Policy');
@@ -269,6 +313,37 @@ export default function PrivacyScreen() {
                       trackColor={{ false: colors.border, true: Brand.primary }}
                       thumbColor="#FFFFFF"
                     />
+                  </View>
+
+                  <View style={styles.rowDivider} />
+
+                  {/* Two-Factor Authentication */}
+                  <View style={styles.settingRow}>
+                    <View style={[styles.settingIcon, { backgroundColor: Brand.primary + '20' }]}>
+                      <MaterialCommunityIcons
+                        name={twoFactorEnabled ? 'shield-check' : 'shield-outline'}
+                        size={22}
+                        color={Brand.primary}
+                      />
+                    </View>
+                    <View style={styles.settingInfo}>
+                      <Text style={styles.settingLabel}>Two-Factor Authentication</Text>
+                      <Text style={styles.settingSublabel}>
+                        {twoFactorEnabled
+                          ? 'A 6-digit code is sent to your email on every login'
+                          : 'Add an extra layer of security with email OTP'}
+                      </Text>
+                    </View>
+                    {twoFactorLoading ? (
+                      <ActivityIndicator size="small" color={Brand.primary} />
+                    ) : (
+                      <Switch
+                        value={twoFactorEnabled}
+                        onValueChange={handleTwoFactorToggle}
+                        trackColor={{ false: colors.border, true: Brand.primary }}
+                        thumbColor="#FFFFFF"
+                      />
+                    )}
                   </View>
                 </View>
               </View>
