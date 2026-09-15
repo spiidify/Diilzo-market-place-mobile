@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -15,7 +14,7 @@ import {
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { getShipmentDetail, getShipments, type SellerShipment, type SellerShipmentDetail } from '@/services/seller';
+import { getShipments, type SellerShipment } from '@/services/seller';
 
 export default function SellerShipmentsScreen() {
   const router = useRouter();
@@ -34,9 +33,6 @@ export default function SellerShipmentsScreen() {
   const [shipments, setShipments] = useState<SellerShipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [detail, setDetail] = useState<SellerShipmentDetail | null>(null);
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -55,24 +51,13 @@ export default function SellerShipmentsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openDetail = async (id: number) => {
-    setDetailVisible(true);
-    setDetailLoading(true);
-    setDetail(null);
-    try {
-      const data = await getShipmentDetail(id);
-      setDetail(data);
-    } catch {
-      setDetailVisible(false);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
   const renderItem = ({ item }: { item: SellerShipment }) => {
     const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+        onPress={() => router.push(`/seller/shipments/${item.id}` as any)}
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.orderNumber}>#{item.order_number}</Text>
           <View style={[styles.badge, { backgroundColor: color + '20' }]}>
@@ -129,63 +114,6 @@ export default function SellerShipmentsScreen() {
             }
           />
         )}
-
-        <Modal visible={detailVisible} animationType="slide" transparent onRequestClose={() => setDetailVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Shipment Details</Text>
-                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}><MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} /></Pressable>
-              </View>
-              {detailLoading ? (
-                <ActivityIndicator size="large" color={Brand.primary} style={{ padding: 40 }} />
-              ) : detail ? (
-                <View>
-                  <Text style={styles.detailLabel}>Order</Text>
-                  <Text style={styles.detailValue}>#{detail.order_number}</Text>
-                  <Text style={styles.detailLabel}>Carrier</Text>
-                  <Text style={styles.detailValue}>{detail.carrier}</Text>
-                  <Text style={styles.detailLabel}>Tracking Number</Text>
-                  <Text style={styles.detailValue}>{detail.tracking_number || '—'}</Text>
-                  <Text style={styles.detailLabel}>Status</Text>
-                  <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status.replace(/_/g, ' ')}</Text>
-                  </View>
-                  <Text style={styles.detailLabel}>Shipping Method</Text>
-                  <Text style={styles.detailValue}>{detail.shipping_method}</Text>
-                  <Text style={styles.detailLabel}>Fulfillment Type</Text>
-                  <Text style={styles.detailValue}>{detail.fulfillment_type}</Text>
-                  <Text style={styles.detailLabel}>Shipping Cost</Text>
-                  <Text style={styles.detailValue}>UGX {Number(detail.shipping_cost).toLocaleString()}</Text>
-                  {detail.weight_kg && detail.weight_kg !== '0' && (
-                    <>
-                      <Text style={styles.detailLabel}>Weight</Text>
-                      <Text style={styles.detailValue}>{detail.weight_kg} kg</Text>
-                    </>
-                  )}
-                  {detail.shipped_at && (
-                    <>
-                      <Text style={styles.detailLabel}>Shipped At</Text>
-                      <Text style={styles.detailValue}>{new Date(detail.shipped_at).toLocaleString()}</Text>
-                    </>
-                  )}
-                  {detail.estimated_delivery && (
-                    <>
-                      <Text style={styles.detailLabel}>Est. Delivery</Text>
-                      <Text style={styles.detailValue}>{new Date(detail.estimated_delivery).toLocaleString()}</Text>
-                    </>
-                  )}
-                  {detail.delivered_at && (
-                    <>
-                      <Text style={styles.detailLabel}>Delivered At</Text>
-                      <Text style={styles.detailValue}>{new Date(detail.delivered_at).toLocaleString()}</Text>
-                    </>
-                  )}
-                </View>
-              ) : null}
-            </View>
-          </View>
-        </Modal>
       </View>
     </View>
   );
@@ -213,10 +141,4 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
   emptySub: { fontSize: 13, color: c.textTertiary },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: c.text },
 });

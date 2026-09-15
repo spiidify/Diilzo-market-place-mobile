@@ -26,6 +26,8 @@ interface AnalyticsData {
   revenue_series: { label: string; value: number }[];
   top_products: { id: number; name: string; sold: number; revenue: number; image_url?: string | null }[];
   sales_by_category: { name: string; revenue: number }[];
+  status_distribution?: { status: string; count: number }[];
+  avg_order_value?: number;
 }
 
 const PERIODS: { key: Period; label: string }[] = [
@@ -33,6 +35,24 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: '30d', label: '30 Days' },
   { key: '90d', label: '90 Days' },
 ];
+
+const STATUS_DIST_COLORS: Record<string, string> = {
+  pending: '#F59E0B',
+  accepted: '#3B82F6',
+  processing: '#8B5CF6',
+  shipped: '#06B6D4',
+  delivered: '#16A34A',
+  cancelled: '#EF4444',
+};
+
+const STATUS_DIST_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  accepted: 'Accepted',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+};
 
 export default function SellerAnalyticsScreen() {
   const router = useRouter();
@@ -168,6 +188,14 @@ export default function SellerAnalyticsScreen() {
                 <Text style={styles.kpiValue}>{Number(data?.conversion_rate || 0).toFixed(1)}%</Text>
                 <Text style={styles.kpiLabel}>Conversion</Text>
               </View>
+
+              <View style={styles.kpiCard}>
+                <View style={[styles.kpiIcon, { backgroundColor: '#8B5CF620' }]}>
+                  <MaterialCommunityIcons name="calculator" size={22} color="#8B5CF6" />
+                </View>
+                <Text style={styles.kpiValue}>UGX {Number(data?.avg_order_value || 0).toLocaleString()}</Text>
+                <Text style={styles.kpiLabel}>Avg Order</Text>
+              </View>
             </View>
 
             {/* ── Revenue chart ─────────────────────────────────────── */}
@@ -265,6 +293,37 @@ export default function SellerAnalyticsScreen() {
                 </View>
               ) : (
                 <Text style={styles.emptyText}>No category sales yet</Text>
+              )}
+            </View>
+
+            {/* ── Order status distribution ──────────────────────────── */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Order Status Distribution</Text>
+              {data?.status_distribution && data.status_distribution.length > 0 ? (
+                <View style={styles.statusDistList}>
+                  {data.status_distribution.map((s, idx) => {
+                    const total = data.status_distribution!.reduce((sum, x) => sum + x.count, 0);
+                    const pct = total > 0 ? (s.count / total) * 100 : 0;
+                    const color = STATUS_DIST_COLORS[s.status] || colors.textTertiary;
+                    return (
+                      <View key={`status-${idx}`} style={styles.statusDistRow}>
+                        <View style={styles.statusDistHeader}>
+                          <View style={[styles.statusDistDot, { backgroundColor: color }]} />
+                          <Text style={styles.statusDistLabel}>
+                            {STATUS_DIST_LABELS[s.status] || s.status.replace(/_/g, ' ')}
+                          </Text>
+                          <Text style={styles.statusDistCount}>{s.count}</Text>
+                          <Text style={styles.statusDistPct}>{pct.toFixed(0)}%</Text>
+                        </View>
+                        <View style={styles.statusDistBar}>
+                          <View style={[styles.statusDistFill, { width: `${Math.max(pct, 2)}%`, backgroundColor: color }]} />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={styles.emptyText}>No order data yet</Text>
               )}
             </View>
           </ScrollView>
@@ -404,4 +463,19 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   progressBar: { height: '100%', backgroundColor: Brand.primary, borderRadius: 4 },
 
   emptyText: { fontSize: 13, color: c.textTertiary, paddingVertical: Spacing.two },
+
+  // ── Order status distribution ───────────────────────────────────
+  statusDistList: { gap: Spacing.two + Spacing.half },
+  statusDistRow: { gap: Spacing.one + Spacing.half },
+  statusDistHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  statusDistDot: { width: 10, height: 10, borderRadius: 5 },
+  statusDistLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: c.text, textTransform: 'capitalize' },
+  statusDistCount: { fontSize: 13, fontWeight: '800', color: c.text, marginRight: 8 },
+  statusDistPct: { fontSize: 12, color: c.textTertiary, fontWeight: '500' },
+  statusDistBar: {
+    height: 8, backgroundColor: c.surfaceAlt, borderRadius: 4, overflow: 'hidden',
+  },
+  statusDistFill: { height: '100%', borderRadius: 4 },
 });

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -16,11 +15,8 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  getDisputeDetail,
   getDisputes,
-  updateDisputeNotes,
   type SellerDispute,
-  type SellerDisputeDetail,
 } from '@/services/seller';
 
 export default function SellerDisputesScreen() {
@@ -38,11 +34,6 @@ export default function SellerDisputesScreen() {
   const [disputes, setDisputes] = useState<SellerDispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [detail, setDetail] = useState<SellerDisputeDetail | null>(null);
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [notesText, setNotesText] = useState('');
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -61,39 +52,13 @@ export default function SellerDisputesScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openDetail = async (id: number) => {
-    setDetailVisible(true);
-    setDetailLoading(true);
-    setDetail(null);
-    try {
-      const data = await getDisputeDetail(id);
-      setDetail(data);
-      setNotesText(data.admin_notes || '');
-    } catch {
-      Alert.alert('Error', 'Failed to load dispute');
-      setDetailVisible(false);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const handleSaveNotes = async () => {
-    if (!detail) return;
-    setSaving(true);
-    try {
-      await updateDisputeNotes(detail.id, notesText);
-      Alert.alert('Saved', 'Notes updated successfully');
-    } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.error || 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const renderItem = ({ item }: { item: SellerDispute }) => {
     const color = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
-      <Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} onPress={() => openDetail(item.id)}>
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+        onPress={() => router.push(`/seller/disputes/${item.id}` as any)}
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.orderNumber}>#{item.order_number}</Text>
           <View style={[styles.badge, { backgroundColor: color + '20' }]}>
@@ -143,53 +108,6 @@ export default function SellerDisputesScreen() {
             }
           />
         )}
-
-        {detailVisible && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Dispute Details</Text>
-                <Pressable onPress={() => setDetailVisible(false)} hitSlop={12}>
-                  <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
-                </Pressable>
-              </View>
-              {detailLoading ? (
-                <ActivityIndicator size="large" color={Brand.primary} style={{ padding: 40 }} />
-              ) : detail ? (
-                <FlatList
-                  data={[]}
-                  renderItem={() => null}
-                  ListHeaderComponent={
-                    <View>
-                      <Text style={styles.detailLabel}>Order</Text>
-                      <Text style={styles.detailValue}>#{detail.order_number}</Text>
-                      <Text style={styles.detailLabel}>Reason</Text>
-                      <Text style={styles.detailValue}>{detail.reason}</Text>
-                      <Text style={styles.detailLabel}>Description</Text>
-                      <Text style={styles.detailValue}>{detail.description}</Text>
-                      <Text style={styles.detailLabel}>Status</Text>
-                      <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[detail.status] || colors.textTertiary) + '20', alignSelf: 'flex-start', marginTop: 4 }]}>
-                        <Text style={[styles.badgeText, { color: STATUS_COLORS[detail.status] || colors.textTertiary }]}>{detail.status}</Text>
-                      </View>
-                      {detail.refund_amount !== '0' && (
-                        <>
-                          <Text style={styles.detailLabel}>Refund Amount</Text>
-                          <Text style={styles.detailValue}>UGX {Number(detail.refund_amount).toLocaleString()}</Text>
-                        </>
-                      )}
-                      <Text style={styles.detailLabel}>Admin Notes</Text>
-                      <Text style={styles.detailValue}>{detail.admin_notes || 'No admin notes yet.'}</Text>
-                      <Text style={styles.detailLabel}>Opened By</Text>
-                      <Text style={styles.detailValue}>{detail.opened_by}</Text>
-                      <Text style={styles.detailLabel}>Date</Text>
-                      <Text style={styles.detailValue}>{new Date(detail.created_at).toLocaleString()}</Text>
-                    </View>
-                  }
-                />
-              ) : null}
-            </View>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -215,10 +133,4 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },
   emptySub: { fontSize: 13, color: c.textTertiary },
-  modalOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
-  modalContent: { backgroundColor: c.surface, borderRadius: 20, padding: 24, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
-  detailLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, marginTop: 12, marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 14, color: c.text },
 });

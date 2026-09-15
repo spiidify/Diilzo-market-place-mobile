@@ -34,11 +34,26 @@ export interface SellerLowStockProduct {
   stock_quantity: number;
 }
 
+export interface SellerSupplierStats {
+  pending_rfqs: number;
+  accepted_rfqs: number;
+  unread_inquiries: number;
+}
+
+export interface SellerProfileCompletion {
+  completed: number;
+  total: number;
+  percentage: number;
+  missing_fields: string[];
+}
+
 export interface SellerDashboard {
   store: any;
   stats: SellerStats;
   recent_orders?: SellerRecentOrder[];
   low_stock_products?: SellerLowStockProduct[];
+  supplier_stats?: SellerSupplierStats | null;
+  profile_completion?: SellerProfileCompletion | null;
 }
 
 export interface SellerOrder {
@@ -102,6 +117,97 @@ export interface AnalyticsData {
   revenue_series: { label: string; value: number }[];
   top_products: { id: number; name: string; sold: number; revenue: number }[];
   sales_by_category: { name: string; revenue: number }[];
+  status_distribution?: { status: string; count: number }[];
+  avg_order_value?: number;
+}
+
+export interface SellerDisputeDetail {
+  id: number;
+  order_number: string;
+  reason: string;
+  description: string;
+  status: string;
+  resolution: string;
+  refund_amount: string;
+  admin_notes: string;
+  opened_by: string;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface SellerRFQDetail {
+  id: number;
+  product_name: string;
+  quantity: number;
+  target_price: string | null;
+  quoted_price: string | null;
+  quoted_total: string | null;
+  status: string;
+  buyer_email: string;
+  notes: string;
+  seller_notes: string;
+  created_at: string;
+}
+
+export interface SellerShipmentDetail {
+  id: number;
+  order_number: string;
+  carrier: string;
+  tracking_number: string;
+  status: string;
+  shipping_method: string;
+  fulfillment_type: string;
+  shipping_cost: string;
+  weight_kg: string;
+  shipped_at: string | null;
+  estimated_delivery: string | null;
+  delivered_at: string | null;
+  created_at: string;
+}
+
+export interface EscrowHold {
+  id: number;
+  order_number: string;
+  buyer_email: string;
+  amount_held: string;
+  currency: string;
+  status: string;
+  buyer_confirmed_receipt: boolean;
+  auto_release_date: string | null;
+  held_at: string;
+  released_at: string | null;
+  tracking_number: string;
+}
+
+export interface EscrowResponse {
+  escrows: EscrowHold[];
+  total_held: string;
+  total_released: string;
+  total_count: number;
+  trade_assurance: boolean;
+}
+
+export interface MembershipInfo {
+  tier: string;
+  status: string;
+  annual_fee: string;
+  current_period_start: string;
+  current_period_end: string;
+  days_remaining: number;
+  auto_renew: boolean;
+  is_active: boolean;
+  features_enabled: Record<string, boolean>;
+  store_verification_status: string;
+  store_trade_assurance: boolean;
+}
+
+export interface PendingStatus {
+  has_store: boolean;
+  status: string;
+  is_supplier: boolean;
+  verification_status: string;
+  name: string;
+  created_at: string | null;
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────
@@ -833,4 +939,34 @@ export async function deleteWholesaleTier(productId: number, tierId: number): Pr
     url: `${SELLER_BASE}/${productId}/wholesale_tier_delete/`,
     params: { tier_id: tierId },
   });
+}
+
+// ── Escrow & Trade Assurance ────────────────────────────────────────
+
+/** GET /seller/escrow/ — escrow holds for the seller's store */
+export async function getEscrow(): Promise<EscrowResponse> {
+  return apiRequest<EscrowResponse>({ method: 'GET', url: `${SELLER_BASE}/escrow/` });
+}
+
+// ── Membership (B2B Supplier) ──────────────────────────────────────
+
+/** GET /seller/membership/ — view supplier membership */
+export async function getMembership(): Promise<MembershipInfo> {
+  return apiRequest<MembershipInfo>({ method: 'GET', url: `${SELLER_BASE}/membership/` });
+}
+
+/** POST /seller/membership/ — upgrade supplier membership tier */
+export async function upgradeMembership(tier: string): Promise<any> {
+  return apiRequest<any>({
+    method: 'POST',
+    url: `${SELLER_BASE}/membership/`,
+    data: { tier },
+  });
+}
+
+// ── Pending Status ─────────────────────────────────────────────────
+
+/** GET /seller/pending_status/ — check if store is pending approval */
+export async function getPendingStatus(): Promise<PendingStatus> {
+  return apiRequest<PendingStatus>({ method: 'GET', url: `${SELLER_BASE}/pending_status/` });
 }

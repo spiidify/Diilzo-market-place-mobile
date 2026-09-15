@@ -153,6 +153,49 @@ export default function SellerFinanceDashboardScreen() {
                 <Text style={styles.summaryLabel}>Net Earnings</Text>
               </View>
             </View>
+            {/* Extended summary row */}
+            <View style={[styles.summaryGrid, { marginTop: 8 }]}>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: Brand.danger, fontSize: 12 }]}>UGX {fmt(data?.refunds_30d)}</Text>
+                <Text style={styles.summaryLabel}>Refunds</Text>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: '#8B5CF6', fontSize: 12 }]}>UGX {fmt(data?.platform_fees_30d)}</Text>
+                <Text style={styles.summaryLabel}>Platform Fees</Text>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: '#F59E0B', fontSize: 12 }]}>UGX {fmt(data?.ad_spend_30d)}</Text>
+                <Text style={styles.summaryLabel}>Ad Spend</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Commission rate + transaction count */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Commission Summary</Text>
+            <View style={styles.commissionRow}>
+              <View style={styles.commissionMetric}>
+                <View style={[styles.commissionIcon, { backgroundColor: '#8B5CF620' }]}>
+                  <MaterialCommunityIcons name="percent" size={20} color="#8B5CF6" />
+                </View>
+                <Text style={styles.commissionValue}>{data?.commission_rate || '0'}%</Text>
+                <Text style={styles.commissionLabel}>Current Rate</Text>
+              </View>
+              <View style={styles.commissionMetric}>
+                <View style={[styles.commissionIcon, { backgroundColor: Brand.primary + '20' }]}>
+                  <MaterialCommunityIcons name="swap-horizontal" size={20} color={Brand.primary} />
+                </View>
+                <Text style={styles.commissionValue}>{data?.commission_transactions_30d || 0}</Text>
+                <Text style={styles.commissionLabel}>Transactions</Text>
+              </View>
+              <View style={styles.commissionMetric}>
+                <View style={[styles.commissionIcon, { backgroundColor: Brand.success + '20' }]}>
+                  <MaterialCommunityIcons name="wallet-outline" size={20} color={Brand.success} />
+                </View>
+                <Text style={styles.commissionValue}>UGX {fmt(data?.eligible_for_payout)}</Text>
+                <Text style={styles.commissionLabel}>Eligible</Text>
+              </View>
+            </View>
           </View>
 
           {/* Active holds alert */}
@@ -244,6 +287,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   summaryCell: { flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 10, alignItems: 'center' },
   summaryValue: { fontSize: 13, fontWeight: '800' },
   summaryLabel: { fontSize: 10, color: c.textSecondary, marginTop: 4 },
+
+  // Commission summary
+  commissionRow: { flexDirection: 'row', gap: 10 },
+  commissionMetric: { flex: 1, alignItems: 'center', gap: 6 },
+  commissionIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  commissionValue: { fontSize: 14, fontWeight: '800', color: c.text },
+  commissionLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
 
   holdsAlert: {
     flexDirection: 'row', alignItems: 'center', gap: 10,

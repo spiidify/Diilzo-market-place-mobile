@@ -30,6 +30,15 @@ interface StatItem {
   bgColor: string;
 }
 
+const STATUS_DOT_COLORS: Record<string, string> = {
+  pending: '#F59E0B',
+  accepted: '#3B82F6',
+  processing: '#8B5CF6',
+  shipped: '#06B6D4',
+  delivered: '#16A34A',
+  cancelled: '#EF4444',
+};
+
 // ── Menu group definitions ──────────────────────────────────────────
 interface MenuItem {
   icon: string;
@@ -61,6 +70,10 @@ export default function SellerDashboardScreen() {
       setError(null);
       const result = await getMyStore();
       setData(result);
+      // Redirect to pending screen if store is not approved
+      if (result?.store?.status && result.store.status !== 'approved') {
+        router.replace('/seller/pending' as any);
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load dashboard');
     } finally {
@@ -146,6 +159,7 @@ export default function SellerDashboardScreen() {
         { icon: 'cash', label: 'Payouts', color: '#16A34A', route: '/seller/payouts' },
         { icon: 'chart-pie', label: 'Finance', color: '#16A34A', route: '/seller/finance' },
         { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' },
+        { icon: 'lock-outline', label: 'Escrow', color: '#F59E0B', route: '/seller/escrow' },
       ],
     },
     {
@@ -153,6 +167,7 @@ export default function SellerDashboardScreen() {
       items: [
         { icon: 'account-group', label: 'Staff', color: '#3B82F6', route: '/seller/staff' },
         { icon: 'shield-check-outline', label: 'Verification', color: colors.textSecondary, route: '/seller/verification' },
+        { icon: 'crown', label: 'Membership', color: '#F59E0B', route: '/seller/membership' },
         { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages', count: chatUnread },
         { icon: 'store-settings-outline', label: 'Settings', color: colors.textSecondary, route: '/seller/settings' },
       ],
@@ -266,6 +281,112 @@ export default function SellerDashboardScreen() {
             <MaterialCommunityIcons name="clipboard-list-outline" size={22} color={Brand.primary} />
             <Text style={styles.quickBtnTextDark}>View Orders</Text>
           </Pressable>
+        </View>
+
+        {/* ── Supplier KPIs (B2B only) ─────────────────────────────── */}
+        {data?.supplier_stats && (
+          <View style={styles.supplierKpiRow}>
+            <Pressable style={styles.supplierKpiCard} onPress={() => router.push('/seller/rfqs' as any)}>
+              <MaterialCommunityIcons name="file-document-outline" size={20} color="#8B5CF6" />
+              <Text style={styles.supplierKpiValue}>{data.supplier_stats.pending_rfqs}</Text>
+              <Text style={styles.supplierKpiLabel}>Pending RFQs</Text>
+            </Pressable>
+            <Pressable style={styles.supplierKpiCard} onPress={() => router.push('/seller/rfqs' as any)}>
+              <MaterialCommunityIcons name="check-circle-outline" size={20} color={Brand.primary} />
+              <Text style={styles.supplierKpiValue}>{data.supplier_stats.accepted_rfqs}</Text>
+              <Text style={styles.supplierKpiLabel}>Accepted</Text>
+            </Pressable>
+            <Pressable style={styles.supplierKpiCard} onPress={() => router.push('/seller/messages' as any)}>
+              <MaterialCommunityIcons name="comment-text-outline" size={20} color="#3B82F6" />
+              <Text style={styles.supplierKpiValue}>{data.supplier_stats.unread_inquiries}</Text>
+              <Text style={styles.supplierKpiLabel}>Inquiries</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* ── Profile completion (suppliers) ──────────────────────── */}
+        {data?.profile_completion && data.profile_completion.percentage < 100 && (
+          <Pressable
+            style={styles.completionCard}
+            onPress={() => router.push('/seller/settings' as any)}
+          >
+            <View style={styles.completionHeader}>
+              <MaterialCommunityIcons name="clipboard-check-outline" size={20} color={Brand.primary} />
+              <Text style={styles.completionTitle}>Profile Completion</Text>
+              <Text style={styles.completionPct}>{data.profile_completion.percentage}%</Text>
+            </View>
+            <View style={styles.completionBar}>
+              <View style={[styles.completionFill, { width: `${data.profile_completion.percentage}%` }]} />
+            </View>
+            <Text style={styles.completionSub}>
+              {data.profile_completion.completed}/{data.profile_completion.total} fields completed · Tap to finish
+            </Text>
+          </Pressable>
+        )}
+
+        {/* ── Recent Orders + Low Stock (2-column) ─────────────────── */}
+        <View style={styles.widgetsRow}>
+          {/* Recent Orders */}
+          <View style={styles.widgetCard}>
+            <View style={styles.widgetHeader}>
+              <Text style={styles.widgetTitle}>Recent Orders</Text>
+              <Pressable onPress={() => router.push('/seller/orders' as any)}>
+                <Text style={styles.widgetLink}>All ›</Text>
+              </Pressable>
+            </View>
+            {data?.recent_orders && data.recent_orders.length > 0 ? (
+              data.recent_orders.slice(0, 4).map((order, idx) => (
+                <Pressable
+                  key={`order-${idx}`}
+                  style={styles.widgetRow}
+                  onPress={() => router.push(`/seller/orders/${order.id}` as any)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.widgetOrderNum}>#{order.order_number}</Text>
+                    <Text style={styles.widgetDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
+                  </View>
+                  <Text style={styles.widgetAmount}>UGX {Number(order.seller_amount).toLocaleString()}</Text>
+                  <View style={[styles.widgetStatusDot, { backgroundColor: STATUS_DOT_COLORS[order.status] || colors.textTertiary }]} />
+                </Pressable>
+              ))
+            ) : (
+              <View style={styles.widgetEmpty}>
+                <MaterialCommunityIcons name="inbox-outline" size={24} color={colors.textTertiary} />
+                <Text style={styles.widgetEmptyText}>No orders yet</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Low Stock Alerts */}
+          <View style={styles.widgetCard}>
+            <View style={styles.widgetHeader}>
+              <Text style={styles.widgetTitle}>Low Stock</Text>
+              <Pressable onPress={() => router.push('/seller/products' as any)}>
+                <Text style={styles.widgetLink}>All ›</Text>
+              </Pressable>
+            </View>
+            {data?.low_stock_products && data.low_stock_products.length > 0 ? (
+              data.low_stock_products.slice(0, 4).map((prod, idx) => (
+                <Pressable
+                  key={`stock-${idx}`}
+                  style={styles.widgetRow}
+                  onPress={() => router.push(`/seller/products/edit?id=${prod.id}` as any)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.widgetOrderNum} numberOfLines={1}>{prod.name}</Text>
+                  </View>
+                  <Text style={[styles.widgetStockValue, { color: prod.stock_quantity === 0 ? Brand.danger : Brand.rating }]}>
+                    {prod.stock_quantity} left
+                  </Text>
+                </Pressable>
+              ))
+            ) : (
+              <View style={styles.widgetEmpty}>
+                <MaterialCommunityIcons name="check-circle-outline" size={24} color={Brand.primary} />
+                <Text style={styles.widgetEmptyText}>All stock healthy</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* ── Role switching ─────────────────────────────────────────── */}
@@ -562,6 +683,50 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   quickBtnSecondary: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: Brand.primary },
   quickBtnText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
   quickBtnTextDark: { fontSize: 14, fontWeight: '800', color: Brand.primary },
+
+  // ── Supplier KPIs ───────────────────────────────────────────────────
+  supplierKpiRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 14 },
+  supplierKpiCard: {
+    flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 14,
+    alignItems: 'center', gap: 4, elevation: 2, shadowColor: '#000',
+    shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  supplierKpiValue: { fontSize: 18, fontWeight: '900', color: c.text },
+  supplierKpiLabel: { fontSize: 11, color: c.textTertiary, fontWeight: '600' },
+
+  // ── Profile completion ───────────────────────────────────────────────
+  completionCard: {
+    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 14,
+    padding: 16, borderRadius: 14, borderWidth: 1, borderColor: Brand.primary + '30',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  completionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  completionTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: c.text },
+  completionPct: { fontSize: 16, fontWeight: '900', color: Brand.primary },
+  completionBar: { height: 8, backgroundColor: c.surfaceAlt, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  completionFill: { height: '100%', backgroundColor: Brand.primary, borderRadius: 4 },
+  completionSub: { fontSize: 12, color: c.textTertiary },
+
+  // ── Widgets row (Recent Orders + Low Stock) ─────────────────────────
+  widgetsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 18 },
+  widgetCard: {
+    flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 14,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  widgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  widgetTitle: { fontSize: 13, fontWeight: '800', color: c.text, textTransform: 'uppercase', letterSpacing: 0.3 },
+  widgetLink: { fontSize: 12, fontWeight: '700', color: Brand.primary },
+  widgetRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: c.borderLight,
+  },
+  widgetOrderNum: { fontSize: 13, fontWeight: '700', color: c.text },
+  widgetDate: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+  widgetAmount: { fontSize: 12, fontWeight: '700', color: c.text },
+  widgetStatusDot: { width: 8, height: 8, borderRadius: 4 },
+  widgetStockValue: { fontSize: 13, fontWeight: '800' },
+  widgetEmpty: { alignItems: 'center', paddingVertical: 16, gap: 6 },
+  widgetEmptyText: { fontSize: 12, color: c.textTertiary },
 
   // ── Role switching ──────────────────────────────────────────────────
   roleSwitchSection: { paddingHorizontal: 14, marginBottom: 18, gap: 8 },
