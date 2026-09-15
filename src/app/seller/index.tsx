@@ -326,69 +326,82 @@ export default function SellerDashboardScreen() {
           </Pressable>
         )}
 
-        {/* ── Recent Orders + Low Stock (2-column) ─────────────────── */}
-        <View style={styles.widgetsRow}>
-          {/* Recent Orders */}
-          <View style={styles.widgetCard}>
-            <View style={styles.widgetHeader}>
-              <Text style={styles.widgetTitle}>Recent Orders</Text>
-              <Pressable onPress={() => router.push('/seller/orders' as any)}>
-                <Text style={styles.widgetLink}>All ›</Text>
-              </Pressable>
-            </View>
-            {data?.recent_orders && data.recent_orders.length > 0 ? (
-              data.recent_orders.slice(0, 4).map((order, idx) => (
+        {/* ── Recent Orders (full-width) ──────────────────────────── */}
+        <View style={styles.fullWidgetCard}>
+          <View style={styles.widgetHeader}>
+            <Text style={styles.widgetTitle}>Recent Orders</Text>
+            <Pressable onPress={() => router.push('/seller/orders' as any)}>
+              <Text style={styles.widgetLink}>View All ›</Text>
+            </Pressable>
+          </View>
+          {data?.recent_orders && data.recent_orders.length > 0 ? (
+            data.recent_orders.slice(0, 3).map((order, idx) => {
+              const statusColor = STATUS_DOT_COLORS[order.status] || colors.textTertiary;
+              return (
                 <Pressable
                   key={`order-${idx}`}
-                  style={styles.widgetRow}
+                  style={({ pressed }) => [styles.orderRow, pressed && { opacity: 0.85 }]}
                   onPress={() => router.push(`/seller/orders/${order.id}` as any)}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.widgetOrderNum}>#{order.order_number}</Text>
-                    <Text style={styles.widgetDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
+                  <View style={[styles.orderStatusDot, { backgroundColor: statusColor }]} />
+                  <View style={styles.orderInfo}>
+                    <Text style={styles.orderNum}>#{order.order_number}</Text>
+                    <Text style={styles.orderDate}>{new Date(order.created_at).toLocaleDateString()}</Text>
                   </View>
-                  <Text style={styles.widgetAmount}>UGX {Number(order.seller_amount).toLocaleString()}</Text>
-                  <View style={[styles.widgetStatusDot, { backgroundColor: STATUS_DOT_COLORS[order.status] || colors.textTertiary }]} />
+                  <View style={styles.orderStatusBadge}>
+                    <Text style={[styles.orderStatusText, { color: statusColor }]}>
+                      {order.status}
+                    </Text>
+                  </View>
+                  <Text style={styles.orderAmount}>UGX {Number(order.seller_amount).toLocaleString()}</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
                 </Pressable>
-              ))
-            ) : (
-              <View style={styles.widgetEmpty}>
-                <MaterialCommunityIcons name="inbox-outline" size={24} color={colors.textTertiary} />
-                <Text style={styles.widgetEmptyText}>No orders yet</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Low Stock Alerts */}
-          <View style={styles.widgetCard}>
-            <View style={styles.widgetHeader}>
-              <Text style={styles.widgetTitle}>Low Stock</Text>
-              <Pressable onPress={() => router.push('/seller/products' as any)}>
-                <Text style={styles.widgetLink}>All ›</Text>
-              </Pressable>
+              );
+            })
+          ) : (
+            <View style={styles.widgetEmpty}>
+              <MaterialCommunityIcons name="inbox-outline" size={24} color={colors.textTertiary} />
+              <Text style={styles.widgetEmptyText}>No orders yet</Text>
             </View>
-            {data?.low_stock_products && data.low_stock_products.length > 0 ? (
-              data.low_stock_products.slice(0, 4).map((prod, idx) => (
-                <Pressable
-                  key={`stock-${idx}`}
-                  style={styles.widgetRow}
-                  onPress={() => router.push(`/seller/products/edit?id=${prod.id}` as any)}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.widgetOrderNum} numberOfLines={1}>{prod.name}</Text>
-                  </View>
-                  <Text style={[styles.widgetStockValue, { color: prod.stock_quantity === 0 ? Brand.danger : Brand.rating }]}>
-                    {prod.stock_quantity} left
-                  </Text>
-                </Pressable>
-              ))
-            ) : (
-              <View style={styles.widgetEmpty}>
-                <MaterialCommunityIcons name="check-circle-outline" size={24} color={Brand.primary} />
-                <Text style={styles.widgetEmptyText}>All stock healthy</Text>
-              </View>
-            )}
+          )}
+        </View>
+
+        {/* ── Low Stock Alerts (full-width) ────────────────────────── */}
+        <View style={styles.fullWidgetCard}>
+          <View style={styles.widgetHeader}>
+            <Text style={styles.widgetTitle}>Low Stock Alerts</Text>
+            <Pressable onPress={() => router.push('/seller/products' as any)}>
+              <Text style={styles.widgetLink}>View All ›</Text>
+            </Pressable>
           </View>
+          {data?.low_stock_products && data.low_stock_products.length > 0 ? (
+            data.low_stock_products.slice(0, 3).map((prod, idx) => (
+              <Pressable
+                key={`stock-${idx}`}
+                style={({ pressed }) => [styles.orderRow, pressed && { opacity: 0.85 }]}
+                onPress={() => router.push(`/seller/products/edit?id=${prod.id}` as any)}
+              >
+                <MaterialCommunityIcons
+                  name={prod.stock_quantity === 0 ? 'alert-circle' : 'package-variant-closed'}
+                  size={18}
+                  color={prod.stock_quantity === 0 ? Brand.danger : Brand.rating}
+                />
+                <View style={styles.orderInfo}>
+                  <Text style={styles.orderNum} numberOfLines={1}>{prod.name}</Text>
+                  <Text style={styles.orderDate}>Product ID: {prod.id}</Text>
+                </View>
+                <Text style={[styles.orderAmount, { color: prod.stock_quantity === 0 ? Brand.danger : Brand.rating }]}>
+                  {prod.stock_quantity} left
+                </Text>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
+              </Pressable>
+            ))
+          ) : (
+            <View style={styles.widgetEmpty}>
+              <MaterialCommunityIcons name="check-circle-outline" size={24} color={Brand.primary} />
+              <Text style={styles.widgetEmptyText}>All stock healthy</Text>
+            </View>
+          )}
         </View>
 
         {/* ── Role switching ─────────────────────────────────────────── */}
@@ -709,24 +722,33 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   completionFill: { height: '100%', backgroundColor: Brand.primary, borderRadius: 4 },
   completionSub: { fontSize: 12, color: c.textTertiary },
 
-  // ── Widgets row (Recent Orders + Low Stock) ─────────────────────────
-  widgetsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 18 },
-  widgetCard: {
-    flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 14,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  // ── Full-width widget cards ────────────────────────────────────────
+  fullWidgetCard: {
+    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 12,
+    padding: 14, borderRadius: 14, elevation: 2, shadowColor: '#000',
+    shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   widgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   widgetTitle: { fontSize: 13, fontWeight: '800', color: c.text, textTransform: 'uppercase', letterSpacing: 0.3 },
   widgetLink: { fontSize: 12, fontWeight: '700', color: Brand.primary },
-  widgetRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: c.borderLight,
+
+  // ── Compact order row ───────────────────────────────────────────────
+  orderRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 9, paddingHorizontal: 4,
+    borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
-  widgetOrderNum: { fontSize: 13, fontWeight: '700', color: c.text },
-  widgetDate: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
-  widgetAmount: { fontSize: 12, fontWeight: '700', color: c.text },
-  widgetStatusDot: { width: 8, height: 8, borderRadius: 4 },
-  widgetStockValue: { fontSize: 13, fontWeight: '800' },
+  orderStatusDot: { width: 8, height: 8, borderRadius: 4 },
+  orderInfo: { flex: 1, gap: 2 },
+  orderNum: { fontSize: 13, fontWeight: '700', color: c.text },
+  orderDate: { fontSize: 11, color: c.textTertiary },
+  orderStatusBadge: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    backgroundColor: c.surfaceAlt,
+  },
+  orderStatusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
+  orderAmount: { fontSize: 13, fontWeight: '800', color: c.text, marginRight: 4 },
+
   widgetEmpty: { alignItems: 'center', paddingVertical: 16, gap: 6 },
   widgetEmptyText: { fontSize: 12, color: c.textTertiary },
 
