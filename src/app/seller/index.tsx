@@ -160,6 +160,7 @@ export default function SellerDashboardScreen() {
         { icon: 'chart-pie', label: 'Finance', color: '#16A34A', route: '/seller/finance' },
         { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' },
         { icon: 'lock-outline', label: 'Escrow', color: '#F59E0B', route: '/seller/escrow' },
+        { icon: 'receipt', label: 'Commissions', color: '#8B5CF6', route: '/seller/commissions' },
       ],
     },
     {
@@ -170,6 +171,7 @@ export default function SellerDashboardScreen() {
         { icon: 'crown', label: 'Membership', color: '#F59E0B', route: '/seller/membership' },
         { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages', count: chatUnread },
         { icon: 'store-settings-outline', label: 'Settings', color: colors.textSecondary, route: '/seller/settings' },
+        { icon: 'storefront', label: 'My Store', color: Brand.primary, route: store?.slug ? `/store/${store.slug}` : '/seller/settings' },
       ],
     },
     {
