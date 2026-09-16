@@ -6,9 +6,9 @@ import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } 
 import * as SecureStore from 'expo-secure-store';
 
 // ── BASE_URL resolution ──────────────────────────────────────────
-// Production: hosted Railway backend (used by default for all devices)
+// Production: custom domain backend (used by default for all devices)
 // Local dev: set EXPO_PUBLIC_API_URL env var to override (e.g. http://10.0.2.2:8000/api/v1)
-const PRODUCTION_API_URL = 'https://diilzo-market-place-production.up.railway.app/api/v1';
+const PRODUCTION_API_URL = 'https://diilzo.com/api/v1';
 
 function resolveBaseUrl(): string {
   // Allow override via env for local development

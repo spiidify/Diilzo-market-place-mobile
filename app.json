@@ -88,7 +88,7 @@
       "expo-video"
     ],
     "extra": {
-      "EXPO_PUBLIC_API_URL": "https://diilzo-market-place-production.up.railway.app/api/v1",
+      "EXPO_PUBLIC_API_URL": "https://diilzo.com/api/v1",
       "eas": {
         "projectId": "b78e18af-5580-4211-9e27-0138c8d3049f"
       },

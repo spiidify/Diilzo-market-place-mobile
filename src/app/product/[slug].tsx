@@ -304,7 +304,7 @@ export default function ProductDetailScreen() {
     try {
       await Share.share({
         message: `Check out ${product.name} on Diilzo — ${product.currency} ${Number(product.final_price).toLocaleString()}`,
-        url: `https://diilzo-market-place-production.up.railway.app/products/${product.slug}`,
+        url: `https://diilzo.com/products/${product.slug}`,
         title: product.name,
       });
     } catch (e: any) {
