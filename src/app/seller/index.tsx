@@ -183,12 +183,13 @@ export default function SellerDashboardScreen() {
         { icon: 'rocket-launch', label: 'AdPulse', color: '#EC4899', route: '/adpulse' },
       ],
     },
-    {
+    // Platform tools — app owners only, not regular sellers
+    ...(user?.is_superuser ? [{
       title: 'Platform',
       items: [
         { icon: 'shield-crown-outline', label: 'AdminOps', color: '#0A2E1A', route: '/adminops' },
       ],
-    },
+    }] : []),
   ];
 
   // ── Loading state ─────────────────────────────────────────────────
