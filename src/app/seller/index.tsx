@@ -183,13 +183,6 @@ export default function SellerDashboardScreen() {
         { icon: 'rocket-launch', label: 'AdPulse', color: '#EC4899', route: '/adpulse' },
       ],
     },
-    // Platform tools — app owners only, not regular sellers
-    ...(user?.is_superuser ? [{
-      title: 'Platform',
-      items: [
-        { icon: 'shield-crown-outline', label: 'AdminOps', color: '#0A2E1A', route: '/adminops' },
-      ],
-    }] : []),
   ];
 
   // ── Loading state ─────────────────────────────────────────────────
@@ -424,34 +417,19 @@ export default function SellerDashboardScreen() {
 
           {/* Admin access for superusers */}
           {user?.is_superuser && (
-            <>
-              <Pressable
-                style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/admin' as any)}
-              >
-                <View style={[styles.roleSwitchIcon, { backgroundColor: '#8B5CF612' }]}>
-                  <MaterialCommunityIcons name="view-dashboard" size={22} color="#8B5CF6" />
-                </View>
-                <View style={styles.roleSwitchInfo}>
-                  <Text style={styles.roleSwitchTitle}>Admin Dashboard</Text>
-                  <Text style={styles.roleSwitchSub}>Full platform management</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
-                onPress={() => router.push('/adminops' as any)}
-              >
-                <View style={[styles.roleSwitchIcon, { backgroundColor: '#0A2E1A12' }]}>
-                  <MaterialCommunityIcons name="shield-crown-outline" size={22} color="#0A2E1A" />
-                </View>
-                <View style={styles.roleSwitchInfo}>
-                  <Text style={styles.roleSwitchTitle}>AdminOps Central</Text>
-                  <Text style={styles.roleSwitchSub}>Operations dashboard</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-              </Pressable>
-            </>
+            <Pressable
+              style={({ pressed }) => [styles.roleSwitchBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/admin' as any)}
+            >
+              <View style={[styles.roleSwitchIcon, { backgroundColor: '#8B5CF612' }]}>
+                <MaterialCommunityIcons name="view-dashboard" size={22} color="#8B5CF6" />
+              </View>
+              <View style={styles.roleSwitchInfo}>
+                <Text style={styles.roleSwitchTitle}>Admin Dashboard</Text>
+                <Text style={styles.roleSwitchSub}>Full platform management</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
+            </Pressable>
           )}
         </View>
 
