@@ -805,11 +805,21 @@ export default function ProductDetailScreen() {
             )}
             <View style={styles.deliveryMiniRow}>
               <MaterialCommunityIcons name="truck-fast" size={16} color={Brand.success} />
-              <Text style={styles.deliveryMiniText}>Free delivery over 100K</Text>
+              <Text style={styles.deliveryMiniText}>
+                {product.delivery_info?.free_threshold && Number(product.delivery_info.free_threshold) > 0
+                  ? `Free delivery over ${product.delivery_info.free_threshold_fmt} ${product.delivery_info.currency}`
+                  : `Delivery from ${product.delivery_info?.flat_cost_fmt || '5,000'} ${product.delivery_info?.currency || 'UGX'}`}
+              </Text>
+            </View>
+            <View style={styles.deliveryMiniRow}>
+              <MaterialCommunityIcons name="map-marker-radius" size={16} color={colors.textSecondary} />
+              <Text style={styles.deliveryMiniText}>
+                Deliver to {product.delivery_info?.country || 'Uganda'} · Est. {product.delivery_info?.est_days || 3} day{((product.delivery_info?.est_days || 3)) === 1 ? '' : 's'}
+              </Text>
             </View>
             <View style={styles.deliveryMiniRow}>
               <MaterialCommunityIcons name="undo-variant" size={16} color={Brand.primary} />
-              <Text style={styles.deliveryMiniText}>7-day returns</Text>
+              <Text style={styles.deliveryMiniText}>{product.delivery_info?.return_days || 7}-day returns</Text>
             </View>
           </View>
 
@@ -885,15 +895,21 @@ export default function ProductDetailScreen() {
             <Text style={styles.cardTitle}>Shipping & Returns</Text>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="truck-fast" size={18} color={Brand.success} />
-              <Text style={styles.shipText}>Fast delivery in 2-5 business days</Text>
+              <Text style={styles.shipText}>
+                Fast delivery in {product.delivery_info?.est_days || 3} business day{((product.delivery_info?.est_days || 3)) === 1 ? '' : 's'}
+              </Text>
             </View>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="currency-usd" size={18} color={Brand.success} />
-              <Text style={styles.shipText}>Free shipping over 100,000 UGX</Text>
+              <Text style={styles.shipText}>
+                {product.delivery_info?.free_threshold && Number(product.delivery_info.free_threshold) > 0
+                  ? `Free shipping over ${product.delivery_info.free_threshold_fmt} ${product.delivery_info.currency}`
+                  : `Flat shipping: ${product.delivery_info?.flat_cost_fmt || '5,000'} ${product.delivery_info?.currency || 'UGX'}`}
+              </Text>
             </View>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="undo-variant" size={18} color={Brand.primary} />
-              <Text style={styles.shipText}>7-day return policy</Text>
+              <Text style={styles.shipText}>{product.delivery_info?.return_days || 7}-day return policy</Text>
             </View>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="shield-check" size={18} color={Brand.link} />

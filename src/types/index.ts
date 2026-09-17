@@ -164,8 +164,26 @@ export interface Product {
   promotion_type?: string | null;
   promotion_id?: number | null;
   flash_sale_ends_at?: string | null;
+  delivery_info?: DeliveryInfo;
   created_at: string;
   updated_at: string;
+}
+
+export interface DeliveryInfo {
+  free_threshold: string;
+  free_threshold_fmt: string;
+  flat_cost: string;
+  flat_cost_fmt: string;
+  return_days: number;
+  country: string;
+  est_days: number;
+  currency: string;
+  store_supports: {
+    local_delivery: boolean;
+    pickup: boolean;
+    national: boolean;
+    international: boolean;
+  };
 }
 
 // ── Voucher / Claimable Coupon ───────────────────────────────────
