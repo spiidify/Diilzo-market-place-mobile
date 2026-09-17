@@ -552,24 +552,13 @@ export interface ShippingMethod {
   cost: string;
   estimated_days: number;
   is_active: boolean;
+  platform?: boolean;
 }
 
+/** Read-only — shipping methods are platform-managed by Diilzo. */
 export async function getShippingMethods(): Promise<ShippingMethod[]> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/shipping_methods/` });
   return Array.isArray(data) ? data : data.results || [];
-}
-
-export async function createShippingMethod(payload: {
-  name: string;
-  cost: number;
-  estimated_days: number;
-  is_active?: boolean;
-}): Promise<any> {
-  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/shipping_methods/`, data: payload });
-}
-
-export async function deleteShippingMethod(id: number): Promise<void> {
-  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/shipping_method_delete/` });
 }
 
 // ── Shipments ──────────────────────────────────────────────────────
@@ -843,30 +832,16 @@ export async function updateStock(productId: number, stockQuantity: number): Pro
 
 // ── Delivery Areas & Service Areas ─────────────────────────────────
 
+/** Read-only — delivery zones are platform-managed by Diilzo. */
 export async function getDeliveryAreas(): Promise<any[]> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/delivery_areas/` });
   return Array.isArray(data) ? data : data.results || [];
 }
 
-export async function createDeliveryArea(payload: any): Promise<any> {
-  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/delivery_areas/`, data: payload });
-}
-
-export async function deleteDeliveryArea(id: number): Promise<void> {
-  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/delivery_area_detail/` });
-}
-
+/** Read-only — service areas are platform-managed by Diilzo. */
 export async function getServiceAreas(): Promise<any[]> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/service_areas/` });
   return Array.isArray(data) ? data : data.results || [];
-}
-
-export async function createServiceArea(payload: any): Promise<any> {
-  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/service_areas/`, data: payload });
-}
-
-export async function deleteServiceArea(id: number): Promise<void> {
-  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${id}/service_area_detail/` });
 }
 
 // ── Product Variants ───────────────────────────────────────────────

@@ -148,7 +148,7 @@ export default function SellerDashboardScreen() {
       items: [
         { icon: 'package-variant-closed', label: 'Products', color: '#3B82F6', route: '/seller/products', count: stats?.total_products },
         { icon: 'ticket-percent', label: 'Coupons', color: '#06B6D4', route: '/seller/coupons' },
-        { icon: 'truck-outline', label: 'Shipping', color: '#16A34A', route: '/seller/shipping' },
+        { icon: 'truck-outline', label: 'Delivery', color: '#16A34A', route: '/seller/shipping' },
         { icon: 'bullhorn-outline', label: 'Promotions', color: '#F59E0B', route: '/seller/promotions' },
       ],
     },

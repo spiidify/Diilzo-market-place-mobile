@@ -32,8 +32,6 @@ interface StoreSettings {
   contact_email?: string;
   contact_phone?: string;
   business_type?: string;
-  shipping_enabled?: boolean;
-  free_shipping_threshold?: string;
   notification_orders?: boolean;
   notification_messages?: boolean;
   notification_marketing?: boolean;
@@ -67,8 +65,6 @@ export default function SellerSettingsScreen() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [businessType, setBusinessType] = useState('individual');
-  const [shippingEnabled, setShippingEnabled] = useState(true);
-  const [freeShipThreshold, setFreeShipThreshold] = useState('');
   const [notifOrders, setNotifOrders] = useState(true);
   const [notifMessages, setNotifMessages] = useState(true);
   const [notifMarketing, setNotifMarketing] = useState(false);
@@ -111,8 +107,6 @@ export default function SellerSettingsScreen() {
       setContactEmail(store.contact_email || store.email || '');
       setContactPhone(store.contact_phone || store.phone || '');
       setBusinessType(store.business_type || 'individual');
-      setShippingEnabled(store.shipping_enabled ?? true);
-      setFreeShipThreshold(store.free_shipping_threshold || '');
       setNotifOrders(store.notification_orders ?? true);
       setNotifMessages(store.notification_messages ?? true);
       setNotifMarketing(store.notification_marketing ?? false);
@@ -177,8 +171,6 @@ export default function SellerSettingsScreen() {
       formData.append('contact_email', contactEmail.trim());
       formData.append('contact_phone', contactPhone.trim());
       formData.append('business_type', businessType);
-      formData.append('shipping_enabled', shippingEnabled ? 'true' : 'false');
-      if (freeShipThreshold.trim()) formData.append('free_shipping_threshold', freeShipThreshold.trim());
       formData.append('notification_orders', notifOrders ? 'true' : 'false');
       formData.append('notification_messages', notifMessages ? 'true' : 'false');
       formData.append('notification_marketing', notifMarketing ? 'true' : 'false');
@@ -347,33 +339,6 @@ export default function SellerSettingsScreen() {
                   </Text>
                   <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
                 </Pressable>
-              </View>
-
-              {/* ── Shipping ───────────────────────────────────────── */}
-              <Text style={styles.sectionTitle}>Shipping</Text>
-              <View style={styles.card}>
-                <View style={styles.switchRow}>
-                  <View style={styles.switchInfo}>
-                    <MaterialCommunityIcons name="truck-delivery-outline" size={20} color={Brand.primary} />
-                    <Text style={styles.switchLabel}>Enable Shipping</Text>
-                  </View>
-                  <Switch
-                    value={shippingEnabled}
-                    onValueChange={setShippingEnabled}
-                    trackColor={{ false: colors.border, true: Brand.primary }}
-                    thumbColor="#FFFFFF"
-                  />
-                </View>
-
-                <Text style={styles.label}>Free Shipping Threshold (UGX)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={freeShipThreshold}
-                  onChangeText={setFreeShipThreshold}
-                  placeholder="e.g. 100000"
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="numeric"
-                />
               </View>
 
               {/* ── Notifications ──────────────────────────────────── */}
