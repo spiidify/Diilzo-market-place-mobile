@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,7 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { clearCart, getCart } from '@/services/cart';
 import { validateCoupon } from '@/services/catalog';
@@ -29,7 +30,7 @@ import {
   fetchPickupStations,
   type PickUpStation,
 } from '@/services/logistics';
-import { calculateShipping } from '@/services/orders';
+import { calculateShipping, type ShippingQuote } from '@/services/orders';
 import {
   checkPaymentStatus,
   fetchPaymentMethods,
@@ -38,7 +39,6 @@ import {
 } from '@/services/payments';
 import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const PAYMENT_OPTIONS: {
   method: string;
@@ -127,6 +127,7 @@ export default function CheckoutScreen() {
   const [shippingCost, setShippingCost] = useState<number>(0);
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingEstimate, setShippingEstimate] = useState<{ method_name: string; estimated_days: number } | null>(null);
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
 
   const loadCheckout = useCallback(async () => {
     if (!isAuthenticated) {
@@ -181,32 +182,59 @@ export default function CheckoutScreen() {
 
   // Fetch dynamic shipping cost when cart, address, or fulfillment method changes
   useEffect(() => {
-    if (fulfillmentMethod === 'pickup_station' || !cart || cart.items.length === 0) {
+    let cancelled = false;
+    if (!cart || cart.items.length === 0) {
       setShippingCost(0);
       setShippingEstimate(null);
+      setShippingQuote(null);
       return;
     }
     const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
-    if (!selectedAddr) {
-      setShippingCost(DEFAULT_SHIPPING_FEE);
+    if (fulfillmentMethod === 'pickup_station') {
+      // Pickup-station delivery is still priced by the engine (cheaper tier)
+      setShippingCost(0);
+      setShippingEstimate(null);
+      setShippingQuote(null);
+      if (selectedAddr) {
+        (async () => {
+          try {
+            const result = await calculateShipping({
+              items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
+              address: { city: selectedAddr.city, country: selectedAddr.country, region: selectedAddr.state },
+              delivery_type: 'PICKUP_STATION',
+            });
+            if (!cancelled && result.available) {
+              setShippingQuote(result);
+            }
+          } catch { /* keep pickup at 0 until station confirmed server-side */ }
+        })();
+      }
       return;
     }
-    let cancelled = false;
+    if (!selectedAddr) {
+      setShippingCost(DEFAULT_SHIPPING_FEE);
+      setShippingQuote(null);
+      return;
+    }
     (async () => {
       setShippingLoading(true);
       try {
         const result = await calculateShipping({
           items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
-          address: { city: selectedAddr.city, country: selectedAddr.country },
+          address: { city: selectedAddr.city, country: selectedAddr.country, region: selectedAddr.state },
+          delivery_type: 'HOME_DELIVERY',
         });
         if (!cancelled && result.available) {
-          setShippingCost(Number(result.shipping_cost));
+          setShippingCost(Number(result.total_shipping_fee || result.shipping_cost));
           setShippingEstimate({ method_name: result.method_name, estimated_days: result.estimated_days });
+          setShippingQuote(result);
         } else if (!cancelled) {
           setShippingCost(DEFAULT_SHIPPING_FEE);
+          setShippingQuote(null);
         }
       } catch {
         if (!cancelled) setShippingCost(DEFAULT_SHIPPING_FEE);
+        if (!cancelled) setShippingQuote(null);
       } finally {
         if (!cancelled) setShippingLoading(false);
       }
@@ -332,6 +360,8 @@ export default function CheckoutScreen() {
         data: {
           shipping_address: shippingAddress,
           notes: orderNote || undefined,
+          fulfillment_method: fulfillmentMethod,
+          pickup_station_id: fulfillmentMethod === 'pickup_station' ? selectedStationId ?? undefined : undefined,
         },
       });
 
@@ -911,7 +941,24 @@ export default function CheckoutScreen() {
                   </Text>
                 )}
               </View>
-              {shippingEstimate && fulfillmentMethod === 'home_delivery' && !shippingLoading && (
+              {!shippingLoading && shippingQuote && shippingQuote.parts.length > 0 && (
+                <View style={styles.shippingBreakdown}>
+                  {shippingQuote.parts.map((part, idx) => (
+                    <View key={idx} style={styles.shippingBreakdownRow}>
+                      <Text style={styles.shippingBreakdownLabel}>{part.label}</Text>
+                      <Text style={styles.shippingBreakdownValue}>
+                        {currency} {Number(part.fee).toLocaleString()}
+                      </Text>
+                    </View>
+                  ))}
+                  {shippingQuote.mode && shippingQuote.mode !== 'DOMESTIC' && (
+                    <Text style={styles.shippingEstimate}>
+                      {shippingQuote.mode} freight · Est. {shippingEstimate?.estimated_days ?? shippingQuote.estimated_days} day(s)
+                    </Text>
+                  )}
+                </View>
+              )}
+              {shippingEstimate && fulfillmentMethod === 'home_delivery' && !shippingLoading && !shippingQuote && (
                 <Text style={styles.shippingEstimate}>
                   {shippingEstimate.method_name} · Est. {shippingEstimate.estimated_days} day(s)
                 </Text>
@@ -1454,6 +1501,21 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   costLabel: { fontSize: 13, color: c.textSecondary },
   costValue: { fontSize: 13, fontWeight: '600', color: c.text },
   shippingEstimate: { fontSize: 11, color: c.textTertiary, marginTop: 2, marginBottom: 4 },
+  shippingBreakdown: {
+    marginTop: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: c.surfaceAlt,
+    gap: 3,
+  },
+  shippingBreakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shippingBreakdownLabel: { fontSize: 11, color: c.textSecondary, flex: 1 },
+  shippingBreakdownValue: { fontSize: 11, fontWeight: '700', color: c.text },
 
   // Total bar — full width green gradient feel
   totalBar: {

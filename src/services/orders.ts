@@ -23,6 +23,8 @@ export async function cancelOrder(id: number): Promise<{ message: string; status
 export async function createOrder(params: {
   shipping_address?: Record<string, any>;
   notes?: string;
+  fulfillment_method?: 'home_delivery' | 'pickup_station';
+  pickup_station_id?: number;
 }): Promise<Order> {
   return apiRequest<Order>({ method: 'POST', url: '/orders/create/', data: params });
 }
@@ -71,20 +73,39 @@ export async function reorder(id: number): Promise<{ detail: string; added: numb
   return apiRequest({ method: 'POST', url: `/orders/${id}/reorder/` });
 }
 
-// ── Shipping Calculator ───────────────────────────────────────────
+// ── Shipping Calculator (dual-engine) ─────────────────────────────
 
-/** POST /api/v1/shipping/calculate/ — estimate shipping cost */
-export async function calculateShipping(params: {
-  items: Array<{ product_id: number; quantity: number }>;
-  address: { city: string; country?: string };
-}): Promise<{
+export interface ShippingFeePart {
+  label: string;
+  fee: string;
+  kind: string;
+  mode?: string;
+  billing_units?: string;
+  unit_label?: string;
+}
+
+export interface ShippingQuote {
   shipping_cost: string;
   estimated_days: number;
   method_name: string;
   available: boolean;
   currency: string;
-}> {
-  return apiRequest({ method: 'POST', url: '/shipping/calculate/', data: params });
+  base_freight: string;
+  customs_and_handling: string;
+  last_mile_fee: string;
+  total_shipping_fee: string;
+  mode: string;
+  parts: ShippingFeePart[];
+}
+
+/** POST /api/v1/shipping/calculate/ — dual-engine shipping estimate */
+export async function calculateShipping(params: {
+  items: Array<{ product_id: number; quantity: number }>;
+  address: { city: string; country?: string; region?: string };
+  delivery_type?: 'HOME_DELIVERY' | 'PICKUP_STATION';
+  shipping_mode?: 'AIR' | 'SEA';
+}): Promise<ShippingQuote> {
+  return apiRequest<ShippingQuote>({ method: 'POST', url: '/shipping/calculate/', data: params });
 }
 
 // ── Reviews ───────────────────────────────────────────────────────
