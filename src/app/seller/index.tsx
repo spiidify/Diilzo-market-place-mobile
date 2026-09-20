@@ -596,7 +596,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingBottom: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   heroSafe: { gap: 16 },
   heroTitleRow: {
@@ -638,7 +638,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── 2-column stats grid ────────────────────────────────────────────
   statsGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 14, marginTop: -12,
+    paddingHorizontal: 8, marginTop: -12,
   },
   statCard: {
     width: '48%', marginHorizontal: '1%',
@@ -657,7 +657,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Sales + rating banner ──────────────────────────────────────────
   salesBanner: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 12,
+    backgroundColor: c.surface, marginHorizontal: 8, marginBottom: 12,
     padding: 16, borderRadius: 16,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -669,7 +669,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   reviewText: { fontSize: 12, color: c.textTertiary, fontWeight: '500' },
 
   // ── Quick action buttons ───────────────────────────────────────────
-  quickActions: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 20 },
+  quickActions: { flexDirection: 'row', gap: 10, paddingHorizontal: 8, marginBottom: 20 },
   quickBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Brand.primary, paddingVertical: 14, borderRadius: 14,
@@ -679,7 +679,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   quickBtnTextDark: { fontSize: 14, fontWeight: '800', color: Brand.primary },
 
   // ── Supplier KPIs ───────────────────────────────────────────────────
-  supplierKpiRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, marginBottom: 14 },
+  supplierKpiRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 8, marginBottom: 14 },
   supplierKpiCard: {
     flex: 1, backgroundColor: c.surface, borderRadius: 14, padding: 14,
     alignItems: 'center', gap: 4, elevation: 2, shadowColor: '#000',
@@ -690,7 +690,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Profile completion ───────────────────────────────────────────────
   completionCard: {
-    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 14,
+    backgroundColor: c.surface, marginHorizontal: 8, marginBottom: 14,
     padding: 16, borderRadius: 14, borderWidth: 1, borderColor: Brand.primary + '30',
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -703,7 +703,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Full-width widget cards ────────────────────────────────────────
   fullWidgetCard: {
-    backgroundColor: c.surface, marginHorizontal: 14, marginBottom: 12,
+    backgroundColor: c.surface, marginHorizontal: 8, marginBottom: 12,
     padding: 14, borderRadius: 14, elevation: 2, shadowColor: '#000',
     shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -732,7 +732,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   widgetEmptyText: { fontSize: 12, color: c.textTertiary },
 
   // ── Role switching ──────────────────────────────────────────────────
-  roleSwitchSection: { paddingHorizontal: 14, marginBottom: 18, gap: 8 },
+  roleSwitchSection: { paddingHorizontal: 8, marginBottom: 18, gap: 8 },
   roleSwitchBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: c.surface, padding: 16, borderRadius: 14,
@@ -749,7 +749,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   roleSwitchSub: { fontSize: 13, color: c.textTertiary },
 
   // ── Menu groups ────────────────────────────────────────────────────
-  menuGroup: { paddingHorizontal: 14, marginBottom: 18 },
+  menuGroup: { paddingHorizontal: 8, marginBottom: 18 },
   groupTitle: {
     fontSize: 13, fontWeight: '800', color: c.textSecondary,
     marginBottom: 10, marginLeft: 2, textTransform: 'uppercase', letterSpacing: 0.5,
