@@ -638,12 +638,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── 2-column stats grid ────────────────────────────────────────────
   statsGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 8, marginTop: -12,
+    rowGap: 10, columnGap: 10,
+    paddingHorizontal: 8, marginTop: -12, marginBottom: 12,
   },
   statCard: {
-    width: '48%', marginHorizontal: '1%',
+    flexBasis: '48%', flexGrow: 1,
     backgroundColor: c.surface, borderRadius: 16, padding: 16,
-    marginBottom: 10,
     elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   statIconWrap: {
@@ -756,7 +756,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   menuGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   menuCard: {
-    width: '47%', backgroundColor: c.surface, borderRadius: 14,
+    flexBasis: '47%', flexGrow: 1, backgroundColor: c.surface, borderRadius: 14,
     padding: 16, alignItems: 'flex-start',
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
