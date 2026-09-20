@@ -128,6 +128,27 @@ export default function SellerCommissionsScreen() {
         removeClippedSubviews={true}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          summary && summary.transaction_count > 0 ? (
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryTitle}>Last 30 days</Text>
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryCell}>
+                  <Text style={styles.summaryLabel}>Commission</Text>
+                  <Text style={[styles.summaryValue, { color: Brand.danger }]}>UGX {fmt(summary.total_commission)}</Text>
+                </View>
+                <View style={styles.summaryCell}>
+                  <Text style={styles.summaryLabel}>Your Earnings</Text>
+                  <Text style={[styles.summaryValue, { color: Brand.success }]}>UGX {fmt(summary.total_seller_amount)}</Text>
+                </View>
+                <View style={styles.summaryCell}>
+                  <Text style={styles.summaryLabel}>Orders</Text>
+                  <Text style={styles.summaryValue}>{summary.transaction_count}</Text>
+                </View>
+              </View>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="receipt" size={48} color={colors.textTertiary} />
@@ -159,6 +180,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
 
   list: { padding: 12, paddingBottom: 32 },
+
+  summaryCard: {
+    backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 12,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  summaryTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
+  summaryRow: { flexDirection: 'row', gap: 8 },
+  summaryCell: { flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 10, padding: 10, alignItems: 'center' },
+  summaryLabel: { fontSize: 10, color: c.textSecondary, marginBottom: 3 },
+  summaryValue: { fontSize: 13, fontWeight: '800', color: c.text },
 
   txCard: {
     backgroundColor: c.surface, borderRadius: 14, padding: 14, marginBottom: 10,
