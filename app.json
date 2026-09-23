@@ -85,7 +85,9 @@
           "color": "#32C700"
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-image",
+      "expo-web-browser"
     ],
     "extra": {
       "EXPO_PUBLIC_API_URL": "https://diilzo.com/api/v1",
