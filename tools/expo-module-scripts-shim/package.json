@@ -4,6 +4,8 @@
   "private": true,
   "description": "Local shim that only provides tsconfig.base.json so IDE diagnostics for vendored Expo package tsconfigs can resolve their extends. Not the real expo-module-scripts build toolchain.",
   "files": [
-    "tsconfig.base.json"
+    "tsconfig.base.json",
+    "tsconfig.plugin.json",
+    "tsconfig.node.json"
   ]
 }
