@@ -3,21 +3,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { fetchStoreBySlug, fetchStoreProducts, followStore, unfollowStore } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import type { PaginatedResponse, Product, StoreDetail } from '@/types';
@@ -45,6 +46,7 @@ export default function StoreDetailScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const { isAuthenticated } = useAuth();
   const { colors } = useAppTheme();
+  const { productColumns, isTablet } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -209,11 +211,12 @@ export default function StoreDetailScreen() {
       />
 
       <FlatList
+        key={`store-products-${productColumns}`}
         data={products}
         keyExtractor={(item) => `${item.id}-${item.slug}`}
         renderItem={renderProduct}
-        numColumns={2}
-        columnWrapperStyle={styles.productRow}
+        numColumns={productColumns}
+        columnWrapperStyle={isTablet ? styles.tabletProductRow : styles.productRow}
         contentContainerStyle={styles.list}
         maxToRenderPerBatch={6}
         windowSize={7}
@@ -552,6 +555,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: c.text, paddingVertical: 2 },
   list: { paddingBottom: 20 },
   productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 16 },
+  tabletProductRow: { gap: 16, marginBottom: 16, paddingHorizontal: 24 },
   productCard: {
     flex: 1,
     backgroundColor: c.surface,

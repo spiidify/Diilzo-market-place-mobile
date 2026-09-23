@@ -2,17 +2,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useWindowDimensions
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
@@ -21,6 +20,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { fetchCategories } from '@/services/catalog';
 import { fetchProducts } from '@/services/products';
 import type { Category, Product } from '@/types';
@@ -32,7 +32,7 @@ export default function CategoriesScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { user, isAuthenticated } = useAuth();
-  const { width: screenWidth } = useWindowDimensions();
+  const { isTablet, contentWidth } = useResponsiveLayout();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,12 +49,18 @@ export default function CategoriesScreen() {
   const selectedSlugRef = useRef<string | null>(null);
 
   // Subcategory card width — responsive to actual screen width
+  const leftPanelWidth = isTablet ? 160 : LEFT_PANEL_WIDTH;
+  const categoryContentWidth = contentWidth - leftPanelWidth;
   const subGridPadding = 20;
   const subGridGap = 10;
-  const subColumns = 3;
+  const subColumns = categoryContentWidth >= 900 ? 5 : categoryContentWidth >= 650 ? 4 : 3;
+  const productGridColumns = categoryContentWidth >= 850 ? 4 : categoryContentWidth >= 560 ? 3 : 2;
   const subCardWidth = Math.floor(
-    (screenWidth - LEFT_PANEL_WIDTH - subGridPadding - subGridGap * (subColumns - 1)) / subColumns
+    (categoryContentWidth - subGridPadding - subGridGap * (subColumns - 1)) / subColumns
   );
+  const categoryProductWidth = (
+    categoryContentWidth - 40 - subGridGap * (productGridColumns - 1)
+  ) / productGridColumns;
 
   // Filter categories by search query
   const filteredCategories = searchQuery.trim()
@@ -138,7 +144,7 @@ export default function CategoriesScreen() {
           onPress={() => handleParentSelect(item.slug)}
         >
           {active && <View style={styles.activeBar} />}
-          <View style={[styles.parentCircle, active && styles.parentCircleActive]}>
+          <View style={[styles.parentCircle, isTablet && styles.tabletParentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
               <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="contain" />
             ) : (
@@ -148,7 +154,7 @@ export default function CategoriesScreen() {
             )}
           </View>
           <Text
-            style={[styles.parentName, active && styles.parentNameActive]}
+            style={[styles.parentName, isTablet && styles.tabletParentName, active && styles.parentNameActive]}
             numberOfLines={2}
           >
             {item.name}
@@ -156,7 +162,7 @@ export default function CategoriesScreen() {
         </Pressable>
       );
     },
-    [selectedSlug, handleParentSelect]
+    [selectedSlug, handleParentSelect, isTablet]
   );
 
   if (loading) {
@@ -222,7 +228,7 @@ export default function CategoriesScreen() {
         ) : (
           <>
             {/* Left panel — parent categories */}
-            <View style={styles.leftPanel}>
+            <View style={[styles.leftPanel, isTablet && { width: leftPanelWidth }]}>
               <FlatList
                 data={filteredCategories}
                 keyExtractor={(item) => `parent-${item.id}-${item.slug}`}
@@ -256,7 +262,7 @@ export default function CategoriesScreen() {
               {selectedCategory && (
                 <>
                   {/* Category hero banner */}
-                  <View style={styles.heroBanner}>
+                  <View style={[styles.heroBanner, isTablet && styles.tabletHeroBanner]}>
                     {selectedCategory.display_image ? (
                       <Image
                         source={{ uri: selectedCategory.display_image }}
@@ -335,7 +341,7 @@ export default function CategoriesScreen() {
                         {categoryProducts.map((item) => (
                           <Pressable
                             key={`cat-prod-${item.id}-${item.slug}`}
-                            style={({ pressed }) => [styles.productCard, pressed && { opacity: 0.9 }]}
+                            style={({ pressed }) => [styles.productCard, isTablet && { width: categoryProductWidth }, pressed && { opacity: 0.9 }]}
                             onPress={() => router.push(`/product/${item.slug}` as any)}
                           >
                             <View style={styles.productImageWrap}>
@@ -470,6 +476,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: Brand.primary,
     borderWidth: 2.5,
   },
+  tabletParentCircle: { width: 60, height: 60, borderRadius: 30 },
   parentCircleImg: { width: '100%', height: '100%' },
   parentCircleFallback: {
     width: '100%',
@@ -486,6 +493,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 13,
   },
+  tabletParentName: { fontSize: 12, lineHeight: 15 },
   parentNameActive: {
     color: Brand.primary,
     fontWeight: '800',
@@ -512,6 +520,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 6,
   },
+  tabletHeroBanner: { height: 180, marginHorizontal: 24 },
   heroBg: {
     position: 'absolute',
     top: 0,

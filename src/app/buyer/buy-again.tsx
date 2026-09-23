@@ -1,29 +1,31 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { addToCart } from '@/services/cart';
 import { fetchBuyAgain } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { Product } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function BuyAgainScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { productColumns } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -125,9 +127,10 @@ export default function BuyAgainScreen() {
         </View>
       ) : (
         <FlatList
+          key={`buy-again-${productColumns}`}
           data={products}
           keyExtractor={(item: any) => String(item.id)}
-          numColumns={2}
+          numColumns={productColumns}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}

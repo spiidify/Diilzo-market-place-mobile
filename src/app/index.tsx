@@ -4,18 +4,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  Linking,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Linking,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,26 +26,27 @@ import { useBadges } from '@/context/BadgeContext';
 import { useCart } from '@/context/CartContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
-  fetchBecauseYouViewed,
-  fetchCategories,
-  fetchClaimableCoupons,
-  fetchFlashSaleProducts,
-  fetchRecentlyViewed,
-  fetchSlides,
-  fetchTopBrands,
-  fetchTopStores
+    fetchBecauseYouViewed,
+    fetchCategories,
+    fetchClaimableCoupons,
+    fetchFlashSaleProducts,
+    fetchRecentlyViewed,
+    fetchSlides,
+    fetchTopBrands,
+    fetchTopStores
 } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
-  Brand as BrandType,
-  Category,
-  ClaimableCoupon,
-  Product,
-  Slide,
-  SlidePosition,
-  Store,
+    Brand as BrandType,
+    Category,
+    ClaimableCoupon,
+    Product,
+    Slide,
+    SlidePosition,
+    Store,
 } from '@/types';
 
 // ── Memoized product card for FlatList performance ──────────────────
@@ -189,7 +188,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { width: windowWidth } = useWindowDimensions();
+  const { contentWidth: windowWidth } = useResponsiveLayout();
   // Single source of truth: carousel has Spacing.two (8px) horizontal margin
   // on each side, so the visible ScrollView viewport = windowWidth - 16.
   // Each slide card must match this exactly for pagingEnabled to snap cleanly.
@@ -505,6 +504,7 @@ const CategorySection = memo(function CategorySection({
   onPressCategory: (cat: Category) => void;
 }) {
   const { colors } = useAppTheme();
+  const { isTablet, contentWidth } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   if (!categories.length) return null;
   return (
@@ -526,20 +526,20 @@ const CategorySection = memo(function CategorySection({
         pagingEnabled
       >
         {(() => {
-          const PER_PAGE = 8;
+          const PER_PAGE = isTablet ? 12 : 8;
           const pages: Category[][] = [];
           for (let i = 0; i < categories.length; i += PER_PAGE) {
             pages.push(categories.slice(i, i + PER_PAGE));
           }
           return pages.map((pageCats, pageIdx) => (
-            <View key={`cat-page-${pageIdx}`} style={styles.categoryPage}>
+            <View key={`cat-page-${pageIdx}`} style={[styles.categoryPage, { width: contentWidth - 2 * Spacing.two - 8 }]}>
               {pageCats.map((cat) => (
                 <Pressable
                   key={`cat-${cat.id}-${cat.slug}`}
-                  style={({ pressed }) => [styles.categoryItem, pressed && { opacity: 0.8 }]}
+                  style={({ pressed }) => [styles.categoryItem, isTablet && styles.tabletCategoryItem, pressed && { opacity: 0.8 }]}
                   onPress={() => onPressCategory(cat)}
                 >
-                  <View style={styles.categorySquare}>
+                  <View style={[styles.categorySquare, isTablet && styles.tabletCategorySquare]}>
                     {cat.display_image ? (
                       <Image
                         source={{ uri: cat.display_image }}
@@ -772,6 +772,7 @@ export default function ProductFeedScreen() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { colors, isDark } = useAppTheme();
+  const { isTablet, productColumns } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1317,13 +1318,14 @@ export default function ProductFeedScreen() {
       </LinearGradient >
 
       <FlatList
+        key={`home-products-${productColumns}`}
         ref={flatListRef}
         data={products}
         keyExtractor={(item) => `${item.id}-${item.slug}`}
         renderItem={renderProduct}
-        numColumns={2}
+        numColumns={productColumns}
         columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, isTablet && styles.tabletList]}
         ListHeaderComponent={renderHeader}
         maxToRenderPerBatch={4}
         windowSize={5}
@@ -1792,9 +1794,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   categoryPage: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: Dimensions.get('window').width - 2 * Spacing.two - 8,
     justifyContent: 'space-between',
   },
+  tabletCategoryItem: { width: '19%' },
+  tabletCategorySquare: { width: 84, height: 84, borderRadius: 16 },
   categoryItem: {
     alignItems: 'center',
     width: '24%',
@@ -1965,6 +1968,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Product grid ────────────────────────────────────────────────
   list: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.six },
+  tabletList: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.six },
   row: { gap: Spacing.two, marginBottom: Spacing.two },
 
   card: {

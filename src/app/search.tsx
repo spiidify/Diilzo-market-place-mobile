@@ -1,26 +1,26 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  Accuracy,
-  getCurrentPositionAsync,
-  getLastKnownPositionAsync,
-  requestForegroundPermissionsAsync,
+    Accuracy,
+    getCurrentPositionAsync,
+    getLastKnownPositionAsync,
+    requestForegroundPermissionsAsync,
 } from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Keyboard,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Keyboard,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,15 +29,16 @@ import { ProductListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { apiRequest } from '@/services/api';
 import { fetchCountries } from '@/services/locations';
 import {
-  esSearchProducts,
-  fetchProducts,
-  getAutocomplete,
-  getTrendingSearches,
-  logSearchClick,
-  searchProducts,
+    esSearchProducts,
+    fetchProducts,
+    getAutocomplete,
+    getTrendingSearches,
+    logSearchClick,
+    searchProducts,
 } from '@/services/products';
 import type { Address, Product } from '@/types';
 
@@ -240,6 +241,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
   const { isAuthenticated } = useAuth();
+  const { productColumns, isTablet } = useResponsiveLayout();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const categorySlug = params.category || null;
@@ -1098,13 +1100,14 @@ export default function SearchScreen() {
               </View>
             ) : (
               <FlatList
+                key={`search-products-${productColumns}`}
                 ref={listRef}
                 data={products}
                 keyExtractor={(item) => `${item.id}-${item.slug}`}
                 renderItem={renderProduct}
-                numColumns={2}
+                numColumns={productColumns}
                 columnWrapperStyle={styles.row}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={[styles.list, isTablet && styles.tabletList]}
                 maxToRenderPerBatch={6}
                 windowSize={7}
                 initialNumToRender={8}
@@ -1612,6 +1615,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 20,
   },
+  tabletList: { paddingHorizontal: 24, paddingBottom: 32 },
   row: { gap: 10, marginBottom: 10 },
 
   // ── Card ────────────────────────────────────────────────────────

@@ -5,9 +5,11 @@ import { StyleSheet } from 'react-native';
 
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { TABLET_NAV_WIDTH, useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export default function AppTabs() {
   const { colors } = useAppTheme();
+  const { isTablet, contentMaxWidth } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
@@ -15,9 +17,19 @@ export default function AppTabs() {
       screenOptions={{
         tabBarActiveTintColor: Brand.primary,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        tabBarIconStyle: styles.tabBarIcon,
+        tabBarPosition: isTablet ? 'left' : 'bottom',
+        tabBarVariant: isTablet ? 'material' : 'uikit',
+        tabBarLabelPosition: isTablet ? 'beside-icon' : 'below-icon',
+        tabBarStyle: isTablet ? styles.tabletTabBar : styles.tabBar,
+        tabBarLabelStyle: isTablet ? styles.tabletTabBarLabel : styles.tabBarLabel,
+        tabBarIconStyle: isTablet ? styles.tabletTabBarIcon : styles.tabBarIcon,
+        tabBarItemStyle: isTablet ? styles.tabletTabBarItem : undefined,
+        sceneStyle: isTablet ? {
+          flex: 1,
+          width: '100%',
+          maxWidth: contentMaxWidth,
+          alignSelf: 'center',
+        } : undefined,
         headerShown: false,
       }}
     >
@@ -102,6 +114,29 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 8,
+  },
+  tabletTabBar: {
+    width: TABLET_NAV_WIDTH,
+    backgroundColor: c.surface,
+    borderTopWidth: 0,
+    borderRightWidth: 1,
+    borderRightColor: c.border,
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingHorizontal: 8,
+  },
+  tabletTabBarItem: {
+    minHeight: 52,
+    borderRadius: 12,
+    marginVertical: 4,
+  },
+  tabletTabBarLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  tabletTabBarIcon: {
+    marginTop: 0,
+    marginRight: 8,
   },
   tabBarLabel: {
     fontSize: 11,

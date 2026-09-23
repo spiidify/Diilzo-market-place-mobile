@@ -1,31 +1,34 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { clearCart, getCart, removeCartItem, updateCartItem } from '@/services/cart';
 import { playSound, Sounds } from '@/services/sound';
 import type { CartItem, Cart as CartType } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function CartScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { isTablet, contentWidth } = useResponsiveLayout();
+  const tabletSplit = isTablet && contentWidth >= 820;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const { setCartCount: setGlobalCartCount, refreshCartCount } = useCart();
@@ -321,6 +324,40 @@ export default function CartScreen() {
     </View>
   );
 
+  const cartList = (
+    <FlatList
+      style={tabletSplit ? styles.tabletCartList : undefined}
+      data={cart.items}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={renderItem}
+      contentContainerStyle={[styles.list, tabletSplit && styles.tabletList]}
+      showsVerticalScrollIndicator={false}
+      onRefresh={loadCart}
+      refreshing={false}
+    />
+  );
+
+  const summaryBar = (
+    <View style={[styles.bottomBar, tabletSplit && styles.tabletBottomBar]}>
+      <View style={styles.bottomBarTop}>
+        <View style={styles.subtotalCol}>
+          <Text style={styles.subtotalLabel}>Subtotal</Text>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalCurrency}>{currency}</Text>
+            <Text style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</Text>
+          </View>
+        </View>
+        <Pressable
+          style={({ pressed }) => [styles.checkoutBtn, pressed && { opacity: 0.85 }]}
+          onPress={handleCheckout}
+        >
+          <MaterialCommunityIcons name="cart-arrow-right" size={22} color="#FFFFFF" />
+          <Text style={styles.checkoutBtnText}>Checkout</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.screen}>
       <GradientHeader
@@ -329,35 +366,17 @@ export default function CartScreen() {
         rightIcon="delete-sweep-outline"
         onRightPress={handleClear}
       />
-
-      <FlatList
-        data={cart.items}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        onRefresh={loadCart}
-        refreshing={false}
-      />
-
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomBarTop}>
-          <View style={styles.subtotalCol}>
-            <Text style={styles.subtotalLabel}>Subtotal</Text>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalCurrency}>{currency}</Text>
-              <Text style={styles.totalAmount}>{Number(cart.total_price).toLocaleString()}</Text>
-            </View>
-          </View>
-          <Pressable
-            style={({ pressed }) => [styles.checkoutBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleCheckout}
-          >
-            <MaterialCommunityIcons name="cart-arrow-right" size={22} color="#FFFFFF" />
-            <Text style={styles.checkoutBtnText}>Checkout</Text>
-          </Pressable>
+      {tabletSplit ? (
+        <View style={styles.tabletLayout}>
+          {cartList}
+          <View style={styles.tabletSummaryColumn}>{summaryBar}</View>
         </View>
-      </View>
+      ) : (
+        <>
+          {cartList}
+          {summaryBar}
+        </>
+      )}
     </View>
   );
 }
@@ -426,6 +445,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingTop: Spacing.two,
     paddingBottom: 140,
   },
+  tabletLayout: { flex: 1, flexDirection: 'row', gap: 24, paddingHorizontal: 24, paddingTop: 16 },
+  tabletCartList: { flex: 1 },
+  tabletList: { paddingHorizontal: 0, paddingTop: 0, paddingBottom: 24 },
+  tabletSummaryColumn: { width: '36%', maxWidth: 400, paddingTop: 8 },
 
   card: {
     backgroundColor: c.surface,
@@ -514,6 +537,18 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -3 },
+  },
+  tabletBottomBar: {
+    position: 'relative',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    paddingBottom: Spacing.three,
+    borderWidth: 1,
+    borderColor: c.borderLight,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 2 },
   },
   bottomBarTop: {
     flexDirection: 'row',

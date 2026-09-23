@@ -1,6 +1,9 @@
+import * as Device from 'expo-device';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { DiilzoSplash } from '@/components/diilzo-splash';
@@ -10,10 +13,10 @@ import { CartProvider } from '@/context/CartContext';
 import { ThemeProvider as AppThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import {
-  addNotificationReceivedListener,
-  addNotificationResponseListener,
-  getLastNotificationResponse,
-  registerForPushNotifications,
+    addNotificationReceivedListener,
+    addNotificationResponseListener,
+    getLastNotificationResponse,
+    registerForPushNotifications,
 } from '@/services/push';
 import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { router } from 'expo-router';
@@ -22,6 +25,13 @@ SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   useSessionManager();
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const orientationChange = Device.deviceType === Device.DeviceType.TABLET
+      ? ScreenOrientation.unlockAsync()
+      : ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    orientationChange.catch(() => {});
+  }, []);
   useEffect(() => {
     // Preload sound effects and register for push notifications on app launch
     preloadSounds();

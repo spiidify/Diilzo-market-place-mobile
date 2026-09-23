@@ -4,21 +4,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  Linking,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Image,
+    Linking,
+    Modal,
+    Pressable,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,6 +25,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { addToCart } from '@/services/cart';
 import { createReview, fetchProductReviews, trackProductView } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
@@ -70,7 +70,10 @@ export default function ProductDetailScreen() {
   const [chatCreating, setChatCreating] = useState(false);
   const { isAuthenticated } = useAuth();
   const { colors } = useAppTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { width: windowWidth, contentWidth, isTablet } = useResponsiveLayout();
+  const isWideTablet = isTablet && contentWidth >= 820;
+  const galleryWidth = isWideTablet ? Math.min(contentWidth * 0.45, 560) : contentWidth;
+  const styles = useMemo(() => createStyles(colors, galleryWidth), [colors, galleryWidth]);
 
   const load = useCallback(async () => {
     if (!slug) return;
@@ -531,8 +534,9 @@ export default function ProductDetailScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Image gallery (swipeable carousel) ─────────────────── */}
-          <View style={styles.gallerySection}>
+          <View style={isWideTablet ? styles.tabletProductOverview : undefined}>
+            {/* ── Image gallery (swipeable carousel) ─────────────────── */}
+            <View style={[styles.gallerySection, isWideTablet && styles.tabletGallerySection]}>
             <View style={styles.mainImageWrap}>
               {images.length > 0 ? (
                 <FlatList
@@ -542,14 +546,14 @@ export default function ProductDetailScreen() {
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, idx) => `img-${idx}`}
                   onScroll={(e) => {
-                    const idx = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+                    const idx = Math.round(e.nativeEvent.contentOffset.x / galleryWidth);
                     if (idx !== activeImage) setActiveImage(idx);
                   }}
                   scrollEventThrottle={16}
                   renderItem={({ item, index }) => (
                     <Pressable
                       onPress={() => { setFullscreenIndex(index); setShowFullscreenGallery(true); }}
-                      style={{ width: screenWidth, height: screenWidth }}
+                      style={{ width: galleryWidth, height: galleryWidth }}
                     >
                       <Image
                         source={{ uri: item }}
@@ -618,10 +622,11 @@ export default function ProductDetailScreen() {
                 ))}
               </ScrollView>
             )}
-          </View>
+            </View>
 
-          {/* ── Title + price section (compact, Alibaba-style) ─────── */}
-          <View style={styles.titleSection}>
+            {/* ── Title + price section (compact, Alibaba-style) ─────── */}
+            <View style={[styles.titleSection, isWideTablet && styles.tabletTitleSection]}>
+
             {/* Local / International badge */}
             {(isLocalSeller || isInternationalSeller) && (
               <View style={[styles.locBadgeRow, isLocalSeller ? styles.locBadgeLocal : styles.locBadgeIntl]}>
@@ -704,6 +709,7 @@ export default function ProductDetailScreen() {
               {product.is_featured && (
                 <View style={[styles.tag, styles.tagChoice]}><Text style={styles.tagChoiceText}>✓ Choice</Text></View>
               )}
+            </View>
             </View>
           </View>
 
@@ -1385,17 +1391,17 @@ export default function ProductDetailScreen() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, idx) => `fs-img-${idx}`}
               onScroll={(e) => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+                const idx = Math.round(e.nativeEvent.contentOffset.x / windowWidth);
                 if (idx !== fullscreenIndex) setFullscreenIndex(idx);
               }}
               scrollEventThrottle={16}
               getItemLayout={(_, index) => ({
-                length: screenWidth,
-                offset: screenWidth * index,
+                length: windowWidth,
+                offset: windowWidth * index,
                 index,
               })}
               renderItem={({ item }) => (
-                <View style={{ width: screenWidth, height: screenWidth }}>
+                <View style={{ width: windowWidth, height: windowWidth }}>
                   <Image
                     source={{ uri: item }}
                     style={styles.fsImage}
@@ -1586,9 +1592,7 @@ export default function ProductDetailScreen() {
   );
 }
 
-const { width: screenWidth } = Dimensions.get('window');
-
-const createStyles = (c: ThemeColors) => StyleSheet.create({
+const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.surface },
   safeArea: { flex: 1, backgroundColor: c.surface },
 
@@ -1698,13 +1702,21 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     paddingBottom: 8,
   },
+  tabletProductOverview: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 24,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  tabletGallerySection: { width: galleryWidth, flexShrink: 0 },
   mainImageWrap: {
     width: '100%',
-    height: screenWidth,
+    height: galleryWidth,
     backgroundColor: c.surface,
     position: 'relative',
   },
-  carousel: { width: '100%', height: screenWidth },
+  carousel: { width: '100%', height: galleryWidth },
   mainImage: { width: '100%', height: '100%' },
   noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.surfaceAlt },
   badgeStack: { position: 'absolute', top: 12, left: 12, gap: 4 },
@@ -1890,6 +1902,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 10,
+  },
+  tabletTitleSection: {
+    flex: 1,
+    marginTop: 0,
+    borderTopWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 8,
   },
   priceBlock: { gap: 2 },
   oldPrice: { fontSize: 13, color: c.textTertiary, textDecorationLine: 'line-through' },

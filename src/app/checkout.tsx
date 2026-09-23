@@ -23,6 +23,7 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { apiRequest } from '@/services/api';
 import { clearCart, getCart } from '@/services/cart';
 import { validateCoupon } from '@/services/catalog';
@@ -92,6 +93,8 @@ const DEFAULT_SHIPPING_FEE = 5000; // Fallback only — actual cost fetched from
 export default function CheckoutScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { isTablet, contentWidth } = useResponsiveLayout();
+  const tabletSplit = isTablet && contentWidth >= 820;
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { user, isAuthenticated } = useAuth();
   const { setCartCount: setGlobalCartCount } = useCart();
@@ -550,9 +553,10 @@ export default function CheckoutScreen() {
       >
         <ScrollView
           style={styles.body}
-          contentContainerStyle={styles.bodyContent}
+          contentContainerStyle={[styles.bodyContent, isTablet && styles.tabletBodyContent, tabletSplit && styles.tabletBodyContentSplit]}
           showsVerticalScrollIndicator={false}
         >
+          <View style={tabletSplit ? styles.tabletMainColumn : undefined}>
           {/* ── Section 1: Delivery Address + Notes ─────────────── */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -877,9 +881,10 @@ export default function CheckoutScreen() {
               </View>
             )}
           </View>
+          </View>
 
           {/* ── Section 4: Order Summary ─────────────────────── */}
-          <View style={styles.card}>
+          <View style={[styles.card, tabletSplit && styles.tabletSummaryCard]}>
             <View style={styles.cardHeader}>
               <View style={styles.stepPill}>
                 <Text style={styles.stepPillText}>4</Text>
@@ -1146,6 +1151,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Body ────────────────────────────────────────────────────
   body: { flex: 1 },
   bodyContent: { padding: Spacing.two + 2, paddingBottom: 120, gap: Spacing.two + 2 },
+  tabletBodyContent: { width: '100%', maxWidth: 1120, alignSelf: 'center', padding: 24, paddingBottom: 120 },
+  tabletBodyContentSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  tabletMainColumn: { flex: 1, minWidth: 0, gap: 16 },
+  tabletSummaryCard: { width: '38%', maxWidth: 440, alignSelf: 'flex-start' },
 
   // ── Card (shared) ──────────────────────────────────────────
   card: {

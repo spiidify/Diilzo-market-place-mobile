@@ -3,14 +3,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Image,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { getMyStore, type SellerDashboard } from '@/services/seller';
 
 // ── Stat card data ──────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export default function SellerDashboardScreen() {
   const [error, setError] = useState<string | null>(null);
   const { chatUnread, refreshBadges } = useBadges();
   const { colors } = useAppTheme();
+  const { isTablet, isLargeTablet } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const load = useCallback(async () => {
@@ -228,7 +230,7 @@ export default function SellerDashboardScreen() {
         {/* ── 2-column stats grid ──────────────────────────────────── */}
         <View style={styles.statsGrid}>
           {statCards.map((stat, i) => (
-            <View key={`stat-${i}`} style={styles.statCard}>
+            <View key={`stat-${i}`} style={[styles.statCard, isTablet && { flexBasis: isLargeTablet ? '23%' : '31%' }]}>
               <View style={[styles.statIconWrap, { backgroundColor: stat.bgColor }]}>
                 <MaterialCommunityIcons name={stat.icon as any} size={22} color={stat.color} />
               </View>
@@ -441,7 +443,7 @@ export default function SellerDashboardScreen() {
               {group.items.map((item, ii) => (
                 <Pressable
                   key={`menu-${gi}-${ii}`}
-                  style={({ pressed }) => [styles.menuCard, pressed && { transform: [{ scale: 0.97 }] }]}
+                  style={({ pressed }) => [styles.menuCard, isTablet && { flexBasis: isLargeTablet ? '23%' : '31%' }, pressed && { transform: [{ scale: 0.97 }] }]}
                   onPress={() => router.push(item.route)}
                 >
                   <View style={[styles.menuIconWrap, { backgroundColor: item.color + '18' }]}>

@@ -6,26 +6,27 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  AppState,
-  FlatList,
-  Image,
-  Keyboard,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    AppState,
+    FlatList,
+    Image,
+    Keyboard,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { fetchCategories } from '@/services/catalog';
 import { esSearchProducts, fetchProducts, getAutocomplete, getTrendingSearches, logSearchClick } from '@/services/products';
 import { addToWishlist, fetchWishlist, removeFromWishlist } from '@/services/wishlist';
@@ -462,6 +463,7 @@ const gridVideoStyles = StyleSheet.create({
 export default function VideosScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { isTablet, productColumns } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<{ product?: string }>();
   const targetProductSlug = params.product || null;
@@ -470,7 +472,7 @@ export default function VideosScreen() {
 
   // Tab bar is 88px (from app-tabs.tsx). Header ~56px. Tabs row ~40px.
   // Feed item height = visible area between header+tabs and tab bar.
-  const TAB_BAR_HEIGHT = 88;
+  const TAB_BAR_HEIGHT = isTablet ? 0 : 88;
   const HEADER_HEIGHT = 56;
   const TABS_HEIGHT = 40;
   // Normal browse mode: header + tabs are visible
@@ -1473,16 +1475,16 @@ export default function VideosScreen() {
       ) : (
         /* ── Search results: 2-column grid with muted autoplay ─────────── */
         <FlatList
-          key="grid"
+          key={`grid-${productColumns}`}
           ref={gridListRef}
           data={products}
           keyExtractor={(item) => `grid-video-${item.id}-${item.slug}`}
           renderItem={renderGridVideoItem}
           extraData={Array.from(gridActiveIndices).join(',')}
-          numColumns={2}
+          numColumns={productColumns}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.gridContent}
-          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={isTablet ? styles.tabletGridContent : styles.gridContent}
+          columnWrapperStyle={isTablet ? styles.tabletGridRow : styles.gridRow}
           onViewableItemsChanged={handleGridViewableItemsChanged}
           viewabilityConfig={gridViewabilityConfig}
           onEndReached={handleLoadMore}
@@ -1783,7 +1785,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Grid (search results — 2-column muted autoplay) ──────────────
   gridContent: { paddingHorizontal: 8, paddingBottom: 100 },
+  tabletGridContent: { paddingHorizontal: 24, paddingBottom: 32 },
   gridRow: { gap: 8, marginBottom: 8 },
+  tabletGridRow: { gap: 16, marginBottom: 16 },
   gridItem: {
     flex: 1,
     aspectRatio: 9 / 16,
