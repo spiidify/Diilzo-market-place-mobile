@@ -2,29 +2,46 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { getMessageContactWarning } from '@/services/connection';
 import {
-  getSellerThreadDetail,
-  getSellerThreads,
-  sendSellerMessage,
-  type SellerMessage,
-  type SellerThread,
-  type SellerThreadDetail,
+    getSellerThreadDetail,
+    getSellerThreads,
+    sendSellerMessage,
+    type SellerMessage,
+    type SellerThread,
+    type SellerThreadDetail,
 } from '@/services/seller';
 import { playSound, Sounds } from '@/services/sound';
+
+function uniqueById<T extends { id: number }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const id = String(item.id);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function appendUniqueById<T extends { id: number }>(items: T[], item: T): T[] {
+  return items.some((existing) => String(existing.id) === String(item.id))
+    ? items
+    : [...items, item];
+}
 
 export default function SellerMessagesScreen() {
   const router = useRouter();
@@ -36,6 +53,7 @@ export default function SellerMessagesScreen() {
   const [activeThread, setActiveThread] = useState<SellerThreadDetail | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [sendWarning, setSendWarning] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +63,7 @@ export default function SellerMessagesScreen() {
       setError(null);
       setRefreshing(true);
       const data = await getSellerThreads();
-      setThreads(data);
+      setThreads(uniqueById(data));
     } catch (e: any) {
       setError(e?.message || 'Failed to load data');
     } finally {
@@ -75,7 +93,7 @@ export default function SellerMessagesScreen() {
     setActiveThread(null);
     try {
       const data = await getSellerThreadDetail(id);
-      setActiveThread(data);
+      setActiveThread({ ...data, messages: uniqueById(data.messages) });
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     } catch {
       Alert.alert('Error', 'Failed to load messages');
@@ -90,14 +108,15 @@ export default function SellerMessagesScreen() {
     const interval = setInterval(async () => {
       try {
         const data = await getSellerThreadDetail(activeThread.thread_id);
+        const messages = uniqueById(data.messages);
         // Only update if new messages arrived
-        if (data.messages.length !== activeThread.messages.length) {
+        if (messages.length !== activeThread.messages.length) {
           // Check if the new message is from the buyer (not me)
-          const lastMsg = data.messages[data.messages.length - 1];
+          const lastMsg = messages[messages.length - 1];
           if (lastMsg && !lastMsg.is_me) {
             playSound(Sounds.MESSAGE);
           }
-          setActiveThread(data);
+          setActiveThread({ ...data, messages });
           setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
         }
       } catch { /* ignore polling errors */ }
@@ -106,26 +125,33 @@ export default function SellerMessagesScreen() {
   }, [activeThread?.thread_id]);
 
   const handleSend = async () => {
-    if (!activeThread || !replyText.trim()) return;
+    const message = replyText.trim();
+    if (!activeThread || !message) return;
+    const contactWarning = getMessageContactWarning(message);
+    if (contactWarning) {
+      setSendWarning(contactWarning);
+      return;
+    }
+    setSendWarning(null);
     setSending(true);
     playSound(Sounds.MESSAGE_SEND);
     try {
-      const newMsg = await sendSellerMessage(activeThread.thread_id, replyText.trim());
+      const newMsg = await sendSellerMessage(activeThread.thread_id, message);
       setActiveThread({
         ...activeThread,
-        messages: [...activeThread.messages, {
+        messages: appendUniqueById(activeThread.messages, {
           id: newMsg.id,
           message: newMsg.message,
           is_me: true,
           sender_name: 'You',
           created_at: newMsg.created_at,
-        } as SellerMessage],
+        } as SellerMessage),
       });
       setReplyText('');
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
       load();
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.error || 'Failed to send');
+      Alert.alert('Error', e?.response?.data?.error || e?.message || 'Failed to send');
     } finally {
       setSending(false);
     }
@@ -185,11 +211,23 @@ export default function SellerMessagesScreen() {
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
               />
             )}
+            {sendWarning ? (
+              <View style={styles.sendWarningBar}>
+                <MaterialCommunityIcons name="shield-alert-outline" size={16} color={Brand.rating} />
+                <Text style={styles.sendWarningText}>{sendWarning}</Text>
+                <Pressable onPress={() => setSendWarning(null)} hitSlop={8}>
+                  <MaterialCommunityIcons name="close" size={16} color={colors.textTertiary} />
+                </Pressable>
+              </View>
+            ) : null}
             <View style={styles.inputBar}>
               <TextInput
                 style={styles.replyInput}
                 value={replyText}
-                onChangeText={setReplyText}
+                onChangeText={(text) => {
+                  setReplyText(text);
+                  if (sendWarning) setSendWarning(null);
+                }}
                 placeholder="Type a message..."
                 placeholderTextColor={colors.textTertiary}
                 multiline
@@ -266,6 +304,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   msgTextMe: { color: '#FFFFFF' },
   msgTime: { fontSize: 10, color: c.textTertiary, marginTop: 4, alignSelf: 'flex-end' },
   msgTimeMe: { color: 'rgba(255,255,255,0.7)' },
+  sendWarningBar: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#FFFBEB' },
+  sendWarningText: { flex: 1, fontSize: 11, color: '#92400E', lineHeight: 16 },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.borderLight },
   replyInput: { flex: 1, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, color: c.text, maxHeight: 100 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },

@@ -4,16 +4,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,9 +24,25 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { BASE_URL, getAccessToken } from '@/services/api';
 import { fetchChatMessages, fetchChatPresence, fetchChatThread, sendChatMessage, sendHeartbeat, sendTypingStatus, sendVoiceMessage } from '@/services/chat';
-import { scanMessageRisk } from '@/services/connection';
+import { getMessageContactWarning, scanMessageRisk } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
 import type { ChatMessage, ChatThread } from '@/types';
+
+function uniqueChatMessages(messages: ChatMessage[]): ChatMessage[] {
+  const seen = new Set<string>();
+  return messages.filter((message) => {
+    const id = String(message.id);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function appendUniqueChatMessage(messages: ChatMessage[], message: ChatMessage): ChatMessage[] {
+  return messages.some((existing) => String(existing.id) === String(message.id))
+    ? messages
+    : [...messages, message];
+}
 
 // ── Date separator helpers ────────────────────────────────────────
 function formatDateSeparator(iso: string): string {
@@ -225,7 +241,7 @@ export default function ChatThreadScreen() {
         fetchChatThread(threadId).catch(() => null as ChatThread | null),
       ]);
       console.log('[chat] Loaded messages:', msgs.length, 'for thread', threadId);
-      setMessages(msgs);
+      setMessages(uniqueChatMessages(msgs));
       // Refresh badge counts since loading messages marks them as read
       refreshBadges();
       if (thread) {
@@ -321,7 +337,7 @@ export default function ChatThreadScreen() {
                   created_at: msg.created_at,
                 };
                 setMessages((prev) => {
-                  if (prev.some((m) => m.id === normalized.id)) return prev;
+                  if (prev.some((message) => String(message.id) === String(normalized.id))) return prev;
                   // Play message sound only for incoming messages (not our own)
                   if (normalized.sender !== user?.id) {
                     playSound(Sounds.MESSAGE);
@@ -368,6 +384,13 @@ export default function ChatThreadScreen() {
   const handleSend = useCallback(async () => {
     const msg = input.trim();
     if (!msg || sending) return;
+    const contactWarning = getMessageContactWarning(msg);
+    if (contactWarning) {
+      setRiskWarning(contactWarning);
+      setSendError(null);
+      return;
+    }
+    setRiskWarning(null);
     setInput('');
     // Stop typing indicator when message is sent
     if (threadId) sendTypingStatus(Number(threadId), false);
@@ -387,7 +410,7 @@ export default function ChatThreadScreen() {
     try {
       setSendError(null);
       const sent = await sendChatMessage(threadId, msg);
-      setMessages((prev) => [...prev, sent]);
+      setMessages((prev) => appendUniqueChatMessage(prev, sent));
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -408,7 +431,7 @@ export default function ChatThreadScreen() {
         playSound(Sounds.MESSAGE_SEND);
         try {
           const sent = await sendVoiceMessage(threadId, result.uri, result.duration);
-          setMessages((prev) => [...prev, sent]);
+          setMessages((prev) => appendUniqueChatMessage(prev, sent));
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
           }, 100);

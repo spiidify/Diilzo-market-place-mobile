@@ -2,6 +2,7 @@
 
 import type { ChatMessage, ChatThread, PaginatedResponse } from '../types';
 import api, { apiRequest, BASE_URL, getAccessToken } from './api';
+import { getMessageContactWarning } from './connection';
 
 /** GET /api/v1/chat/threads/ — list user's chat threads */
 export async function fetchChatThreads(): Promise<ChatThread[]> {
@@ -54,6 +55,9 @@ export async function fetchChatMessages(threadId: number): Promise<ChatMessage[]
 
 /** POST /api/v1/chat/threads/<id>/send/ — send a text message */
 export async function sendChatMessage(threadId: number, message: string): Promise<ChatMessage> {
+  const warning = getMessageContactWarning(message);
+  if (warning) throw new Error(warning);
+
   return apiRequest<ChatMessage>({
     method: 'POST',
     url: `/chat/threads/${threadId}/send/`,

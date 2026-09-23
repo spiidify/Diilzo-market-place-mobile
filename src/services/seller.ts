@@ -5,6 +5,7 @@
 // BASE_URL (/api/v1), so we use /seller/... as the relative path.
 
 import { apiRequest, BASE_URL, getAccessToken } from './api';
+import { getMessageContactWarning } from './connection';
 
 const SELLER_BASE = '/seller';
 
@@ -679,6 +680,9 @@ export async function getSellerThreadDetail(id: number): Promise<SellerThreadDet
 }
 
 export async function sendSellerMessage(threadId: number, message: string): Promise<any> {
+  const warning = getMessageContactWarning(message);
+  if (warning) throw new Error(warning);
+
   return apiRequest<any>({
     method: 'POST',
     url: `${SELLER_BASE}/${threadId}/message_thread/`,
