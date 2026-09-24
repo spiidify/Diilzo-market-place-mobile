@@ -10,6 +10,7 @@ import { DiilzoSplash } from '@/components/diilzo-splash';
 import { AuthProvider } from '@/context/AuthContext';
 import { BadgeProvider } from '@/context/BadgeContext';
 import { CartProvider } from '@/context/CartContext';
+import { CountryProvider } from '@/context/CountryContext';
 import { ThemeProvider as AppThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import {
@@ -82,7 +83,9 @@ function ThemedRoot() {
       <AuthProvider>
         <BadgeProvider>
           <CartProvider>
-            <AppContent />
+            <CountryProvider>
+              <AppContent />
+            </CountryProvider>
           </CartProvider>
         </BadgeProvider>
       </AuthProvider>

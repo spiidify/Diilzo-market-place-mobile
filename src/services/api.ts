@@ -5,6 +5,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
+import { getCountryIso2 } from './country';
+
 // ── BASE_URL resolution ──────────────────────────────────────────
 // Production: custom domain backend (used by default for all devices)
 // Local dev: set EXPO_PUBLIC_API_URL env var to override (e.g. http://10.0.2.2:8000/api/v1)
@@ -172,6 +174,12 @@ api.interceptors.request.use(
     const token = await getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    // Scope catalog/currency to the shopper's selected country
+    // (CountryMiddleware on the backend reads this header).
+    if (config.headers) {
+      config.headers['X-Country-Code'] = await getCountryIso2();
     }
     return config;
   },

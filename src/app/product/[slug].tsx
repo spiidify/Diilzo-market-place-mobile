@@ -306,7 +306,7 @@ export default function ProductDetailScreen() {
     if (!product) return;
     try {
       await Share.share({
-        message: `Check out ${product.name} on Diilzo — ${product.currency} ${Number(product.final_price).toLocaleString()}`,
+        message: `Check out ${product.name} on Diilzo — ${product.display_currency || product.currency} ${Number(product.display_price || product.final_price).toLocaleString()}`,
         url: `https://diilzo.com/products/${product.slug}`,
         title: product.name,
       });
@@ -372,7 +372,7 @@ export default function ProductDetailScreen() {
         const raw = await AsyncStorage.getItem('recently_viewed');
         const list: any[] = raw ? JSON.parse(raw) : [];
         const filtered = list.filter((p: any) => p.slug !== product.slug);
-        filtered.unshift({ id: product.id, slug: product.slug, name: product.name, primary_image_url: product.primary_image_url, final_price: product.final_price, currency: product.currency });
+        filtered.unshift({ id: product.id, slug: product.slug, name: product.name, primary_image_url: product.primary_image_url, final_price: product.final_price, currency: product.currency, display_price: product.display_price, display_currency: product.display_currency });
         await AsyncStorage.setItem('recently_viewed', JSON.stringify(filtered.slice(0, 20)));
       } catch { }
     })();
@@ -438,7 +438,12 @@ export default function ProductDetailScreen() {
   const images = product.images?.length
     ? product.images.map((img) => img.image_url).filter(Boolean) as string[]
     : product.primary_image_url ? [product.primary_image_url] : [];
-  const savings = product.is_on_sale ? Number(product.price) - Number(product.final_price) : 0;
+  // Prices converted to the shopper's selected-country currency
+  // (display_* fields are server-computed; null when same as native).
+  const dispCurrency = product.display_currency || product.currency;
+  const dispFinalPrice = Number(product.display_price || product.final_price);
+  const dispOriginalPrice = Number(product.display_original_price || product.price);
+  const savings = product.is_on_sale ? dispOriginalPrice - dispFinalPrice : 0;
   const isLowStock = effectiveInStock && effectiveStock > 0 && effectiveStock <= 5;
   const storeCountry = product.store?.country || '';
   const isLocalSeller = storeCountry.toLowerCase() === 'uganda';
@@ -490,9 +495,9 @@ export default function ProductDetailScreen() {
           <View style={styles.headerInfoRow}>
             <Text style={styles.headerProductName} numberOfLines={2}>{product.name}</Text>
             <View style={styles.headerPriceCol}>
-              <Text style={styles.headerPriceCurrency}>{product.currency}</Text>
+              <Text style={styles.headerPriceCurrency}>{dispCurrency}</Text>
               <Text style={styles.headerPriceAmount} numberOfLines={1}>
-                {Number(product.final_price).toLocaleString()}
+                {dispFinalPrice.toLocaleString()}
               </Text>
             </View>
           </View>
@@ -646,13 +651,13 @@ export default function ProductDetailScreen() {
             <View style={styles.priceBlock}>
               {product.is_on_sale && !selectedVariant && (
                 <Text style={styles.oldPrice}>
-                  {product.currency} {Number(product.price).toLocaleString()}
+                  {dispCurrency} {dispOriginalPrice.toLocaleString()}
                 </Text>
               )}
               <View style={styles.priceMainRow}>
-                <Text style={styles.priceCurrency}>{product.currency}</Text>
+                <Text style={styles.priceCurrency}>{selectedVariant ? product.currency : dispCurrency}</Text>
                 <Text style={[styles.priceAmount, product.is_on_sale && !selectedVariant && { color: Brand.danger }]}>
-                  {effectivePrice.toLocaleString()}
+                  {(selectedVariant ? effectivePrice : dispFinalPrice).toLocaleString()}
                 </Text>
                 {product.is_on_sale && !selectedVariant && product.discount_percentage > 0 && (
                   <View style={styles.discountTag}>
@@ -662,7 +667,7 @@ export default function ProductDetailScreen() {
               </View>
               {product.is_on_sale && !selectedVariant && savings > 0 && (
                 <Text style={styles.saveLine}>
-                  Save {product.currency} {savings.toLocaleString()}
+                  Save {dispCurrency} {savings.toLocaleString()}
                 </Text>
               )}
               {selectedVariant && (
@@ -1163,7 +1168,7 @@ export default function ProductDetailScreen() {
                       )}
                     </View>
                     <Text style={styles.hName} numberOfLines={2}>{item.name}</Text>
-                    <Text style={styles.hPrice}>{item.currency} {Number(item.final_price).toLocaleString()}</Text>
+                    <Text style={styles.hPrice}>{item.display_currency || item.currency} {Number(item.display_price || item.final_price).toLocaleString()}</Text>
                     {item.is_in_stock ? (
                       <View style={styles.hStockRow}>
                         <MaterialCommunityIcons name="check-circle" size={10} color={Brand.success} />
@@ -1210,7 +1215,7 @@ export default function ProductDetailScreen() {
                       )}
                     </View>
                     <Text style={styles.hName} numberOfLines={2}>{item.name}</Text>
-                    <Text style={styles.hPrice}>{item.currency} {Number(item.final_price).toLocaleString()}</Text>
+                    <Text style={styles.hPrice}>{item.display_currency || item.currency} {Number(item.display_price || item.final_price).toLocaleString()}</Text>
                     {item.is_in_stock ? (
                       <View style={styles.hStockRow}>
                         <MaterialCommunityIcons name="check-circle" size={10} color={Brand.success} />
@@ -1261,7 +1266,7 @@ export default function ProductDetailScreen() {
                       )}
                     </View>
                     <Text style={styles.hName} numberOfLines={2}>{item.name}</Text>
-                    <Text style={styles.hPrice}>{item.currency} {Number(item.final_price).toLocaleString()}</Text>
+                    <Text style={styles.hPrice}>{item.display_currency || item.currency} {Number(item.display_price || item.final_price).toLocaleString()}</Text>
                     {item.is_in_stock ? (
                       <View style={styles.hStockRow}>
                         <MaterialCommunityIcons name="check-circle" size={10} color={Brand.success} />
@@ -1299,7 +1304,7 @@ export default function ProductDetailScreen() {
                       )}
                     </View>
                     <Text style={styles.hName} numberOfLines={2}>{item.name}</Text>
-                    <Text style={styles.hPrice}>{item.currency} {Number(item.final_price).toLocaleString()}</Text>
+                    <Text style={styles.hPrice}>{item.display_currency || item.currency} {Number(item.display_price || item.final_price).toLocaleString()}</Text>
                   </Pressable>
                 ))}
               </ScrollView>

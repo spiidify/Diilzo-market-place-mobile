@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CountryPicker } from '@/components/CountryPicker';
 import { DiilzoLogo } from '@/components/diilzo-logo';
 import { ScrollToTopButton } from '@/components/scroll-to-top';
 import { ProductListSkeleton } from '@/components/skeleton';
@@ -24,6 +25,7 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { useCart } from '@/context/CartContext';
+import { useCountry } from '@/context/CountryContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -101,9 +103,9 @@ const ProductCard = memo(function ProductCard({
           <Text style={styles.reviewCount}>{item.review_count}</Text>
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.currency}>{item.currency}</Text>
+          <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
           <Text style={styles.price}>
-            {Number(item.final_price).toLocaleString()}
+            {Number(item.display_price || item.final_price).toLocaleString()}
           </Text>
         </View>
         {item.is_on_sale && (
@@ -395,11 +397,11 @@ const FlashSaleShelf = memo(function FlashSaleShelf({
             </View>
             <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
             <View style={styles.carouselPriceRow}>
-              <Text style={styles.currency}>{item.currency}</Text>
-              <Text style={styles.carouselPrice}>{Number(item.final_price).toLocaleString()}</Text>
+              <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
+              <Text style={styles.carouselPrice}>{Number(item.display_price || item.final_price).toLocaleString()}</Text>
             </View>
             {item.is_on_sale && (
-              <Text style={styles.carouselOrigPrice}>{item.currency} {Number(item.price).toLocaleString()}</Text>
+              <Text style={styles.carouselOrigPrice}>{item.display_currency || item.currency} {Number(item.display_original_price || item.price).toLocaleString()}</Text>
             )}
           </Pressable>
         ))}
@@ -613,11 +615,11 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
             </View>
             <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
             <View style={styles.carouselPriceRow}>
-              <Text style={styles.currency}>{item.currency}</Text>
-              <Text style={styles.carouselPrice}>{Number(item.final_price).toLocaleString()}</Text>
+              <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
+              <Text style={styles.carouselPrice}>{Number(item.display_price || item.final_price).toLocaleString()}</Text>
             </View>
             {item.is_on_sale && (
-              <Text style={styles.carouselOrigPrice}>{item.currency} {Number(item.price).toLocaleString()}</Text>
+              <Text style={styles.carouselOrigPrice}>{item.display_currency || item.currency} {Number(item.display_original_price || item.price).toLocaleString()}</Text>
             )}
           </Pressable>
         ))}
@@ -802,6 +804,10 @@ export default function ProductFeedScreen() {
   const [tileA, setTileA] = useState<Slide[]>([]);
   const [tileB, setTileB] = useState<Slide[]>([]);
   const [becauseYouViewed, setBecauseYouViewed] = useState<Product[]>([]);
+
+  // ── Country selection (Jumia-style per-country storefront) ──────
+  const { country, countryIso2 } = useCountry();
+  const [countryPickerVisible, setCountryPickerVisible] = useState(false);
 
   // ── Cloudinary image sizes per component layout ─────────────────
   const productCardSize = useImageDimensions('productCard');
@@ -1068,6 +1074,23 @@ export default function ProductFeedScreen() {
         </View>
       </Pressable>
 
+      {/* ── Ship-to country selector (Jumia-style) ───────────────── */}
+      <Pressable
+        style={({ pressed }) => [styles.shipToRow, pressed && styles.shipToRowPressed]}
+        onPress={() => setCountryPickerVisible(true)}
+      >
+        <MaterialCommunityIcons name="map-marker-outline" size={16} color={Brand.primary} />
+        <Text style={styles.shipToText}>
+          Ship to: <Text style={styles.shipToCountry}>{country?.name || countryIso2}</Text>
+        </Text>
+        <MaterialCommunityIcons name="chevron-down" size={16} color={colors.textTertiary} />
+      </Pressable>
+      <CountryPicker
+        visible={countryPickerVisible}
+        onClose={() => setCountryPickerVisible(false)}
+        onSelected={onRefresh}
+      />
+
       {/* ── Homepage carousel ─────────────────────────────────────── */}
       <HomeCarousel slides={slides} />
 
@@ -1120,7 +1143,8 @@ export default function ProductFeedScreen() {
   ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
     deals, newArrivals, recommended, becauseYouViewed, recentlyViewed,
     vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
-    handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory]);
+    handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory,
+    country, countryIso2, countryPickerVisible, onRefresh]);
 
   if (loading && products.length === 0) {
     return (
@@ -1520,6 +1544,25 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     gap: Spacing.two,
   },
   searchBarPressed: { opacity: 0.85 },
+  shipToRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: Spacing.two,
+    marginBottom: Spacing.one,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  shipToRowPressed: { opacity: 0.6 },
+  shipToText: {
+    flex: 1,
+    fontSize: 13,
+    color: c.textSecondary,
+  },
+  shipToCountry: {
+    fontWeight: '700',
+    color: c.text,
+  },
   searchPlaceholder: {
     flex: 1,
     color: c.textTertiary,

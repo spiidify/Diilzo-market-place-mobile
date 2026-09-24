@@ -128,6 +128,12 @@ export interface Product {
   sale_price: string | null;
   final_price: string;
   currency: string;
+  /** Price converted to the shopper's selected-country currency (null when same). */
+  display_price?: string | null;
+  /** Original (pre-sale) price converted to the selected-country currency. */
+  display_original_price?: string | null;
+  /** Selected-country currency code (null when same as `currency`). */
+  display_currency?: string | null;
   discount_percentage: number;
   stock_quantity: number;
   is_in_stock: boolean;
