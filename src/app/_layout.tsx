@@ -28,10 +28,15 @@ function AppContent() {
   useSessionManager();
   useEffect(() => {
     if (Platform.OS === 'web') return;
-    const orientationChange = Device.deviceType === Device.DeviceType.TABLET
-      ? ScreenOrientation.unlockAsync()
-      : ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    orientationChange.catch(() => {});
+    // Guarded: older dev-client builds may not contain the native module yet.
+    try {
+      const orientationChange = Device.deviceType === Device.DeviceType.TABLET
+        ? ScreenOrientation.unlockAsync()
+        : ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+      Promise.resolve(orientationChange).catch(() => {});
+    } catch {
+      // Native module unavailable in this build — orientation stays at system default.
+    }
   }, []);
   useEffect(() => {
     // Preload sound effects and register for push notifications on app launch
