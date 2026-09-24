@@ -1,8 +1,9 @@
 // ── Social Login Buttons ───────────────────────────────────────────
-// Reusable social login buttons for Google and Facebook.
+// Reusable social login buttons matching the web storefront:
+// Google, Facebook, Instagram, TikTok (+ Apple placeholder).
 // Used on both the login and register screens.
 // Uses expo-auth-session for the OAuth flow, then exchanges the
-// provider token for Diilzo JWT tokens via the backend.
+// provider token/code for Diilzo JWT tokens via the backend.
 //
 // Buttons are ALWAYS visible. If a provider is not configured (no
 // client ID in env), tapping the button shows an alert explaining
@@ -18,6 +19,8 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
   useFacebookAuth,
   useGoogleAuth,
+  useInstagramAuth,
+  useTiktokAuth,
 } from '@/services/socialAuth';
 
 export function SocialLoginButtons() {
@@ -30,6 +33,8 @@ export function SocialLoginButtons() {
   // Hooks are always called — no conditional returns before them
   const googleAuth = useGoogleAuth();
   const facebookAuth = useFacebookAuth();
+  const instagramAuth = useInstagramAuth();
+  const tiktokAuth = useTiktokAuth();
 
   const handleGoogle = async () => {
     if (!googleAuth.configured) {
@@ -84,6 +89,58 @@ export function SocialLoginButtons() {
     }
   };
 
+  const handleInstagram = async () => {
+    if (!instagramAuth.configured) {
+      Alert.alert(
+        'Instagram Sign-In Not Configured',
+        'Add EXPO_PUBLIC_INSTAGRAM_CLIENT_ID to your .env file to enable Instagram sign-in.',
+      );
+      return;
+    }
+    try {
+      setLoadingProvider('instagram');
+      const result = await instagramAuth.promptAsync();
+      if (result?.type !== 'success') return;
+      const code = result.params?.code;
+      if (!code) {
+        Alert.alert('Error', 'No authorization code received from Instagram.');
+        return;
+      }
+      await socialLogin('instagram', { code, redirect_uri: instagramAuth.redirectUri });
+      router.replace('/');
+    } catch (e: any) {
+      Alert.alert('Instagram Sign-In Failed', e?.message || 'Something went wrong.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
+  const handleTiktok = async () => {
+    if (!tiktokAuth.configured) {
+      Alert.alert(
+        'TikTok Sign-In Not Configured',
+        'Add EXPO_PUBLIC_TIKTOK_CLIENT_KEY to your .env file to enable TikTok sign-in.',
+      );
+      return;
+    }
+    try {
+      setLoadingProvider('tiktok');
+      const result = await tiktokAuth.promptAsync();
+      if (result?.type !== 'success') return;
+      const code = result.params?.code;
+      if (!code) {
+        Alert.alert('Error', 'No authorization code received from TikTok.');
+        return;
+      }
+      await socialLogin('tiktok', { code, redirect_uri: tiktokAuth.redirectUri });
+      router.replace('/');
+    } catch (e: any) {
+      Alert.alert('TikTok Sign-In Failed', e?.message || 'Something went wrong.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.dividerRow}>
@@ -116,6 +173,32 @@ export function SocialLoginButtons() {
             <ActivityIndicator size="small" color={colors.text} />
           ) : (
             <MaterialCommunityIcons name="facebook" size={22} color="#1877F2" />
+          )}
+        </Pressable>
+
+        {/* Instagram */}
+        <Pressable
+          style={[styles.socialBtn, loadingProvider === 'instagram' && styles.socialBtnDisabled]}
+          onPress={handleInstagram}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'instagram' ? (
+            <ActivityIndicator size="small" color={colors.text} />
+          ) : (
+            <MaterialCommunityIcons name="instagram" size={22} color="#E4405F" />
+          )}
+        </Pressable>
+
+        {/* TikTok */}
+        <Pressable
+          style={[styles.socialBtn, loadingProvider === 'tiktok' && styles.socialBtnDisabled]}
+          onPress={handleTiktok}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'tiktok' ? (
+            <ActivityIndicator size="small" color={colors.text} />
+          ) : (
+            <MaterialCommunityIcons name="music-note" size={22} color={colors.text} />
           )}
         </Pressable>
 
