@@ -99,14 +99,45 @@ export interface ProductImage {
   sort_order: number;
 }
 
+export interface ProductOptionValue {
+  id: number;
+  value: string;
+  swatch: string;
+  position: number;
+}
+
+export interface ProductOption {
+  id: number;
+  name: string;
+  position: number;
+  values: ProductOptionValue[];
+}
+
+export interface ProductVariantOptionValue {
+  id: number;
+  option_id: number;
+  option: string;
+  value: string;
+  swatch: string;
+}
+
 export interface ProductVariant {
   id: number;
   name: string;
+  /** Structured combo label (e.g. "M / Red") or the legacy name. */
+  display_name: string;
   sku: string | null;
-  price: string;
+  barcode: string;
+  /** Null means "inherits the product price". */
+  price: string | null;
+  sale_price: string | null;
+  /** Resolved price: variant sale → variant price → product final price. */
+  effective_price: string;
   stock_quantity: number;
   is_in_stock: boolean;
   is_active: boolean;
+  image_url: string | null;
+  option_values: ProductVariantOptionValue[];
 }
 
 export interface WholesaleTier {
@@ -149,6 +180,10 @@ export interface Product {
   primary_image_url: string | null;
   images: ProductImage[];
   variants: ProductVariant[];
+  /** Variation axes (e.g. Size, Color) — present when variants are structured. */
+  options?: ProductOption[];
+  /** Category variation theme hint (e.g. 'size_color'). */
+  variation_theme?: string;
   wholesale_tiers: WholesaleTier[];
   country_of_origin: string;
   // Extended search result fields (returned by /api/v1/search/)
@@ -352,6 +387,9 @@ export interface Address {
 export interface CartItem {
   id: number;
   product: Product;
+  variant_id?: number | null;
+  /** Selected variant label (e.g. "M / Red"), empty for base products. */
+  variant_name?: string;
   quantity: number;
   unit_price: string;
   total_price: string;

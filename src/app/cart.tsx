@@ -279,6 +279,9 @@ export default function CartScreen() {
           <Pressable onPress={() => router.push(`/product/${item.product.slug}`)}>
             <Text style={styles.itemName} numberOfLines={2}>{item.product.name}</Text>
           </Pressable>
+          {!!item.variant_name && (
+            <Text style={styles.itemVariant} numberOfLines={1}>{item.variant_name}</Text>
+          )}
           {item.product.store && (
             <View style={styles.storeRow}>
               <MaterialCommunityIcons name="store-outline" size={13} color={colors.textTertiary} />
@@ -478,6 +481,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   storeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   itemStore: { fontSize: 12, color: c.textTertiary, flex: 1 },
+  itemVariant: { fontSize: 12, color: c.textSecondary, marginTop: 1, fontWeight: '500' },
   itemBottom: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -63,6 +63,8 @@ export default function ProductDetailScreen() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  // Structured option selection: { [optionId]: optionValueId }
+  const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const toastAnim = useRef(new Animated.Value(-100)).current;
@@ -160,22 +162,71 @@ export default function ProductDetailScreen() {
   useEffect(() => { load(); }, [load]);
 
   // ── Derived variant state ──────────────────────────────────────
-  // When product loads, auto-select the first in-stock variant (if any)
+  const hasOptions = (product?.options?.length ?? 0) > 0;
+
+  // When product loads, auto-select the first in-stock variant (if any).
+  // Structured products seed the per-axis selections from that variant.
   useEffect(() => {
     if (product?.variants?.length) {
-      const firstInStock = product.variants.find((v) => v.is_in_stock && v.is_active);
-      setSelectedVariantId(firstInStock?.id ?? product.variants[0]?.id ?? null);
+      const chosen =
+        product.variants.find((v) => v.is_in_stock && v.is_active) ?? product.variants[0];
+      setSelectedVariantId(chosen?.id ?? null);
+      const sel: Record<number, number> = {};
+      chosen?.option_values?.forEach((ov) => { sel[ov.option_id] = ov.id; });
+      setSelectedOptions(sel);
     } else {
       setSelectedVariantId(null);
+      setSelectedOptions({});
     }
   }, [product]);
 
-  const selectedVariant = product?.variants?.find((v) => v.id === selectedVariantId) || null;
+  // Structured products resolve the variant from the selected option
+  // values; legacy products use the flat variant list selection.
+  const selectedVariant = hasOptions
+    ? (product?.variants?.find(
+        (v) =>
+          v.is_active &&
+          (v.option_values?.length ?? 0) > 0 &&
+          product.options!.every(
+            (o) =>
+              selectedOptions[o.id] != null &&
+              v.option_values.some((ov) => ov.option_id === o.id && ov.id === selectedOptions[o.id]),
+          ),
+      ) ?? null)
+    : product?.variants?.find((v) => v.id === selectedVariantId) || null;
+
+  const resolvedVariantId = hasOptions ? selectedVariant?.id ?? null : selectedVariantId;
+  const allOptionsPicked = hasOptions && product!.options!.every((o) => selectedOptions[o.id] != null);
+  const comboUnavailable = hasOptions && allOptionsPicked && !selectedVariant;
+
   // Effective price/stock: use variant values if a variant is selected, else product values
-  const effectivePrice = selectedVariant ? Number(selectedVariant.price) : Number(product?.final_price ?? 0);
+  const effectivePrice = selectedVariant
+    ? Number(selectedVariant.effective_price ?? selectedVariant.price ?? product?.final_price ?? 0)
+    : Number(product?.final_price ?? 0);
   const effectiveStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0);
   const effectiveInStock = selectedVariant ? selectedVariant.is_in_stock : (product?.is_in_stock ?? false);
   const effectiveSku = selectedVariant?.sku || product?.sku || '';
+
+  // Pick one value on one axis, then resolve the combination to a variant.
+  const selectOption = (optionId: number, valueId: number) => {
+    setSelectedOptions((prev) => ({ ...prev, [optionId]: valueId }));
+  };
+
+  // Grey out values that can't combine with the current selections.
+  const isValueAvailable = (optionId: number, valueId: number): boolean => {
+    if (!product?.variants?.length || !product.options?.length) return true;
+    return product.variants.some(
+      (v) =>
+        v.is_active &&
+        v.option_values?.some((ov) => ov.option_id === optionId && ov.id === valueId) &&
+        product.options!.every(
+          (o) =>
+            o.id === optionId ||
+            selectedOptions[o.id] == null ||
+            v.option_values.some((ov) => ov.option_id === o.id && ov.id === selectedOptions[o.id]),
+        ),
+    );
+  };
 
   const handleWishlist = useCallback(async () => {
     if (!product) return;
@@ -244,8 +295,8 @@ export default function ProductDetailScreen() {
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
     // Validate variant selection if product has variants
-    if (product.variants?.length > 0 && !selectedVariantId) {
-      showToast('error', 'Please select a variant first.');
+    if (product.variants?.length > 0 && !resolvedVariantId) {
+      showToast('error', comboUnavailable ? 'This combination is currently unavailable.' : 'Please select a variant first.');
       return;
     }
     if (product.variants?.length > 0 && selectedVariant && !selectedVariant.is_in_stock) {
@@ -254,7 +305,7 @@ export default function ProductDetailScreen() {
     }
     setAddingToCart(true);
     try {
-      await addToCart(product.id, quantity, selectedVariantId ?? undefined);
+      await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
       incrementCartCount(quantity);
       playSound(Sounds.ADD_TO_CART);
       showToast('success', `${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart`);
@@ -270,12 +321,12 @@ export default function ProductDetailScreen() {
     } finally {
       setAddingToCart(false);
     }
-  }, [product, quantity, selectedVariantId, selectedVariant, incrementCartCount, showToast]);
+  }, [product, quantity, resolvedVariantId, selectedVariant, comboUnavailable, incrementCartCount, showToast]);
 
   const handleBuyNow = useCallback(async () => {
     if (!product) return;
-    if (product.variants?.length > 0 && !selectedVariantId) {
-      showToast('error', 'Please select a variant first.');
+    if (product.variants?.length > 0 && !resolvedVariantId) {
+      showToast('error', comboUnavailable ? 'This combination is currently unavailable.' : 'Please select a variant first.');
       return;
     }
     if (product.variants?.length > 0 && selectedVariant && !selectedVariant.is_in_stock) {
@@ -284,7 +335,7 @@ export default function ProductDetailScreen() {
     }
     setBuyingNow(true);
     try {
-      await addToCart(product.id, quantity, selectedVariantId ?? undefined);
+      await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
       incrementCartCount(quantity);
       // Navigate directly to checkout
       router.push('/checkout');
@@ -300,7 +351,7 @@ export default function ProductDetailScreen() {
     } finally {
       setBuyingNow(false);
     }
-  }, [product, quantity, selectedVariantId, selectedVariant, incrementCartCount, showToast, router]);
+  }, [product, quantity, resolvedVariantId, selectedVariant, comboUnavailable, incrementCartCount, showToast, router]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;
@@ -718,41 +769,95 @@ export default function ProductDetailScreen() {
             </View>
           </View>
 
-          {/* ── Variant selector ────────────────────────────────────── */}
+          {/* ── Variant selector — grouped option axes (Amazon-style) when
+              the product has structured options, else a flat list ── */}
           {product.variants && product.variants.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Select Variant</Text>
-              {product.variants.filter((v) => v.is_active).map((variant) => {
-                const isSelected = selectedVariantId === variant.id;
-                const isOos = !variant.is_in_stock;
-                return (
-                  <Pressable
-                    key={variant.id}
-                    style={[
-                      styles.variantItem,
-                      isSelected && styles.variantItemSelected,
-                      isOos && styles.variantItemOos,
-                    ]}
-                    onPress={() => !isOos && setSelectedVariantId(variant.id)}
-                    disabled={isOos}
-                  >
-                    <View style={styles.variantRadio}>
-                      {isSelected && <View style={styles.variantRadioInner} />}
-                    </View>
-                    <View style={styles.variantInfo}>
-                      <Text style={[styles.variantName, isOos && { opacity: 0.5 }]}>{variant.name}</Text>
-                      <Text style={styles.variantPrice}>
-                        {product.currency} {Number(variant.price).toLocaleString()}
-                      </Text>
-                    </View>
-                    <Text style={[styles.variantStock, isOos ? { color: Brand.danger } : { color: Brand.success }]}>
-                      {isOos ? 'Out of stock' : `${variant.stock_quantity} in stock`}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-              {selectedVariant && !selectedVariant.is_in_stock && (
-                <Text style={styles.variantUnavailable}>This combination is currently unavailable.</Text>
+              <Text style={styles.cardTitle}>{hasOptions ? 'Options' : 'Select Variant'}</Text>
+              {hasOptions ? (
+                <>
+                  {product.options!.map((opt) => {
+                    const picked = opt.values.find((ov) => ov.id === selectedOptions[opt.id]);
+                    return (
+                      <View key={opt.id} style={styles.optionGroup}>
+                        <Text style={styles.optionLabel}>
+                          {opt.name}: <Text style={styles.optionLabelValue}>{picked?.value ?? ''}</Text>
+                        </Text>
+                        <View style={styles.optionValuesRow}>
+                          {opt.values.map((ov) => {
+                            const isSelected = selectedOptions[opt.id] === ov.id;
+                            const unavailable = !isValueAvailable(opt.id, ov.id);
+                            return (
+                              <Pressable
+                                key={ov.id}
+                                style={[
+                                  styles.optionPill,
+                                  isSelected && styles.optionPillSelected,
+                                  unavailable && styles.optionPillUnavail,
+                                ]}
+                                onPress={() => selectOption(opt.id, ov.id)}
+                              >
+                                {!!ov.swatch && (
+                                  <View style={[styles.optionSwatch, { backgroundColor: ov.swatch }]} />
+                                )}
+                                <Text
+                                  style={[
+                                    styles.optionPillText,
+                                    isSelected && styles.optionPillTextSelected,
+                                    unavailable && styles.optionPillTextUnavail,
+                                  ]}
+                                >
+                                  {ov.value}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    );
+                  })}
+                  {comboUnavailable && (
+                    <Text style={styles.variantUnavailable}>This combination is currently unavailable.</Text>
+                  )}
+                  {selectedVariant && !selectedVariant.is_in_stock && (
+                    <Text style={styles.variantUnavailable}>This variant is out of stock.</Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  {product.variants.filter((v) => v.is_active).map((variant) => {
+                    const isSelected = selectedVariantId === variant.id;
+                    const isOos = !variant.is_in_stock;
+                    return (
+                      <Pressable
+                        key={variant.id}
+                        style={[
+                          styles.variantItem,
+                          isSelected && styles.variantItemSelected,
+                          isOos && styles.variantItemOos,
+                        ]}
+                        onPress={() => !isOos && setSelectedVariantId(variant.id)}
+                        disabled={isOos}
+                      >
+                        <View style={styles.variantRadio}>
+                          {isSelected && <View style={styles.variantRadioInner} />}
+                        </View>
+                        <View style={styles.variantInfo}>
+                          <Text style={[styles.variantName, isOos && { opacity: 0.5 }]}>{variant.display_name || variant.name}</Text>
+                          <Text style={styles.variantPrice}>
+                            {product.currency} {Number(variant.effective_price ?? variant.price ?? 0).toLocaleString()}
+                          </Text>
+                        </View>
+                        <Text style={[styles.variantStock, isOos ? { color: Brand.danger } : { color: Brand.success }]}>
+                          {isOos ? 'Out of stock' : `${variant.stock_quantity} in stock`}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                  {selectedVariant && !selectedVariant.is_in_stock && (
+                    <Text style={styles.variantUnavailable}>This combination is currently unavailable.</Text>
+                  )}
+                </>
               )}
             </View>
           )}
@@ -2296,6 +2401,60 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     color: c.textTertiary,
     marginTop: 2,
     fontStyle: 'italic',
+  },
+  optionGroup: {
+    marginBottom: 12,
+  },
+  optionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.text,
+  },
+  optionLabelValue: {
+    fontWeight: '400',
+    color: c.textSecondary,
+  },
+  optionValuesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  optionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surface,
+  },
+  optionPillSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: `${Brand.primary}10`,
+  },
+  optionPillUnavail: {
+    opacity: 0.45,
+  },
+  optionPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.text,
+  },
+  optionPillTextSelected: {
+    color: Brand.primary,
+  },
+  optionPillTextUnavail: {
+    textDecorationLine: 'line-through',
+  },
+  optionSwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.15)',
   },
 
   // ── Local / International badge ────────────────────────────────
