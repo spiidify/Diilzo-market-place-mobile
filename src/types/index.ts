@@ -146,6 +146,15 @@ export interface WholesaleTier {
   price: string;
 }
 
+export interface ProductSpecification {
+  id: number;
+  /** Section heading (e.g. "Display", "Engine"), empty when ungrouped. */
+  group: string;
+  name: string;
+  value: string;
+  position: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -184,6 +193,8 @@ export interface Product {
   options?: ProductOption[];
   /** Category variation theme hint (e.g. 'size_color'). */
   variation_theme?: string;
+  /** Seller-defined spec sheet (informational, not variants). */
+  specifications?: ProductSpecification[];
   wholesale_tiers: WholesaleTier[];
   country_of_origin: string;
   // Extended search result fields (returned by /api/v1/search/)

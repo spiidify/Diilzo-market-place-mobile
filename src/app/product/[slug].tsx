@@ -33,7 +33,7 @@ import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
-import type { Product, Review } from '@/types';
+import type { Product, ProductSpecification, Review } from '@/types';
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -206,6 +206,15 @@ export default function ProductDetailScreen() {
   const effectiveStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0);
   const effectiveInStock = selectedVariant ? selectedVariant.is_in_stock : (product?.is_in_stock ?? false);
   const effectiveSku = selectedVariant?.sku || product?.sku || '';
+
+  // Seller-defined spec sheet, grouped by section (ordered server-side)
+  const specGroups = useMemo(() => {
+    const groups: Record<string, ProductSpecification[]> = {};
+    (product?.specifications ?? []).forEach((s) => {
+      (groups[s.group || ''] = groups[s.group || ''] || []).push(s);
+    });
+    return Object.entries(groups);
+  }, [product]);
 
   // Pick one value on one axis, then resolve the combination to a variant.
   const selectOption = (optionId: number, valueId: number) => {
@@ -1002,6 +1011,18 @@ export default function ProductDetailScreen() {
               <View key={idx} style={[styles.specRow, idx === arr.length - 1 && styles.specRowLast]}>
                 <Text style={styles.specKey}>{k}</Text>
                 <Text style={styles.specVal}>{v}</Text>
+              </View>
+            ))}
+            {/* Seller-defined spec sheet (e.g. Battery: 5000mAh), grouped by section */}
+            {specGroups.map(([grp, rows]) => (
+              <View key={grp || '__ungrouped'}>
+                {!!grp && <Text style={styles.specGroupTitle}>{grp}</Text>}
+                {rows.map((s) => (
+                  <View key={s.id} style={styles.specRow}>
+                    <Text style={styles.specKey}>{s.name}</Text>
+                    <Text style={styles.specVal}>{s.value}</Text>
+                  </View>
+                ))}
               </View>
             ))}
           </View>
@@ -2130,6 +2151,15 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   specRowLast: { borderBottomWidth: 0 },
   specKey: { fontSize: 13, color: c.textSecondary },
   specVal: { fontSize: 13, color: c.text, fontWeight: '500' },
+  specGroupTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: 12,
+    marginBottom: 4,
+  },
 
   // ── Shipping ────────────────────────────────────────────────────
   shipRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
