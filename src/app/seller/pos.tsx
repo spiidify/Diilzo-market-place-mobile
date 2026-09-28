@@ -49,6 +49,9 @@ export default function SellerPOSScreen() {
   // Products
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productPage, setProductPage] = useState(1);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
 
   // Cart
@@ -72,16 +75,34 @@ export default function SellerPOSScreen() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load products
-  const loadProducts = useCallback(async () => {
+  // Load products with pagination
+  const loadProducts = useCallback(async (page = 1, append = false) => {
     try {
-      setLoadingProducts(true);
-      const res = await getMyProducts({ search: search.trim() || undefined });
-      setProducts(Array.isArray(res) ? res : (res as any)?.results || []);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoadingProducts(true);
+      }
+      const res = await getMyProducts({
+        search: search.trim() || undefined,
+        page,
+        page_size: 20,
+      });
+      const list = Array.isArray(res) ? res : (res as any)?.results || [];
+      const hasNext = Boolean((res as any)?.next);
+
+      if (append) {
+        setProducts((prev) => [...prev, ...list]);
+      } else {
+        setProducts(list);
+      }
+      setProductPage(page);
+      setHasMoreProducts(hasNext);
     } catch {
       // Non-critical error
     } finally {
       setLoadingProducts(false);
+      setLoadingMore(false);
     }
   }, [search]);
 
@@ -380,6 +401,19 @@ export default function SellerPOSScreen() {
                   <Text style={styles.emptyTitle}>No matching products</Text>
                   <Text style={styles.emptySubtitle}>Try searching another keyword or barcode</Text>
                 </View>
+              }
+              onEndReached={() => {
+                if (!loadingProducts && !loadingMore && hasMoreProducts) {
+                  loadProducts(productPage + 1, true);
+                }
+              }}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={
+                loadingMore ? (
+                  <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={Brand.primary} />
+                  </View>
+                ) : null
               }
             />
           )}

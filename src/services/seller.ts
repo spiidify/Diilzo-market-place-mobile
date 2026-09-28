@@ -229,9 +229,14 @@ export async function getMyProducts(params?: {
   stock?: 'in' | 'out' | 'low';
   on_sale?: string;
   sort?: 'newest' | 'price_low' | 'price_high' | 'name' | 'stock_low';
-}): Promise<any[]> {
+  page?: number;
+  page_size?: number;
+}): Promise<any[] & { next?: string | null; count?: number }> {
   const data = await apiRequest<any>({ method: 'GET', url: `${SELLER_BASE}/my_products/`, params });
-  return Array.isArray(data) ? data : data.results || [];
+  const list = Array.isArray(data) ? data : data?.results || [];
+  (list as any).next = data?.next ?? null;
+  (list as any).count = data?.count ?? list.length;
+  return list as any;
 }
 
 /** GET /seller/<id>/product_detail/ — single product detail */
