@@ -467,14 +467,6 @@ export default function SellerInventoryScreen() {
                 <Text style={[styles.kpiNum, { color: Brand.primary }]}>UGX {Math.round(kpis.value).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>Value</Text>
               </View>
-              <View style={styles.kpi}>
-                <Text style={[styles.kpiNum, { color: Brand.rating }]}>{kpis.low}</Text>
-                <Text style={styles.kpiLabel}>Low</Text>
-              </View>
-              <View style={styles.kpi}>
-                <Text style={[styles.kpiNum, { color: Brand.danger }]}>{kpis.out}</Text>
-                <Text style={styles.kpiLabel}>Out</Text>
-              </View>
             </View>
           )}
 
@@ -496,15 +488,24 @@ export default function SellerInventoryScreen() {
             )}
           </View>
           <View style={styles.pillRow}>
-            {STATUS_TABS.map((t) => (
-              <Pressable
-                key={t.key}
-                style={[styles.pill, status === t.key && styles.pillActive]}
-                onPress={() => pickStatus(t.key)}
-              >
-                <Text style={[styles.pillText, status === t.key && styles.pillTextActive]}>{t.label}</Text>
-              </Pressable>
-            ))}
+            {STATUS_TABS.map((t) => {
+              const count = !kpis ? null
+                : t.key === '' ? kpis.skus
+                : t.key === 'in' ? Math.max(0, kpis.skus - kpis.low - kpis.out)
+                : t.key === 'low' ? kpis.low
+                : kpis.out;
+              return (
+                <Pressable
+                  key={t.key}
+                  style={[styles.pill, status === t.key && styles.pillActive]}
+                  onPress={() => pickStatus(t.key)}
+                >
+                  <Text style={[styles.pillText, status === t.key && styles.pillTextActive]}>
+                    {t.label}{count !== null ? ` ${count}` : ''}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {loading && items.length === 0 ? (
