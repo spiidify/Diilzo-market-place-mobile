@@ -58,6 +58,10 @@ export default function SellerProductsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search & filters
   const [search, setSearch] = useState('');
@@ -116,25 +120,34 @@ export default function SellerProductsScreen() {
     }
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (pageNum = 1, append = false) => {
     try {
       setError(null);
-      setRefreshing(true);
-      const params: any = { sort };
+      if (append) setLoadingMore(true); else setRefreshing(true);
+      const params: any = { sort, page: pageNum, page_size: 20 };
       if (search) params.search = search;
       if (stockFilter !== 'all') params.stock = stockFilter;
       if (activeFilter !== 'all') params.active = activeFilter;
       if (categoryId) params.category = String(categoryId);
       if (brandId) params.brand = String(brandId);
       const data = await getMyProducts(params);
-      setProducts(data);
+      setProducts((prev) => (append ? [...prev, ...data] : data));
+      setHasMore(!!(data as any).next);
+      setTotalCount((data as any).count ?? data.length);
+      setPage(pageNum);
     } catch (e: any) {
       setError(e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   }, [search, sort, stockFilter, activeFilter, categoryId, brandId]);
+
+  const loadMore = useCallback(() => {
+    if (loading || refreshing || loadingMore || !hasMore) return;
+    load(page + 1, true);
+  }, [load, page, hasMore, loading, refreshing, loadingMore]);
 
   useEffect(() => {
     loadMeta();
@@ -291,7 +304,7 @@ export default function SellerProductsScreen() {
     <View style={styles.screen}>
       <GradientHeader
         title="My Products"
-        subtitle={!loading && products.length > 0 ? `${products.length} product${products.length === 1 ? '' : 's'}` : undefined}
+        subtitle={!loading && totalCount > 0 ? `${totalCount} product${totalCount === 1 ? '' : 's'}` : undefined}
         rightIcon="plus"
         onRightPress={() => router.push('/seller/products/add' as any)}
       />
@@ -378,7 +391,7 @@ export default function SellerProductsScreen() {
           <View style={styles.centerBody}>
             <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
             <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={load}>
+            <Pressable style={styles.retryBtn} onPress={() => load(1)}>
               <Text style={styles.retryBtnText}>Retry</Text>
             </Pressable>
           </View>
@@ -418,7 +431,16 @@ export default function SellerProductsScreen() {
             windowSize={11}
             initialNumToRender={12}
             removeClippedSubviews={true}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.4}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator size="small" color={Brand.primary} style={{ paddingVertical: 14 }} />
+              ) : hasMore ? null : products.length > 15 ? (
+                <Text style={styles.endText}>All {totalCount} products loaded</Text>
+              ) : null
+            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(1)} colors={[Brand.primary]} tintColor={Brand.primary} />}
           />
         )}
       </View>
@@ -736,6 +758,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   itemActions: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { padding: 6 },
   rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 62 },
+  endText: { textAlign: 'center', fontSize: 11, color: c.textTertiary, paddingVertical: 12, backgroundColor: 'transparent' },
 
   // ── Empty/error ─────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
