@@ -686,8 +686,18 @@ export default function SellerPOSScreen() {
                 <View style={styles.modalHeaderTitleWrap}>
                   <Text style={styles.modalHeaderTitle} numberOfLines={1}>Review & Pay</Text>
                   <Text style={styles.modalHeaderSub} numberOfLines={1}>
-                    {totalCartCount} {totalCartCount === 1 ? 'item' : 'items'} · UGX {grandTotal.toLocaleString()}
+                    UGX {grandTotal.toLocaleString()}
                   </Text>
+                </View>
+                <View style={styles.modalHeaderCartWrap}>
+                  <MaterialCommunityIcons name="cart" size={24} color="#FFFFFF" />
+                  {totalCartCount > 0 && (
+                    <View style={styles.modalHeaderCartBadge}>
+                      <Text style={styles.modalHeaderCartBadgeText}>
+                        {totalCartCount > 99 ? '99+' : totalCartCount}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <Pressable onPress={clearCart} hitSlop={12} style={styles.modalHeaderBtn}>
                   <MaterialCommunityIcons name="cart-remove" size={22} color="#FFFFFF" />
@@ -1393,6 +1403,29 @@ const createStyles = (colors: ThemeColors) =>
       color: 'rgba(255,255,255,0.85)',
       marginTop: 1,
       fontWeight: '500',
+    },
+    modalHeaderCartWrap: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalHeaderCartBadge: {
+      position: 'absolute',
+      top: 2,
+      right: 0,
+      backgroundColor: '#FFFFFF',
+      minWidth: 16,
+      height: 16,
+      borderRadius: 8,
+      paddingHorizontal: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalHeaderCartBadgeText: {
+      fontSize: 9,
+      fontWeight: '800',
+      color: Brand.primary,
     },
     modalScroll: {
       flex: 1,
