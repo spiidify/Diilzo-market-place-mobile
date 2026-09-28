@@ -36,7 +36,7 @@ import {
 } from '@/services/seller';
 
 type HistoryRange = 'all' | 'today' | '7d' | '30d';
-type HistoryMethod = '' | 'cash' | 'mtn_momo' | 'airtel_money' | 'card' | 'credit' | 'mixed';
+type HistoryMethod = '' | 'cash' | 'mtn_momo' | 'airtel_money' | 'card' | 'credit';
 
 const HISTORY_RANGES: { key: HistoryRange; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -52,7 +52,6 @@ const HISTORY_METHODS: { key: HistoryMethod; label: string; icon: string }[] = [
   { key: 'airtel_money', label: 'Airtel', icon: 'cellphone-wireless' },
   { key: 'card', label: 'Card', icon: 'credit-card-outline' },
   { key: 'credit', label: 'Credit', icon: 'credit-card-clock-outline' },
-  { key: 'mixed', label: 'Mixed', icon: 'credit-card-multiple-outline' },
 ];
 
 const METHOD_COLORS: Record<string, string> = {
