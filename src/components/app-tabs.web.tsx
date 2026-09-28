@@ -65,7 +65,7 @@ export default function AppTabs() {
             </TabTrigger>
           )}
           <TabTrigger name="account" href="/account" asChild>
-            <TabButton>Account</TabButton>
+            <TabButton>{!isAuthenticated ? 'Account' : posAccess ? 'Dashboards' : 'My dashboard'}</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>

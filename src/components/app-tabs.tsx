@@ -112,7 +112,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="account"
         options={{
-          title: 'Account',
+          title: !isAuthenticated ? 'Account' : posAccess ? 'Dashboards' : 'My dashboard',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="account" size={26} color={color} />
           ),
