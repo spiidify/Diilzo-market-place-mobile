@@ -179,7 +179,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginRight: 8,
   },
   tabBarItem: {
-    marginHorizontal: -6,
     paddingHorizontal: 0,
   },
   tabBarLabel: {
