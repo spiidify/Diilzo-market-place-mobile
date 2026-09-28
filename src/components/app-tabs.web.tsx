@@ -1,19 +1,47 @@
 import {
-  TabList,
-  TabListProps,
-  Tabs,
-  TabSlot,
-  TabTrigger,
-  TabTriggerSlotProps,
+    TabList,
+    TabListProps,
+    Tabs,
+    TabSlot,
+    TabTrigger,
+    TabTriggerSlotProps,
 } from 'expo-router/ui';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
+import { getPermissions } from '@/services/seller';
 
 export default function AppTabs() {
+  const { isAuthenticated, user } = useAuth();
+  const [posAccess, setPosAccess] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setPosAccess(false);
+      return;
+    }
+    if (user?.has_store) {
+      setPosAccess(true);
+      return;
+    }
+    let cancelled = false;
+    getPermissions()
+      .then(() => {
+        if (!cancelled) setPosAccess(true);
+      })
+      .catch(() => {
+        if (!cancelled) setPosAccess(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.has_store]);
+
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
@@ -31,6 +59,11 @@ export default function AppTabs() {
           <TabTrigger name="suppliers" href="/suppliers" asChild>
             <TabButton>Suppliers</TabButton>
           </TabTrigger>
+          {posAccess && (
+            <TabTrigger name="pos" href="/pos" asChild>
+              <TabButton>POS</TabButton>
+            </TabTrigger>
+          )}
           <TabTrigger name="account" href="/account" asChild>
             <TabButton>Account</TabButton>
           </TabTrigger>

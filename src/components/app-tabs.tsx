@@ -1,16 +1,45 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Brand } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { TABLET_NAV_WIDTH, useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { getPermissions } from '@/services/seller';
 
 export default function AppTabs() {
   const { colors } = useAppTheme();
   const { isTablet, contentMaxWidth } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { isAuthenticated, user } = useAuth();
+
+  // POS tab is only for store owners and active store staff.
+  // has_store covers owners instantly; the permissions endpoint resolves
+  // staff membership server-side (_get_seller_store accepts both).
+  const [posAccess, setPosAccess] = useState(false);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setPosAccess(false);
+      return;
+    }
+    if (user?.has_store) {
+      setPosAccess(true);
+      return;
+    }
+    let cancelled = false;
+    getPermissions()
+      .then(() => {
+        if (!cancelled) setPosAccess(true);
+      })
+      .catch(() => {
+        if (!cancelled) setPosAccess(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.has_store]);
 
   return (
     <Tabs
@@ -66,6 +95,17 @@ export default function AppTabs() {
           title: 'Suppliers',
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="factory" size={26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="pos"
+        options={{
+          title: 'POS',
+          href: posAccess ? '/pos' : null,
+          ...(posAccess ? {} : { tabBarItemStyle: { display: 'none' as const } }),
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="cash-register" size={26} color={color} />
           ),
         }}
       />
