@@ -562,86 +562,144 @@ export default function SellerInventoryScreen() {
       )}
 
       {tab === 'receive' && (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 14, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <Text style={styles.rcvTitle}>Receive stock from supplier</Text>
-          <Text style={styles.rcvSub}>Creates a purchase record, bumps on-hand, and logs it in Activity.</Text>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          {/* Hero */}
+          <View style={styles.rcvHero}>
+            <View style={styles.rcvHeroIcon}>
+              <MaterialCommunityIcons name="truck-delivery" size={26} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rcvHeroTitle}>Receive Stock</Text>
+              <Text style={styles.rcvHeroSub}>From a supplier — creates a purchase record and logs it in Activity.</Text>
+            </View>
+          </View>
 
-          <Text style={styles.fieldLabel}>Product</Text>
-          {rcvProduct ? (
-            <View style={styles.rcvPicked}>
-              {rcvProduct.primary_image_url ? (
-                <Image source={{ uri: rcvProduct.primary_image_url }} style={styles.thumb} />
-              ) : (
-                <View style={[styles.thumb, styles.thumbFallback]}>
-                  <MaterialCommunityIcons name="package-variant" size={16} color={colors.textTertiary} />
+          {/* Step 1: product */}
+          <View style={styles.rcvCard}>
+            <View style={styles.rcvStepRow}>
+              <View style={styles.rcvStepNum}><Text style={styles.rcvStepNumText}>1</Text></View>
+              <Text style={styles.rcvStepLabel}>Which product arrived?</Text>
+            </View>
+            {rcvProduct ? (
+              <View style={styles.rcvPicked}>
+                {rcvProduct.primary_image_url ? (
+                  <Image source={{ uri: rcvProduct.primary_image_url }} style={styles.rcvPickedImg} />
+                ) : (
+                  <View style={[styles.rcvPickedImg, styles.thumbFallback]}>
+                    <MaterialCommunityIcons name="package-variant" size={20} color={colors.textTertiary} />
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowName} numberOfLines={1}>{rcvProduct.name}</Text>
+                  <Text style={styles.rowMeta}>
+                    On hand: {rcvProduct.stock_quantity}{rcvProduct.sku ? ` · ${rcvProduct.sku}` : ''}
+                  </Text>
                 </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowName} numberOfLines={1}>{rcvProduct.name}</Text>
-                <Text style={styles.rowMeta}>On hand: {rcvProduct.stock_quantity}{rcvProduct.sku ? ` · ${rcvProduct.sku}` : ''}</Text>
-              </View>
-              <Pressable onPress={() => setRcvProduct(null)} hitSlop={8}>
-                <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <View style={styles.searchWrap}>
-                <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search product to receive..."
-                  placeholderTextColor={colors.textTertiary}
-                  value={rcvQuery}
-                  onChangeText={onRcvQueryChange}
-                  autoCapitalize="none"
-                />
-              </View>
-              {rcvResults.map((p) => (
-                <Pressable key={p.id} style={styles.rcvResult} onPress={() => { setRcvProduct(p); setRcvResults([]); setRcvQuery(''); }}>
-                  <Text style={styles.rowName} numberOfLines={1}>{p.name}</Text>
-                  <Text style={styles.rowMeta}>{p.sku || 'No SKU'} · on hand {p.stock_quantity}</Text>
+                <View style={styles.rcvPickedAfter}>
+                  <Text style={styles.rcvPickedAfterNum}>{rcvProduct.stock_quantity + (parseInt(rcvQty, 10) || 0)}</Text>
+                  <Text style={styles.rcvPickedAfterLabel}>after</Text>
+                </View>
+                <Pressable onPress={() => setRcvProduct(null)} hitSlop={8}>
+                  <MaterialCommunityIcons name="close-circle" size={20} color={colors.textTertiary} />
                 </Pressable>
-              ))}
-            </>
-          )}
+              </View>
+            ) : (
+              <>
+                <View style={styles.rcvSearchWrap}>
+                  <MaterialCommunityIcons name="magnify" size={20} color={colors.textTertiary} />
+                  <TextInput
+                    style={styles.rcvSearchInput}
+                    placeholder="Search product to receive..."
+                    placeholderTextColor={colors.textTertiary}
+                    value={rcvQuery}
+                    onChangeText={onRcvQueryChange}
+                    autoCapitalize="none"
+                  />
+                  {!!rcvQuery && (
+                    <Pressable onPress={() => { setRcvQuery(''); setRcvResults([]); }} hitSlop={8}>
+                      <MaterialCommunityIcons name="close-circle" size={17} color={colors.textTertiary} />
+                    </Pressable>
+                  )}
+                </View>
+                {rcvResults.map((p) => (
+                  <Pressable
+                    key={p.id}
+                    style={({ pressed }) => [styles.rcvResult, pressed && { backgroundColor: colors.surfaceAlt }]}
+                    onPress={() => { setRcvProduct(p); setRcvResults([]); setRcvQuery(''); }}
+                  >
+                    {p.primary_image_url ? (
+                      <Image source={{ uri: p.primary_image_url }} style={styles.rcvResultImg} />
+                    ) : (
+                      <View style={[styles.rcvResultImg, styles.thumbFallback]}>
+                        <MaterialCommunityIcons name="package-variant" size={16} color={colors.textTertiary} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.rowName} numberOfLines={1}>{p.name}</Text>
+                      <Text style={styles.rowMeta}>{p.sku || 'No SKU'} · on hand {p.stock_quantity}</Text>
+                    </View>
+                    <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Brand.primary} />
+                  </Pressable>
+                ))}
+                {rcvQuery.trim().length > 0 && rcvResults.length === 0 && (
+                  <Text style={styles.rcvNoResults}>No products match "{rcvQuery.trim()}"</Text>
+                )}
+              </>
+            )}
+          </View>
 
-          <Text style={styles.fieldLabel}>Supplier (optional)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Kampala Traders Ltd"
-            placeholderTextColor={colors.textTertiary}
-            value={rcvSupplier}
-            onChangeText={setRcvSupplier}
-          />
-
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Quantity</Text>
+          {/* Step 2: details */}
+          <View style={styles.rcvCard}>
+            <View style={styles.rcvStepRow}>
+              <View style={styles.rcvStepNum}><Text style={styles.rcvStepNumText}>2</Text></View>
+              <Text style={styles.rcvStepLabel}>Delivery details</Text>
+            </View>
+            <Text style={styles.fieldLabel}>Supplier (optional)</Text>
+            <View style={styles.rcvInputWrap}>
+              <MaterialCommunityIcons name="factory" size={16} color={colors.textTertiary} />
               <TextInput
-                style={styles.input}
-                placeholder="0"
+                style={styles.rcvInput}
+                placeholder="e.g. Kampala Traders Ltd"
                 placeholderTextColor={colors.textTertiary}
-                value={rcvQty}
-                onChangeText={setRcvQty}
-                keyboardType="number-pad"
+                value={rcvSupplier}
+                onChangeText={setRcvSupplier}
               />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Unit cost (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="UGX"
-                placeholderTextColor={colors.textTertiary}
-                value={rcvCost}
-                onChangeText={setRcvCost}
-                keyboardType="decimal-pad"
-              />
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Quantity received</Text>
+                <View style={styles.rcvInputWrap}>
+                  <MaterialCommunityIcons name="counter" size={16} color={colors.textTertiary} />
+                  <TextInput
+                    style={styles.rcvInput}
+                    placeholder="0"
+                    placeholderTextColor={colors.textTertiary}
+                    value={rcvQty}
+                    onChangeText={setRcvQty}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Unit cost (optional)</Text>
+                <View style={styles.rcvInputWrap}>
+                  <MaterialCommunityIcons name="cash" size={16} color={colors.textTertiary} />
+                  <TextInput
+                    style={styles.rcvInput}
+                    placeholder="UGX"
+                    placeholderTextColor={colors.textTertiary}
+                    value={rcvCost}
+                    onChangeText={setRcvCost}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              </View>
             </View>
           </View>
 
           <Pressable
-            style={[styles.receiveBtn, (rcvSaving || !rcvProduct) && { opacity: 0.5 }]}
+            style={[styles.receiveBtn, (rcvSaving || !rcvProduct) && { opacity: 0.45 }]}
             onPress={submitReceive}
             disabled={rcvSaving || !rcvProduct}
           >
@@ -649,8 +707,10 @@ export default function SellerInventoryScreen() {
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <MaterialCommunityIcons name="package-variant-plus" size={18} color="#fff" />
-                <Text style={styles.receiveBtnText}>Receive Stock</Text>
+                <MaterialCommunityIcons name="package-variant-plus" size={20} color="#fff" />
+                <Text style={styles.receiveBtnText}>
+                  {rcvProduct && rcvQty ? `Receive ${rcvQty} units` : 'Receive Stock'}
+                </Text>
               </>
             )}
           </Pressable>
@@ -1089,20 +1149,69 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   resQty: { fontSize: 14, fontWeight: '800', color: Brand.rating },
 
-  rcvTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
-  rcvSub: { fontSize: 12, color: colors.textTertiary, marginTop: 3, marginBottom: 14 },
+  rcvHero: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginHorizontal: 12, marginTop: 12, padding: 14,
+    backgroundColor: Brand.primary, borderRadius: 14,
+  },
+  rcvHeroIcon: {
+    width: 46, height: 46, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rcvHeroTitle: { fontSize: 15, fontWeight: '800', color: '#fff' },
+  rcvHeroSub: { fontSize: 11.5, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+
+  rcvCard: {
+    backgroundColor: colors.surface, marginHorizontal: 12, marginTop: 12,
+    borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border,
+  },
+  rcvStepRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  rcvStepNum: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center',
+  },
+  rcvStepNumText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  rcvStepLabel: { fontSize: 13, fontWeight: '800', color: colors.text },
+
+  rcvSearchWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: Brand.primary + '55',
+    borderRadius: 12, paddingHorizontal: 12, height: 48, width: '100%',
+  },
+  rcvSearchInput: { flex: 1, fontSize: 14, color: colors.text, padding: 0 },
+  rcvNoResults: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', paddingVertical: 14 },
+
   rcvPicked: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: Brand.primary + '55',
-    borderRadius: 10, padding: 8,
+    backgroundColor: Brand.primary + '0D', borderWidth: 1.5, borderColor: Brand.primary + '55',
+    borderRadius: 12, padding: 10,
   },
+  rcvPickedImg: { width: 46, height: 46, borderRadius: 10, backgroundColor: colors.surfaceAlt },
+  rcvPickedAfter: { alignItems: 'center', marginRight: 2 },
+  rcvPickedAfterNum: { fontSize: 14, fontWeight: '800', color: Brand.primary },
+  rcvPickedAfterLabel: { fontSize: 9, color: colors.textTertiary, fontWeight: '700', textTransform: 'uppercase' },
+
   rcvResult: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: 10, padding: 10, marginTop: 6,
+    borderRadius: 10, padding: 9, marginTop: 8,
   },
+  rcvResultImg: { width: 38, height: 38, borderRadius: 8, backgroundColor: colors.surfaceAlt },
+
+  rcvInputWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 10, paddingHorizontal: 12, height: 44,
+  },
+  rcvInput: { flex: 1, fontSize: 13.5, color: colors.text, padding: 0 },
+
   receiveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Brand.primary, borderRadius: 12, paddingVertical: 13, marginTop: 20,
+    backgroundColor: Brand.primary, borderRadius: 14, paddingVertical: 15,
+    marginHorizontal: 12, marginTop: 14,
+    shadowColor: Brand.primary, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  receiveBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  receiveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 });
