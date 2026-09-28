@@ -1,23 +1,23 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchMySellers } from '@/services/connection';
 import type { FollowedStore } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 export default function MySellersScreen() {
   const router = useRouter();
@@ -50,12 +50,17 @@ export default function MySellersScreen() {
     load();
   }, [load]);
 
-  const renderItem = ({ item }: { item: FollowedStore }) => (
-    <Pressable
-      style={styles.card}
-      onPress={() => router.push(`/store/${item.slug}` as any)}
-    >
-      <View style={styles.cardHeader}>
+  const renderItem = ({ item }: { item: FollowedStore }) => {
+    const meta = [
+      item.rating > 0 ? `${item.rating.toFixed(1)}` : null,
+      `${item.product_count} products`,
+      `${item.follower_count} followers`,
+    ].filter(Boolean);
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
+        onPress={() => router.push(`/store/${item.slug}` as any)}
+      >
         {item.logo_url ? (
           <Image source={{ uri: item.logo_url }} style={styles.logo} />
         ) : (
@@ -63,103 +68,91 @@ export default function MySellersScreen() {
             <Text style={styles.logoPlaceholderText}>{item.name.slice(0, 2).toUpperCase()}</Text>
           </View>
         )}
-        <View style={styles.cardInfo}>
+        <View style={styles.info}>
           <Text style={styles.storeName} numberOfLines={1}>{item.name}</Text>
           <View style={styles.metaRow}>
             {item.rating > 0 && (
-              <Text style={styles.metaText}>
-                <MaterialCommunityIcons name="star" size={12} color="#FFB800" /> {item.rating.toFixed(1)}
-              </Text>
+              <MaterialCommunityIcons name="star" size={11} color={Brand.rating} />
             )}
-            <Text style={styles.metaText}>{item.product_count} products</Text>
-            <Text style={styles.metaText}>{item.follower_count} followers</Text>
+            <Text style={styles.metaText} numberOfLines={1}>{meta.join(' · ')}</Text>
           </View>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-      </View>
-    </Pressable>
-  );
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>My Sellers</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={Brand.primary} />
-        </View>
-      </SafeAreaView>
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
+      </Pressable>
     );
-  }
+  };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>My Sellers</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      {error ? (
-        <View style={styles.centerContent}>
+    <View style={styles.screen}>
+      <GradientHeader
+        title="My Sellers"
+        subtitle={!loading && stores.length > 0 ? `${stores.length} store${stores.length === 1 ? '' : 's'} followed` : undefined}
+      />
+      {loading ? (
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={Brand.danger} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryBtn} onPress={load}>
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>
       ) : stores.length === 0 ? (
-        <View style={styles.centerContent}>
+        <View style={styles.centerBody}>
           <MaterialCommunityIcons name="store-off" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyTitle}>No sellers followed yet</Text>
           <Text style={styles.emptySubtitle}>Follow sellers to stay updated on their products</Text>
+          <Pressable style={styles.shopBtn} onPress={() => router.push('/suppliers' as any)}>
+            <Text style={styles.shopBtnText}>Browse Suppliers</Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList
           data={stores}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
+          style={styles.listCard}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} colors={[Brand.primary]} tintColor={Brand.primary} />}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: c.surface },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three, paddingVertical: Spacing.two,
-    borderBottomWidth: 1, borderBottomColor: c.border,
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
-  centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
-  list: { padding: Spacing.three },
-  card: {
-    backgroundColor: c.surface, borderRadius: 12, padding: Spacing.three,
-    marginBottom: Spacing.two, borderWidth: 1, borderColor: c.border,
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 10, paddingVertical: 9,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logo: { width: 48, height: 48, borderRadius: 8 },
+  logo: { width: 40, height: 40, borderRadius: 10 },
   logoPlaceholder: {
-    width: 48, height: 48, borderRadius: 8, backgroundColor: Brand.primary,
+    width: 40, height: 40, borderRadius: 10, backgroundColor: Brand.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  logoPlaceholderText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  cardInfo: { flex: 1 },
-  storeName: { fontSize: 16, fontWeight: '600', color: c.text, marginBottom: 4 },
-  metaRow: { flexDirection: 'row', gap: 8 },
-  metaText: { fontSize: 12, color: c.textSecondary },
+  logoPlaceholderText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  info: { flex: 1, gap: 2 },
+  storeName: { fontSize: 13, fontWeight: '700', color: c.text },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  metaText: { fontSize: 11, color: c.textTertiary, fontWeight: '500', flexShrink: 1 },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 60 },
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
-  retryBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Brand.primary, borderRadius: 8 },
-  retryText: { color: '#fff', fontWeight: '600' },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: c.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 4, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 9, backgroundColor: Brand.primary, borderRadius: 10 },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginTop: 10 },
+  emptySubtitle: { fontSize: 13, color: c.textSecondary, marginTop: 3, textAlign: 'center' },
+  shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 11, borderRadius: 10 },
+  shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 });

@@ -11,12 +11,11 @@ import {
     Text,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { addToCart } from '@/services/cart';
 import { fetchBuyAgain } from '@/services/connection';
 import { playSound, Sounds } from '@/services/sound';
@@ -25,13 +24,13 @@ import type { Product } from '@/types';
 export default function BuyAgainScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { productColumns } = useResponsiveLayout();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (!isAuthenticated) {
@@ -56,117 +55,121 @@ export default function BuyAgainScreen() {
 
   const handleBuyAgain = async (product: Product) => {
     try {
+      setAdding(product.id);
       await addToCart(product.id, 1);
       playSound(Sounds.ADD_TO_CART);
     } catch (e) {
       // ignore
+    } finally {
+      setAdding(null);
     }
   };
 
   const renderItem = ({ item }: { item: any }) => (
     <Pressable
-      style={styles.card}
+      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
       onPress={() => router.push(`/product/${item.slug}` as any)}
     >
       {item.images?.[0]?.image ? (
-        <Image source={{ uri: item.images[0].image }} style={styles.image} />
+        <Image source={{ uri: item.images[0].image }} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={[styles.image, styles.imagePlaceholder]}>
-          <MaterialCommunityIcons name="image-off" size={24} color={colors.textTertiary} />
+          <MaterialCommunityIcons name="image-outline" size={18} color={colors.textTertiary} />
         </View>
       )}
-      <View style={styles.cardBody}>
-        <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.price}>{item.price_display || `${item.price} UGX`}</Text>
-        <Pressable style={styles.buyAgainBtn} onPress={() => handleBuyAgain(item)}>
-          <MaterialCommunityIcons name="cart-plus" size={16} color="#fff" />
-          <Text style={styles.buyAgainText}>Buy Again</Text>
-        </Pressable>
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.price}>{item.price_display || `${Number(item.price).toLocaleString()} UGX`}</Text>
       </View>
+      <Pressable
+        style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+        onPress={() => handleBuyAgain(item)}
+        disabled={adding === item.id}
+        hitSlop={6}
+      >
+        {adding === item.id ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <>
+            <MaterialCommunityIcons name="cart-plus" size={14} color="#FFFFFF" />
+            <Text style={styles.addBtnText}>Add</Text>
+          </>
+        )}
+      </Pressable>
     </Pressable>
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Buy Again</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.centerContent}>
+  return (
+    <View style={styles.screen}>
+      <GradientHeader
+        title="Buy Again"
+        subtitle={!loading && products.length > 0 ? `${products.length} item${products.length === 1 ? '' : 's'}` : undefined}
+      />
+      {loading ? (
+        <View style={styles.centerBody}>
           <ActivityIndicator size="large" color={Brand.primary} />
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Buy Again</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      {error ? (
-        <View style={styles.centerContent}>
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={Brand.danger} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable style={styles.retryBtn} onPress={load}>
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>
       ) : products.length === 0 ? (
-        <View style={styles.centerContent}>
+        <View style={styles.centerBody}>
           <MaterialCommunityIcons name="history" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyTitle}>No previous purchases</Text>
           <Text style={styles.emptySubtitle}>Products you've ordered will appear here for quick repurchase</Text>
         </View>
       ) : (
         <FlatList
-          key={`buy-again-${productColumns}`}
           data={products}
           keyExtractor={(item: any) => String(item.id)}
-          numColumns={productColumns}
           renderItem={renderItem}
+          style={styles.listCard}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+          maxToRenderPerBatch={12}
+          windowSize={11}
+          initialNumToRender={12}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} colors={[Brand.primary]} tintColor={Brand.primary} />}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: c.surface },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three, paddingVertical: Spacing.two,
-    borderBottomWidth: 1, borderBottomColor: c.border,
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: c.text },
-  centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
-  list: { padding: Spacing.two },
-  card: {
-    flex: 1, margin: Spacing.one, backgroundColor: c.surface,
-    borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: c.border,
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 10, paddingVertical: 8,
   },
-  image: { width: '100%', height: 140, resizeMode: 'cover' },
-  imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: c.border },
-  cardBody: { padding: Spacing.two },
-  name: { fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 4 },
-  price: { fontSize: 14, fontWeight: '700', color: Brand.primary, marginBottom: 8 },
-  buyAgainBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
-    backgroundColor: Brand.primary, paddingVertical: 8, borderRadius: 8,
+  image: { width: 44, height: 44, borderRadius: 8 },
+  imagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: c.surfaceAlt },
+  info: { flex: 1, gap: 2 },
+  name: { fontSize: 13, fontWeight: '700', color: c.text },
+  price: { fontSize: 12, fontWeight: '800', color: Brand.primary },
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Brand.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
+    minWidth: 62, justifyContent: 'center',
   },
-  buyAgainText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  addBtnText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 62 },
   errorText: { fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
-  retryBtn: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Brand.primary, borderRadius: 8 },
-  retryText: { color: '#fff', fontWeight: '600' },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: c.text, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: c.textSecondary, marginTop: 4, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 9, backgroundColor: Brand.primary, borderRadius: 10 },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  emptyTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginTop: 10 },
+  emptySubtitle: { fontSize: 13, color: c.textSecondary, marginTop: 3, textAlign: 'center' },
 });
