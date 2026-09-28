@@ -1,12 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Image,
+    Keyboard,
     Modal,
     Platform,
     Pressable,
@@ -109,6 +110,25 @@ export default function SellerPOSScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mtn_momo' | 'airtel_money' | 'card'>('cash');
   const [amountTendered, setAmountTendered] = useState('');
   const [submittingSale, setSubmittingSale] = useState(false);
+
+  // Keyboard handling inside the review sheet — KeyboardAvoidingView can't
+  // be used inside a Modal (mis-measures, collapses children), so we pad the
+  // scroll content by the keyboard height and auto-scroll to keep the
+  // focused field visible.
+  const modalScrollRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      setTimeout(() => modalScrollRef.current?.scrollToEnd({ animated: true }), 80);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Completed Receipt Modal
   const [completedSale, setCompletedSale] = useState<any | null>(null);
@@ -707,8 +727,12 @@ export default function SellerPOSScreen() {
           </LinearGradient>
 
           <ScrollView
+            ref={modalScrollRef}
             style={styles.modalScroll}
-            contentContainerStyle={styles.modalScrollContent}
+            contentContainerStyle={[
+              styles.modalScrollContent,
+              { paddingBottom: 16 + keyboardHeight },
+            ]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
           >
