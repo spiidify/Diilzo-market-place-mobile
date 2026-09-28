@@ -552,11 +552,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   moneyRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
   moneyTile: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 10,
+    flex: 1, backgroundColor: c.surface, borderRadius: 10,
     paddingVertical: 8, paddingHorizontal: 10, gap: 2,
   },
-  moneyLabel: { fontSize: 9, fontWeight: '700', color: 'rgba(255,255,255,0.65)', letterSpacing: 0.5 },
-  moneyValue: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  moneyLabel: { fontSize: 9, fontWeight: '700', color: c.textTertiary, letterSpacing: 0.5 },
+  moneyValue: { fontSize: 14, fontWeight: '800', color: c.text },
 
   // ── Quick actions ─────────────────────────────────────────────────
   quickRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 10 },
