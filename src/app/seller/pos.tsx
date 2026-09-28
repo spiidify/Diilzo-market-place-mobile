@@ -688,7 +688,7 @@ export default function SellerPOSScreen() {
         statusBarTranslucent
         onRequestClose={() => setShowCartModal(false)}
       >
-        <View style={[styles.modalContainer, { paddingBottom: insets?.bottom ?? 0 }]}>
+        <View style={styles.modalContainer}>
           <LinearGradient
             colors={[Brand.dark, Brand.accent, Brand.primary]}
             start={{ x: 0, y: 0 }}
@@ -949,7 +949,7 @@ export default function SellerPOSScreen() {
           </ScrollView>
 
           {/* Complete Button Footer */}
-          <View style={styles.modalFooter}>
+          <View style={[styles.modalFooter, { paddingBottom: Math.max(insets?.bottom ?? 0, 10) }]}>
             <Pressable
               style={[styles.completeBtn, submittingSale && styles.completeBtnDisabled]}
               onPress={handleCompleteSale}
@@ -1762,7 +1762,8 @@ const createStyles = (colors: ThemeColors) =>
       color: '#15803D',
     },
     modalFooter: {
-      padding: 16,
+      paddingHorizontal: 16,
+      paddingTop: 10,
       backgroundColor: colors.surface,
       borderTopWidth: 1,
       borderTopColor: colors.border,
