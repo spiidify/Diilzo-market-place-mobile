@@ -156,6 +156,7 @@ export default function SellerPOSScreen() {
       }
       const res = await getMyProducts({
         search: search.trim() || undefined,
+        has_images: 'true',
         page,
         page_size: 20,
       });

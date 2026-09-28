@@ -239,6 +239,7 @@ export async function getMyProducts(params?: {
   brand?: string;
   stock?: 'in' | 'out' | 'low';
   on_sale?: string;
+  has_images?: string;
   sort?: 'newest' | 'price_low' | 'price_high' | 'name' | 'stock_low';
   page?: number;
   page_size?: number;
