@@ -1,23 +1,21 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
-import { apiRequest } from '@/services/api';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { apiRequest } from '@/services/api';
 
 // ── Types ─────────────────────────────────────────────────────────
 interface SavedPaymentMethod {
@@ -68,7 +66,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString(undefined, {
-    year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
@@ -89,7 +86,6 @@ export default function PaymentsScreen() {
       setRefreshing(true);
       setError(null);
 
-      // Fetch saved payment methods
       let savedMethods: SavedPaymentMethod[] = [];
       try {
         const data = await apiRequest<{ results: SavedPaymentMethod[] } | SavedPaymentMethod[]>({
@@ -102,7 +98,6 @@ export default function PaymentsScreen() {
       }
       setMethods(savedMethods);
 
-      // Fetch transaction history
       let txns: Transaction[] = [];
       try {
         const data = await apiRequest<{ results: Transaction[] } | Transaction[]>({
@@ -191,70 +186,32 @@ export default function PaymentsScreen() {
     );
   };
 
-  const renderTransaction = ({ item }: { item: Transaction }) => {
-    const config = getMethodConfig(item.method);
-    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
-    return (
-      <View style={styles.txnCard}>
-        <View style={[styles.txnIcon, { backgroundColor: config.color + '20' }]}>
-          <MaterialCommunityIcons name={config.icon} size={20} color={config.color} />
-        </View>
-        <View style={styles.txnInfo}>
-          <Text style={styles.txnOrder}>Order #{item.order_number}</Text>
-          <Text style={styles.txnDate}>{formatDate(item.created_at)}</Text>
-        </View>
-        <View style={styles.txnRight}>
-          <Text style={styles.txnAmount}>UGX {Number(item.amount).toLocaleString()}</Text>
-          <View style={[styles.txnStatusBadge, { backgroundColor: statusColor + '20' }]}>
-            <Text style={[styles.txnStatusText, { color: statusColor }]}>
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Payment Methods</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-          </View>
-        </SafeAreaView>
-      </View>
-    );
-  }
+  const subtitle = !loading
+    ? `${methods.length} saved · ${transactions.length} transaction${transactions.length === 1 ? '' : 's'}`
+    : undefined;
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Payment Methods</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <GradientHeader
+        title="Payments"
+        subtitle={subtitle}
+        rightIcon="plus"
+        onRightPress={handleAddMethod}
+      />
 
+      {loading ? (
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : (
         <ScrollView
           style={styles.body}
           contentContainerStyle={styles.bodyContent}
@@ -268,248 +225,164 @@ export default function PaymentsScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Saved payment methods */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="wallet-outline" size={20} color={Brand.primary} />
-              <Text style={styles.sectionTitle}>Saved Methods</Text>
-            </View>
-
+          {/* ── Saved methods ─────────────────────────────────────── */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Saved Methods</Text>
             {methods.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="credit-card-off-outline" size={40} color={colors.textTertiary} />
+              <View style={styles.emptyRow}>
                 <Text style={styles.emptyText}>No saved payment methods</Text>
-                <Text style={styles.emptySubtext}>Add a payment method for faster checkout</Text>
+                <Text style={styles.emptySub}>Add one for faster checkout</Text>
               </View>
             ) : (
-              methods.map((method) => {
+              methods.map((method, i) => {
                 const config = getMethodConfig(method.method);
                 return (
-                  <View key={`pm-${method.id}`} style={styles.methodCard}>
-                    <View style={[styles.methodIcon, { backgroundColor: config.color + '20' }]}>
-                      <MaterialCommunityIcons name={config.icon} size={24} color={config.color} />
-                    </View>
-                    <View style={styles.methodInfo}>
-                      <View style={styles.methodHeader}>
-                        <Text style={styles.methodLabel}>{method.label || config.label}</Text>
-                        {method.is_default && (
-                          <View style={styles.defaultBadge}>
-                            <Text style={styles.defaultBadgeText}>Default</Text>
-                          </View>
-                        )}
+                  <View key={`pm-${method.id}`}>
+                    {i > 0 && <View style={styles.rowDivider} />}
+                    <View style={styles.row}>
+                      <View style={[styles.iconWrap, { backgroundColor: config.color + '18' }]}>
+                        <MaterialCommunityIcons name={config.icon} size={18} color={config.color} />
                       </View>
-                      {method.last4 && (
-                        <Text style={styles.methodDetail}>•••• {method.last4}</Text>
-                      )}
-                      {method.expiry && (
-                        <Text style={styles.methodDetail}>Expires {method.expiry}</Text>
-                      )}
-                    </View>
-                    <View style={styles.methodActions}>
+                      <View style={styles.info}>
+                        <View style={styles.titleRow}>
+                          <Text style={styles.rowTitle} numberOfLines={1}>{method.label || config.label}</Text>
+                          {method.is_default && (
+                            <View style={styles.defaultBadge}>
+                              <Text style={styles.defaultBadgeText}>Default</Text>
+                            </View>
+                          )}
+                        </View>
+                        {(method.last4 || method.expiry) ? (
+                          <Text style={styles.rowMeta} numberOfLines={1}>
+                            {[method.last4 ? `•••• ${method.last4}` : null, method.expiry ? `exp ${method.expiry}` : null].filter(Boolean).join(' · ')}
+                          </Text>
+                        ) : null}
+                      </View>
                       {!method.is_default && (
-                        <Pressable
-                          style={styles.methodActionBtn}
-                          onPress={() => handleSetDefault(method)}
-                        >
-                          <MaterialCommunityIcons name="star-outline" size={18} color={colors.textSecondary} />
+                        <Pressable style={styles.iconBtn} onPress={() => handleSetDefault(method)} hitSlop={4}>
+                          <MaterialCommunityIcons name="star-outline" size={17} color={colors.textSecondary} />
                         </Pressable>
                       )}
-                      <Pressable
-                        style={styles.methodActionBtn}
-                        onPress={() => handleRemoveMethod(method)}
-                      >
-                        <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
+                      <Pressable style={styles.iconBtn} onPress={() => handleRemoveMethod(method)} hitSlop={4}>
+                        <MaterialCommunityIcons name="trash-can-outline" size={17} color={Brand.danger} />
                       </Pressable>
                     </View>
                   </View>
                 );
               })
             )}
-
-            {/* Add payment method button */}
+            <View style={styles.rowDivider} />
             <Pressable
-              style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [styles.addRow, pressed && { backgroundColor: colors.surfaceAlt }]}
               onPress={handleAddMethod}
             >
-              <MaterialCommunityIcons name="plus" size={22} color="#FFFFFF" />
-              <Text style={styles.addBtnText}>Add Payment Method</Text>
+              <View style={[styles.iconWrap, { backgroundColor: Brand.primary + '12' }]}>
+                <MaterialCommunityIcons name="plus" size={18} color={Brand.primary} />
+              </View>
+              <Text style={styles.addRowText}>Add payment method</Text>
+              <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
             </Pressable>
           </View>
 
-          {/* Transaction history */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="history" size={20} color={Brand.primary} />
-              <Text style={styles.sectionTitle}>Transaction History</Text>
+          {/* ── Transaction history ───────────────────────────────── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeadRow}>
+              <Text style={styles.cardTitle}>Transaction History</Text>
+              {transactions.length > 10 && (
+                <Pressable style={styles.viewAll} onPress={() => router.push('/buyer/orders' as any)} hitSlop={8}>
+                  <Text style={styles.viewAllText}>View all</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
+                </Pressable>
+              )}
             </View>
-
             {transactions.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <MaterialCommunityIcons name="receipt-text-outline" size={40} color={colors.textTertiary} />
+              <View style={styles.emptyRow}>
                 <Text style={styles.emptyText}>No transactions yet</Text>
-                <Text style={styles.emptySubtext}>Your payment history will appear here</Text>
+                <Text style={styles.emptySub}>Your payment history will appear here</Text>
               </View>
             ) : (
-              <View style={styles.txnListWrap}>
-                {transactions.slice(0, 10).map((txn) => (
+              transactions.slice(0, 10).map((txn, i) => {
+                const config = getMethodConfig(txn.method);
+                const statusColor = STATUS_COLORS[txn.status] || colors.textTertiary;
+                return (
                   <View key={`txn-${txn.id}`}>
-                    {renderTransaction({ item: txn })}
+                    {i > 0 && <View style={styles.rowDivider} />}
+                    <View style={styles.row}>
+                      <View style={[styles.iconWrap, { backgroundColor: config.color + '18' }]}>
+                        <MaterialCommunityIcons name={config.icon} size={16} color={config.color} />
+                      </View>
+                      <View style={styles.info}>
+                        <Text style={styles.rowTitle} numberOfLines={1}>Order #{txn.order_number}</Text>
+                        <Text style={styles.rowMeta}>{config.label} · {formatDate(txn.created_at)}</Text>
+                      </View>
+                      <View style={styles.txnRight}>
+                        <Text style={styles.txnAmount}>UGX {Number(txn.amount).toLocaleString()}</Text>
+                        <Text style={[styles.txnStatus, { color: statusColor }]}>
+                          {txn.status}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                ))}
-                {transactions.length > 10 && (
-                  <Pressable
-                    style={({ pressed }) => [styles.viewAllBtn, pressed && { opacity: 0.85 }]}
-                    onPress={() => router.push('/buyer/orders' as any)}
-                  >
-                    <Text style={styles.viewAllText}>View All Orders</Text>
-                    <MaterialCommunityIcons name="chevron-right" size={18} color={Brand.primary} />
-                  </Pressable>
-                )}
-              </View>
+                );
+              })
             )}
           </View>
         </ScrollView>
-      </SafeAreaView>
+      )}
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  errorText: { marginTop: 10, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 12 },
+  retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 10 },
+  retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
   body: { flex: 1 },
-  bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
+  bodyContent: { paddingTop: 10, paddingBottom: 32, gap: 10 },
 
-  // Sections
-  section: { marginBottom: Spacing.three },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    marginBottom: Spacing.two,
+  card: {
+    backgroundColor: c.surface, marginHorizontal: 10, borderRadius: 14,
+    paddingVertical: 10, paddingHorizontal: 12,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text },
+  cardHeadRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4, marginTop: 2 },
+  viewAll: { flexDirection: 'row', alignItems: 'center' },
+  viewAllText: { fontSize: 12, fontWeight: '700', color: Brand.primary },
 
-  // Empty state
-  emptyCard: {
-    backgroundColor: c.surface,
-    borderRadius: 14,
-    padding: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.two,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 8, paddingHorizontal: 2,
   },
-  emptyText: { fontSize: 15, fontWeight: '700', color: c.text },
-  emptySubtext: { fontSize: 13, color: c.textSecondary, textAlign: 'center' },
-
-  // Method cards
-  methodCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three - 4,
-    backgroundColor: c.surface,
-    borderRadius: 14,
-    padding: Spacing.three,
-    marginBottom: Spacing.two,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+  iconWrap: {
+    width: 32, height: 32, borderRadius: 9,
+    justifyContent: 'center', alignItems: 'center',
   },
-  methodIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  methodInfo: { flex: 1, gap: 2 },
-  methodHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  methodLabel: { fontSize: 15, fontWeight: '700', color: c.text },
+  info: { flex: 1, gap: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rowTitle: { fontSize: 13, fontWeight: '700', color: c.text },
+  rowMeta: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
   defaultBadge: {
-    backgroundColor: Brand.primary,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 2,
-    borderRadius: 6,
+    backgroundColor: Brand.primary, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 5,
   },
-  defaultBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-  methodDetail: { fontSize: 13, color: c.textSecondary },
-  methodActions: { flexDirection: 'row', gap: Spacing.two },
-  methodActionBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: c.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  defaultBadgeText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
+  iconBtn: { padding: 6 },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 44 },
 
-  // Add button
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    backgroundColor: Brand.primary,
-    paddingVertical: Platform.select({ ios: 14, android: 12 }),
-    borderRadius: 12,
-    marginTop: Spacing.two,
-  },
-  addBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  emptyRow: { alignItems: 'center', paddingVertical: 14, gap: 2 },
+  emptyText: { fontSize: 13, fontWeight: '700', color: c.textSecondary },
+  emptySub: { fontSize: 11, color: c.textTertiary },
 
-  // Transactions
-  txnListWrap: { gap: Spacing.two },
-  txnCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three - 4,
-    backgroundColor: c.surface,
-    borderRadius: 12,
-    padding: Spacing.three,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+  addRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 8, paddingHorizontal: 2, borderRadius: 8,
   },
-  txnIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  txnInfo: { flex: 1, gap: 2 },
-  txnOrder: { fontSize: 14, fontWeight: '600', color: c.text },
-  txnDate: { fontSize: 12, color: c.textTertiary },
-  txnRight: { alignItems: 'flex-end', gap: 4 },
-  txnAmount: { fontSize: 15, fontWeight: '700', color: c.text },
-  txnStatusBadge: { paddingHorizontal: Spacing.two, paddingVertical: 2, borderRadius: 6 },
-  txnStatusText: { fontSize: 11, fontWeight: '700' },
+  addRowText: { flex: 1, fontSize: 13, fontWeight: '700', color: Brand.primary },
 
-  // View all
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.one + 2,
-    paddingVertical: Spacing.two + Spacing.one,
-    marginTop: Spacing.one + 2,
-  },
-  viewAllText: { fontSize: 14, fontWeight: '700', color: Brand.primary },
+  txnRight: { alignItems: 'flex-end', gap: 1 },
+  txnAmount: { fontSize: 13, fontWeight: '800', color: c.text },
+  txnStatus: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
 });

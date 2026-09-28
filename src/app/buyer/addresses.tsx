@@ -1,29 +1,28 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { LocationPicker } from '@/components/LocationPicker';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import type { Address } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 const LABELS: { key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
   { key: 'home', icon: 'home' },
@@ -46,7 +45,6 @@ const EMPTY_FORM = {
 };
 
 export default function BuyerAddressesScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { isAuthenticated } = useAuth();
@@ -148,43 +146,35 @@ export default function BuyerAddressesScreen() {
 
   const renderItem = ({ item }: { item: Address }) => {
     const labelMeta = LABELS.find((l) => l.key === item.label) || LABELS[2];
+    const meta = [
+      [item.city, item.state].filter(Boolean).join(', '),
+      item.postal_code,
+      item.country,
+      item.phone,
+    ].filter(Boolean).join(' · ');
     return (
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={styles.cardIconWrap}>
-            <MaterialCommunityIcons name={labelMeta.icon} size={20} color={Brand.primary} />
-          </View>
-          <View style={styles.cardInfo}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardLabel}>{item.label}</Text>
-              {item.is_default ? (
-                <View style={styles.defaultBadge}>
-                  <Text style={styles.defaultText}>Default</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.cardStreet}>{item.street}</Text>
-            <Text style={styles.cardCity}>
-              {item.city}
-              {item.state ? `, ${item.state}` : ''} {item.postal_code}
-            </Text>
-            <Text style={styles.cardCountry}>{item.country}</Text>
-            {item.phone ? (
-              <View style={styles.phoneRow}>
-                <MaterialCommunityIcons name="phone-outline" size={13} color={colors.textTertiary} />
-                <Text style={styles.cardPhone}>{item.phone}</Text>
+      <View style={styles.row}>
+        <View style={styles.iconWrap}>
+          <MaterialCommunityIcons name={labelMeta.icon} size={18} color={Brand.primary} />
+        </View>
+        <View style={styles.info}>
+          <View style={styles.titleRow}>
+            <Text style={styles.rowLabel}>{item.label}</Text>
+            {item.is_default ? (
+              <View style={styles.defaultBadge}>
+                <Text style={styles.defaultText}>Default</Text>
               </View>
             ) : null}
           </View>
+          <Text style={styles.street} numberOfLines={1}>{item.street}</Text>
+          <Text style={styles.meta} numberOfLines={1}>{meta}</Text>
         </View>
-        <View style={styles.cardActions}>
-          <Pressable style={styles.actionBtn} onPress={() => openEdit(item)}>
-            <MaterialCommunityIcons name="pencil-outline" size={16} color={Brand.primary} />
-            <Text style={styles.actionEditText}>Edit</Text>
+        <View style={styles.actions}>
+          <Pressable style={styles.iconBtn} onPress={() => openEdit(item)} hitSlop={4}>
+            <MaterialCommunityIcons name="pencil-outline" size={17} color={Brand.primary} />
           </Pressable>
-          <Pressable style={styles.actionBtn} onPress={() => handleDelete(item.id)}>
-            <MaterialCommunityIcons name="trash-can-outline" size={16} color={Brand.danger} />
-            <Text style={styles.actionDeleteText}>Remove</Text>
+          <Pressable style={styles.iconBtn} onPress={() => handleDelete(item.id)} hitSlop={4}>
+            <MaterialCommunityIcons name="trash-can-outline" size={17} color={Brand.danger} />
           </Pressable>
         </View>
       </View>
@@ -193,21 +183,12 @@ export default function BuyerAddressesScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Addresses</Text>
-          <Pressable hitSlop={12} onPress={openAdd} style={styles.headerBtn}>
-            <MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" />
-          </Pressable>
-        </LinearGradient>
+      <GradientHeader
+        title="Addresses"
+        subtitle={!loading && addresses.length > 0 ? `${addresses.length} saved` : undefined}
+        rightIcon="plus"
+        onRightPress={openAdd}
+      />
 
         {loading ? (
           <View style={styles.centerBody}>
@@ -238,7 +219,9 @@ export default function BuyerAddressesScreen() {
             data={addresses}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
+            style={styles.listCard}
             contentContainerStyle={styles.list}
+            ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -253,12 +236,7 @@ export default function BuyerAddressesScreen() {
           />
         )}
 
-        {addresses.length > 0 && !loading ? (
-          <Pressable style={styles.fab} onPress={openAdd}>
-            <MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" />
-          </Pressable>
-        ) : null}
-      </SafeAreaView>
+
 
       {/* Add/Edit Modal */}
       <Modal visible={showForm} animationType="slide" onRequestClose={closeForm}>
@@ -392,17 +370,7 @@ export default function BuyerAddressesScreen() {
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  headerBtn: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
@@ -429,65 +397,39 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
   },
   emptyAddBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  list: { padding: 16, gap: 12, paddingBottom: 96 },
-  card: {
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
     backgroundColor: c.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: c.borderLight,
-    gap: 12,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  cardTop: { flexDirection: 'row', gap: 12 },
-  cardIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 10, paddingVertical: 9,
+  },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: Brand.primary + '12',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardInfo: { flex: 1, gap: 2 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  cardLabel: { fontSize: 15, fontWeight: '700', color: c.text, textTransform: 'capitalize' },
+  info: { flex: 1, gap: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rowLabel: { fontSize: 13, fontWeight: '700', color: c.text, textTransform: 'capitalize' },
   defaultBadge: {
     backgroundColor: Brand.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 5,
   },
-  defaultText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  cardStreet: { fontSize: 14, color: c.text },
-  cardCity: { fontSize: 13, color: c.textSecondary },
-  cardCountry: { fontSize: 13, color: c.textSecondary },
-  phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  cardPhone: { fontSize: 13, color: c.textTertiary },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 24,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: c.borderLight,
-  },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionEditText: { color: Brand.primary, fontSize: 13, fontWeight: '600' },
-  actionDeleteText: { color: Brand.danger, fontSize: 13, fontWeight: '600' },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Brand.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
+  defaultText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
+  street: { fontSize: 12, color: c.text, fontWeight: '500' },
+  meta: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
+  actions: { flexDirection: 'row', alignItems: 'center' },
+  iconBtn: { padding: 6 },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 54 },
   // Modal (full screen)
   modalSafeArea: { flex: 1, backgroundColor: c.surface },
   modalHeader: {

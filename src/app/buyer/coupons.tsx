@@ -1,22 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
-import { ModernHeader } from '@/components/ModernHeader';
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
+import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import type { ClaimableCoupon } from '@/types';
-import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface CouponsResponse {
   results: ClaimableCoupon[];
@@ -75,167 +75,140 @@ export default function BuyerCouponsScreen() {
   const renderItem = ({ item }: { item: ClaimableCoupon }) => {
     const copied = copiedCode === item.code;
     const expired = item.valid_to ? new Date(item.valid_to).getTime() < Date.now() : false;
+    const meta = [
+      `Min UGX ${Number(item.min_order_amount).toLocaleString()}`,
+      item.store_name || 'All stores',
+      item.valid_to ? `till ${new Date(item.valid_to).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : null,
+    ].filter(Boolean).join(' · ');
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <MaterialCommunityIcons name="ticket-percent" size={22} color={Brand.primary} />
-          <Text style={styles.discountValue}>{formatDiscount(item)}</Text>
-          {expired ? (
-            <View style={[styles.statusBadge, { backgroundColor: Brand.danger + '20' }]}>
-              <Text style={[styles.statusText, { color: Brand.danger }]}>Expired</Text>
-            </View>
-          ) : (
-            <View style={[styles.statusBadge, { backgroundColor: Brand.primary + '20' }]}>
-              <Text style={[styles.statusText, { color: Brand.primary }]}>Active</Text>
-            </View>
-          )}
+      <View style={styles.row}>
+        <View style={[styles.ticketIcon, expired && { backgroundColor: colors.textTertiary + '15' }]}>
+          <MaterialCommunityIcons name="ticket-percent" size={20} color={expired ? colors.textTertiary : Brand.primary} />
         </View>
-
-        <View style={styles.codeWrap}>
-          <Text style={styles.codeLabel}>Code</Text>
-          <View style={styles.codeBox}>
-            <Text style={styles.codeText}>{item.code}</Text>
+        <View style={styles.info}>
+          <View style={styles.topRow}>
+            <Text style={[styles.discountValue, expired && { color: colors.textTertiary }]}>{formatDiscount(item)}</Text>
+            <Text style={[styles.codeText, expired && { color: colors.textTertiary }]}>{item.code}</Text>
           </View>
+          <Text style={styles.meta} numberOfLines={1}>{meta}</Text>
         </View>
-
-        <View style={styles.detailRow}>
-          <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Min Order</Text>
-            <Text style={styles.detailValue}>UGX {Number(item.min_order_amount).toLocaleString()}</Text>
-          </View>
-          {item.store_name ? (
-            <View style={styles.detailCol}>
-              <Text style={styles.detailLabel}>Store</Text>
-              <Text style={styles.detailValue} numberOfLines={1}>{item.store_name}</Text>
-            </View>
-          ) : (
-            <View style={styles.detailCol}>
-              <Text style={styles.detailLabel}>Store</Text>
-              <Text style={styles.detailValue}>All stores</Text>
-            </View>
-          )}
-        </View>
-
-        {item.valid_to && (
-          <View style={styles.expiryRow}>
-            <MaterialCommunityIcons name="clock-outline" size={14} color={colors.textTertiary} />
-            <Text style={styles.expiryText}>
-              Valid until {new Date(item.valid_to).toLocaleDateString()}
-            </Text>
-          </View>
+        {expired ? (
+          <Text style={styles.expiredText}>Expired</Text>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [styles.copyBtn, copied && styles.copyBtnDone, pressed && { opacity: 0.8 }]}
+            onPress={() => handleCopy(item.code)}
+            hitSlop={6}
+          >
+            <MaterialCommunityIcons
+              name={copied ? 'check' : 'content-copy'}
+              size={14}
+              color={copied ? Brand.primary : '#FFFFFF'}
+            />
+            {copied && <Text style={styles.copyBtnTextDone}>Copied</Text>}
+          </Pressable>
         )}
-
-        <Pressable
-          style={({ pressed }) => [styles.copyBtn, copied && styles.copyBtnDone, pressed && { opacity: 0.85 }]}
-          onPress={() => handleCopy(item.code)}
-        >
-          <MaterialCommunityIcons
-            name={copied ? 'check-circle-outline' : 'content-copy'}
-            size={18}
-            color={copied ? Brand.primary : '#FFFFFF'}
-          />
-          <Text style={[styles.copyBtnText, copied && styles.copyBtnTextDone]}>
-            {copied ? 'Copied!' : 'Copy Code'}
-          </Text>
-        </Pressable>
       </View>
     );
   };
 
   return (
     <View style={styles.screen}>
-      <ModernHeader title="My Coupons" subtitle="Available discounts" />
-
-      <View style={{ flex: 1 }}>
-        {loading ? (
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-          </View>
-        ) : error ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorTitle}>Couldn't load coupons</Text>
-            <Text style={styles.errorSub}>{error}</Text>
-            <Pressable style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.85 }]} onPress={load}>
-              <Text style={styles.retryBtnText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : coupons.length === 0 ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="ticket-outline" size={56} color={colors.textTertiary} />
-            <Text style={styles.title}>No coupons available</Text>
-            <Text style={styles.subtitle}>
-              Check back later for new discounts and vouchers from your favourite stores.
-            </Text>
-            <Pressable style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]} onPress={() => router.push('/')}>
-              <Text style={styles.shopBtnText}>Browse Products</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <FlatList
-            data={coupons}
-            keyExtractor={(item, index) => `${item.code}-${index}`}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={8}
-            windowSize={9}
-            initialNumToRender={8}
-            removeClippedSubviews={true}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={load}
-                colors={[Brand.primary]}
-                tintColor={Brand.primary}
-              />
-            }
-          />
-        )}
-      </View>
+      <GradientHeader
+        title="My Coupons"
+        subtitle={!loading && coupons.length > 0 ? `${coupons.length} coupon${coupons.length === 1 ? '' : 's'}` : undefined}
+      />
+      {loading ? (
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={Brand.danger} />
+          <Text style={styles.errorTitle}>Couldn't load coupons</Text>
+          <Text style={styles.errorSub}>{error}</Text>
+          <Pressable style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.85 }]} onPress={load}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : coupons.length === 0 ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="ticket-outline" size={48} color={colors.textTertiary} />
+          <Text style={styles.title}>No coupons available</Text>
+          <Text style={styles.subtitle}>
+            Check back later for new discounts and vouchers from your favourite stores.
+          </Text>
+          <Pressable style={({ pressed }) => [styles.shopBtn, pressed && { opacity: 0.85 }]} onPress={() => router.push('/')}>
+            <Text style={styles.shopBtnText}>Browse Products</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          data={coupons}
+          keyExtractor={(item, index) => `${item.code}-${index}`}
+          renderItem={renderItem}
+          style={styles.listCard}
+          contentContainerStyle={styles.list}
+          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+          maxToRenderPerBatch={12}
+          windowSize={11}
+          initialNumToRender={12}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={load}
+              colors={[Brand.primary]}
+              tintColor={Brand.primary}
+            />
+          }
+        />
+      )}
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  title: { marginTop: 16, fontSize: 18, fontWeight: '700', color: c.text },
-  subtitle: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
-  shopBtn: { marginTop: 20, backgroundColor: Brand.primary, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10 },
-  shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
-  errorTitle: { marginTop: 12, fontSize: 16, fontWeight: '700', color: Brand.danger },
-  errorSub: { marginTop: 4, fontSize: 13, color: c.textTertiary, textAlign: 'center' },
-  retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  retryBtnText: { color: '#FFFFFF', fontWeight: '700' },
-  list: { padding: Spacing.three, gap: Spacing.two },
-  card: {
-    backgroundColor: c.surface, borderRadius: 16, padding: Spacing.three, gap: Spacing.two,
-    borderWidth: 1, borderColor: c.borderLight,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  title: { marginTop: 12, fontSize: 16, fontWeight: '700', color: c.text },
+  subtitle: { marginTop: 6, fontSize: 13, color: c.textSecondary, textAlign: 'center' },
+  shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 11, borderRadius: 10 },
+  shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+  errorTitle: { marginTop: 10, fontSize: 15, fontWeight: '700', color: Brand.danger },
+  errorSub: { marginTop: 3, fontSize: 13, color: c.textTertiary, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: Brand.primary, paddingHorizontal: 20, paddingVertical: 9, borderRadius: 10 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  discountValue: { flex: 1, fontSize: 18, fontWeight: '800', color: c.text },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusText: { fontSize: 11, fontWeight: '700' },
-  codeWrap: { gap: 6 },
-  codeLabel: { fontSize: 11, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  codeBox: {
-    borderWidth: 1.5, borderStyle: 'dashed', borderColor: Brand.primary, borderRadius: 12,
-    paddingVertical: 14, paddingHorizontal: 16, backgroundColor: Brand.primary + '0D',
-    alignItems: 'center',
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 10, paddingVertical: 9,
   },
-  codeText: { fontSize: 20, fontWeight: '900', color: Brand.primary, letterSpacing: 1.5 },
-  detailRow: { flexDirection: 'row', gap: Spacing.two },
-  detailCol: { flex: 1, gap: 2 },
-  detailLabel: { fontSize: 11, fontWeight: '600', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.4 },
-  detailValue: { fontSize: 14, fontWeight: '700', color: c.text },
-  expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  expiryText: { fontSize: 12, color: c.textTertiary },
+  ticketIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: Brand.primary + '14',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  info: { flex: 1, gap: 2 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  discountValue: { fontSize: 13, fontWeight: '800', color: c.text },
+  codeText: {
+    fontSize: 11, fontWeight: '800', color: Brand.primary, letterSpacing: 0.8,
+    backgroundColor: Brand.primary + '12', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4,
+  },
+  meta: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
+  expiredText: { fontSize: 10, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase' },
   copyBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Brand.primary, paddingVertical: 12, borderRadius: 12, marginTop: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Brand.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
   },
-  copyBtnDone: { backgroundColor: Brand.primary + '18', borderWidth: 1.5, borderColor: Brand.primary },
-  copyBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
-  copyBtnTextDone: { color: Brand.primary },
+  copyBtnDone: { backgroundColor: Brand.primary + '14', borderWidth: 1, borderColor: Brand.primary },
+  copyBtnTextDone: { color: Brand.primary, fontWeight: '800', fontSize: 11 },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 56 },
 });
