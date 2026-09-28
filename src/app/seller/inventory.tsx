@@ -383,9 +383,11 @@ export default function SellerInventoryScreen() {
               <Text style={styles.resText}>{item.reserved_quantity} res</Text>
             </Pressable>
           </View>
+          <Text style={styles.rowValue} numberOfLines={1}>
+            Value UGX {Math.round(item.stock_value || 0).toLocaleString()} · {item.available_quantity} avail
+          </Text>
         </View>
         <View style={styles.rowActions}>
-          <Text style={styles.rowValue} numberOfLines={1}>UGX {Math.round(item.stock_value || 0).toLocaleString()}</Text>
           <Pressable style={styles.adjustBtn} onPress={() => openAdjust(item)} hitSlop={4}>
             <MaterialCommunityIcons name="plus-minus-variant" size={13} color={Brand.primary} />
             <Text style={styles.adjustBtnText}>Adjust</Text>
@@ -978,7 +980,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   statusPill: { fontSize: 10, fontWeight: '700' },
   resText: { fontSize: 10, fontWeight: '700', color: Brand.rating, textDecorationLine: 'underline' },
   rowActions: { alignItems: 'flex-end', gap: 6 },
-  rowValue: { fontSize: 11, fontWeight: '800', color: Brand.primary },
+  rowValue: { fontSize: 10.5, fontWeight: '600', color: colors.textTertiary, marginTop: 3 },
   adjustBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Brand.primary + '14', borderWidth: 1, borderColor: Brand.primary + '44',
