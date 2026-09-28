@@ -385,6 +385,7 @@ export default function SellerInventoryScreen() {
           </View>
         </View>
         <View style={styles.rowActions}>
+          <Text style={styles.rowValue} numberOfLines={1}>UGX {Math.round(item.stock_value || 0).toLocaleString()}</Text>
           <Pressable style={styles.adjustBtn} onPress={() => openAdjust(item)} hitSlop={4}>
             <MaterialCommunityIcons name="plus-minus-variant" size={13} color={Brand.primary} />
             <Text style={styles.adjustBtnText}>Adjust</Text>
@@ -945,9 +946,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 13, color: colors.text, padding: 0 },
 
-  pillRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  pillRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 10 },
   pill: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,
+    flex: 1, alignItems: 'center',
+    paddingHorizontal: 4, paddingVertical: 7, borderRadius: 16,
     backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
   },
   pillActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
@@ -975,7 +977,8 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   barFill: { height: 4, borderRadius: 2 },
   statusPill: { fontSize: 10, fontWeight: '700' },
   resText: { fontSize: 10, fontWeight: '700', color: Brand.rating, textDecorationLine: 'underline' },
-  rowActions: { alignItems: 'center', gap: 6 },
+  rowActions: { alignItems: 'flex-end', gap: 6 },
+  rowValue: { fontSize: 11, fontWeight: '800', color: Brand.primary },
   adjustBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Brand.primary + '14', borderWidth: 1, borderColor: Brand.primary + '44',
