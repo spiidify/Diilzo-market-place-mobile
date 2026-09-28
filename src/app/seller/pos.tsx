@@ -222,6 +222,12 @@ export default function SellerPOSScreen() {
     return cart.reduce((cnt, item) => cnt + item.quantity, 0);
   }, [cart]);
 
+  const cartQtyById = useMemo(() => {
+    const map = new Map<number, number>();
+    cart.forEach((i) => map.set(i.id, i.quantity));
+    return map;
+  }, [cart]);
+
   // Cart actions
   const addToCart = (product: any) => {
     const pPrice = Number(product.final_price || product.price || 0);
@@ -428,9 +434,14 @@ export default function SellerPOSScreen() {
               contentContainerStyle={styles.productsList}
               renderItem={({ item }) => {
                 const isOutOfStock = item.stock_quantity <= 0;
+                const inCartQty = cartQtyById.get(item.id) || 0;
                 return (
                   <Pressable
-                    style={[styles.productCard, isOutOfStock && styles.productCardOut]}
+                    style={[
+                      styles.productCard,
+                      isOutOfStock && styles.productCardOut,
+                      inCartQty > 0 && styles.productCardInCart,
+                    ]}
                     onPress={() => addToCart(item)}
                   >
                     <View style={styles.productImgWrap}>
@@ -439,6 +450,12 @@ export default function SellerPOSScreen() {
                       ) : (
                         <View style={styles.noImgBox}>
                           <MaterialCommunityIcons name="package-variant" size={26} color="#D1D5DB" />
+                        </View>
+                      )}
+                      {inCartQty > 0 && (
+                        <View style={styles.inCartBadge}>
+                          <MaterialCommunityIcons name="cart" size={10} color="#FFFFFF" />
+                          <Text style={styles.inCartBadgeText}>{inCartQty}</Text>
                         </View>
                       )}
                       <View
@@ -1039,6 +1056,28 @@ const createStyles = (colors: ThemeColors) =>
     },
     productCardOut: {
       opacity: 0.5,
+    },
+    productCardInCart: {
+      borderColor: Brand.primary,
+      borderWidth: 1.5,
+      backgroundColor: 'rgba(5, 150, 105, 0.07)',
+    },
+    inCartBadge: {
+      position: 'absolute',
+      top: 3,
+      right: 3,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 2,
+      backgroundColor: Brand.primary,
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+      borderRadius: 8,
+    },
+    inCartBadgeText: {
+      fontSize: 9.5,
+      fontWeight: '800',
+      color: '#FFFFFF',
     },
     productImgWrap: {
       position: 'relative',
