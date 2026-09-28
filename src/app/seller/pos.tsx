@@ -640,6 +640,22 @@ export default function SellerPOSScreen() {
 
           {/* Payment methods — wrapping icon chips, all labels visible */}
           <View style={styles.methodChipRow}>
+            {(historySearchInput || historyMethod || historyRange !== 'all') && (
+              <Pressable
+                style={styles.resetChip}
+                onPress={() => {
+                  setHistorySearchInput('');
+                  setHistorySearch('');
+                  setHistoryMethod('');
+                  setHistoryRange('all');
+                  setCustomFrom('');
+                  setCustomTo('');
+                }}
+              >
+                <MaterialCommunityIcons name="filter-remove-outline" size={13} color={Brand.danger} />
+                <Text style={styles.resetChipText}>Reset</Text>
+              </Pressable>
+            )}
             {HISTORY_METHODS.map((m) => {
               const active = historyMethod === m.key;
               const mColor = m.key ? METHOD_COLORS[m.key] : Brand.primary;
@@ -1725,6 +1741,22 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 11,
       fontWeight: '700',
       color: colors.text,
+    },
+    resetChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: Brand.danger + '66',
+      backgroundColor: Brand.danger + '0D',
+    },
+    resetChipText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: Brand.danger,
     },
     histStatStrip: {
       flexDirection: 'row',
