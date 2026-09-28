@@ -45,14 +45,14 @@ const HISTORY_RANGES: { key: HistoryRange; label: string }[] = [
   { key: '30d', label: '30 Days' },
 ];
 
-const HISTORY_METHODS: { key: HistoryMethod; label: string }[] = [
-  { key: '', label: 'All' },
-  { key: 'cash', label: 'Cash' },
-  { key: 'mtn_momo', label: 'MTN MoMo' },
-  { key: 'airtel_money', label: 'Airtel' },
-  { key: 'card', label: 'Card' },
-  { key: 'credit', label: 'Credit' },
-  { key: 'mixed', label: 'Mixed' },
+const HISTORY_METHODS: { key: HistoryMethod; label: string; icon: string }[] = [
+  { key: '', label: 'All', icon: 'view-grid-outline' },
+  { key: 'cash', label: 'Cash', icon: 'cash' },
+  { key: 'mtn_momo', label: 'MTN MoMo', icon: 'cellphone' },
+  { key: 'airtel_money', label: 'Airtel', icon: 'cellphone-wireless' },
+  { key: 'card', label: 'Card', icon: 'credit-card-outline' },
+  { key: 'credit', label: 'Credit', icon: 'credit-card-clock-outline' },
+  { key: 'mixed', label: 'Mixed', icon: 'credit-card-multiple-outline' },
 ];
 
 const METHOD_COLORS: Record<string, string> = {
@@ -141,10 +141,18 @@ export default function SellerPOSScreen() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // History filters
+  // History filters — input is debounced into historySearch
+  const [historySearchInput, setHistorySearchInput] = useState('');
   const [historySearch, setHistorySearch] = useState('');
   const [historyMethod, setHistoryMethod] = useState<HistoryMethod>('');
   const [historyRange, setHistoryRange] = useState<HistoryRange>('all');
+  const historySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const onHistorySearchChange = useCallback((text: string) => {
+    setHistorySearchInput(text);
+    if (historySearchTimer.current) clearTimeout(historySearchTimer.current);
+    historySearchTimer.current = setTimeout(() => setHistorySearch(text.trim()), 350);
+  }, []);
 
   // Load products with pagination
   const loadProducts = useCallback(async (page = 1, append = false) => {
@@ -559,68 +567,93 @@ export default function SellerPOSScreen() {
         /* History Tab */
         <View style={{ flex: 1 }}>
           {/* Search */}
-          <View style={[styles.searchBar, { marginHorizontal: 12 }]}>
+          <View style={[styles.histSearchBar, { marginHorizontal: 12 }]}>
             <MaterialCommunityIcons name="magnify" size={20} color={Brand.primary} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search sale #, customer, phone..."
               placeholderTextColor={colors.textSecondary}
-              value={historySearch}
-              onChangeText={setHistorySearch}
-              onSubmitEditing={loadData}
+              value={historySearchInput}
+              onChangeText={onHistorySearchChange}
               returnKeyType="search"
             />
-            {historySearch.length > 0 && (
-              <Pressable onPress={() => setHistorySearch('')}>
+            {historySearchInput.length > 0 && (
+              <Pressable onPress={() => onHistorySearchChange('')} hitSlop={8}>
                 <MaterialCommunityIcons name="close-circle" size={18} color={colors.textSecondary} />
               </Pressable>
             )}
           </View>
 
-          {/* Range pills */}
-          <View style={styles.filterPillRow}>
+          {/* Date range — equal-width segmented control */}
+          <View style={styles.rangeSeg}>
             {HISTORY_RANGES.map((r) => (
               <Pressable
                 key={r.key}
-                style={[styles.filterPill, historyRange === r.key && styles.filterPillActive]}
+                style={[styles.rangeSegBtn, historyRange === r.key && styles.rangeSegBtnActive]}
                 onPress={() => setHistoryRange(r.key)}
               >
-                <Text style={[styles.filterPillText, historyRange === r.key && styles.filterPillTextActive]}>
+                <Text style={[styles.rangeSegText, historyRange === r.key && styles.rangeSegTextActive]}>
                   {r.label}
                 </Text>
               </Pressable>
             ))}
           </View>
 
-          {/* Method pills */}
-          <View style={[styles.filterPillRow, { marginTop: 0, marginBottom: 4 }]}>
-            {HISTORY_METHODS.map((m) => (
-              <Pressable
-                key={m.key}
-                style={[
-                  styles.filterPill,
-                  historyMethod === m.key && styles.filterPillActive,
-                  historyMethod === m.key && m.key !== '' && { backgroundColor: METHOD_COLORS[m.key] },
-                ]}
-                onPress={() => setHistoryMethod(m.key)}
-              >
-                <Text style={[styles.filterPillText, historyMethod === m.key && styles.filterPillTextActive]}>
-                  {m.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          {/* Payment methods — scrollable icon chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.methodChipRow}
+          >
+            {HISTORY_METHODS.map((m) => {
+              const active = historyMethod === m.key;
+              const mColor = m.key ? METHOD_COLORS[m.key] : colors.textSecondary;
+              return (
+                <Pressable
+                  key={m.key}
+                  style={[
+                    styles.methodChip,
+                    active && { backgroundColor: m.key ? mColor : '#1E293B', borderColor: m.key ? mColor : '#1E293B' },
+                  ]}
+                  onPress={() => setHistoryMethod(m.key)}
+                >
+                  <MaterialCommunityIcons
+                    name={m.icon as any}
+                    size={14}
+                    color={active ? '#FFFFFF' : mColor}
+                  />
+                  <Text style={[styles.methodChipText, active && { color: '#FFFFFF' }]}>
+                    {m.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-          {/* Filtered summary */}
+          {/* Filtered summary — stat strip */}
           {salesSummary && (
-            <View style={styles.historySummary}>
-              <Text style={styles.historySummaryText}>
-                <Text style={{ fontWeight: '800', color: colors.text }}>{salesSummary.count}</Text> sale{salesSummary.count === 1 ? '' : 's'}
-                {'  ·  '}Total <Text style={{ fontWeight: '800', color: Brand.primary }}>UGX {Number(salesSummary.total).toLocaleString()}</Text>
-                {salesSummary.count > 0 && (
-                  <>{'  ·  '}Avg <Text style={{ fontWeight: '800', color: colors.text }}>UGX {Number(salesSummary.avg).toLocaleString()}</Text></>
-                )}
-              </Text>
+            <View style={styles.histStatStrip}>
+              <View style={styles.histStat}>
+                <MaterialCommunityIcons name="receipt-text-outline" size={15} color={colors.textTertiary} />
+                <Text style={styles.histStatNum}>{salesSummary.count}</Text>
+                <Text style={styles.histStatLabel}>Sale{salesSummary.count === 1 ? '' : 's'}</Text>
+              </View>
+              <View style={styles.histStatDivider} />
+              <View style={styles.histStat}>
+                <MaterialCommunityIcons name="cash-multiple" size={15} color={Brand.primary} />
+                <Text style={[styles.histStatNum, { color: Brand.primary }]} numberOfLines={1}>
+                  UGX {Number(salesSummary.total).toLocaleString()}
+                </Text>
+                <Text style={styles.histStatLabel}>Total</Text>
+              </View>
+              <View style={styles.histStatDivider} />
+              <View style={styles.histStat}>
+                <MaterialCommunityIcons name="chart-line" size={15} color={colors.textTertiary} />
+                <Text style={styles.histStatNum} numberOfLines={1}>
+                  {salesSummary.count > 0 ? `UGX ${Number(salesSummary.avg).toLocaleString()}` : '—'}
+                </Text>
+                <Text style={styles.histStatLabel}>Avg Sale</Text>
+              </View>
             </View>
           )}
 
@@ -631,37 +664,37 @@ export default function SellerPOSScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
             renderItem={({ item }) => {
               const mColor = METHOD_COLORS[item.payment_method] || colors.textSecondary;
+              const mIcon = HISTORY_METHODS.find((m) => m.key === item.payment_method)?.icon || 'cash';
               return (
                 <View style={styles.historyCard}>
-                  <View style={styles.historyCardHead}>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <View style={[styles.statusDot, { backgroundColor: item.completed ? Brand.primary : Brand.rating }]} />
-                        <Text style={styles.historySaleNum}>{item.sale_number}</Text>
-                      </View>
-                      <Text style={styles.historyCustomer}>{item.customer_name || 'Walk-in Customer'}</Text>
-                      {item.customer_phone ? (
-                        <Text style={styles.historyMeta}>{item.customer_phone}</Text>
-                      ) : null}
-                    </View>
-                    <Text style={styles.historyTotal}>UGX {Number(item.total).toLocaleString()}</Text>
+                  <View style={[styles.histMethodIcon, { backgroundColor: mColor + '18' }]}>
+                    <MaterialCommunityIcons name={mIcon as any} size={20} color={mColor} />
                   </View>
-                  <View style={styles.historyCardFoot}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.historyDate}>
-                        {new Date(item.sale_date).toLocaleDateString()} • {new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                      {(item.cashier || item.register) ? (
-                        <Text style={styles.historyMeta} numberOfLines={1}>
-                          {[item.cashier, item.register].filter(Boolean).join(' · ')}
-                        </Text>
-                      ) : null}
-                    </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={styles.historyMeta}>{item.items_count} item{item.items_count === 1 ? '' : 's'}</Text>
-                      <View style={[styles.methodBadge, { backgroundColor: mColor + '18' }]}>
-                        <Text style={[styles.methodBadgeText, { color: mColor }]}>{item.payment_method.replace(/_/g, ' ').toUpperCase()}</Text>
-                      </View>
+                      <Text style={styles.historySaleNum} numberOfLines={1}>{item.sale_number}</Text>
+                      {!item.completed && (
+                        <View style={styles.histPendingTag}><Text style={styles.histPendingTagText}>Pending</Text></View>
+                      )}
+                    </View>
+                    <Text style={styles.historyCustomer} numberOfLines={1}>
+                      {item.customer_name || 'Walk-in Customer'}
+                      {item.customer_phone ? ` · ${item.customer_phone}` : ''}
+                    </Text>
+                    <Text style={styles.historyMeta} numberOfLines={1}>
+                      {new Date(item.sale_date).toLocaleDateString()}
+                      {' '}{new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {' · '}{item.items_count} item{item.items_count === 1 ? '' : 's'}
+                      {[item.cashier, item.register].filter(Boolean).length > 0
+                        ? ` · ${[item.cashier, item.register].filter(Boolean).join(' · ')}` : ''}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                    <Text style={styles.historyTotal}>UGX {Number(item.total).toLocaleString()}</Text>
+                    <View style={[styles.methodBadge, { backgroundColor: mColor + '18' }]}>
+                      <Text style={[styles.methodBadgeText, { color: mColor }]}>
+                        {item.payment_method.replace(/_/g, ' ').toUpperCase()}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -1289,56 +1322,102 @@ const createStyles = (colors: ThemeColors) =>
     },
     historyList: {
       padding: 12,
-      paddingTop: 2,
+      paddingTop: 4,
       paddingBottom: 40,
     },
-    filterPillRow: {
+    histSearchBar: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 6,
-      paddingHorizontal: 12,
-      marginTop: 8,
-      marginBottom: 2,
-    },
-    filterPill: {
-      paddingHorizontal: 14,
-      paddingVertical: 6,
-      borderRadius: 16,
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      height: 44,
+      marginTop: 8,
+    },
+    rangeSeg: {
+      flexDirection: 'row',
+      marginHorizontal: 12,
+      marginTop: 10,
       backgroundColor: colors.surface,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 3,
     },
-    filterPillActive: {
-      backgroundColor: '#1E293B',
-      borderColor: '#1E293B',
+    rangeSegBtn: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: 7,
+      borderRadius: 8,
     },
-    filterPillText: {
+    rangeSegBtnActive: {
+      backgroundColor: Brand.primary,
+    },
+    rangeSegText: {
       fontSize: 12,
       fontWeight: '600',
       color: colors.textSecondary,
     },
-    filterPillTextActive: {
+    rangeSegTextActive: {
       color: '#FFFFFF',
     },
-    historySummary: {
-      marginHorizontal: 12,
-      marginTop: 6,
-      marginBottom: 4,
-      paddingVertical: 6,
-      paddingHorizontal: 10,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
+    methodChipRow: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingHorizontal: 12,
+      marginTop: 10,
+      paddingBottom: 2,
+    },
+    methodChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 11,
+      paddingVertical: 7,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
+      backgroundColor: colors.surface,
     },
-    historySummaryText: {
-      fontSize: 12,
+    methodChipText: {
+      fontSize: 11.5,
+      fontWeight: '700',
       color: colors.textSecondary,
     },
-    statusDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+    histStatStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 12,
+      marginTop: 10,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 10,
+    },
+    histStat: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+    },
+    histStatNum: {
+      fontSize: 12.5,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    histStatLabel: {
+      fontSize: 10.5,
+      color: colors.textTertiary,
+    },
+    histStatDivider: {
+      width: 1,
+      height: 20,
+      backgroundColor: colors.border,
     },
     historyMeta: {
       fontSize: 11,
@@ -1346,18 +1425,34 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 2,
     },
     historyCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
       backgroundColor: colors.surface,
-      borderRadius: 10,
+      borderRadius: 12,
       padding: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 10,
-    },
-    historyCardHead: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
       marginBottom: 8,
+    },
+    histMethodIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    histPendingTag: {
+      backgroundColor: Brand.rating + '1A',
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: 4,
+    },
+    histPendingTagText: {
+      fontSize: 8.5,
+      fontWeight: '800',
+      color: Brand.rating,
+      textTransform: 'uppercase',
     },
     historySaleNum: {
       fontSize: 13.5,
@@ -1373,18 +1468,6 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 15,
       fontWeight: '800',
       color: Brand.primary,
-    },
-    historyCardFoot: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: 8,
-    },
-    historyDate: {
-      fontSize: 11.5,
-      color: colors.textSecondary,
     },
     methodBadge: {
       backgroundColor: colors.surfaceAlt,
