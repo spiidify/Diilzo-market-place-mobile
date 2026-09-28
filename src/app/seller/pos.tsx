@@ -166,6 +166,7 @@ export default function SellerPOSScreen() {
   const [customTo, setCustomTo] = useState('');
   const [draftFrom, setDraftFrom] = useState('');
   const [draftTo, setDraftTo] = useState('');
+  const [rangeField, setRangeField] = useState<'from' | 'to'>('from');
   const [calCursor, setCalCursor] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -621,6 +622,7 @@ export default function SellerPOSScreen() {
                   if (r.key === 'custom') {
                     setDraftFrom(customFrom);
                     setDraftTo(customTo);
+                    setRangeField('from');
                     setShowRangeModal(true);
                     if (!customFrom || !customTo) return; // don't activate until dates are applied
                   }
@@ -772,17 +774,23 @@ export default function SellerPOSScreen() {
               </Pressable>
             </View>
 
-            {/* Selected range summary */}
+            {/* Selected range — tap a field to choose what the calendar sets */}
             <View style={styles.rangeSummary}>
-              <View style={styles.rangeSummaryCell}>
-                <Text style={styles.rangeFieldLabel}>From</Text>
-                <Text style={styles.rangeSummaryVal}>{draftFrom || '—'}</Text>
-              </View>
+              <Pressable
+                style={[styles.rangeSummaryCell, rangeField === 'from' && styles.rangeSummaryCellActive]}
+                onPress={() => setRangeField('from')}
+              >
+                <Text style={[styles.rangeFieldLabel, rangeField === 'from' && { color: Brand.primary }]}>From</Text>
+                <Text style={styles.rangeSummaryVal}>{draftFrom || 'Tap a date'}</Text>
+              </Pressable>
               <MaterialCommunityIcons name="arrow-right" size={16} color={colors.textTertiary} />
-              <View style={styles.rangeSummaryCell}>
-                <Text style={styles.rangeFieldLabel}>To</Text>
-                <Text style={styles.rangeSummaryVal}>{draftTo || '—'}</Text>
-              </View>
+              <Pressable
+                style={[styles.rangeSummaryCell, rangeField === 'to' && styles.rangeSummaryCellActive]}
+                onPress={() => setRangeField('to')}
+              >
+                <Text style={[styles.rangeFieldLabel, rangeField === 'to' && { color: Brand.primary }]}>To</Text>
+                <Text style={styles.rangeSummaryVal}>{draftTo || 'Tap a date'}</Text>
+              </Pressable>
             </View>
 
             {/* Calendar */}
@@ -832,14 +840,17 @@ export default function SellerPOSScreen() {
                       (isStart || isEnd) && styles.calCellEdge,
                     ]}
                     onPress={() => {
-                      if (!draftFrom || (draftFrom && draftTo)) {
+                      if (rangeField === 'from') {
                         setDraftFrom(iso);
-                        setDraftTo('');
-                      } else if (iso < draftFrom) {
-                        setDraftTo(draftFrom);
-                        setDraftFrom(iso);
+                        if (draftTo && iso > draftTo) setDraftTo('');
+                        setRangeField('to');
                       } else {
-                        setDraftTo(iso);
+                        if (draftFrom && iso < draftFrom) {
+                          setDraftTo(draftFrom);
+                          setDraftFrom(iso);
+                        } else {
+                          setDraftTo(iso);
+                        }
                       }
                     }}
                   >
@@ -1553,7 +1564,19 @@ const createStyles = (colors: ThemeColors) =>
       paddingVertical: 10,
       marginBottom: 12,
     },
-    rangeSummaryCell: { alignItems: 'flex-start' },
+    rangeSummaryCell: {
+      flex: 1,
+      alignItems: 'flex-start',
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 8,
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    rangeSummaryCellActive: {
+      borderColor: Brand.primary,
+      backgroundColor: Brand.primary + '0D',
+    },
     rangeSummaryVal: {
       fontSize: 13.5,
       fontWeight: '800',
