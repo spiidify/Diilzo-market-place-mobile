@@ -35,14 +35,15 @@ import {
     type POSSalesSummary,
 } from '@/services/seller';
 
-type HistoryRange = 'all' | 'today' | '7d' | '30d';
+type HistoryRange = 'all' | 'today' | '7d' | '30d' | 'custom';
 type HistoryMethod = '' | 'cash' | 'mtn_momo' | 'airtel_money' | 'card' | 'credit';
 
 const HISTORY_RANGES: { key: HistoryRange; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'today', label: 'Today' },
-  { key: '7d', label: '7 Days' },
-  { key: '30d', label: '30 Days' },
+  { key: '7d', label: '7D' },
+  { key: '30d', label: '30D' },
+  { key: 'custom', label: 'Custom' },
 ];
 
 const HISTORY_METHODS: { key: HistoryMethod; label: string; icon: string }[] = [
@@ -65,6 +66,20 @@ const METHOD_COLORS: Record<string, string> = {
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Mask digits into YYYY-MM-DD as the user types. */
+function maskDateInput(text: string): string {
+  const d = text.replace(/\D/g, '').slice(0, 8);
+  if (d.length <= 4) return d;
+  if (d.length <= 6) return `${d.slice(0, 4)}-${d.slice(4)}`;
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
+}
+
+function isValidIsoDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + 'T00:00:00Z');
+  return !isNaN(d.getTime()) && isoDate(d) === s;
 }
 
 interface CartItem {
@@ -145,6 +160,9 @@ export default function SellerPOSScreen() {
   const [historySearch, setHistorySearch] = useState('');
   const [historyMethod, setHistoryMethod] = useState<HistoryMethod>('');
   const [historyRange, setHistoryRange] = useState<HistoryRange>('all');
+  const [showRangeModal, setShowRangeModal] = useState(false);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const historySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onHistorySearchChange = useCallback((text: string) => {
@@ -210,6 +228,9 @@ export default function SellerPOSScreen() {
         from.setDate(from.getDate() - 29);
         filters.date_from = isoDate(from);
         filters.date_to = isoDate(today);
+      } else if (historyRange === 'custom' && customFrom && customTo) {
+        filters.date_from = customFrom;
+        filters.date_to = customTo;
       }
 
       const [statsData, salesData] = await Promise.all([
@@ -222,7 +243,7 @@ export default function SellerPOSScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [historySearch, historyMethod, historyRange]);
+  }, [historySearch, historyMethod, historyRange, customFrom, customTo]);
 
   useEffect(() => {
     loadProducts();
@@ -589,10 +610,18 @@ export default function SellerPOSScreen() {
               <Pressable
                 key={r.key}
                 style={[styles.rangeSegBtn, historyRange === r.key && styles.rangeSegBtnActive]}
-                onPress={() => setHistoryRange(r.key)}
+                onPress={() => {
+                  if (r.key === 'custom') {
+                    setShowRangeModal(true);
+                    if (!customFrom || !customTo) return; // don't activate until dates are applied
+                  }
+                  setHistoryRange(r.key);
+                }}
               >
-                <Text style={[styles.rangeSegText, historyRange === r.key && styles.rangeSegTextActive]}>
-                  {r.label}
+                <Text style={[styles.rangeSegText, historyRange === r.key && styles.rangeSegTextActive]} numberOfLines={1}>
+                  {r.key === 'custom' && historyRange === 'custom' && customFrom && customTo
+                    ? `${customFrom.slice(5)}–${customTo.slice(5)}`
+                    : r.label}
                 </Text>
               </Pressable>
             ))}
@@ -717,6 +746,73 @@ export default function SellerPOSScreen() {
           />
         </View>
       )}
+
+      {/* Custom Date Range Modal */}
+      <Modal
+        visible={showRangeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRangeModal(false)}
+      >
+        <Pressable style={styles.rangeOverlay} onPress={() => setShowRangeModal(false)}>
+          <Pressable style={styles.rangeSheet} onPress={() => {}}>
+            <View style={styles.rangeSheetHead}>
+              <Text style={styles.rangeSheetTitle}>Custom Date Range</Text>
+              <Pressable onPress={() => setShowRangeModal(false)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={20} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.rangeFields}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rangeFieldLabel}>From</Text>
+                <View style={styles.rangeInputWrap}>
+                  <MaterialCommunityIcons name="calendar-start" size={16} color={Brand.primary} />
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textTertiary}
+                    value={customFrom}
+                    onChangeText={(t) => setCustomFrom(maskDateInput(t))}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                  />
+                </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rangeFieldLabel}>To</Text>
+                <View style={styles.rangeInputWrap}>
+                  <MaterialCommunityIcons name="calendar-end" size={16} color={Brand.primary} />
+                  <TextInput
+                    style={styles.rangeInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.textTertiary}
+                    value={customTo}
+                    onChangeText={(t) => setCustomTo(maskDateInput(t))}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <Pressable
+              style={[
+                styles.rangeApplyBtn,
+                (!isValidIsoDate(customFrom) || !isValidIsoDate(customTo) || customFrom > customTo) && { opacity: 0.45 },
+              ]}
+              disabled={!isValidIsoDate(customFrom) || !isValidIsoDate(customTo) || customFrom > customTo}
+              onPress={() => {
+                setHistoryRange('custom');
+                setShowRangeModal(false);
+              }}
+            >
+              <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
+              <Text style={styles.rangeApplyText}>Apply Range</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Cart & Checkout Modal Sheet */}
       <Modal
@@ -1364,6 +1460,73 @@ const createStyles = (colors: ThemeColors) =>
     },
     rangeSegTextActive: {
       color: '#FFFFFF',
+    },
+    rangeOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    rangeSheet: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+    },
+    rangeSheetHead: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 14,
+    },
+    rangeSheetTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    rangeFields: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 16,
+    },
+    rangeFieldLabel: {
+      fontSize: 10.5,
+      fontWeight: '700',
+      color: colors.textTertiary,
+      textTransform: 'uppercase',
+      marginBottom: 6,
+      letterSpacing: 0.4,
+    },
+    rangeInputWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+      backgroundColor: colors.surfaceAlt,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      height: 44,
+    },
+    rangeInput: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+      padding: 0,
+    },
+    rangeApplyBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: Brand.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+    },
+    rangeApplyText: {
+      color: '#FFFFFF',
+      fontSize: 13.5,
+      fontWeight: '800',
     },
     methodChipRow: {
       flexDirection: 'row',
