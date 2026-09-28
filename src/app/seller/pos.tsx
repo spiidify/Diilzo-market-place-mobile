@@ -636,13 +636,10 @@ export default function SellerPOSScreen() {
                 </Text>
               </Pressable>
             ))}
-          </View>
-
-          {/* Payment methods — wrapping icon chips, all labels visible */}
-          <View style={styles.methodChipRow}>
             {(historySearchInput || historyMethod || historyRange !== 'all') && (
               <Pressable
-                style={styles.resetChip}
+                style={styles.rangeSegReset}
+                hitSlop={4}
                 onPress={() => {
                   setHistorySearchInput('');
                   setHistorySearch('');
@@ -652,10 +649,13 @@ export default function SellerPOSScreen() {
                   setCustomTo('');
                 }}
               >
-                <MaterialCommunityIcons name="filter-remove-outline" size={13} color={Brand.danger} />
-                <Text style={styles.resetChipText}>Reset</Text>
+                <MaterialCommunityIcons name="close-circle" size={15} color={Brand.danger} />
               </Pressable>
             )}
+          </View>
+
+          {/* Payment methods — wrapping icon chips, all labels visible */}
+          <View style={styles.methodChipRow}>
             {HISTORY_METHODS.map((m) => {
               const active = historyMethod === m.key;
               const mColor = m.key ? METHOD_COLORS[m.key] : Brand.primary;
@@ -1742,21 +1742,13 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '700',
       color: colors.text,
     },
-    resetChip: {
-      flexDirection: 'row',
+    rangeSegReset: {
       alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 8,
-      paddingVertical: 6,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: Brand.danger + '66',
-      backgroundColor: Brand.danger + '0D',
-    },
-    resetChipText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: Brand.danger,
+      justifyContent: 'center',
+      paddingHorizontal: 7,
+      borderRadius: 8,
+      marginLeft: 2,
+      backgroundColor: Brand.danger + '12',
     },
     histStatStrip: {
       flexDirection: 'row',
