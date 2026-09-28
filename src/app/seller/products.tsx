@@ -2,21 +2,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
-import { ModernHeader } from '@/components/ModernHeader';
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
@@ -223,74 +223,75 @@ export default function SellerProductsScreen() {
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedBrand = brands.find((b) => b.id === brandId);
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <Pressable
-        style={styles.cardBody}
-        onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
-      >
-        {item.primary_image_url ? (
-          <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.productImageFallback}>
-            <MaterialCommunityIcons name="package-variant" size={28} color={colors.textTertiary} />
-          </View>
-        )}
-        <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-          <Text style={styles.productPrice}>UGX {Number(item.final_price || item.price).toLocaleString()}</Text>
-          <View style={styles.productMeta}>
-            <View style={[styles.statusDot, { backgroundColor: item.is_active ? Brand.primary : colors.textTertiary }]} />
-            <Text style={styles.productStatus}>{item.is_active ? 'Active' : 'Inactive'}</Text>
-            <Text style={styles.stockText}> · {item.stock_quantity} in stock</Text>
-            {item.is_on_sale && (
-              <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>SALE</Text></View>
-            )}
-          </View>
-        </View>
-      </Pressable>
-      <View style={styles.cardActions}>
-        <Pressable style={styles.actionBtn} onPress={() => openQuickStock(item)}>
-          <MaterialCommunityIcons name="cube-send" size={18} color="#10B981" />
-          <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Stock</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={() => handleToggleActive(item)}>
-          <MaterialCommunityIcons
-            name={item.is_active ? 'eye-off-outline' : 'eye-outline'}
-            size={18}
-            color={colors.textSecondary}
-          />
-          <Text style={styles.actionBtnText}>{item.is_active ? 'Hide' : 'Show'}</Text>
-        </Pressable>
+  const renderItem = ({ item }: { item: any }) => {
+    const stock = Number(item.stock_quantity ?? 0);
+    const stockColor = stock === 0 ? Brand.danger : stock <= 5 ? Brand.rating : colors.textTertiary;
+    return (
+      <View style={styles.item}>
         <Pressable
-          style={styles.actionBtn}
+          style={({ pressed }) => [styles.itemMain, pressed && { opacity: 0.8 }]}
           onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
         >
-          <MaterialCommunityIcons name="pencil-outline" size={18} color={Brand.primary} />
-          <Text style={[styles.actionBtnText, { color: Brand.primary }]}>Edit</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.actionBtn, styles.deleteBtn]}
-          onPress={() => handleDelete(item)}
-          disabled={deleting === item.id}
-        >
-          {deleting === item.id ? (
-            <ActivityIndicator size="small" color={Brand.danger} />
+          {item.primary_image_url ? (
+            <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="cover" />
           ) : (
-            <>
-              <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
-              <Text style={[styles.actionBtnText, { color: Brand.danger }]}>Delete</Text>
-            </>
+            <View style={styles.productImageFallback}>
+              <MaterialCommunityIcons name="package-variant" size={20} color={colors.textTertiary} />
+            </View>
           )}
+          <View style={styles.productInfo}>
+            <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.productMeta}>
+              <Text style={styles.productPrice}>UGX {Number(item.final_price || item.price).toLocaleString()}</Text>
+              <View style={[styles.statusDot, { backgroundColor: item.is_active ? Brand.primary : colors.textTertiary }]} />
+              <Text style={styles.productStatus}>{item.is_active ? 'Active' : 'Off'}</Text>
+              <Text style={[styles.stockText, { color: stockColor }]}>· {stock} left</Text>
+              {item.is_on_sale && (
+                <View style={styles.saleBadge}><Text style={styles.saleBadgeText}>SALE</Text></View>
+              )}
+            </View>
+          </View>
         </Pressable>
+        <View style={styles.itemActions}>
+          <Pressable style={styles.iconBtn} onPress={() => openQuickStock(item)} hitSlop={4}>
+            <MaterialCommunityIcons name="cube-send" size={17} color="#10B981" />
+          </Pressable>
+          <Pressable style={styles.iconBtn} onPress={() => handleToggleActive(item)} hitSlop={4}>
+            <MaterialCommunityIcons
+              name={item.is_active ? 'eye-off-outline' : 'eye-outline'}
+              size={17}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            style={styles.iconBtn}
+            onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
+            hitSlop={4}
+          >
+            <MaterialCommunityIcons name="pencil-outline" size={17} color={Brand.primary} />
+          </Pressable>
+          <Pressable
+            style={styles.iconBtn}
+            onPress={() => handleDelete(item)}
+            disabled={deleting === item.id}
+            hitSlop={4}
+          >
+            {deleting === item.id ? (
+              <ActivityIndicator size="small" color={Brand.danger} />
+            ) : (
+              <MaterialCommunityIcons name="trash-can-outline" size={17} color={Brand.danger} />
+            )}
+          </Pressable>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.screen}>
-      <ModernHeader
+      <GradientHeader
         title="My Products"
+        subtitle={!loading && products.length > 0 ? `${products.length} product${products.length === 1 ? '' : 's'}` : undefined}
         rightIcon="plus"
         onRightPress={() => router.push('/seller/products/add' as any)}
       />
@@ -410,10 +411,12 @@ export default function SellerProductsScreen() {
             data={products}
             keyExtractor={(item) => `${item.id}`}
             renderItem={renderItem}
+            style={styles.listCard}
             contentContainerStyle={styles.list}
-            maxToRenderPerBatch={8}
-            windowSize={9}
-            initialNumToRender={8}
+            ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+            maxToRenderPerBatch={12}
+            windowSize={11}
+            initialNumToRender={12}
             removeClippedSubviews={true}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
           />
@@ -704,36 +707,35 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: '600', color: c.text, maxWidth: 120 },
   clearChip: { borderColor: 'transparent', backgroundColor: 'transparent' },
 
-  // ── List ────────────────────────────────────────────────────
-  list: { padding: 12, gap: 10 },
-  card: {
-    backgroundColor: c.surface, borderRadius: 14, overflow: 'hidden',
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  // ── List — single card, dense rows ──────────────────────────
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  cardBody: { flexDirection: 'row', gap: 12, padding: 12 },
-  productImage: { width: 70, height: 70, borderRadius: 10 },
-  productImageFallback: { width: 70, height: 70, borderRadius: 10, backgroundColor: c.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  productInfo: { flex: 1, gap: 4, justifyContent: 'center' },
-  productName: { fontSize: 15, fontWeight: '600', color: c.text },
-  productPrice: { fontSize: 14, fontWeight: '700', color: Brand.primary },
-  productMeta: { flexDirection: 'row', alignItems: 'center' },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  productStatus: { fontSize: 12, color: c.textSecondary, fontWeight: '600' },
-  stockText: { fontSize: 12, color: c.textTertiary },
+  item: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 10, paddingVertical: 8, gap: 4,
+  },
+  itemMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  productImage: { width: 44, height: 44, borderRadius: 8 },
+  productImageFallback: { width: 44, height: 44, borderRadius: 8, backgroundColor: c.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  productInfo: { flex: 1, gap: 2, justifyContent: 'center' },
+  productName: { fontSize: 13, fontWeight: '700', color: c.text },
+  productPrice: { fontSize: 12, fontWeight: '800', color: Brand.primary },
+  productMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  productStatus: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
+  stockText: { fontSize: 11, fontWeight: '600' },
   saleBadge: {
-    marginLeft: 6, backgroundColor: Brand.danger,
-    paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4,
+    backgroundColor: Brand.danger,
+    paddingHorizontal: 4, paddingVertical: 1, borderRadius: 3,
   },
-  saleBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
-  cardActions: {
-    flexDirection: 'row', borderTopWidth: 1, borderTopColor: c.border,
-  },
-  actionBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 10,
-  },
-  actionBtnText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
-  deleteBtn: { borderLeftWidth: 1, borderLeftColor: c.border },
+  saleBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '800' },
+  itemActions: { flexDirection: 'row', alignItems: 'center' },
+  iconBtn: { padding: 6 },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 62 },
 
   // ── Empty/error ─────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
