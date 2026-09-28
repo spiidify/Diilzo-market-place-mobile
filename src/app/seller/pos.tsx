@@ -7,7 +7,6 @@ import {
     Alert,
     FlatList,
     Image,
-    KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
@@ -697,10 +696,6 @@ export default function SellerPOSScreen() {
             </View>
           </LinearGradient>
 
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
           <ScrollView
             style={styles.modalScroll}
             contentContainerStyle={styles.modalScrollContent}
@@ -938,7 +933,6 @@ export default function SellerPOSScreen() {
               )}
             </Pressable>
           </View>
-          </KeyboardAvoidingView>
         </View>
       </Modal>
 
