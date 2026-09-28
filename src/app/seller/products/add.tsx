@@ -3,19 +3,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -208,6 +208,17 @@ export default function AddProductScreen() {
       return;
     }
 
+    // An image is required to publish — without one, save as a draft instead.
+    let publish = isActive;
+    if (isActive && images.length === 0) {
+      Alert.alert(
+        'Image Required',
+        'An image is required to publish this product. It will be saved as a Draft instead.',
+      );
+      publish = false;
+      setIsActive(false);
+    }
+
     try {
       setSubmitting(true);
       setError(null);
@@ -236,7 +247,7 @@ export default function AddProductScreen() {
           type: videoFile.type,
         } as any);
       }
-      formData.append('is_active', isActive ? 'true' : 'false');
+      formData.append('is_active', publish ? 'true' : 'false');
 
       images.forEach((img) => {
         formData.append('images', {

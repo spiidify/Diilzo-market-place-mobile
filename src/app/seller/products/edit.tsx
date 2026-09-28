@@ -3,19 +3,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -215,6 +215,18 @@ export default function EditProductScreen() {
       return;
     }
 
+    // An image is required to publish — without one, save as a draft instead.
+    const hasImages = existingImages.length + newImages.length > 0;
+    let publish = isActive;
+    if (isActive && !hasImages) {
+      Alert.alert(
+        'Image Required',
+        'An image is required to publish this product. It will be saved as a Draft instead.',
+      );
+      publish = false;
+      setIsActive(false);
+    }
+
     try {
       setSubmitting(true);
       setError(null);
@@ -232,7 +244,7 @@ export default function EditProductScreen() {
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
       if (weight.trim()) formData.append('weight', weight.trim());
       formData.append('country_of_origin', countryOfOrigin.trim() || 'Uganda');
-      formData.append('is_active', isActive ? 'true' : 'false');
+      formData.append('is_active', publish ? 'true' : 'false');
 
       // Existing images to keep
       const keepIds = existingImages.map((img) => img.id);
