@@ -78,6 +78,15 @@ const PAYMENT_OPTIONS: {
       bgColor: '#00308712',
     },
     {
+      method: 'stripe',
+      label: 'Credit / Debit Card',
+      subtitle: 'Visa, Mastercard, Apple Pay',
+      icon: 'credit-card-chip-outline',
+      requiresPhone: false,
+      color: '#635BFF',
+      bgColor: '#635BFF12',
+    },
+    {
       method: 'cod',
       label: 'Cash on Delivery',
       subtitle: 'Pay when you receive',
@@ -376,11 +385,11 @@ export default function CheckoutScreen() {
           return_url: Linking.createURL('/checkout'),
         });
 
-        if (selectedMethod === 'paypal' && initResult.redirect_url) {
+        if ((selectedMethod === 'paypal' || selectedMethod === 'stripe') && initResult.redirect_url) {
           Linking.openURL(initResult.redirect_url);
           Alert.alert(
-            'PayPal',
-            'Complete your PayPal payment in the browser. We will verify your payment status.',
+            selectedMethod === 'paypal' ? 'PayPal' : 'Card Payment',
+            `Complete your ${selectedMethod === 'paypal' ? 'PayPal' : 'card'} payment in the browser. We will verify your payment status.`,
             [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
           );
         } else if (opt?.requiresPhone) {

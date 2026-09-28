@@ -11,6 +11,10 @@ export interface PaymentInitResult {
   status: string;
   redirect_url?: string;
   provider_txn_id?: string;
+  client_secret?: string;
+  publishable_key?: string;
+  payment_intent_id?: string;
+  idempotent?: boolean;
 }
 
 export interface PaymentStatusResult {
@@ -25,17 +29,34 @@ export async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
   return apiRequest<PaymentMethod[]>({ method: 'GET', url: '/payments/methods/' });
 }
 
-/** POST /api/v1/payments/init/ — initiate payment */
+/** POST /api/v1/payments/init/ — initiate payment with client idempotency key */
 export async function initiatePayment(params: {
   order_id: number;
   method: string;
   phone?: string;
   return_url?: string;
+  cancel_url?: string;
+  idempotency_key?: string;
 }): Promise<PaymentInitResult> {
+  const idempotencyKey =
+    params.idempotency_key ||
+    `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+  const paymentMethod = params.method === 'cod' ? 'cash' : params.method;
+
   return apiRequest<PaymentInitResult>({
     method: 'POST',
     url: '/payments/init/',
-    data: params,
+    headers: {
+      'Idempotency-Key': idempotencyKey,
+    },
+    data: {
+      order_id: params.order_id,
+      payment_method: paymentMethod,
+      phone_number: params.phone,
+      return_url: params.return_url,
+      cancel_url: params.cancel_url,
+    },
   });
 }
 
