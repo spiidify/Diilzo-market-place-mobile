@@ -607,19 +607,19 @@ export default function SellerPOSScreen() {
           >
             {HISTORY_METHODS.map((m) => {
               const active = historyMethod === m.key;
-              const mColor = m.key ? METHOD_COLORS[m.key] : colors.textSecondary;
+              const mColor = m.key ? METHOD_COLORS[m.key] : Brand.primary;
               return (
                 <Pressable
                   key={m.key}
                   style={[
                     styles.methodChip,
-                    active && { backgroundColor: m.key ? mColor : '#1E293B', borderColor: m.key ? mColor : '#1E293B' },
+                    active && { backgroundColor: mColor, borderColor: mColor },
                   ]}
                   onPress={() => setHistoryMethod(m.key)}
                 >
                   <MaterialCommunityIcons
                     name={m.icon as any}
-                    size={14}
+                    size={13}
                     color={active ? '#FFFFFF' : mColor}
                   />
                   <Text style={[styles.methodChipText, active && { color: '#FFFFFF' }]}>
@@ -1366,7 +1366,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     methodChipRow: {
       flexDirection: 'row',
-      gap: 8,
+      gap: 6,
       paddingHorizontal: 12,
       marginTop: 10,
       paddingBottom: 2,
@@ -1374,18 +1374,18 @@ const createStyles = (colors: ThemeColors) =>
     methodChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
-      paddingHorizontal: 11,
-      paddingVertical: 7,
-      borderRadius: 18,
+      gap: 4,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
     },
     methodChipText: {
-      fontSize: 11.5,
+      fontSize: 11,
       fontWeight: '700',
-      color: colors.textSecondary,
+      color: colors.text,
     },
     histStatStrip: {
       flexDirection: 'row',
