@@ -4,18 +4,18 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
@@ -28,18 +28,28 @@ import { apiRequest } from '@/services/api';
 import { clearCart, getCart } from '@/services/cart';
 import { validateCoupon } from '@/services/catalog';
 import {
-  fetchPickupStations,
-  type PickUpStation,
+    fetchPickupStations,
+    type PickUpStation,
 } from '@/services/logistics';
 import { calculateShipping, type ShippingQuote } from '@/services/orders';
 import {
-  checkPaymentStatus,
-  fetchPaymentMethods,
-  initiatePayment,
-  type PaymentMethod,
+    checkPaymentStatus,
+    fetchPaymentMethods,
+    initiatePayment,
+    type PaymentMethod,
 } from '@/services/payments';
 import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
+
+// Gateways that are not operational in East Africa — shown only for
+// international delivery addresses.
+const INTL_ONLY_METHODS = new Set(['paypal', 'stripe']);
+const EAST_AFRICA = new Set(['uganda', 'ug', 'kenya', 'ke', 'tanzania', 'tz', 'rwanda', 'rw']);
+
+function isIntlCountry(country?: string | null): boolean {
+  const c = (country || '').trim().toLowerCase();
+  return c !== '' && !EAST_AFRICA.has(c);
+}
 
 const PAYMENT_OPTIONS: {
   method: string;
@@ -49,6 +59,7 @@ const PAYMENT_OPTIONS: {
   requiresPhone: boolean;
   color: string;
   bgColor: string;
+  intlOnly?: boolean;
 }[] = [
     {
       method: 'mtn_momo',
@@ -76,6 +87,7 @@ const PAYMENT_OPTIONS: {
       requiresPhone: false,
       color: '#003087',
       bgColor: '#00308712',
+      intlOnly: true,
     },
     {
       method: 'stripe',
@@ -85,6 +97,7 @@ const PAYMENT_OPTIONS: {
       requiresPhone: false,
       color: '#635BFF',
       bgColor: '#635BFF12',
+      intlOnly: true,
     },
     {
       method: 'cod',
@@ -476,6 +489,20 @@ export default function CheckoutScreen() {
   const currency = cart?.items[0]?.product.currency || 'UGX';
   const itemCount = cart?.items.reduce((s, i) => s + i.quantity, 0) || 0;
 
+  // Region-aware payment options — PayPal/Stripe are international-only.
+  const deliveryCountry = addresses.find((a) => a.id === selectedAddressId)?.country;
+  const visiblePaymentOptions = useMemo(
+    () => PAYMENT_OPTIONS.filter((opt) => !opt.intlOnly || isIntlCountry(deliveryCountry)),
+    [deliveryCountry]
+  );
+
+  // If the selected method becomes hidden by region, fall back to MoMo.
+  useEffect(() => {
+    if (selectedMethod && !visiblePaymentOptions.some((o) => o.method === selectedMethod)) {
+      setSelectedMethod(visiblePaymentOptions[0]?.method || 'mtn_momo');
+    }
+  }, [visiblePaymentOptions, selectedMethod]);
+
   const selectedStation = pickupStations.find(s => s.id === selectedStationId);
   const regionStations = pickupStations.filter(s => s.region === selectedRegion && s.is_active);
 
@@ -843,7 +870,7 @@ export default function CheckoutScreen() {
             </View>
 
             <View style={styles.paymentList}>
-              {PAYMENT_OPTIONS.map((opt) => {
+              {visiblePaymentOptions.map((opt) => {
                 const selected = opt.method === selectedMethod;
                 const isAvailable =
                   paymentMethods.length === 0 || paymentMethods.some((m) => m.method === opt.method);

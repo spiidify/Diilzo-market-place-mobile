@@ -48,7 +48,7 @@ const HISTORY_RANGES: { key: HistoryRange; label: string }[] = [
 const HISTORY_METHODS: { key: HistoryMethod; label: string; icon: string }[] = [
   { key: '', label: 'All', icon: 'view-grid-outline' },
   { key: 'cash', label: 'Cash', icon: 'cash' },
-  { key: 'mtn_momo', label: 'MTN MoMo', icon: 'cellphone' },
+  { key: 'mtn_momo', label: 'MTN', icon: 'cellphone' },
   { key: 'airtel_money', label: 'Airtel', icon: 'cellphone-wireless' },
   { key: 'card', label: 'Card', icon: 'credit-card-outline' },
   { key: 'credit', label: 'Credit', icon: 'credit-card-clock-outline' },
@@ -599,12 +599,8 @@ export default function SellerPOSScreen() {
             ))}
           </View>
 
-          {/* Payment methods — scrollable icon chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.methodChipRow}
-          >
+          {/* Payment methods — wrapping icon chips, all labels visible */}
+          <View style={styles.methodChipRow}>
             {HISTORY_METHODS.map((m) => {
               const active = historyMethod === m.key;
               const mColor = m.key ? METHOD_COLORS[m.key] : Brand.primary;
@@ -619,7 +615,7 @@ export default function SellerPOSScreen() {
                 >
                   <MaterialCommunityIcons
                     name={m.icon as any}
-                    size={13}
+                    size={14}
                     color={active ? '#FFFFFF' : mColor}
                   />
                   <Text style={[styles.methodChipText, active && { color: '#FFFFFF' }]}>
@@ -628,31 +624,37 @@ export default function SellerPOSScreen() {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
 
           {/* Filtered summary — stat strip */}
           {salesSummary && (
             <View style={styles.histStatStrip}>
               <View style={styles.histStat}>
-                <MaterialCommunityIcons name="receipt-text-outline" size={15} color={colors.textTertiary} />
-                <Text style={styles.histStatNum}>{salesSummary.count}</Text>
-                <Text style={styles.histStatLabel}>Sale{salesSummary.count === 1 ? '' : 's'}</Text>
+                <View style={styles.histStatTop}>
+                  <MaterialCommunityIcons name="receipt-text-outline" size={13} color={colors.textTertiary} />
+                  <Text style={styles.histStatLabel}>Sales</Text>
+                </View>
+                <Text style={styles.histStatNum} numberOfLines={1}>{salesSummary.count}</Text>
               </View>
               <View style={styles.histStatDivider} />
               <View style={styles.histStat}>
-                <MaterialCommunityIcons name="cash-multiple" size={15} color={Brand.primary} />
-                <Text style={[styles.histStatNum, { color: Brand.primary }]} numberOfLines={1}>
+                <View style={styles.histStatTop}>
+                  <MaterialCommunityIcons name="cash-multiple" size={13} color={Brand.primary} />
+                  <Text style={styles.histStatLabel}>Total</Text>
+                </View>
+                <Text style={[styles.histStatNum, { color: Brand.primary }]} numberOfLines={1} adjustsFontSizeToFit>
                   UGX {Number(salesSummary.total).toLocaleString()}
                 </Text>
-                <Text style={styles.histStatLabel}>Total</Text>
               </View>
               <View style={styles.histStatDivider} />
               <View style={styles.histStat}>
-                <MaterialCommunityIcons name="chart-line" size={15} color={colors.textTertiary} />
-                <Text style={styles.histStatNum} numberOfLines={1}>
+                <View style={styles.histStatTop}>
+                  <MaterialCommunityIcons name="chart-line" size={13} color={colors.textTertiary} />
+                  <Text style={styles.histStatLabel}>Avg Sale</Text>
+                </View>
+                <Text style={styles.histStatNum} numberOfLines={1} adjustsFontSizeToFit>
                   {salesSummary.count > 0 ? `UGX ${Number(salesSummary.avg).toLocaleString()}` : '—'}
                 </Text>
-                <Text style={styles.histStatLabel}>Avg Sale</Text>
               </View>
             </View>
           )}
@@ -670,7 +672,7 @@ export default function SellerPOSScreen() {
                   <View style={[styles.histMethodIcon, { backgroundColor: mColor + '18' }]}>
                     <MaterialCommunityIcons name={mIcon as any} size={20} color={mColor} />
                   </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={styles.historyCardBody}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Text style={styles.historySaleNum} numberOfLines={1}>{item.sale_number}</Text>
                       {!item.completed && (
@@ -689,10 +691,10 @@ export default function SellerPOSScreen() {
                         ? ` · ${[item.cashier, item.register].filter(Boolean).join(' · ')}` : ''}
                     </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    <Text style={styles.historyTotal}>UGX {Number(item.total).toLocaleString()}</Text>
+                  <View style={styles.historyCardRight}>
+                    <Text style={styles.historyTotal} numberOfLines={1}>UGX {Number(item.total).toLocaleString()}</Text>
                     <View style={[styles.methodBadge, { backgroundColor: mColor + '18' }]}>
-                      <Text style={[styles.methodBadgeText, { color: mColor }]}>
+                      <Text style={[styles.methodBadgeText, { color: mColor }]} numberOfLines={1}>
                         {item.payment_method.replace(/_/g, ' ').toUpperCase()}
                       </Text>
                     </View>
@@ -1366,7 +1368,8 @@ const createStyles = (colors: ThemeColors) =>
     },
     methodChipRow: {
       flexDirection: 'row',
-      gap: 6,
+      flexWrap: 'wrap',
+      gap: 5,
       paddingHorizontal: 12,
       marginTop: 10,
       paddingBottom: 2,
@@ -1375,8 +1378,8 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      paddingHorizontal: 9,
-      paddingVertical: 5,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
       borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1400,15 +1403,21 @@ const createStyles = (colors: ThemeColors) =>
     },
     histStat: {
       flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
+    histStatTop: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5,
+      gap: 4,
     },
     histStatNum: {
       fontSize: 12.5,
       fontWeight: '800',
       color: colors.text,
+      marginTop: 3,
+      textAlign: 'center',
+      width: '100%',
     },
     histStatLabel: {
       fontSize: 10.5,
@@ -1426,7 +1435,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     historyCard: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       gap: 10,
       backgroundColor: colors.surface,
       borderRadius: 12,
@@ -1434,6 +1443,17 @@ const createStyles = (colors: ThemeColors) =>
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 8,
+      overflow: 'hidden',
+    },
+    historyCardBody: {
+      flex: 1,
+      minWidth: 0,
+    },
+    historyCardRight: {
+      alignItems: 'flex-end',
+      gap: 4,
+      flexShrink: 0,
+      maxWidth: '42%',
     },
     histMethodIcon: {
       width: 40,
