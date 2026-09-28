@@ -52,7 +52,7 @@ export default function AppTabs() {
         tabBarStyle: isTablet ? styles.tabletTabBar : styles.tabBar,
         tabBarLabelStyle: isTablet ? styles.tabletTabBarLabel : styles.tabBarLabel,
         tabBarIconStyle: isTablet ? styles.tabletTabBarIcon : styles.tabBarIcon,
-        tabBarItemStyle: isTablet ? styles.tabletTabBarItem : undefined,
+        tabBarItemStyle: isTablet ? styles.tabletTabBarItem : styles.tabBarItem,
         sceneStyle: isTablet ? {
           flex: 1,
           width: '100%',
@@ -178,10 +178,15 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 0,
     marginRight: 8,
   },
+  tabBarItem: {
+    marginHorizontal: -6,
+    paddingHorizontal: 0,
+  },
   tabBarLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 3,
+    letterSpacing: -0.4,
   },
   tabBarIcon: {
     marginTop: 2,
