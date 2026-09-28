@@ -68,6 +68,12 @@ function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Display a raw digit string with thousand separators. */
+function withCommas(digits: string): string {
+  if (!digits) return '';
+  return Number(digits).toLocaleString('en-US');
+}
+
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /** Build 42 calendar cells (ISO strings or null) for a month grid starting Monday. */
@@ -1163,8 +1169,8 @@ export default function SellerPOSScreen() {
                   style={styles.tenderedInput}
                   placeholder="Amount Received"
                   keyboardType="numeric"
-                  value={amountTendered}
-                  onChangeText={setAmountTendered}
+                  value={withCommas(amountTendered)}
+                  onChangeText={(t) => setAmountTendered(t.replace(/\D/g, '').slice(0, 12))}
                 />
                 <View style={styles.quickCashGrid}>
                   <Pressable style={styles.cashChip} onPress={() => handleQuickCash('exact')}>
