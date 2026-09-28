@@ -866,21 +866,40 @@ export default function SellerPOSScreen() {
               })}
             </View>
 
-            <Pressable
-              style={[styles.rangeApplyBtn, !(draftFrom && draftTo) && { opacity: 0.45 }]}
-              disabled={!(draftFrom && draftTo)}
-              onPress={() => {
-                setCustomFrom(draftFrom);
-                setCustomTo(draftTo);
-                setHistoryRange('custom');
-                setShowRangeModal(false);
-              }}
-            >
-              <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
-              <Text style={styles.rangeApplyText}>
-                {draftFrom && draftTo ? `Apply ${draftFrom.slice(5)} → ${draftTo.slice(5)}` : 'Tap two dates'}
-              </Text>
-            </Pressable>
+            <View style={styles.rangeBtnRow}>
+              {(draftFrom || draftTo || historyRange === 'custom') && (
+                <Pressable
+                  style={styles.rangeClearBtn}
+                  onPress={() => {
+                    setDraftFrom('');
+                    setDraftTo('');
+                    setCustomFrom('');
+                    setCustomTo('');
+                    setRangeField('from');
+                    if (historyRange === 'custom') setHistoryRange('all');
+                    setShowRangeModal(false);
+                  }}
+                >
+                  <MaterialCommunityIcons name="filter-remove-outline" size={16} color={Brand.danger} />
+                  <Text style={styles.rangeClearText}>Clear</Text>
+                </Pressable>
+              )}
+              <Pressable
+                style={[styles.rangeApplyBtn, { flex: 1 }, !(draftFrom && draftTo) && { opacity: 0.45 }]}
+                disabled={!(draftFrom && draftTo)}
+                onPress={() => {
+                  setCustomFrom(draftFrom);
+                  setCustomTo(draftTo);
+                  setHistoryRange('custom');
+                  setShowRangeModal(false);
+                }}
+              >
+                <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
+                <Text style={styles.rangeApplyText}>
+                  {draftFrom && draftTo ? `Apply ${draftFrom.slice(5)} → ${draftTo.slice(5)}` : 'Tap two dates'}
+                </Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -1647,6 +1666,27 @@ const createStyles = (colors: ThemeColors) =>
     calCellTextEdge: {
       color: '#FFFFFF',
       fontWeight: '800',
+    },
+    rangeBtnRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    rangeClearBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: Brand.danger + '55',
+      backgroundColor: Brand.danger + '0D',
+    },
+    rangeClearText: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: Brand.danger,
     },
     rangeApplyBtn: {
       flexDirection: 'row',
