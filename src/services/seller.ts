@@ -810,13 +810,24 @@ export interface InventoryItem {
   stock_quantity: number;
   reserved_quantity: number;
   available_quantity: number;
+  reorder_point: number;
   price: number;
   final_price: number;
+  cost_price: number | null;
+  stock_value: number;
   is_active: boolean;
   is_on_sale: boolean;
   category_name: string;
   brand_name: string;
   primary_image_url: string;
+}
+
+export interface InventoryKpis {
+  skus: number;
+  units: number;
+  value: number;
+  low: number;
+  out: number;
 }
 
 export interface InventoryResponse {
@@ -825,10 +836,12 @@ export interface InventoryResponse {
   page: number;
   page_size: number;
   has_next: boolean;
+  kpis?: InventoryKpis;
 }
 
 export async function getInventory(params?: {
   q?: string;
+  status?: 'in' | 'low' | 'out';
   low_stock?: string;
   out_of_stock?: string;
   threshold?: number;
@@ -838,17 +851,139 @@ export async function getInventory(params?: {
   return apiRequest<InventoryResponse>({ method: 'GET', url: `${SELLER_BASE}/inventory/`, params });
 }
 
-export async function updateStock(productId: number, stockQuantity: number): Promise<{
+export async function updateStock(
+  productId: number,
+  stockQuantity: number,
+  opts?: { reason?: string; note?: string; reorder_point?: number }
+): Promise<{
   id: number;
   name: string;
   old_stock_quantity: number;
   new_stock_quantity: number;
+  reorder_point: number;
 }> {
   return apiRequest<any>({
     method: 'PATCH',
     url: `${SELLER_BASE}/${productId}/update_stock/`,
-    data: { stock_quantity: stockQuantity },
+    data: {
+      stock_quantity: stockQuantity,
+      ...(opts?.reason ? { adjustment_reason: opts.reason } : {}),
+      ...(opts?.note ? { note: opts.note } : {}),
+      ...(opts?.reorder_point !== undefined ? { reorder_point: opts.reorder_point } : {}),
+    },
   });
+}
+
+// ── Stock movement audit log ───────────────────────────────────────
+
+export interface StockMovementRow {
+  id: number;
+  product_id: number;
+  product_name: string;
+  change: number;
+  before: number;
+  after: number;
+  reason: string;
+  reason_label: string;
+  note: string;
+  reference: string;
+  performed_by: string;
+  created_at: string;
+}
+
+export async function getInventoryMovements(params?: {
+  q?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<{ results: StockMovementRow[]; count: number; has_next: boolean }> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/inventory_movements/`, params });
+}
+
+// ── Supplier receiving ─────────────────────────────────────────────
+
+export async function receiveStock(data: {
+  product: number;
+  quantity: number;
+  supplier?: string;
+  unit_cost?: number;
+}): Promise<{
+  po_number: string;
+  product_id: number;
+  product_name: string;
+  quantity_received: number;
+  stock_quantity: number;
+}> {
+  return apiRequest({ method: 'POST', url: `${SELLER_BASE}/inventory_receive/`, data });
+}
+
+// ── Reorder badge ──────────────────────────────────────────────────
+
+export async function getInventoryReorderCount(): Promise<{ count: number }> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/inventory_reorder_count/` });
+}
+
+// ── Reservations drill-down ────────────────────────────────────────
+
+export interface ProductReservation {
+  id: number;
+  quantity: number;
+  holder: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export async function getProductReservations(productId: number): Promise<{
+  product_id: number;
+  product_name: string;
+  reserved_total: number;
+  reservations: ProductReservation[];
+}> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/${productId}/product_reservations/` });
+}
+
+// ── Product quick view (inventory detail) ─────────────────────────
+
+export interface InventoryProductDetail {
+  id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  barcode: string;
+  category_name: string;
+  brand_name: string;
+  is_active: boolean;
+  primary_image_url: string;
+  price: number;
+  final_price: number;
+  cost_price: number | null;
+  stock_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  reorder_point: number;
+  warehouses: {
+    warehouse_name: string;
+    warehouse_code: string;
+    quantity: number;
+    reserved_quantity: number;
+    available_quantity: number;
+  }[];
+  movements: {
+    id: number;
+    change: number;
+    before: number;
+    after: number;
+    reason: string;
+    reason_label: string;
+    note: string;
+    reference: string;
+    performed_by: string;
+    created_at: string;
+  }[];
+  movement_count: number;
+}
+
+export async function getInventoryProductDetail(productId: number): Promise<InventoryProductDetail> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/${productId}/inventory_product_detail/` });
 }
 
 // ── Delivery Areas & Service Areas ─────────────────────────────────

@@ -97,6 +97,7 @@ export default function SellerDashboardScreen() {
       title: 'Products & In-Store POS',
       items: [
         { icon: 'package-variant-closed', label: 'Products', color: '#3B82F6', route: '/seller/products', count: stats?.total_products },
+        { icon: 'warehouse', label: 'Inventory', color: '#8B5CF6', route: '/seller/inventory' },
         { icon: 'cash-register', label: 'Point of Sale (POS)', color: '#10B981', route: '/seller/pos' },
         { icon: 'ticket-percent', label: 'Coupons', color: '#06B6D4', route: '/seller/coupons' },
         { icon: 'truck-outline', label: 'Delivery', color: '#16A34A', route: '/seller/shipping' },
