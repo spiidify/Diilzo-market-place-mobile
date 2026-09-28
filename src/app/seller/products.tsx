@@ -245,8 +245,8 @@ export default function SellerProductsScreen() {
           style={({ pressed }) => [styles.itemMain, pressed && { opacity: 0.8 }]}
           onPress={() => router.push(`/seller/products/edit?id=${item.id}` as any)}
         >
-          {item.primary_image_url ? (
-            <Image source={{ uri: item.primary_image_url }} style={styles.productImage} resizeMode="cover" />
+          {(item.primary_image_url || item.primary_image) ? (
+            <Image source={{ uri: item.primary_image_url || item.primary_image }} style={styles.productImage} resizeMode="cover" />
           ) : (
             <View style={styles.productImageFallback}>
               <MaterialCommunityIcons name="package-variant" size={20} color={colors.textTertiary} />

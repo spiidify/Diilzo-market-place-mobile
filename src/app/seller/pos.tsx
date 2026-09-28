@@ -160,7 +160,10 @@ export default function SellerPOSScreen() {
         page,
         page_size: 20,
       });
-      const list = Array.isArray(res) ? res : (res as any)?.results || [];
+      const raw = Array.isArray(res) ? res : (res as any)?.results || [];
+      // Only image-bearing products are sellable — mirrors the backend
+      // has_images filter and guards against older server builds.
+      const list = raw.filter((p: any) => Boolean(p.primary_image_url || p.primary_image || (p.images && p.images.length)));
       const hasNext = Boolean((res as any)?.next);
 
       if (append) {
@@ -477,8 +480,8 @@ export default function SellerPOSScreen() {
                     onPress={() => addToCart(item)}
                   >
                     <View style={styles.productImgWrap}>
-                      {item.primary_image_url ? (
-                        <Image source={{ uri: item.primary_image_url }} style={styles.productImg} />
+                      {(item.primary_image_url || item.primary_image) ? (
+                        <Image source={{ uri: item.primary_image_url || item.primary_image }} style={styles.productImg} />
                       ) : (
                         <View style={styles.noImgBox}>
                           <MaterialCommunityIcons name="package-variant" size={26} color="#D1D5DB" />
