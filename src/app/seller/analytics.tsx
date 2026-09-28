@@ -28,6 +28,15 @@ interface AnalyticsData {
   sales_by_category: { name: string; revenue: number }[];
   status_distribution?: { status: string; count: number }[];
   avg_order_value?: number;
+  pos?: {
+    revenue: number;
+    sales_count: number;
+    avg_sale: number;
+    revenue_series: { label: string; value: number }[];
+    payment_methods: { code: string; label: string; total: number; count: number }[];
+    top_products: { name: string; sold: number; revenue: number }[];
+    share_pct: number;
+  };
 }
 
 const PERIODS: { key: Period; label: string }[] = [
@@ -43,6 +52,15 @@ const STATUS_DIST_COLORS: Record<string, string> = {
   shipped: '#06B6D4',
   delivered: '#16A34A',
   cancelled: '#EF4444',
+};
+
+const POS_METHOD_COLORS: Record<string, string> = {
+  cash: '#16A34A',
+  mtn_momo: '#CA8A04',
+  airtel_money: '#DC2626',
+  card: '#2563EB',
+  credit: '#7C3AED',
+  mixed: '#A21CAF',
 };
 
 const STATUS_DIST_LABELS: Record<string, string> = {
@@ -198,6 +216,42 @@ export default function SellerAnalyticsScreen() {
               </View>
             </View>
 
+            {/* ── Channel mix: Online vs In-Store POS ────────────────── */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Sales Channels</Text>
+              {(() => {
+                const onlineRev = Number(data?.revenue || 0);
+                const posRev = Number(data?.pos?.revenue || 0);
+                const combined = onlineRev + posRev;
+                const onlinePct = combined > 0 ? (onlineRev / combined) * 100 : 0;
+                const posPct = combined > 0 ? (posRev / combined) * 100 : 0;
+                return (
+                  <>
+                    <View style={styles.channelBar}>
+                      {onlinePct > 0 && <View style={[styles.channelSeg, { width: `${onlinePct}%`, backgroundColor: Brand.primary }]} />}
+                      {posPct > 0 && <View style={[styles.channelSeg, { width: `${posPct}%`, backgroundColor: '#F59E0B' }]} />}
+                    </View>
+                    <View style={styles.channelLegend}>
+                      <View style={styles.channelItem}>
+                        <View style={[styles.channelDot, { backgroundColor: Brand.primary }]} />
+                        <View>
+                          <Text style={styles.channelValue}>UGX {onlineRev.toLocaleString()}</Text>
+                          <Text style={styles.channelName}>Online · {onlinePct.toFixed(0)}%</Text>
+                        </View>
+                      </View>
+                      <View style={styles.channelItem}>
+                        <View style={[styles.channelDot, { backgroundColor: '#F59E0B' }]} />
+                        <View>
+                          <Text style={styles.channelValue}>UGX {posRev.toLocaleString()}</Text>
+                          <Text style={styles.channelName}>In-Store POS · {posPct.toFixed(0)}% · no commission</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </>
+                );
+              })()}
+            </View>
+
             {/* ── Revenue chart ─────────────────────────────────────── */}
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Revenue Trend</Text>
@@ -295,6 +349,103 @@ export default function SellerAnalyticsScreen() {
                 <Text style={styles.emptyText}>No category sales yet</Text>
               )}
             </View>
+
+            {/* ── In-Store POS section ──────────────────────────────── */}
+            {data?.pos && (
+              <>
+                <View style={styles.sectionLabelRow}>
+                  <MaterialCommunityIcons name="cash-register" size={15} color="#D97706" />
+                  <Text style={styles.sectionLabel}>In-Store POS</Text>
+                  <Text style={styles.sectionLabelSub}>instant settlement · no commission</Text>
+                </View>
+
+                <View style={styles.kpiGrid}>
+                  <View style={styles.kpiCard}>
+                    <View style={[styles.kpiIcon, { backgroundColor: '#F59E0B20' }]}>
+                      <MaterialCommunityIcons name="cash-register" size={22} color="#D97706" />
+                    </View>
+                    <Text style={styles.kpiValue}>UGX {Number(data.pos.revenue).toLocaleString()}</Text>
+                    <Text style={styles.kpiLabel}>POS Revenue</Text>
+                  </View>
+                  <View style={styles.kpiCard}>
+                    <View style={[styles.kpiIcon, { backgroundColor: '#3B82F620' }]}>
+                      <MaterialCommunityIcons name="receipt" size={22} color="#3B82F6" />
+                    </View>
+                    <Text style={styles.kpiValue}>{data.pos.sales_count}</Text>
+                    <Text style={styles.kpiLabel}>POS Sales</Text>
+                  </View>
+                  <View style={styles.kpiCard}>
+                    <View style={[styles.kpiIcon, { backgroundColor: '#8B5CF620' }]}>
+                      <MaterialCommunityIcons name="calculator" size={22} color="#8B5CF6" />
+                    </View>
+                    <Text style={styles.kpiValue}>UGX {Number(data.pos.avg_sale).toLocaleString()}</Text>
+                    <Text style={styles.kpiLabel}>Avg POS Sale</Text>
+                  </View>
+                  <View style={styles.kpiCard}>
+                    <View style={[styles.kpiIcon, { backgroundColor: '#16A34A20' }]}>
+                      <MaterialCommunityIcons name="chart-pie" size={22} color="#16A34A" />
+                    </View>
+                    <Text style={styles.kpiValue}>{data.pos.share_pct}%</Text>
+                    <Text style={styles.kpiLabel}>of Total Revenue</Text>
+                  </View>
+                </View>
+
+                {/* POS top products */}
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>Top Products — In-Store POS</Text>
+                  {data.pos.top_products && data.pos.top_products.length > 0 ? (
+                    <View style={styles.listInner}>
+                      {data.pos.top_products.slice(0, 5).map((prod, idx) => (
+                        <View key={`pos-top-${idx}`} style={styles.topProductRow}>
+                          <View style={[styles.rankBadge, { backgroundColor: '#F59E0B20' }]}>
+                            <Text style={[styles.rankText, { color: '#D97706' }]}>{idx + 1}</Text>
+                          </View>
+                          <View style={styles.topProductInfo}>
+                            <Text style={styles.topProductName} numberOfLines={1}>
+                              {prod.name}
+                            </Text>
+                            <Text style={styles.topProductMeta}>
+                              {Math.round(prod.sold)} sold · UGX {Number(prod.revenue).toLocaleString()}
+                            </Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.emptyText}>No POS sales yet</Text>
+                  )}
+                </View>
+
+                {/* POS payment methods */}
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>Payment Methods — POS</Text>
+                  {data.pos.payment_methods && data.pos.payment_methods.length > 0 ? (
+                    <View style={styles.statusDistList}>
+                      {data.pos.payment_methods.map((m, idx) => {
+                        const total = data.pos!.payment_methods.reduce((sum, x) => sum + x.total, 0);
+                        const pct = total > 0 ? (m.total / total) * 100 : 0;
+                        const color = POS_METHOD_COLORS[m.code] || colors.textTertiary;
+                        return (
+                          <View key={`pm-${idx}`} style={styles.statusDistRow}>
+                            <View style={styles.statusDistHeader}>
+                              <View style={[styles.statusDistDot, { backgroundColor: color }]} />
+                              <Text style={styles.statusDistLabel}>{m.label}</Text>
+                              <Text style={styles.statusDistCount}>UGX {Number(m.total).toLocaleString()}</Text>
+                              <Text style={styles.statusDistPct}>{pct.toFixed(0)}%</Text>
+                            </View>
+                            <View style={styles.statusDistBar}>
+                              <View style={[styles.statusDistFill, { width: `${Math.max(pct, 2)}%`, backgroundColor: color }]} />
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <Text style={styles.emptyText}>No POS payments yet</Text>
+                  )}
+                </View>
+              </>
+            )}
 
             {/* ── Order status distribution ──────────────────────────── */}
             <View style={styles.card}>
@@ -478,4 +629,37 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     height: 8, backgroundColor: c.surfaceAlt, borderRadius: 4, overflow: 'hidden',
   },
   statusDistFill: { height: '100%', borderRadius: 4 },
+
+  // ── Channel mix ─────────────────────────────────────────────────
+  channelBar: {
+    flexDirection: 'row',
+    height: 20,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: c.surfaceAlt,
+    marginBottom: 12,
+  },
+  channelSeg: { height: '100%' },
+  channelLegend: { flexDirection: 'row', gap: 20, flexWrap: 'wrap' },
+  channelItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  channelDot: { width: 12, height: 12, borderRadius: 4 },
+  channelValue: { fontSize: 14, fontWeight: '800', color: c.text },
+  channelName: { fontSize: 11, color: c.textSecondary },
+
+  // ── POS section label ───────────────────────────────────────────
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: Spacing.two + Spacing.half,
+    paddingHorizontal: 2,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  sectionLabelSub: { fontSize: 11, color: c.textTertiary },
 });

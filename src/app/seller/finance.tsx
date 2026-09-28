@@ -170,6 +170,76 @@ export default function SellerFinanceDashboardScreen() {
             </View>
           </View>
 
+          {/* In-Store POS revenue — instant settlement, no commission */}
+          <View style={[styles.sectionCard, styles.posCard]}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialCommunityIcons name="cash-register" size={18} color="#D97706" />
+                <Text style={styles.sectionTitle}>In-Store POS Revenue</Text>
+              </View>
+              <View style={styles.noFeeBadge}>
+                <Text style={styles.noFeeBadgeText}>NO COMMISSION</Text>
+              </View>
+            </View>
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: '#D97706' }]}>UGX {fmt(data?.pos_revenue_30d)}</Text>
+                <Text style={styles.summaryLabel}>POS Revenue (30d)</Text>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: '#2563EB' }]}>{data?.pos_count_30d || 0}</Text>
+                <Text style={styles.summaryLabel}>POS Sales (30d)</Text>
+              </View>
+              <View style={styles.summaryCell}>
+                <Text style={[styles.summaryValue, { color: Brand.success }]}>UGX {fmt(data?.pos_today_total)}</Text>
+                <Text style={styles.summaryLabel}>Today ({data?.pos_today_count || 0})</Text>
+              </View>
+            </View>
+            {data?.pos_methods_30d && data.pos_methods_30d.length > 0 ? (
+              <View style={styles.posMethodsRow}>
+                {data.pos_methods_30d.map((m, i) => (
+                  <View key={`pm-${i}`} style={styles.posMethodChip}>
+                    <Text style={styles.posMethodChipText}>
+                      {m.label} · UGX {fmt(m.total)} · {m.count} sale{m.count === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.emptyText}>No in-store sales in the last 30 days.</Text>
+            )}
+            <Pressable style={styles.posLinkBtn} onPress={() => router.push('/seller/pos' as any)}>
+              <Text style={styles.posLinkText}>Open POS Terminal</Text>
+              <MaterialCommunityIcons name="arrow-right" size={16} color={Brand.primary} />
+            </Pressable>
+          </View>
+
+          {/* Recent POS sales */}
+          {data?.recent_pos_sales && data.recent_pos_sales.length > 0 ? (
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent POS Sales</Text>
+                <Pressable onPress={() => router.push('/seller/pos' as any)}>
+                  <Text style={styles.viewAllText}>Open POS</Text>
+                </Pressable>
+              </View>
+              {data.recent_pos_sales.map((s) => (
+                <View key={`pos-${s.id}`} style={styles.txRow}>
+                  <View style={[styles.txIcon, { backgroundColor: '#F59E0B20' }]}>
+                    <MaterialCommunityIcons name="receipt" size={18} color="#D97706" />
+                  </View>
+                  <View style={styles.txInfo}>
+                    <Text style={styles.txRef} numberOfLines={1}>{s.sale_number}</Text>
+                    <Text style={styles.txRule}>
+                      {s.payment_method.replace(/_/g, ' ').toUpperCase()} · {s.cashier || 'Cashier'} · {new Date(s.sale_date).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={[styles.txCommission, { color: Brand.success }]}>+UGX {fmt(s.total)}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           {/* Commission rate + transaction count */}
           <View style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>Commission Summary</Text>
@@ -320,4 +390,38 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 24 },
   emptyText: { marginTop: 8, fontSize: 14, color: c.textSecondary, fontWeight: '600' },
   emptySubtext: { marginTop: 4, fontSize: 12, color: c.textTertiary },
+
+  // ── POS revenue section ─────────────────────────────────────────
+  posCard: { borderLeftWidth: 4, borderLeftColor: '#F59E0B' },
+  noFeeBadge: {
+    backgroundColor: '#16A34A18',
+    borderWidth: 1,
+    borderColor: '#16A34A40',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  noFeeBadgeText: { fontSize: 9, fontWeight: '800', color: '#16A34A', letterSpacing: 0.4 },
+  posMethodsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  posMethodChip: {
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  posMethodChipText: { fontSize: 11, fontWeight: '600', color: c.text },
+  posLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Brand.primary,
+  },
+  posLinkText: { fontSize: 13, fontWeight: '700', color: Brand.primary },
 });

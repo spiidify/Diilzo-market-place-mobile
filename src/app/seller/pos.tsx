@@ -28,7 +28,41 @@ import {
   type POSDashboardData,
   type POSSalePayload,
   type POSSaleRecord,
+  type POSSalesSummary,
 } from '@/services/seller';
+
+type HistoryRange = 'all' | 'today' | '7d' | '30d';
+type HistoryMethod = '' | 'cash' | 'mtn_momo' | 'airtel_money' | 'card' | 'credit' | 'mixed';
+
+const HISTORY_RANGES: { key: HistoryRange; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'today', label: 'Today' },
+  { key: '7d', label: '7 Days' },
+  { key: '30d', label: '30 Days' },
+];
+
+const HISTORY_METHODS: { key: HistoryMethod; label: string }[] = [
+  { key: '', label: 'All' },
+  { key: 'cash', label: 'Cash' },
+  { key: 'mtn_momo', label: 'MTN MoMo' },
+  { key: 'airtel_money', label: 'Airtel' },
+  { key: 'card', label: 'Card' },
+  { key: 'credit', label: 'Credit' },
+  { key: 'mixed', label: 'Mixed' },
+];
+
+const METHOD_COLORS: Record<string, string> = {
+  cash: '#16A34A',
+  mtn_momo: '#CA8A04',
+  airtel_money: '#DC2626',
+  card: '#2563EB',
+  credit: '#7C3AED',
+  mixed: '#A21CAF',
+};
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 interface CartItem {
   id: number;
@@ -72,8 +106,14 @@ export default function SellerPOSScreen() {
   // Stats & History
   const [stats, setStats] = useState<POSDashboardData | null>(null);
   const [salesHistory, setSalesHistory] = useState<POSSaleRecord[]>([]);
+  const [salesSummary, setSalesSummary] = useState<POSSalesSummary | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // History filters
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyMethod, setHistoryMethod] = useState<HistoryMethod>('');
+  const [historyRange, setHistoryRange] = useState<HistoryRange>('all');
 
   // Load products with pagination
   const loadProducts = useCallback(async (page = 1, append = false) => {
@@ -110,16 +150,37 @@ export default function SellerPOSScreen() {
   const loadData = useCallback(async () => {
     try {
       setRefreshing(true);
+      const filters: Record<string, string> = {};
+      if (historySearch.trim()) filters.q = historySearch.trim();
+      if (historyMethod) filters.method = historyMethod;
+
+      const today = new Date();
+      if (historyRange === 'today') {
+        filters.date_from = isoDate(today);
+        filters.date_to = isoDate(today);
+      } else if (historyRange === '7d') {
+        const from = new Date(today);
+        from.setDate(from.getDate() - 6);
+        filters.date_from = isoDate(from);
+        filters.date_to = isoDate(today);
+      } else if (historyRange === '30d') {
+        const from = new Date(today);
+        from.setDate(from.getDate() - 29);
+        filters.date_from = isoDate(from);
+        filters.date_to = isoDate(today);
+      }
+
       const [statsData, salesData] = await Promise.all([
         getPOSDashboard().catch(() => null),
-        getPOSSales().catch(() => ({ results: [] })),
+        getPOSSales(filters).catch(() => ({ results: [], summary: undefined })),
       ]);
       if (statsData) setStats(statsData);
       setSalesHistory(salesData.results || []);
+      setSalesSummary(salesData.summary || null);
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [historySearch, historyMethod, historyRange]);
 
   useEffect(() => {
     loadProducts();
@@ -439,38 +500,131 @@ export default function SellerPOSScreen() {
         </View>
       ) : (
         /* History Tab */
-        <FlatList
-          data={salesHistory}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={styles.historyList}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
-          renderItem={({ item }) => (
-            <View style={styles.historyCard}>
-              <View style={styles.historyCardHead}>
-                <View>
-                  <Text style={styles.historySaleNum}>{item.sale_number}</Text>
-                  <Text style={styles.historyCustomer}>{item.customer_name || 'Walk-in Customer'}</Text>
-                </View>
-                <Text style={styles.historyTotal}>UGX {Number(item.total).toLocaleString()}</Text>
-              </View>
-              <View style={styles.historyCardFoot}>
-                <Text style={styles.historyDate}>
-                  {new Date(item.sale_date).toLocaleDateString()} &bull; {new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <View style={{ flex: 1 }}>
+          {/* Search */}
+          <View style={[styles.searchBar, { marginHorizontal: 16 }]}>
+            <MaterialCommunityIcons name="magnify" size={20} color={Brand.primary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search sale #, customer, phone..."
+              placeholderTextColor={colors.textSecondary}
+              value={historySearch}
+              onChangeText={setHistorySearch}
+              onSubmitEditing={loadData}
+              returnKeyType="search"
+            />
+            {historySearch.length > 0 && (
+              <Pressable onPress={() => setHistorySearch('')}>
+                <MaterialCommunityIcons name="close-circle" size={18} color={colors.textSecondary} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Range pills */}
+          <View style={styles.filterPillRow}>
+            {HISTORY_RANGES.map((r) => (
+              <Pressable
+                key={r.key}
+                style={[styles.filterPill, historyRange === r.key && styles.filterPillActive]}
+                onPress={() => setHistoryRange(r.key)}
+              >
+                <Text style={[styles.filterPillText, historyRange === r.key && styles.filterPillTextActive]}>
+                  {r.label}
                 </Text>
-                <View style={styles.methodBadge}>
-                  <Text style={styles.methodBadgeText}>{item.payment_method.toUpperCase()}</Text>
-                </View>
-              </View>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Method pills */}
+          <View style={[styles.filterPillRow, { marginTop: 0, marginBottom: 4 }]}>
+            {HISTORY_METHODS.map((m) => (
+              <Pressable
+                key={m.key}
+                style={[
+                  styles.filterPill,
+                  historyMethod === m.key && styles.filterPillActive,
+                  historyMethod === m.key && m.key !== '' && { backgroundColor: METHOD_COLORS[m.key] },
+                ]}
+                onPress={() => setHistoryMethod(m.key)}
+              >
+                <Text style={[styles.filterPillText, historyMethod === m.key && styles.filterPillTextActive]}>
+                  {m.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Filtered summary */}
+          {salesSummary && (
+            <View style={styles.historySummary}>
+              <Text style={styles.historySummaryText}>
+                <Text style={{ fontWeight: '800', color: colors.text }}>{salesSummary.count}</Text> sale{salesSummary.count === 1 ? '' : 's'}
+                {'  ·  '}Total <Text style={{ fontWeight: '800', color: Brand.primary }}>UGX {Number(salesSummary.total).toLocaleString()}</Text>
+                {salesSummary.count > 0 && (
+                  <>{'  ·  '}Avg <Text style={{ fontWeight: '800', color: colors.text }}>UGX {Number(salesSummary.avg).toLocaleString()}</Text></>
+                )}
+              </Text>
             </View>
           )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="receipt" size={48} color={colors.border} />
-              <Text style={styles.emptyTitle}>No POS sales yet</Text>
-              <Text style={styles.emptySubtitle}>In-store counter sales will appear here</Text>
-            </View>
-          }
-        />
+
+          <FlatList
+            data={salesHistory}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={styles.historyList}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
+            renderItem={({ item }) => {
+              const mColor = METHOD_COLORS[item.payment_method] || colors.textSecondary;
+              return (
+                <View style={styles.historyCard}>
+                  <View style={styles.historyCardHead}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <View style={[styles.statusDot, { backgroundColor: item.completed ? Brand.primary : Brand.rating }]} />
+                        <Text style={styles.historySaleNum}>{item.sale_number}</Text>
+                      </View>
+                      <Text style={styles.historyCustomer}>{item.customer_name || 'Walk-in Customer'}</Text>
+                      {item.customer_phone ? (
+                        <Text style={styles.historyMeta}>{item.customer_phone}</Text>
+                      ) : null}
+                    </View>
+                    <Text style={styles.historyTotal}>UGX {Number(item.total).toLocaleString()}</Text>
+                  </View>
+                  <View style={styles.historyCardFoot}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.historyDate}>
+                        {new Date(item.sale_date).toLocaleDateString()} &bull; {new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                      {(item.cashier || item.register) ? (
+                        <Text style={styles.historyMeta} numberOfLines={1}>
+                          {[item.cashier, item.register].filter(Boolean).join(' · ')}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.historyMeta}>{item.items_count} item{item.items_count === 1 ? '' : 's'}</Text>
+                      <View style={[styles.methodBadge, { backgroundColor: mColor + '18' }]}>
+                        <Text style={[styles.methodBadgeText, { color: mColor }]}>{item.payment_method.replace(/_/g, ' ').toUpperCase()}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <MaterialCommunityIcons name="receipt" size={48} color={colors.border} />
+                <Text style={styles.emptyTitle}>
+                  {historySearch || historyMethod || historyRange !== 'all' ? 'No matching sales' : 'No POS sales yet'}
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {historySearch || historyMethod || historyRange !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'In-store counter sales will appear here'}
+                </Text>
+              </View>
+            }
+          />
+        </View>
       )}
 
       {/* Cart & Checkout Modal Sheet */}
@@ -1010,7 +1164,61 @@ const createStyles = (colors: ThemeColors) =>
     },
     historyList: {
       padding: 16,
+      paddingTop: 4,
       paddingBottom: 40,
+    },
+    filterPillRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      paddingHorizontal: 16,
+      marginTop: 10,
+      marginBottom: 2,
+    },
+    filterPill: {
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    filterPillActive: {
+      backgroundColor: '#1E293B',
+      borderColor: '#1E293B',
+    },
+    filterPillText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    filterPillTextActive: {
+      color: '#FFFFFF',
+    },
+    historySummary: {
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    historySummaryText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    historyMeta: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      marginTop: 2,
     },
     historyCard: {
       backgroundColor: colors.surface,

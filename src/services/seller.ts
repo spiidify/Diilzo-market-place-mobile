@@ -110,6 +110,16 @@ export interface SellerEarnings {
   payouts: any[];
 }
 
+export interface POSAnalytics {
+  revenue: number;
+  sales_count: number;
+  avg_sale: number;
+  revenue_series: { label: string; value: number }[];
+  payment_methods: { code: string; label: string; total: number; count: number }[];
+  top_products: { name: string; sold: number; revenue: number }[];
+  share_pct: number;
+}
+
 export interface AnalyticsData {
   revenue: number;
   orders_count: number;
@@ -120,6 +130,7 @@ export interface AnalyticsData {
   sales_by_category: { name: string; revenue: number }[];
   status_distribution?: { status: string; count: number }[];
   avg_order_value?: number;
+  pos?: POSAnalytics;
 }
 
 export interface SellerDisputeDetail {
@@ -991,10 +1002,28 @@ export interface POSSaleRecord {
   id: number;
   sale_number: string;
   customer_name: string;
+  customer_phone?: string;
   total: string;
   payment_method: string;
   sale_date: string;
   items_count: number;
+  register?: string;
+  cashier?: string;
+  completed?: boolean;
+}
+
+export interface POSSalesSummary {
+  count: number;
+  total: string;
+  avg: string;
+}
+
+export interface POSSalesFilters {
+  method?: string;
+  register?: number;
+  q?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface POSRegisterRecord {
@@ -1016,9 +1045,15 @@ export async function getPOSDashboard(): Promise<POSDashboardData> {
   return apiRequest<POSDashboardData>({ method: 'GET', url: '/pos/dashboard/' });
 }
 
-/** GET /pos/sales/ — list recent POS counter sales */
-export async function getPOSSales(): Promise<{ results: POSSaleRecord[] }> {
-  return apiRequest<{ results: POSSaleRecord[] }>({ method: 'GET', url: '/pos/sales/' });
+/** GET /pos/sales/ — list POS counter sales (filters + summary) */
+export async function getPOSSales(
+  filters: POSSalesFilters = {},
+): Promise<{ results: POSSaleRecord[]; summary: POSSalesSummary }> {
+  return apiRequest<{ results: POSSaleRecord[]; summary: POSSalesSummary }>({
+    method: 'GET',
+    url: '/pos/sales/',
+    params: filters,
+  });
 }
 
 /** POST /pos/sales/ — create a new in-store POS sale */

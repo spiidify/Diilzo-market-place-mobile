@@ -57,6 +57,21 @@ export interface FinancialDashboard {
     notes: string;
     date: string;
   }>;
+  // In-store POS channel (instant settlement, no marketplace commission)
+  pos_revenue_30d?: string;
+  pos_count_30d?: number;
+  pos_today_total?: string;
+  pos_today_count?: number;
+  pos_methods_30d?: Array<{ code: string; label: string; total: string; count: number }>;
+  recent_pos_sales?: Array<{
+    id: number;
+    sale_number: string;
+    customer_name: string;
+    total: string;
+    payment_method: string;
+    cashier: string;
+    sale_date: string;
+  }>;
 }
 
 export interface CommissionTransaction {
