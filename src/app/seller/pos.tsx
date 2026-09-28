@@ -8,15 +8,17 @@ import {
     FlatList,
     Image,
     Modal,
+    Platform,
     Pressable,
     RefreshControl,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TextInput,
-    View,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
@@ -76,7 +78,15 @@ interface CartItem {
 export default function SellerPOSScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  // Inside a Modal on edge-to-edge Android, safe-area insets report 0 —
+  // fall back to the real status bar height so the header isn't covered.
+  const modalTopInset = Math.max(
+    insets.top,
+    Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0
+  );
 
   // Mode: 'register' | 'history'
   const [activeTab, setActiveTab] = useState<'register' | 'history'>('register');
@@ -657,13 +667,13 @@ export default function SellerPOSScreen() {
         transparent={false}
         onRequestClose={() => setShowCartModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer} edges={['bottom']}>
+        <View style={[styles.modalContainer, { paddingBottom: insets.bottom }]}>
           <LinearGradient
             colors={[Brand.dark, Brand.accent, Brand.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <SafeAreaView edges={['top']}>
+            <View style={{ paddingTop: modalTopInset }}>
               <View style={styles.modalHeaderBar}>
                 <Pressable
                   onPress={() => setShowCartModal(false)}
@@ -682,7 +692,7 @@ export default function SellerPOSScreen() {
                   <MaterialCommunityIcons name="cart-remove" size={22} color="#FFFFFF" />
                 </Pressable>
               </View>
-            </SafeAreaView>
+            </View>
           </LinearGradient>
 
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
@@ -917,7 +927,7 @@ export default function SellerPOSScreen() {
               )}
             </Pressable>
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
 
       {/* Printable / View Receipt Modal */}
