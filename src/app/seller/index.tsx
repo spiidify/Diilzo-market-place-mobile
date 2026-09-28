@@ -505,8 +505,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Gradient hero ─────────────────────────────────────────────────
   hero: {
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
     paddingHorizontal: 14,
     paddingBottom: 14,
   },
