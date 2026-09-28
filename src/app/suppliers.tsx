@@ -3,17 +3,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
@@ -178,121 +178,61 @@ export default function SuppliersScreen() {
 
   const renderStore = ({ item }: { item: Store }) => {
     const icon = BUSINESS_ICONS[item.business_type || 'individual'] || 'store';
-    const iconName = icon as any;
     const isSupplier = item.is_wholesaler;
     const rating = item.rating ? parseFloat(item.rating) : 0;
+    const verified = item.verification_status === 'gold' || item.verification_status === 'verified';
     const businessLabel = item.business_type
       ? item.business_type.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())
       : 'Store';
 
     return (
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
+        style={({ pressed }) => [styles.tile, pressed && { opacity: 0.85 }]}
         onPress={() => router.push(`/store/${item.slug}` as any)}
       >
-        {/* ── Banner ──────────────────────────────────────────────── */}
-        <View style={styles.bannerWrap}>
-          {item.banner_url ? (
-            <Image source={{ uri: item.banner_url }} style={styles.banner} resizeMode="cover" />
+        {/* Logo tile with verification badge */}
+        <View style={styles.tileLogoWrap}>
+          {item.logo_url ? (
+            <Image source={{ uri: item.logo_url }} style={styles.tileLogo} resizeMode="cover" />
+          ) : item.banner_url ? (
+            <Image source={{ uri: item.banner_url }} style={styles.tileLogo} resizeMode="cover" />
           ) : (
             <LinearGradient
               colors={[Brand.dark, Brand.accent, Brand.primary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.bannerFallback}
+              style={styles.tileLogoFallback}
             >
-              <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={36} color="rgba(255,255,255,0.4)" />
+              <MaterialCommunityIcons name={isSupplier ? 'factory' : (icon as any)} size={26} color="rgba(255,255,255,0.85)" />
             </LinearGradient>
           )}
-          {/* Badge overlay on banner */}
-          <View style={styles.bannerBadges}>
-            {item.verification_status === 'gold' && (
-              <View style={[styles.bannerBadge, styles.badgeGold]}>
-                <MaterialCommunityIcons name="crown" size={10} color="#FFFFFF" />
-                <Text style={styles.bannerBadgeText}>Gold</Text>
-              </View>
-            )}
-            {item.verification_status === 'verified' && (
-              <View style={[styles.bannerBadge, styles.badgeVerified]}>
-                <MaterialCommunityIcons name="check-decagram" size={10} color="#FFFFFF" />
-                <Text style={styles.bannerBadgeText}>Verified</Text>
-              </View>
-            )}
-            {isSupplier && (
-              <View style={[styles.bannerBadge, styles.badgeTA]}>
-                <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
-                <Text style={styles.bannerBadgeText}>Trade Assurance</Text>
-              </View>
-            )}
-          </View>
+          {verified && (
+            <View style={styles.tileBadge}>
+              <MaterialCommunityIcons
+                name={item.verification_status === 'gold' ? 'crown' : 'check-decagram'}
+                size={10}
+                color="#FFFFFF"
+              />
+            </View>
+          )}
+          {isSupplier && !verified && (
+            <View style={[styles.tileBadge, { backgroundColor: '#0EA5E9' }]}>
+              <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
+            </View>
+          )}
         </View>
 
-        {/* ── Logo + identity ─────────────────────────────────────── */}
-        <View style={styles.cardContent}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoWrap}>
-              {item.logo_url ? (
-                <Image source={{ uri: item.logo_url }} style={styles.logo} resizeMode="contain" />
-              ) : (
-                <View style={styles.logoFallback}>
-                  <MaterialCommunityIcons name={isSupplier ? 'factory' : 'store'} size={22} color="#FFFFFF" />
-                </View>
-              )}
-            </View>
-            <View style={styles.identity}>
-              <Text style={styles.storeName} numberOfLines={2}>{item.name}</Text>
-              <View style={styles.typeRow}>
-                <MaterialCommunityIcons name={iconName} size={13} color={Brand.primary} />
-                <Text style={styles.typeText}>{businessLabel}</Text>
-                <Text style={styles.dot}>•</Text>
-                <MaterialCommunityIcons name="map-marker" size={13} color={colors.textTertiary} />
-                <Text style={styles.locationText}>{item.city}, {item.country}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* ── Tagline ────────────────────────────────────────────── */}
-          {item.tagline ? (
-            <Text style={styles.tagline} numberOfLines={2}>{item.tagline}</Text>
-          ) : null}
-
-          {/* ── Stats row ──────────────────────────────────────────── */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="star" size={14} color={Brand.rating} />
-              <Text style={styles.statValue}>{rating.toFixed(1)}</Text>
-              <Text style={styles.statSub}>({item.review_count || 0})</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="package-variant-closed" size={14} color={colors.textSecondary} />
-              <Text style={styles.statValue}>{item.product_count || 0}</Text>
-              <Text style={styles.statSub}>products</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons name="clock-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.statSub}>Responds fast</Text>
-            </View>
-          </View>
-
-          {/* ── Footer actions ─────────────────────────────────────── */}
-          <View style={styles.cardFooter}>
-            <Pressable
-              style={({ pressed }) => [styles.contactBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push(`/store/${item.slug}` as any)}
-            >
-              <MaterialCommunityIcons name="chat-outline" size={16} color={Brand.primary} />
-              <Text style={styles.contactText}>Contact</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.visitBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push(`/store/${item.slug}` as any)}
-            >
-              <Text style={styles.visitText}>Visit Store</Text>
-              <MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
-            </Pressable>
-          </View>
+        <Text style={styles.tileName} numberOfLines={2}>{item.name}</Text>
+        <View style={styles.tileMetaRow}>
+          <MaterialCommunityIcons name={icon as any} size={11} color={Brand.primary} />
+          <Text style={styles.tileType} numberOfLines={1}>{businessLabel}</Text>
+        </View>
+        <View style={styles.tileMetaRow}>
+          <MaterialCommunityIcons name="star" size={11} color={Brand.rating} />
+          <Text style={styles.tileMetaText}>{rating > 0 ? rating.toFixed(1) : 'New'}</Text>
+          {!!item.city && (
+            <Text style={styles.tileMetaText} numberOfLines={1}> · {item.city}</Text>
+          )}
         </View>
       </Pressable>
     );
@@ -412,10 +352,12 @@ export default function SuppliersScreen() {
           data={stores}
           keyExtractor={(item) => `${item.id}-${item.slug}`}
           renderItem={renderStore}
+          numColumns={3}
+          columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.list}
-          maxToRenderPerBatch={4}
-          windowSize={7}
-          initialNumToRender={6}
+          maxToRenderPerBatch={9}
+          windowSize={9}
+          initialNumToRender={12}
           removeClippedSubviews={true}
           onScroll={handleScroll}
           scrollEventThrottle={16}
@@ -576,116 +518,62 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   filterChipTextActive: { color: '#FFFFFF' },
   filterChipTextInactive: { color: c.textSecondary },
 
-  // ── List ────────────────────────────────────────────────────────
-  list: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 20 },
-  card: {
+  // ── Grid ────────────────────────────────────────────────────────
+  list: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20 },
+  gridRow: { gap: 8, marginBottom: 8 },
+  tile: {
+    flex: 1,
     backgroundColor: c.surface,
-    borderRadius: 14,
-    marginBottom: 14,
-    overflow: 'hidden',
+    borderRadius: 12,
+    padding: 8,
     borderWidth: 1,
     borderColor: c.borderLight,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-
-  // ── Banner ──────────────────────────────────────────────────────
-  bannerWrap: { position: 'relative', height: 100 },
-  banner: { width: '100%', height: '100%' },
-  bannerFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  bannerBadges: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    flexDirection: 'row',
-    gap: 4,
-    flexWrap: 'wrap',
-  },
-  bannerBadge: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  badgeGold: { backgroundColor: Brand.accent },
-  badgeVerified: { backgroundColor: '#16A34A' },
-  badgeTA: { backgroundColor: 'rgba(0,0,0,0.6)' },
-  bannerBadgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-
-  // ── Card content ────────────────────────────────────────────────
-  cardContent: { padding: 12 },
-  logoRow: { flexDirection: 'row', gap: 12, marginTop: -28 },
-  logoWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
+  tileLogoWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: Brand.primary,
-    borderWidth: 3,
+    marginBottom: 7,
+  },
+  tileLogo: { width: '100%', height: '100%' },
+  tileLogoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tileBadge: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
     borderColor: c.surface,
   },
-  logo: { width: '100%', height: '100%' },
-  logoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  identity: { flex: 1, justifyContent: 'flex-end', paddingBottom: 4 },
-  storeName: { fontSize: 16, fontWeight: '700', color: c.text, lineHeight: 21 },
-  typeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
-  typeText: { fontSize: 12, color: Brand.primary, fontWeight: '600' },
-  dot: { fontSize: 12, color: c.textTertiary },
-  locationText: { fontSize: 12, color: c.textSecondary },
-
-  // ── Tagline ─────────────────────────────────────────────────────
-  tagline: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginTop: 10 },
-
-  // ── Stats row ───────────────────────────────────────────────────
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: c.surfaceAlt,
-    borderRadius: 10,
+  tileName: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: c.text,
+    textAlign: 'center',
+    lineHeight: 15,
+    minHeight: 30,
   },
-  statItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 13, fontWeight: '700', color: c.text },
-  statSub: { fontSize: 11, color: c.textSecondary },
-  statDivider: { width: 1, height: 20, backgroundColor: c.borderLight },
-
-  // ── Footer ──────────────────────────────────────────────────────
-  cardFooter: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  contactBtn: {
-    flex: 1,
+  tileMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Brand.primary,
-    backgroundColor: c.surfaceAlt,
+    gap: 3,
+    marginTop: 2,
   },
-  contactText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
-  visitBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: Brand.primary,
-  },
-  visitText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+  tileType: { fontSize: 10, color: Brand.primary, fontWeight: '600' },
+  tileMetaText: { fontSize: 10, color: c.textTertiary },
 
   // ── States ──────────────────────────────────────────────────────
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
