@@ -1,20 +1,19 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Alert,
-  Pressable,
-  Linking as RNLinking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Alert,
+    Pressable,
+    Linking as RNLinking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 
 interface FAQ {
@@ -119,213 +118,116 @@ export default function SupportScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Help & Support</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <GradientHeader
+        title="Help & Support"
+        subtitle="How can we help?"
+      />
 
-        <ScrollView
-          style={styles.body}
-          contentContainerStyle={styles.bodyContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Hero banner */}
-          <View style={styles.heroCard}>
-            <View style={styles.heroIconWrap}>
-              <MaterialCommunityIcons name="lifebuoy" size={32} color="#FFFFFF" />
-            </View>
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroTitle}>How can we help?</Text>
-              <Text style={styles.heroSubtext}>
-                We're here to assist you with any questions or issues
-              </Text>
-            </View>
-          </View>
-
-          {/* Contact options */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Contact Options</Text>
-            {contactOptions.map((option, index) => (
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Contact options */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Contact Us</Text>
+          {contactOptions.map((option, index) => (
+            <View key={`contact-${index}`}>
+              {index > 0 && <View style={styles.rowDivider} />}
               <Pressable
-                key={`contact-${index}`}
-                style={({ pressed }) => [styles.contactCard, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
                 onPress={option.action}
               >
-                <View style={[styles.contactIcon, { backgroundColor: option.color + '20' }]}>
-                  <MaterialCommunityIcons name={option.icon} size={24} color={option.color} />
+                <View style={[styles.iconWrap, { backgroundColor: option.color + '18' }]}>
+                  <MaterialCommunityIcons name={option.icon} size={18} color={option.color} />
                 </View>
-                <View style={styles.contactInfo}>
-                  <Text style={styles.contactLabel}>{option.label}</Text>
-                  <Text style={styles.contactSublabel}>{option.sublabel}</Text>
+                <View style={styles.info}>
+                  <Text style={styles.rowLabel}>{option.label}</Text>
+                  <Text style={styles.rowSublabel}>{option.sublabel}</Text>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textTertiary} />
+                <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
               </Pressable>
-            ))}
-          </View>
+            </View>
+          ))}
+        </View>
 
-          {/* FAQ */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
-            {FAQS.map((faq, index) => {
-              const expanded = expandedFaq === index;
-              return (
-                <View key={`faq-${index}`} style={styles.faqCard}>
-                  <Pressable
-                    style={styles.faqHeader}
-                    onPress={() => toggleFaq(index)}
-                  >
-                    <Text style={styles.faqQuestion}>{faq.question}</Text>
-                    <MaterialCommunityIcons
-                      name={expanded ? 'chevron-up' : 'chevron-down'}
-                      size={22}
-                      color={Brand.primary}
-                    />
-                  </Pressable>
-                  {expanded && (
-                    <View style={styles.faqBody}>
-                      <Text style={styles.faqAnswer}>{faq.answer}</Text>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </View>
+        {/* FAQ */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>FAQs</Text>
+          {FAQS.map((faq, index) => {
+            const expanded = expandedFaq === index;
+            return (
+              <View key={`faq-${index}`}>
+                {index > 0 && <View style={styles.rowDivider} />}
+                <Pressable
+                  style={({ pressed }) => [styles.faqHeader, pressed && { opacity: 0.8 }]}
+                  onPress={() => toggleFaq(index)}
+                >
+                  <Text style={styles.faqQuestion}>{faq.question}</Text>
+                  <MaterialCommunityIcons
+                    name={expanded ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color={Brand.primary}
+                  />
+                </Pressable>
+                {expanded && (
+                  <View style={styles.faqBody}>
+                    <Text style={styles.faqAnswer}>{faq.answer}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
 
-          {/* App info */}
-          <View style={styles.appInfoSection}>
-            <MaterialCommunityIcons name="shopping" size={28} color={Brand.primary} />
-            <Text style={styles.appInfoName}>Diilzo</Text>
-            <Text style={styles.appInfoVersion}>Version 1.0.0</Text>
-            <Text style={styles.appInfoText}>
-              Uganda's vibrant green marketplace — shop local, sell global.
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+        {/* App info */}
+        <View style={styles.appInfoSection}>
+          <MaterialCommunityIcons name="shopping" size={22} color={Brand.primary} />
+          <Text style={styles.appInfoName}>Diilzo <Text style={styles.appInfoVersion}>v1.0.0</Text></Text>
+          <Text style={styles.appInfoText}>
+            Uganda's vibrant green marketplace — shop local, sell global.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
   body: { flex: 1 },
-  bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
+  bodyContent: { paddingTop: 10, paddingBottom: 32, gap: 10 },
 
-  // Hero
-  heroCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    backgroundColor: Brand.primary,
-    borderRadius: 16,
-    padding: Spacing.three + 2,
-    marginBottom: Spacing.three,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+  card: {
+    backgroundColor: c.surface, marginHorizontal: 10, borderRadius: 14,
+    paddingVertical: 10, paddingHorizontal: 12,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  heroIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroInfo: { flex: 1, gap: 4 },
-  heroTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  heroSubtext: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
+  cardTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4, marginTop: 2 },
 
-  // Sections
-  section: { marginBottom: Spacing.three },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: Spacing.two },
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 8, paddingHorizontal: 2, borderRadius: 8,
+  },
+  iconWrap: {
+    width: 32, height: 32, borderRadius: 9,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  info: { flex: 1, gap: 1 },
+  rowLabel: { fontSize: 13, fontWeight: '700', color: c.text },
+  rowSublabel: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 44 },
 
-  // Contact
-  contactCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three - 4,
-    backgroundColor: c.surface,
-    padding: Spacing.three,
-    borderRadius: 14,
-    marginBottom: Spacing.two,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  contactIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactInfo: { flex: 1, gap: 2 },
-  contactLabel: { fontSize: 15, fontWeight: '700', color: c.text },
-  contactSublabel: { fontSize: 13, color: c.textSecondary },
-
-  // FAQ
-  faqCard: {
-    backgroundColor: c.surface,
-    borderRadius: 12,
-    marginBottom: Spacing.two,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
   faqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.two,
-    padding: Spacing.three,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    gap: 8, paddingVertical: 9, paddingHorizontal: 2,
   },
-  faqQuestion: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
-  faqBody: {
-    paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.three,
-    paddingTop: 0,
-  },
-  faqAnswer: { fontSize: 14, color: c.textSecondary, lineHeight: 22 },
+  faqQuestion: { flex: 1, fontSize: 13, fontWeight: '700', color: c.text },
+  faqBody: { paddingHorizontal: 2, paddingBottom: 10, paddingTop: 0 },
+  faqAnswer: { fontSize: 12, color: c.textSecondary, lineHeight: 18 },
 
-  // App info
-  appInfoSection: {
-    alignItems: 'center',
-    paddingVertical: Spacing.four,
-    gap: Spacing.one + 2,
-  },
-  appInfoName: { fontSize: 18, fontWeight: '800', color: c.text },
-  appInfoVersion: { fontSize: 13, color: c.textTertiary },
-  appInfoText: {
-    fontSize: 13,
-    color: c.textSecondary,
-    textAlign: 'center',
-    marginTop: Spacing.one + 2,
-  },
+  appInfoSection: { alignItems: 'center', paddingVertical: 18, gap: 3 },
+  appInfoName: { fontSize: 15, fontWeight: '800', color: c.text },
+  appInfoVersion: { fontSize: 11, fontWeight: '500', color: c.textTertiary },
+  appInfoText: { fontSize: 12, color: c.textSecondary, textAlign: 'center' },
 });

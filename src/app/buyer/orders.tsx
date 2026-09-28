@@ -1,17 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View
+    FlatList,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { OrderListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
@@ -63,97 +62,100 @@ export default function BuyerOrdersScreen() {
     const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
     return (
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+        style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
         onPress={() => router.push(`/buyer/orders/${item.id}` as any)}
       >
-        <View style={styles.cardTop}>
-          <Text style={styles.orderNumber}>#{item.order_number}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
+        <View style={styles.info}>
+          <View style={styles.topRow}>
+            <Text style={styles.orderNumber}>#{item.order_number}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
+            </View>
           </View>
+          <Text style={styles.meta}>
+            {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            {item.items_count != null ? ` · ${item.items_count} item${item.items_count === 1 ? '' : 's'}` : ''}
+          </Text>
         </View>
-        <View style={styles.cardBody}>
-          <Text style={styles.totalLabel}>Total</Text>
+        <View style={styles.right}>
           <Text style={styles.totalValue}>UGX {Number(item.total).toLocaleString()}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
         </View>
-        <Text style={styles.dateText}>{new Date(item.created_at).toLocaleDateString()}</Text>
       </Pressable>
     );
   };
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient colors={[Brand.primary, Brand.primary, Brand.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>My Orders</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <GradientHeader
+        title="My Orders"
+        subtitle={!loading && orders.length > 0 ? `${orders.length} order${orders.length === 1 ? '' : 's'}` : undefined}
+      />
 
-        {loading ? (
-          <OrderListSkeleton count={4} />
-        ) : error ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.shopBtn} onPress={load}>
-              <Text style={styles.shopBtnText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : orders.length === 0 ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="shopping-outline" size={48} color={colors.textTertiary} />
-            <Text style={styles.emptyText}>No orders yet</Text>
-            <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
-              <Text style={styles.shopBtnText}>Start Shopping</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <FlatList
-            data={orders}
-            keyExtractor={(item) => `${item.id}`}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={10}
-            windowSize={11}
-            initialNumToRender={10}
-            removeClippedSubviews={true}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
-          />
-        )}
-      </SafeAreaView>
+      {loading ? (
+        <OrderListSkeleton count={4} />
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={44} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.shopBtn} onPress={load}>
+            <Text style={styles.shopBtnText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : orders.length === 0 ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="shopping-outline" size={48} color={colors.textTertiary} />
+          <Text style={styles.emptyText}>No orders yet</Text>
+          <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
+            <Text style={styles.shopBtnText}>Start Shopping</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => `${item.id}`}
+          renderItem={renderItem}
+          style={styles.listCard}
+          contentContainerStyle={styles.list}
+          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
+          maxToRenderPerBatch={12}
+          windowSize={11}
+          initialNumToRender={12}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
+        />
+      )}
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
-  list: { padding: 12, gap: 10 },
-  card: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+
+  listCard: { flex: 1 },
+  list: {
+    margin: 10, borderRadius: 14, overflow: 'hidden',
+    backgroundColor: c.surface,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  orderNumber: { fontSize: 16, fontWeight: '700', color: c.text },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  cardBody: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 },
-  totalLabel: { fontSize: 13, color: c.textTertiary },
-  totalValue: { fontSize: 18, fontWeight: '800', color: Brand.primary },
-  dateText: { fontSize: 12, color: c.textTertiary },
+  row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 9,
+  },
+  info: { flex: 1, gap: 2 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  orderNumber: { fontSize: 13, fontWeight: '700', color: c.text },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  statusDot: { width: 5, height: 5, borderRadius: 3 },
+  statusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
+  meta: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  totalValue: { fontSize: 14, fontWeight: '800', color: Brand.primary },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 12 },
 });
-
-
-

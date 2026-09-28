@@ -1,38 +1,35 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { toggleTwoFactor } from '@/services/auth';
 import {
-  authenticateWithBiometrics,
-  disableBiometric,
-  getBiometricCredentials,
-  getBiometricType,
-  isBiometricAvailable,
-  isBiometricEnabled,
-  setBiometricEnabled,
+    authenticateWithBiometrics,
+    disableBiometric,
+    getBiometricCredentials,
+    getBiometricType,
+    isBiometricAvailable,
+    isBiometricEnabled,
+    setBiometricEnabled,
 } from '@/services/biometric';
 import { isSoundEnabled, playSound, setSoundEnabled, Sounds } from '@/services/sound';
 
 export default function PrivacyScreen() {
-  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { user, refreshUser } = useAuth();
@@ -241,21 +238,9 @@ export default function PrivacyScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Privacy & Security</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <GradientHeader title="Privacy & Security" subtitle="Manage your account security" />
 
-        <ScrollView
+      <ScrollView
           style={styles.body}
           contentContainerStyle={styles.bodyContent}
           showsVerticalScrollIndicator={false}
@@ -273,7 +258,7 @@ export default function PrivacyScreen() {
                   {/* Biometric auth */}
                   <View style={styles.settingRow}>
                     <View style={[styles.settingIcon, { backgroundColor: Brand.primary + '20' }]}>
-                      <MaterialCommunityIcons name="fingerprint" size={22} color={Brand.primary} />
+                      <MaterialCommunityIcons name="fingerprint" size={18} color={Brand.primary} />
                     </View>
                     <View style={styles.settingInfo}>
                       <Text style={styles.settingLabel}>{biometricType} Login</Text>
@@ -296,10 +281,12 @@ export default function PrivacyScreen() {
                     )}
                   </View>
 
+                  <View style={styles.rowDivider} />
+
                   {/* Sound effects */}
                   <View style={styles.settingRow}>
                     <View style={[styles.settingIcon, { backgroundColor: '#F59E0B20' }]}>
-                      <MaterialCommunityIcons name="volume-high" size={22} color="#F59E0B" />
+                      <MaterialCommunityIcons name="volume-high" size={18} color="#F59E0B" />
                     </View>
                     <View style={styles.settingInfo}>
                       <Text style={styles.settingLabel}>Sound Effects</Text>
@@ -322,7 +309,7 @@ export default function PrivacyScreen() {
                     <View style={[styles.settingIcon, { backgroundColor: Brand.primary + '20' }]}>
                       <MaterialCommunityIcons
                         name={twoFactorEnabled ? 'shield-check' : 'shield-outline'}
-                        size={22}
+                        size={18}
                         color={Brand.primary}
                       />
                     </View>
@@ -416,10 +403,10 @@ export default function PrivacyScreen() {
                     onPress={handlePrivacyPolicy}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: '#06B6D4' + '20' }]}>
-                      <MaterialCommunityIcons name="file-document-outline" size={22} color="#06B6D4" />
+                      <MaterialCommunityIcons name="file-document-outline" size={18} color="#06B6D4" />
                     </View>
                     <Text style={styles.linkLabel}>Privacy Policy</Text>
-                    <MaterialCommunityIcons name="open-in-new" size={20} color={colors.textTertiary} />
+                    <MaterialCommunityIcons name="open-in-new" size={16} color={colors.textTertiary} />
                   </Pressable>
 
                   <View style={styles.rowDivider} />
@@ -429,10 +416,10 @@ export default function PrivacyScreen() {
                     onPress={handleTerms}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: '#3B82F6' + '20' }]}>
-                      <MaterialCommunityIcons name="file-find-outline" size={22} color="#3B82F6" />
+                      <MaterialCommunityIcons name="file-find-outline" size={18} color="#3B82F6" />
                     </View>
                     <Text style={styles.linkLabel}>Terms of Service</Text>
-                    <MaterialCommunityIcons name="open-in-new" size={20} color={colors.textTertiary} />
+                    <MaterialCommunityIcons name="open-in-new" size={16} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               </View>
@@ -440,7 +427,7 @@ export default function PrivacyScreen() {
               {/* Data info card */}
               <View style={styles.infoCard}>
                 <View style={styles.infoIconWrap}>
-                  <MaterialCommunityIcons name="information-outline" size={24} color={Brand.primary} />
+                  <MaterialCommunityIcons name="information-outline" size={18} color={Brand.primary} />
                 </View>
                 <View style={styles.infoContent}>
                   <Text style={styles.infoTitle}>Your Data is Safe</Text>
@@ -460,50 +447,40 @@ export default function PrivacyScreen() {
                     onPress={handleDeleteData}
                   >
                     <View style={[styles.settingIcon, { backgroundColor: Brand.danger + '20' }]}>
-                      <MaterialCommunityIcons name="trash-can-outline" size={22} color={Brand.danger} />
+                      <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
                     </View>
                     <Text style={[styles.linkLabel, { color: Brand.danger }]}>
                       Delete Account Data
                     </Text>
-                    <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textTertiary} />
+                    <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
                   </Pressable>
                 </View>
               </View>
             </>
           )}
         </ScrollView>
-      </SafeAreaView>
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
 
   body: { flex: 1 },
-  bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
-  loadingWrap: { paddingVertical: Spacing.six, alignItems: 'center' },
+  bodyContent: { padding: 10, paddingBottom: 32 },
+  loadingWrap: { paddingVertical: 48, alignItems: 'center' },
 
   // Sections
-  section: { marginBottom: Spacing.three },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: Spacing.two },
+  section: { marginBottom: 10 },
+  sectionTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6, marginLeft: 4 },
   card: {
     backgroundColor: c.surface,
     borderRadius: 14,
     overflow: 'hidden',
-    elevation: 2,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
   },
 
@@ -511,61 +488,64 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three - 4,
-    padding: Spacing.three,
+    gap: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
   },
   settingIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  settingInfo: { flex: 1, gap: 2 },
-  settingLabel: { fontSize: 15, fontWeight: '600', color: c.text },
-  settingSublabel: { fontSize: 13, color: c.textSecondary },
-  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 60 },
+  settingInfo: { flex: 1, gap: 1 },
+  settingLabel: { fontSize: 13, fontWeight: '700', color: c.text },
+  settingSublabel: { fontSize: 11, color: c.textSecondary },
+  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 52 },
 
   // Link rows
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three - 4,
-    padding: Spacing.three,
+    gap: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
   },
-  linkLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
+  linkLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: c.text },
 
   // Info card
   infoCard: {
     flexDirection: 'row',
-    gap: Spacing.three - 4,
+    gap: 10,
     backgroundColor: c.surfaceAlt,
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 14,
-    padding: Spacing.three,
-    marginBottom: Spacing.three,
+    padding: 12,
+    marginBottom: 10,
+    marginHorizontal: 4,
   },
   infoIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 9,
     backgroundColor: c.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  infoContent: { flex: 1, gap: 4 },
-  infoTitle: { fontSize: 15, fontWeight: '700', color: c.text },
-  infoText: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
+  infoContent: { flex: 1, gap: 3 },
+  infoTitle: { fontSize: 13, fontWeight: '700', color: c.text },
+  infoText: { fontSize: 12, color: c.textSecondary, lineHeight: 18 },
 
   // Notification preferences
-  sectionSub: { fontSize: 13, color: c.textSecondary, marginBottom: Spacing.two },
-  notifTypeRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.three },
-  notifChannels: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  sectionSub: { fontSize: 12, color: c.textTertiary, marginBottom: 6, marginLeft: 4 },
+  notifTypeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, paddingHorizontal: 10 },
+  notifChannels: { flexDirection: 'row', gap: 6, marginTop: 5 },
   notifChannelChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 4,
-    backgroundColor: c.surfaceAlt, borderRadius: 12,
+    paddingHorizontal: 8, paddingVertical: 3,
+    backgroundColor: c.surfaceAlt, borderRadius: 10,
   },
-  notifChannelText: { fontSize: 12, fontWeight: '600' },
+  notifChannelText: { fontSize: 11, fontWeight: '600' },
 });
