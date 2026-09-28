@@ -649,7 +649,7 @@ export default function SellerPOSScreen() {
                   setCustomTo('');
                 }}
               >
-                <MaterialCommunityIcons name="close-circle" size={15} color={Brand.danger} />
+                <Text style={styles.rangeSegResetText}>Reset</Text>
               </Pressable>
             )}
           </View>
@@ -1554,13 +1554,14 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       paddingVertical: 7,
+      paddingHorizontal: 2,
       borderRadius: 8,
     },
     rangeSegBtnActive: {
       backgroundColor: Brand.primary,
     },
     rangeSegText: {
-      fontSize: 12,
+      fontSize: 10.5,
       fontWeight: '600',
       color: colors.textSecondary,
     },
@@ -1745,10 +1746,16 @@ const createStyles = (colors: ThemeColors) =>
     rangeSegReset: {
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 7,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
       borderRadius: 8,
       marginLeft: 2,
       backgroundColor: Brand.danger + '12',
+    },
+    rangeSegResetText: {
+      fontSize: 10.5,
+      fontWeight: '700',
+      color: Brand.danger,
     },
     histStatStrip: {
       flexDirection: 'row',
