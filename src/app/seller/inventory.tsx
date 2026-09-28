@@ -384,7 +384,8 @@ export default function SellerInventoryScreen() {
             </Pressable>
           </View>
           <Text style={styles.rowValue} numberOfLines={1}>
-            Value UGX {Math.round(item.stock_value || 0).toLocaleString()} · {item.available_quantity} avail
+            Value <Text style={styles.rowValueFigure}>UGX {Math.round(item.stock_value || 0).toLocaleString()}</Text>
+            {' '}· {item.available_quantity} avail
           </Text>
         </View>
         <View style={styles.rowActions}>
@@ -982,6 +983,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   resText: { fontSize: 10, fontWeight: '700', color: Brand.rating, textDecorationLine: 'underline' },
   rowActions: { alignItems: 'flex-end', gap: 6 },
   rowValue: { fontSize: 10.5, fontWeight: '600', color: colors.textTertiary, marginTop: 3 },
+  rowValueFigure: { fontWeight: '800', color: '#8B5CF6' },
   adjustBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Brand.primary + '14', borderWidth: 1, borderColor: Brand.primary + '44',
