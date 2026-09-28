@@ -149,6 +149,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     height: 88,
     paddingBottom: 24,
     paddingTop: 10,
+    paddingHorizontal: 8,
     shadowColor: Brand.primary,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
@@ -179,6 +180,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginRight: 8,
   },
   tabBarItem: {
+    marginHorizontal: -4,
     paddingHorizontal: 0,
   },
   tabBarLabel: {
