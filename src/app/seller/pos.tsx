@@ -7,6 +7,7 @@ import {
     Alert,
     FlatList,
     Image,
+    KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
@@ -84,7 +85,7 @@ export default function SellerPOSScreen() {
   // Inside a Modal on edge-to-edge Android, safe-area insets report 0 —
   // fall back to the real status bar height so the header isn't covered.
   const modalTopInset = Math.max(
-    insets.top,
+    insets?.top ?? 0,
     Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0
   );
 
@@ -525,7 +526,7 @@ export default function SellerPOSScreen() {
                 </View>
               </View>
               <Pressable style={styles.cartBarBtn} onPress={() => setShowCartModal(true)}>
-                <Text style={styles.cartBarBtnText}>Review &amp; Pay</Text>
+                <Text style={styles.cartBarBtnText}>Review & Pay</Text>
                 <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
@@ -625,7 +626,7 @@ export default function SellerPOSScreen() {
                   <View style={styles.historyCardFoot}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.historyDate}>
-                        {new Date(item.sale_date).toLocaleDateString()} &bull; {new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(item.sale_date).toLocaleDateString()} • {new Date(item.sale_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </Text>
                       {(item.cashier || item.register) ? (
                         <Text style={styles.historyMeta} numberOfLines={1}>
@@ -665,9 +666,10 @@ export default function SellerPOSScreen() {
         visible={showCartModal}
         animationType="slide"
         transparent={false}
+        statusBarTranslucent
         onRequestClose={() => setShowCartModal(false)}
       >
-        <View style={[styles.modalContainer, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.modalContainer, { paddingBottom: insets?.bottom ?? 0 }]}>
           <LinearGradient
             colors={[Brand.dark, Brand.accent, Brand.primary]}
             start={{ x: 0, y: 0 }}
@@ -683,7 +685,7 @@ export default function SellerPOSScreen() {
                   <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
                 </Pressable>
                 <View style={styles.modalHeaderTitleWrap}>
-                  <Text style={styles.modalHeaderTitle} numberOfLines={1}>Review &amp; Pay</Text>
+                  <Text style={styles.modalHeaderTitle} numberOfLines={1}>Review & Pay</Text>
                   <Text style={styles.modalHeaderSub} numberOfLines={1}>
                     {totalCartCount} {totalCartCount === 1 ? 'item' : 'items'} · UGX {grandTotal.toLocaleString()}
                   </Text>
@@ -695,7 +697,16 @@ export default function SellerPOSScreen() {
             </View>
           </LinearGradient>
 
-          <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          >
             {/* Customer Inputs */}
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>Customer Details</Text>
@@ -921,12 +932,13 @@ export default function SellerPOSScreen() {
                 <>
                   <MaterialCommunityIcons name="check-circle-outline" size={20} color="#FFFFFF" />
                   <Text style={styles.completeBtnText}>
-                    Complete Sale &bull; UGX {grandTotal.toLocaleString()}
+                    Complete Sale • UGX {grandTotal.toLocaleString()}
                   </Text>
                 </>
               )}
             </Pressable>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
