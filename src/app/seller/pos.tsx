@@ -57,6 +57,7 @@ export default function SellerPOSScreen() {
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [customerPhone, setCustomerPhone] = useState('');
   const [discount, setDiscount] = useState('0');
+  const [discountMode, setDiscountMode] = useState<'ugx' | 'pct'>('ugx');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mtn_momo' | 'airtel_money' | 'card'>('cash');
   const [amountTendered, setAmountTendered] = useState('');
   const [submittingSale, setSubmittingSale] = useState(false);
@@ -112,14 +113,18 @@ export default function SellerPOSScreen() {
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cart]);
 
-  const discountNum = useMemo(() => {
+  const discountAmount = useMemo(() => {
     const d = parseFloat(discount);
-    return isNaN(d) ? 0 : Math.max(0, d);
-  }, [discount]);
+    if (isNaN(d) || d <= 0 || subtotal <= 0) return 0;
+    if (discountMode === 'pct') {
+      return Math.min(subtotal, Math.round((subtotal * d) / 100));
+    }
+    return Math.min(subtotal, d);
+  }, [discount, discountMode, subtotal]);
 
   const grandTotal = useMemo(() => {
-    return Math.max(0, subtotal - discountNum);
-  }, [subtotal, discountNum]);
+    return Math.max(0, subtotal - discountAmount);
+  }, [subtotal, discountAmount]);
 
   const tenderedNum = useMemo(() => {
     const t = parseFloat(amountTendered);
@@ -211,7 +216,7 @@ export default function SellerPOSScreen() {
         customer_name: customerName.trim() || 'Walk-in Customer',
         customer_phone: customerPhone.trim() || undefined,
         payment_method: paymentMethod,
-        discount: discountNum,
+        discount: discountAmount,
         amount_paid: paymentMethod === 'cash' ? (tenderedNum || grandTotal) : grandTotal,
         items: cart.map((i) => ({
           product_id: i.id,
@@ -510,15 +515,82 @@ export default function SellerPOSScreen() {
                 <Text style={styles.summaryLabel}>Subtotal</Text>
                 <Text style={styles.summaryVal}>UGX {subtotal.toLocaleString()}</Text>
               </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Discount (UGX)</Text>
-                <TextInput
-                  style={styles.discountInput}
-                  keyboardType="numeric"
-                  value={discount}
-                  onChangeText={setDiscount}
-                />
+
+              {/* Modern Discount Module */}
+              <View style={styles.discountCard}>
+                <View style={styles.discountTop}>
+                  <View style={styles.discountTitleWrap}>
+                    <MaterialCommunityIcons name="tag-outline" size={15} color={Brand.primary} />
+                    <Text style={styles.discountTitle}>Discount</Text>
+                  </View>
+                  <View style={styles.modeToggle}>
+                    <Pressable
+                      style={[styles.modeBtn, discountMode === 'ugx' && styles.modeBtnActive]}
+                      onPress={() => setDiscountMode('ugx')}
+                    >
+                      <Text style={[styles.modeBtnText, discountMode === 'ugx' && styles.modeBtnTextActive]}>
+                        UGX
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.modeBtn, discountMode === 'pct' && styles.modeBtnActive]}
+                      onPress={() => setDiscountMode('pct')}
+                    >
+                      <Text style={[styles.modeBtnText, discountMode === 'pct' && styles.modeBtnTextActive]}>
+                        %
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <View style={styles.discountInputWrap}>
+                  <Text style={styles.discountPrefix}>{discountMode === 'ugx' ? 'UGX' : '%'}</Text>
+                  <TextInput
+                    style={styles.discountInputField}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={colors.textSecondary}
+                    value={discount}
+                    onChangeText={setDiscount}
+                  />
+                  {discountAmount > 0 && (
+                    <View style={styles.savedBadge}>
+                      <Text style={styles.savedBadgeText}>-UGX {discountAmount.toLocaleString()}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Preset Chips */}
+                <View style={styles.presetChips}>
+                  {[0, 5, 10, 15, 20].map((pct) => (
+                    <Pressable
+                      key={pct}
+                      style={[
+                        styles.presetChip,
+                        discountMode === 'pct' && discount === String(pct) && styles.presetChipActive,
+                      ]}
+                      onPress={() => {
+                        if (pct === 0) {
+                          setDiscount('0');
+                        } else {
+                          setDiscountMode('pct');
+                          setDiscount(String(pct));
+                        }
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.presetChipText,
+                          discountMode === 'pct' && discount === String(pct) && styles.presetChipTextActive,
+                        ]}
+                      >
+                        {pct === 0 ? 'None' : `${pct}%`}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
+
               <View style={[styles.summaryRow, styles.grandTotalRow]}>
                 <Text style={styles.grandTotalLabel}>Grand Total</Text>
                 <Text style={styles.grandTotalVal}>UGX {grandTotal.toLocaleString()}</Text>
@@ -1089,16 +1161,114 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '600',
       color: colors.text,
     },
-    discountInput: {
+    discountCard: {
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 10,
+      padding: 12,
+      marginVertical: 8,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    discountTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    discountTitleWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    discountTitle: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    modeToggle: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: 6,
+      padding: 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modeBtn: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    modeBtnActive: {
+      backgroundColor: Brand.primary,
+    },
+    modeBtnText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textSecondary,
+    },
+    modeBtnTextActive: {
+      color: '#FFFFFF',
+    },
+    discountInputWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      marginBottom: 8,
+    },
+    discountPrefix: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginRight: 6,
+    },
+    discountInputField: {
+      flex: 1,
+      paddingVertical: 8,
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    savedBadge: {
+      backgroundColor: '#DCFCE7',
       borderRadius: 6,
       paddingHorizontal: 8,
-      paddingVertical: 4,
-      fontSize: 13,
-      width: 90,
-      textAlign: 'right',
-      color: colors.text,
+      paddingVertical: 3,
+    },
+    savedBadgeText: {
+      fontSize: 11,
+      fontWeight: '800',
+      color: '#15803D',
+    },
+    presetChips: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    presetChip: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 6,
+      borderRadius: 6,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    presetChipActive: {
+      backgroundColor: 'rgba(5, 150, 105, 0.12)',
+      borderColor: Brand.primary,
+    },
+    presetChipText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    presetChipTextActive: {
+      color: Brand.primary,
+      fontWeight: '800',
     },
     grandTotalRow: {
       borderTopWidth: 1,
