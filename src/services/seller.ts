@@ -949,3 +949,84 @@ export async function upgradeMembership(tier: string): Promise<any> {
 export async function getPendingStatus(): Promise<PendingStatus> {
   return apiRequest<PendingStatus>({ method: 'GET', url: `${SELLER_BASE}/pending_status/` });
 }
+
+// ── POS (Point of Sale) ──────────────────────────────────────────
+
+export interface POSDashboardData {
+  today_sales_total: string;
+  today_sales_count: number;
+  month_sales_total: string;
+  today_expenses: string;
+  active_registers: number;
+  pending_purchases: number;
+  overdue_invoices: number;
+}
+
+export interface POSSaleItemPayload {
+  product_id?: number;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  discount?: number;
+}
+
+export interface POSSalePayload {
+  customer_name?: string;
+  customer_phone?: string;
+  payment_method: string;
+  amount_paid: number;
+  discount?: number;
+  tax?: number;
+  currency?: string;
+  notes?: string;
+  items: POSSaleItemPayload[];
+}
+
+export interface POSSaleRecord {
+  id: number;
+  sale_number: string;
+  customer_name: string;
+  total: string;
+  payment_method: string;
+  sale_date: string;
+  items_count: number;
+}
+
+export interface POSRegisterRecord {
+  id: number;
+  name: string;
+  location: string;
+  is_open: boolean;
+  current_float: string;
+}
+
+export interface POSCashupPayload {
+  register_id: number;
+  counted_cash: number;
+  notes?: string;
+}
+
+/** GET /pos/dashboard/ — today's POS sales summary */
+export async function getPOSDashboard(): Promise<POSDashboardData> {
+  return apiRequest<POSDashboardData>({ method: 'GET', url: '/pos/dashboard/' });
+}
+
+/** GET /pos/sales/ — list recent POS counter sales */
+export async function getPOSSales(): Promise<{ results: POSSaleRecord[] }> {
+  return apiRequest<{ results: POSSaleRecord[] }>({ method: 'GET', url: '/pos/sales/' });
+}
+
+/** POST /pos/sales/ — create a new in-store POS sale */
+export async function createPOSSale(payload: POSSalePayload): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: '/pos/sales/', data: payload });
+}
+
+/** GET /pos/registers/ — list store registers */
+export async function getPOSRegisters(): Promise<{ results: POSRegisterRecord[] }> {
+  return apiRequest<{ results: POSRegisterRecord[] }>({ method: 'GET', url: '/pos/registers/' });
+}
+
+/** POST /pos/cashup/ — submit register end-of-day cash reconciliation */
+export async function submitPOSCashup(payload: POSCashupPayload): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: '/pos/cashup/', data: payload });
+}

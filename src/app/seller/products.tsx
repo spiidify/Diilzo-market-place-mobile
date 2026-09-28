@@ -20,7 +20,7 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
-import { deleteProduct, getMyProducts } from '@/services/seller';
+import { deleteProduct, getMyProducts, updateStock } from '@/services/seller';
 import type { Brand as BrandType, Category } from '@/types';
 
 type SortOption = 'newest' | 'price_low' | 'price_high' | 'name' | 'stock_low';
@@ -74,6 +74,37 @@ export default function SellerProductsScreen() {
   const [brands, setBrands] = useState<BrandType[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
+
+  // Quick stock modal
+  const [stockModalItem, setStockModalItem] = useState<any | null>(null);
+  const [quickStockVal, setQuickStockVal] = useState('');
+  const [updatingStock, setUpdatingStock] = useState(false);
+
+  const openQuickStock = (item: any) => {
+    setStockModalItem(item);
+    setQuickStockVal(String(item.stock_quantity ?? 0));
+  };
+
+  const handleSaveQuickStock = async () => {
+    if (!stockModalItem) return;
+    const newQty = parseInt(quickStockVal, 10);
+    if (isNaN(newQty) || newQty < 0) {
+      Alert.alert('Invalid Stock', 'Please enter a valid stock quantity.');
+      return;
+    }
+    try {
+      setUpdatingStock(true);
+      await updateStock(stockModalItem.id, newQty);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === stockModalItem.id ? { ...p, stock_quantity: newQty } : p))
+      );
+      setStockModalItem(null);
+    } catch (err: any) {
+      Alert.alert('Update Error', err?.message || 'Failed to update stock');
+    } finally {
+      setUpdatingStock(false);
+    }
+  };
 
   const loadMeta = useCallback(async () => {
     try {
@@ -219,6 +250,10 @@ export default function SellerProductsScreen() {
         </View>
       </Pressable>
       <View style={styles.cardActions}>
+        <Pressable style={styles.actionBtn} onPress={() => openQuickStock(item)}>
+          <MaterialCommunityIcons name="cube-send" size={18} color="#10B981" />
+          <Text style={[styles.actionBtnText, { color: '#10B981' }]}>Stock</Text>
+        </Pressable>
         <Pressable style={styles.actionBtn} onPress={() => handleToggleActive(item)}>
           <MaterialCommunityIcons
             name={item.is_active ? 'eye-off-outline' : 'eye-outline'}
@@ -268,7 +303,7 @@ export default function SellerProductsScreen() {
             style={styles.searchInput}
             value={searchInput}
             onChangeText={setSearchInput}
-            placeholder="Search products..."
+            placeholder="Search name, SKU, or barcode..."
             placeholderTextColor={colors.textTertiary}
             returnKeyType="search"
             onSubmitEditing={handleSearchSubmit}
@@ -552,6 +587,54 @@ export default function SellerProductsScreen() {
                 </Pressable>
               ))}
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Quick Stock Modal ─────────────────────────────────── */}
+      <Modal visible={!!stockModalItem} transparent animationType="fade" onRequestClose={() => setStockModalItem(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.pickerSheet, { maxHeight: 320, padding: 20 }]}>
+            <View style={styles.filterHeader}>
+              <Text style={styles.filterTitle}>Quick Stock Adjustment</Text>
+              <Pressable onPress={() => setStockModalItem(null)} hitSlop={12}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 16 }} numberOfLines={1}>
+              {stockModalItem?.name}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+              <Pressable
+                style={{ width: 44, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt }}
+                onPress={() => setQuickStockVal(String(Math.max(0, (parseInt(quickStockVal, 10) || 0) - 1)))}
+              >
+                <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>-</Text>
+              </Pressable>
+              <TextInput
+                style={{ width: 100, height: 48, borderWidth: 1.5, borderColor: Brand.primary, borderRadius: 10, textAlign: 'center', fontSize: 18, fontWeight: '800', color: colors.text }}
+                keyboardType="numeric"
+                value={quickStockVal}
+                onChangeText={setQuickStockVal}
+              />
+              <Pressable
+                style={{ width: 44, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt }}
+                onPress={() => setQuickStockVal(String((parseInt(quickStockVal, 10) || 0) + 1))}
+              >
+                <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>+</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              style={{ backgroundColor: Brand.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center', opacity: updatingStock ? 0.6 : 1 }}
+              onPress={handleSaveQuickStock}
+              disabled={updatingStock}
+            >
+              {updatingStock ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14 }}>Update Stock</Text>
+              )}
+            </Pressable>
           </View>
         </View>
       </Modal>
