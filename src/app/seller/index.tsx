@@ -413,7 +413,7 @@ function DashboardHero({ store, stats }: { store?: any; stats?: any }) {
             {store?.logo_url ? (
               <Image source={{ uri: store.logo_url }} style={styles.heroLogo} resizeMode="contain" />
             ) : (
-              <MaterialCommunityIcons name="store" size={24} color="#FFFFFF" />
+              <MaterialCommunityIcons name="store" size={24} color={Brand.primary} />
             )}
           </View>
           <View style={styles.heroStoreInfo}>
@@ -445,25 +445,25 @@ function DashboardHero({ store, stats }: { store?: any; stats?: any }) {
           <View style={styles.heroMeta}>
             {location ? (
               <View style={styles.heroMetaItem}>
-                <MaterialCommunityIcons name="map-marker-outline" size={12} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.textTertiary} />
                 <Text style={styles.heroMetaText} numberOfLines={1}>{location}</Text>
               </View>
             ) : null}
             {rating ? (
               <View style={styles.heroMetaItem}>
-                <MaterialCommunityIcons name="star" size={12} color="#FBBF24" />
+                <MaterialCommunityIcons name="star" size={12} color={Brand.rating} />
                 <Text style={styles.heroMetaText}>{rating} ({stats?.review_count || 0})</Text>
               </View>
             ) : null}
             {followers > 0 ? (
               <View style={styles.heroMetaItem}>
-                <MaterialCommunityIcons name="account-group-outline" size={12} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="account-group-outline" size={12} color={colors.textTertiary} />
                 <Text style={styles.heroMetaText}>{followers}</Text>
               </View>
             ) : null}
             {products > 0 ? (
               <View style={styles.heroMetaItem}>
-                <MaterialCommunityIcons name="package-variant-closed" size={12} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="package-variant-closed" size={12} color={colors.textTertiary} />
                 <Text style={styles.heroMetaText}>{products} products</Text>
               </View>
             ) : null}
@@ -524,7 +524,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   heroStoreBtnText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
 
   storePanel: {
-    backgroundColor: '#B45309',
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 10,
     gap: 8,
@@ -532,23 +532,23 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   heroStoreRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   heroLogoWrap: {
     width: 44, height: 44, borderRadius: 12, overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Brand.primary + '14', justifyContent: 'center', alignItems: 'center',
   },
   heroLogo: { width: '100%', height: '100%', backgroundColor: '#FFFFFF' },
   heroStoreInfo: { flex: 1, gap: 3 },
-  heroStoreName: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
+  heroStoreName: { fontSize: 17, fontWeight: '800', color: c.text },
   heroStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroStatusDot: { width: 7, height: 7, borderRadius: 4 },
-  heroStatusText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+  heroStatusText: { fontSize: 11, color: c.textSecondary, fontWeight: '600' },
   heroChip: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
+    backgroundColor: '#F59E0B', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4,
   },
   heroChipText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
 
   heroMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   heroMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  heroMetaText: { fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
+  heroMetaText: { fontSize: 11, color: c.textSecondary, fontWeight: '500' },
 
   moneyRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
   moneyTile: {
