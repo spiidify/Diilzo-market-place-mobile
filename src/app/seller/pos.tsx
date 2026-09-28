@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -657,13 +658,32 @@ export default function SellerPOSScreen() {
         onRequestClose={() => setShowCartModal(false)}
       >
         <SafeAreaView style={styles.modalContainer} edges={['bottom']}>
-          <GradientHeader
-            title="Review &amp; Pay"
-            subtitle={`${totalCartCount} ${totalCartCount === 1 ? 'item' : 'items'} · UGX ${grandTotal.toLocaleString()}`}
-            onBack={() => setShowCartModal(false)}
-            rightIcon="cart-remove"
-            onRightPress={clearCart}
-          />
+          <LinearGradient
+            colors={[Brand.dark, Brand.accent, Brand.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <SafeAreaView edges={['top']}>
+              <View style={styles.modalHeaderBar}>
+                <Pressable
+                  onPress={() => setShowCartModal(false)}
+                  hitSlop={12}
+                  style={styles.modalHeaderBtn}
+                >
+                  <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
+                </Pressable>
+                <View style={styles.modalHeaderTitleWrap}>
+                  <Text style={styles.modalHeaderTitle} numberOfLines={1}>Review &amp; Pay</Text>
+                  <Text style={styles.modalHeaderSub} numberOfLines={1}>
+                    {totalCartCount} {totalCartCount === 1 ? 'item' : 'items'} · UGX {grandTotal.toLocaleString()}
+                  </Text>
+                </View>
+                <Pressable onPress={clearCart} hitSlop={12} style={styles.modalHeaderBtn}>
+                  <MaterialCommunityIcons name="cart-remove" size={22} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            </SafeAreaView>
+          </LinearGradient>
 
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
             {/* Customer Inputs */}
@@ -1326,6 +1346,37 @@ const createStyles = (colors: ThemeColors) =>
     modalContainer: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    modalHeaderBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+    },
+    modalHeaderBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalHeaderTitleWrap: {
+      flex: 1,
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
+    modalHeaderTitle: {
+      fontSize: 17,
+      fontWeight: '800',
+      color: '#FFFFFF',
+      letterSpacing: -0.3,
+    },
+    modalHeaderSub: {
+      fontSize: 11,
+      color: 'rgba(255,255,255,0.85)',
+      marginTop: 1,
+      fontWeight: '500',
     },
     modalScroll: {
       flex: 1,
