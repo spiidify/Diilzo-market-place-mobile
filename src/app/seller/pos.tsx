@@ -1001,7 +1001,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     registerContainer: {
       flex: 1,
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       paddingTop: 8,
     },
     searchBar: {
@@ -1024,13 +1024,13 @@ const createStyles = (colors: ThemeColors) =>
     },
     columnWrapper: {
       justifyContent: 'space-between',
-      marginBottom: 8,
+      marginBottom: 6,
     },
     productsList: {
       paddingBottom: 80,
     },
     productCard: {
-      width: '31.8%',
+      width: '32.4%',
       backgroundColor: colors.surface,
       borderRadius: 8,
       padding: 7,
