@@ -1079,8 +1079,8 @@ export default function SellerPOSScreen() {
                     keyboardType="numeric"
                     placeholder="0"
                     placeholderTextColor={colors.textSecondary}
-                    value={discount}
-                    onChangeText={setDiscount}
+                    value={discountMode === 'ugx' ? withCommas(discount) : discount}
+                    onChangeText={(t) => setDiscount(t.replace(/\D/g, '').slice(0, 12) || '0')}
                   />
                   {discountAmount > 0 && (
                     <View style={styles.savedBadge}>

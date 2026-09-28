@@ -349,6 +349,7 @@ export default function SuppliersScreen() {
       ) : (
         <FlatList
           ref={listRef}
+          key="suppliers-grid-3"
           data={stores}
           keyExtractor={(item) => `${item.id}-${item.slug}`}
           renderItem={renderStore}
