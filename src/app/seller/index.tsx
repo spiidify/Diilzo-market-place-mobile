@@ -406,7 +406,8 @@ function DashboardHero({ store, stats }: { store?: any; stats?: any }) {
           ) : null}
         </View>
 
-        {/* Store details on gradient */}
+        {/* Store details — amber panel that reads "selling" */}
+        <View style={styles.storePanel}>
         <View style={styles.heroStoreRow}>
           <View style={styles.heroLogoWrap}>
             {store?.logo_url ? (
@@ -468,6 +469,7 @@ function DashboardHero({ store, stats }: { store?: any; stats?: any }) {
             ) : null}
           </View>
         ) : null}
+        </View>
 
         {/* Compact money strip — the stats that actually matter */}
         {stats ? (
@@ -521,6 +523,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   heroStoreBtnText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
 
+  storePanel: {
+    backgroundColor: '#B45309',
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
   heroStoreRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   heroLogoWrap: {
     width: 44, height: 44, borderRadius: 12, overflow: 'hidden',
