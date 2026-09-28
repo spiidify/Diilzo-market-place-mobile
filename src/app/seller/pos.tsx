@@ -2,18 +2,18 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,14 +21,14 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  createPOSSale,
-  getMyProducts,
-  getPOSDashboard,
-  getPOSSales,
-  type POSDashboardData,
-  type POSSalePayload,
-  type POSSaleRecord,
-  type POSSalesSummary,
+    createPOSSale,
+    getMyProducts,
+    getPOSDashboard,
+    getPOSSales,
+    type POSDashboardData,
+    type POSSalePayload,
+    type POSSaleRecord,
+    type POSSalesSummary,
 } from '@/services/seller';
 
 type HistoryRange = 'all' | 'today' | '7d' | '30d';
@@ -628,7 +628,12 @@ export default function SellerPOSScreen() {
       )}
 
       {/* Cart & Checkout Modal Sheet */}
-      <Modal visible={showCartModal} animationType="slide" transparent={false}>
+      <Modal
+        visible={showCartModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowCartModal(false)}
+      >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Pressable onPress={() => setShowCartModal(false)} style={styles.modalCloseBtn}>
@@ -876,7 +881,12 @@ export default function SellerPOSScreen() {
       </Modal>
 
       {/* Printable / View Receipt Modal */}
-      <Modal visible={showReceiptModal} animationType="fade" transparent={true}>
+      <Modal
+        visible={showReceiptModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowReceiptModal(false)}
+      >
         <View style={styles.receiptOverlay}>
           <View style={styles.receiptContent}>
             <MaterialCommunityIcons name="check-circle" size={48} color={Brand.primary} />

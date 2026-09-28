@@ -6,26 +6,26 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  City,
-  Country,
-  Region,
-  fetchCitiesByCountry,
-  fetchCitiesByRegion,
-  fetchCountries,
-  fetchRegions,
+    City,
+    Country,
+    Region,
+    fetchCitiesByCountry,
+    fetchCitiesByRegion,
+    fetchCountries,
+    fetchRegions,
 } from '@/services/locations';
 
 interface LocationValue {
@@ -218,7 +218,7 @@ export function LocationPicker({ value, onChange, label = 'Location' }: Location
     const data: any[] = modalLevel === 'country' ? filteredCountries : modalLevel === 'region' ? filteredRegions : filteredCities;
 
     return (
-      <Modal visible={!!modalLevel} animationType="slide" transparent>
+      <Modal visible={!!modalLevel} animationType="slide" transparent onRequestClose={() => setModalLevel(null)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>

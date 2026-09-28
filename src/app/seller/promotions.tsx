@@ -2,29 +2,29 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  activatePromotion,
-  fetchMyPromotions,
-  fetchPromotionAnalytics,
-  fetchPromotionPackages,
-  pausePromotion,
-  purchasePromotion,
-  resumePromotion,
+    activatePromotion,
+    fetchMyPromotions,
+    fetchPromotionAnalytics,
+    fetchPromotionPackages,
+    pausePromotion,
+    purchasePromotion,
+    resumePromotion,
 } from '@/services/promotions';
 import type { ProductPromotion, PromotionAnalytics, PromotionPackage } from '@/types';
 
@@ -357,7 +357,7 @@ export default function SellerPromotionsScreen() {
       )}
 
       {/* Purchase Modal */}
-      <Modal visible={showPurchaseModal} animationType="slide" transparent>
+      <Modal visible={showPurchaseModal} animationType="slide" transparent onRequestClose={() => setShowPurchaseModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>

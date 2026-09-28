@@ -877,7 +877,7 @@ export default function SearchScreen() {
 
   // ── Country picker modal for seller location filter ──────────────
   const countryModal = showCountryModal ? (
-    <Modal visible animationType="slide" transparent>
+    <Modal visible animationType="slide" transparent onRequestClose={() => setShowCountryModal(false)}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>

@@ -1496,7 +1496,7 @@ export default function ProductDetailScreen() {
       )}
 
       {/* ── Fullscreen image gallery ──────────────────────────────── */}
-      <Modal visible={showFullscreenGallery} transparent animationType="fade">
+      <Modal visible={showFullscreenGallery} transparent animationType="fade" onRequestClose={() => setShowFullscreenGallery(false)}>
         <View style={styles.fsOverlay}>
           {/* Header */}
           <View style={styles.fsHeader}>
@@ -1563,7 +1563,7 @@ export default function ProductDetailScreen() {
       </Modal>
 
       {/* ── Themed auth prompt modal ──────────────────────────────── */}
-      <Modal visible={showAuthPrompt} transparent animationType="fade">
+      <Modal visible={showAuthPrompt} transparent animationType="fade" onRequestClose={() => setShowAuthPrompt(false)}>
         <View style={styles.authOverlay}>
           <View style={styles.authCard}>
             {/* Gradient header */}
@@ -1623,7 +1623,7 @@ export default function ProductDetailScreen() {
       </Modal>
 
       {/* ── Call Now themed modal ─────────────────────────────────── */}
-      <Modal visible={showCallModal} transparent animationType="fade">
+      <Modal visible={showCallModal} transparent animationType="fade" onRequestClose={() => setShowCallModal(false)}>
         <Pressable style={styles.callOverlay} onPress={() => setShowCallModal(false)}>
           <Pressable style={styles.callCard} onPress={(e) => e.stopPropagation()}>
             {/* Gradient header with avatar */}
