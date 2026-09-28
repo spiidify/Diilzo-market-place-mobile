@@ -700,7 +700,7 @@ export default function SellerPOSScreen() {
                   )}
                 </View>
                 <Pressable onPress={clearCart} hitSlop={12} style={styles.modalHeaderBtn}>
-                  <MaterialCommunityIcons name="cart-remove" size={22} color="#FFFFFF" />
+                  <MaterialCommunityIcons name="trash-can-outline" size={22} color="#FFFFFF" />
                 </Pressable>
               </View>
             </View>
