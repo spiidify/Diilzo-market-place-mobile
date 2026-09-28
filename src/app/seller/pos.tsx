@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ModernHeader } from '@/components/ModernHeader';
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
@@ -335,12 +335,16 @@ export default function SellerPOSScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ModernHeader
-        title="Point of Sale (POS)"
+    <View style={styles.container}>
+      <GradientHeader
+        title="Point of Sale"
         subtitle="Counter checkout & in-store inventory"
-        showBack
         onBack={() => router.back()}
+        rightIcon="cart-outline"
+        rightBadge={totalCartCount}
+        onRightPress={() => {
+          if (cart.length > 0) setShowCartModal(true);
+        }}
       />
 
       {/* Tabs */}
@@ -375,17 +379,18 @@ export default function SellerPOSScreen() {
 
       {/* Stats Summary Strip */}
       <View style={styles.statsStrip}>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>Today's POS Sales</Text>
-          <Text style={styles.statValue}>
+        <MaterialCommunityIcons name="cash-multiple" size={15} color={Brand.primary} />
+        <Text style={styles.statsText}>
+          Today{'  '}
+          <Text style={styles.statsValue}>
             UGX {Number(stats?.today_sales_total || 0).toLocaleString()}
           </Text>
-        </View>
+        </Text>
         <View style={styles.statDivider} />
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>Transactions</Text>
-          <Text style={styles.statValue}>{stats?.today_sales_count || 0}</Text>
-        </View>
+        <MaterialCommunityIcons name="receipt-text-outline" size={15} color={colors.textSecondary} />
+        <Text style={styles.statsText}>
+          <Text style={styles.statsValue}>{stats?.today_sales_count || 0}</Text> sales
+        </Text>
       </View>
 
       {/* Main Content Area */}
@@ -418,7 +423,7 @@ export default function SellerPOSScreen() {
             <FlatList
               data={products}
               keyExtractor={(item) => String(item.id)}
-              numColumns={2}
+              numColumns={3}
               columnWrapperStyle={styles.columnWrapper}
               contentContainerStyle={styles.productsList}
               renderItem={({ item }) => {
@@ -433,7 +438,7 @@ export default function SellerPOSScreen() {
                         <Image source={{ uri: item.primary_image_url }} style={styles.productImg} />
                       ) : (
                         <View style={styles.noImgBox}>
-                          <MaterialCommunityIcons name="package-variant" size={32} color="#D1D5DB" />
+                          <MaterialCommunityIcons name="package-variant" size={26} color="#D1D5DB" />
                         </View>
                       )}
                       <View
@@ -502,7 +507,7 @@ export default function SellerPOSScreen() {
         /* History Tab */
         <View style={{ flex: 1 }}>
           {/* Search */}
-          <View style={[styles.searchBar, { marginHorizontal: 16 }]}>
+          <View style={[styles.searchBar, { marginHorizontal: 12 }]}>
             <MaterialCommunityIcons name="magnify" size={20} color={Brand.primary} />
             <TextInput
               style={styles.searchInput}
@@ -925,7 +930,7 @@ export default function SellerPOSScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -938,9 +943,9 @@ const createStyles = (colors: ThemeColors) =>
     tabBar: {
       flexDirection: 'row',
       backgroundColor: colors.surface,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      gap: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      gap: 8,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
@@ -949,7 +954,7 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 10,
+      paddingVertical: 8,
       borderRadius: 8,
       backgroundColor: colors.surfaceAlt,
       gap: 6,
@@ -968,68 +973,67 @@ const createStyles = (colors: ThemeColors) =>
     statsStrip: {
       flexDirection: 'row',
       backgroundColor: colors.surface,
-      paddingVertical: 16,
-      paddingHorizontal: 16,
-      marginHorizontal: 16,
-      marginTop: 12,
-      borderRadius: 12,
+      paddingVertical: 7,
+      paddingHorizontal: 12,
+      marginHorizontal: 12,
+      marginTop: 8,
+      borderRadius: 8,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
     },
-    statBox: {
-      flex: 1,
-      alignItems: 'center',
-    },
-    statLabel: {
-      fontSize: 11,
+    statsText: {
+      fontSize: 12,
       color: colors.textSecondary,
-      marginBottom: 2,
+      fontWeight: '500',
     },
-    statValue: {
-      fontSize: 15,
+    statsValue: {
+      fontSize: 12.5,
       fontWeight: '800',
       color: colors.text,
     },
     statDivider: {
       width: 1,
-      height: 28,
+      height: 14,
       backgroundColor: colors.border,
     },
     registerContainer: {
       flex: 1,
-      paddingHorizontal: 16,
-      paddingTop: 12,
+      paddingHorizontal: 10,
+      paddingTop: 8,
     },
     searchBar: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.surface,
       borderRadius: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 12,
+      marginBottom: 8,
       gap: 8,
     },
     searchInput: {
       flex: 1,
-      fontSize: 14,
+      fontSize: 13.5,
       color: colors.text,
+      paddingVertical: 0,
     },
     columnWrapper: {
       justifyContent: 'space-between',
-      marginBottom: 12,
+      marginBottom: 8,
     },
     productsList: {
       paddingBottom: 80,
     },
     productCard: {
-      width: '48.5%',
+      width: '31.8%',
       backgroundColor: colors.surface,
-      borderRadius: 10,
-      padding: 12,
+      borderRadius: 8,
+      padding: 7,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1040,10 +1044,10 @@ const createStyles = (colors: ThemeColors) =>
       position: 'relative',
       width: '100%',
       aspectRatio: 1,
-      borderRadius: 8,
+      borderRadius: 6,
       overflow: 'hidden',
       backgroundColor: colors.surfaceAlt,
-      marginBottom: 8,
+      marginBottom: 6,
     },
     productImg: {
       width: '100%',
@@ -1057,10 +1061,10 @@ const createStyles = (colors: ThemeColors) =>
     },
     stockBadge: {
       position: 'absolute',
-      bottom: 4,
-      left: 4,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
+      bottom: 3,
+      left: 3,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
       borderRadius: 4,
     },
     stockBadgeIn: {
@@ -1070,19 +1074,19 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: Brand.danger,
     },
     stockBadgeText: {
-      fontSize: 9.5,
+      fontSize: 8.5,
       fontWeight: '700',
       color: '#FFFFFF',
     },
     productName: {
-      fontSize: 12.5,
+      fontSize: 11,
       fontWeight: '600',
       color: colors.text,
-      lineHeight: 16,
-      marginBottom: 4,
+      lineHeight: 14,
+      marginBottom: 3,
     },
     productPrice: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: '800',
       color: Brand.primary,
     },
@@ -1114,9 +1118,9 @@ const createStyles = (colors: ThemeColors) =>
     },
     cartBar: {
       position: 'absolute',
-      bottom: 16,
-      left: 16,
-      right: 16,
+      bottom: 12,
+      left: 12,
+      right: 12,
       backgroundColor: '#1E293B',
       borderRadius: 14,
       flexDirection: 'row',
@@ -1173,16 +1177,16 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 13,
     },
     historyList: {
-      padding: 16,
-      paddingTop: 4,
+      padding: 12,
+      paddingTop: 2,
       paddingBottom: 40,
     },
     filterPillRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 6,
-      paddingHorizontal: 16,
-      marginTop: 10,
+      paddingHorizontal: 12,
+      marginTop: 8,
       marginBottom: 2,
     },
     filterPill: {
@@ -1206,11 +1210,11 @@ const createStyles = (colors: ThemeColors) =>
       color: '#FFFFFF',
     },
     historySummary: {
-      marginHorizontal: 16,
-      marginTop: 8,
+      marginHorizontal: 12,
+      marginTop: 6,
       marginBottom: 4,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
       backgroundColor: colors.surface,
       borderRadius: 8,
       borderWidth: 1,
@@ -1233,10 +1237,10 @@ const createStyles = (colors: ThemeColors) =>
     historyCard: {
       backgroundColor: colors.surface,
       borderRadius: 10,
-      padding: 16,
+      padding: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 12,
+      marginBottom: 10,
     },
     historyCardHead: {
       flexDirection: 'row',
