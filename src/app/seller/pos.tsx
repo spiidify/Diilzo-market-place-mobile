@@ -656,16 +656,14 @@ export default function SellerPOSScreen() {
         transparent={false}
         onRequestClose={() => setShowCartModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setShowCartModal(false)} style={styles.modalCloseBtn}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-            </Pressable>
-            <Text style={styles.modalTitle}>Checkout Order</Text>
-            <Pressable onPress={clearCart}>
-              <Text style={styles.clearCartText}>Clear</Text>
-            </Pressable>
-          </View>
+        <SafeAreaView style={styles.modalContainer} edges={['bottom']}>
+          <GradientHeader
+            title="Review &amp; Pay"
+            subtitle={`${totalCartCount} ${totalCartCount === 1 ? 'item' : 'items'} · UGX ${grandTotal.toLocaleString()}`}
+            onBack={() => setShowCartModal(false)}
+            rightIcon="cart-remove"
+            onRightPress={clearCart}
+          />
 
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent}>
             {/* Customer Inputs */}
@@ -1328,28 +1326,6 @@ const createStyles = (colors: ThemeColors) =>
     modalContainer: {
       flex: 1,
       backgroundColor: colors.background,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    modalCloseBtn: {
-      padding: 4,
-    },
-    modalTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    clearCartText: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: Brand.danger,
     },
     modalScroll: {
       flex: 1,
