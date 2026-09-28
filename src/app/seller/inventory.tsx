@@ -464,7 +464,7 @@ export default function SellerInventoryScreen() {
                 <Text style={styles.kpiLabel}>Units</Text>
               </View>
               <View style={styles.kpi}>
-                <Text style={[styles.kpiNum, { color: Brand.primary }]}>UGX {Math.round(kpis.value).toLocaleString()}</Text>
+                <Text style={[styles.kpiNum, { color: '#8B5CF6' }]}>UGX {Math.round(kpis.value).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>Value</Text>
               </View>
             </View>
