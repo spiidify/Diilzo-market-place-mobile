@@ -68,18 +68,19 @@ function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Mask digits into YYYY-MM-DD as the user types. */
-function maskDateInput(text: string): string {
-  const d = text.replace(/\D/g, '').slice(0, 8);
-  if (d.length <= 4) return d;
-  if (d.length <= 6) return `${d.slice(0, 4)}-${d.slice(4)}`;
-  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
-}
+const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-function isValidIsoDate(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(s + 'T00:00:00Z');
-  return !isNaN(d.getTime()) && isoDate(d) === s;
+/** Build 42 calendar cells (ISO strings or null) for a month grid starting Monday. */
+function buildCalendarCells(year: number, month: number): (string | null)[] {
+  const first = new Date(Date.UTC(year, month, 1));
+  const offset = (first.getUTCDay() + 6) % 7; // Monday-first offset
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells: (string | null)[] = Array(offset).fill(null);
+  for (let d = 1; d <= days; d++) {
+    cells.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
 }
 
 interface CartItem {
@@ -163,6 +164,12 @@ export default function SellerPOSScreen() {
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  const [draftFrom, setDraftFrom] = useState('');
+  const [draftTo, setDraftTo] = useState('');
+  const [calCursor, setCalCursor] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
   const historySearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onHistorySearchChange = useCallback((text: string) => {
@@ -612,6 +619,8 @@ export default function SellerPOSScreen() {
                 style={[styles.rangeSegBtn, historyRange === r.key && styles.rangeSegBtnActive]}
                 onPress={() => {
                   if (r.key === 'custom') {
+                    setDraftFrom(customFrom);
+                    setDraftTo(customTo);
                     setShowRangeModal(true);
                     if (!customFrom || !customTo) return; // don't activate until dates are applied
                   }
@@ -763,52 +772,103 @@ export default function SellerPOSScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.rangeFields}>
-              <View style={{ flex: 1 }}>
+            {/* Selected range summary */}
+            <View style={styles.rangeSummary}>
+              <View style={styles.rangeSummaryCell}>
                 <Text style={styles.rangeFieldLabel}>From</Text>
-                <View style={styles.rangeInputWrap}>
-                  <MaterialCommunityIcons name="calendar-start" size={16} color={Brand.primary} />
-                  <TextInput
-                    style={styles.rangeInput}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textTertiary}
-                    value={customFrom}
-                    onChangeText={(t) => setCustomFrom(maskDateInput(t))}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                  />
-                </View>
+                <Text style={styles.rangeSummaryVal}>{draftFrom || '—'}</Text>
               </View>
-              <View style={{ flex: 1 }}>
+              <MaterialCommunityIcons name="arrow-right" size={16} color={colors.textTertiary} />
+              <View style={styles.rangeSummaryCell}>
                 <Text style={styles.rangeFieldLabel}>To</Text>
-                <View style={styles.rangeInputWrap}>
-                  <MaterialCommunityIcons name="calendar-end" size={16} color={Brand.primary} />
-                  <TextInput
-                    style={styles.rangeInput}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.textTertiary}
-                    value={customTo}
-                    onChangeText={(t) => setCustomTo(maskDateInput(t))}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                  />
-                </View>
+                <Text style={styles.rangeSummaryVal}>{draftTo || '—'}</Text>
               </View>
             </View>
 
+            {/* Calendar */}
+            <View style={styles.calHead}>
+              <Pressable
+                style={styles.calNav}
+                hitSlop={8}
+                onPress={() => setCalCursor((c) => {
+                  const m = c.month - 1;
+                  return m < 0 ? { year: c.year - 1, month: 11 } : { year: c.year, month: m };
+                })}
+              >
+                <MaterialCommunityIcons name="chevron-left" size={22} color={colors.text} />
+              </Pressable>
+              <Text style={styles.calTitle}>
+                {new Date(calCursor.year, calCursor.month, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+              </Text>
+              <Pressable
+                style={styles.calNav}
+                hitSlop={8}
+                onPress={() => setCalCursor((c) => {
+                  const m = c.month + 1;
+                  return m > 11 ? { year: c.year + 1, month: 0 } : { year: c.year, month: m };
+                })}
+              >
+                <MaterialCommunityIcons name="chevron-right" size={22} color={colors.text} />
+              </Pressable>
+            </View>
+
+            <View style={styles.calWeekRow}>
+              {WEEKDAYS.map((w, i) => (
+                <Text key={i} style={styles.calWeekDay}>{w}</Text>
+              ))}
+            </View>
+            <View style={styles.calGrid}>
+              {buildCalendarCells(calCursor.year, calCursor.month).map((iso, i) => {
+                if (!iso) return <View key={i} style={styles.calCell} />;
+                const isStart = iso === draftFrom;
+                const isEnd = iso === draftTo;
+                const inRange = draftFrom && draftTo && iso > draftFrom && iso < draftTo;
+                return (
+                  <Pressable
+                    key={iso}
+                    style={[
+                      styles.calCell,
+                      inRange && styles.calCellInRange,
+                      (isStart || isEnd) && styles.calCellEdge,
+                    ]}
+                    onPress={() => {
+                      if (!draftFrom || (draftFrom && draftTo)) {
+                        setDraftFrom(iso);
+                        setDraftTo('');
+                      } else if (iso < draftFrom) {
+                        setDraftTo(draftFrom);
+                        setDraftFrom(iso);
+                      } else {
+                        setDraftTo(iso);
+                      }
+                    }}
+                  >
+                    <Text style={[
+                      styles.calCellText,
+                      inRange && { color: Brand.primary },
+                      (isStart || isEnd) && styles.calCellTextEdge,
+                    ]}>
+                      {parseInt(iso.slice(8), 10)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <Pressable
-              style={[
-                styles.rangeApplyBtn,
-                (!isValidIsoDate(customFrom) || !isValidIsoDate(customTo) || customFrom > customTo) && { opacity: 0.45 },
-              ]}
-              disabled={!isValidIsoDate(customFrom) || !isValidIsoDate(customTo) || customFrom > customTo}
+              style={[styles.rangeApplyBtn, !(draftFrom && draftTo) && { opacity: 0.45 }]}
+              disabled={!(draftFrom && draftTo)}
               onPress={() => {
+                setCustomFrom(draftFrom);
+                setCustomTo(draftTo);
                 setHistoryRange('custom');
                 setShowRangeModal(false);
               }}
             >
               <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
-              <Text style={styles.rangeApplyText}>Apply Range</Text>
+              <Text style={styles.rangeApplyText}>
+                {draftFrom && draftTo ? `Apply ${draftFrom.slice(5)} → ${draftTo.slice(5)}` : 'Tap two dates'}
+              </Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -1483,36 +1543,87 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '800',
       color: colors.text,
     },
-    rangeFields: {
+    rangeSummary: {
       flexDirection: 'row',
-      gap: 10,
-      marginBottom: 16,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 12,
+    },
+    rangeSummaryCell: { alignItems: 'flex-start' },
+    rangeSummaryVal: {
+      fontSize: 13.5,
+      fontWeight: '800',
+      color: colors.text,
+      fontVariant: ['tabular-nums'],
     },
     rangeFieldLabel: {
       fontSize: 10.5,
       fontWeight: '700',
       color: colors.textTertiary,
       textTransform: 'uppercase',
-      marginBottom: 6,
+      marginBottom: 3,
       letterSpacing: 0.4,
     },
-    rangeInputWrap: {
+    calHead: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
-      backgroundColor: colors.surfaceAlt,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
-      paddingHorizontal: 10,
-      height: 44,
+      justifyContent: 'space-between',
+      marginBottom: 6,
     },
-    rangeInput: {
+    calNav: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      backgroundColor: colors.surfaceAlt,
+    },
+    calTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    calWeekRow: {
+      flexDirection: 'row',
+      marginBottom: 2,
+    },
+    calWeekDay: {
       flex: 1,
-      fontSize: 13,
+      textAlign: 'center',
+      fontSize: 10,
+      fontWeight: '800',
+      color: colors.textTertiary,
+    },
+    calGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 12,
+    },
+    calCell: {
+      width: '14.2857%',
+      aspectRatio: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    calCellInRange: {
+      backgroundColor: Brand.primary + '1A',
+    },
+    calCellEdge: {
+      backgroundColor: Brand.primary,
+      borderRadius: 20,
+    },
+    calCellText: {
+      fontSize: 12.5,
       fontWeight: '600',
       color: colors.text,
-      padding: 0,
+    },
+    calCellTextEdge: {
+      color: '#FFFFFF',
+      fontWeight: '800',
     },
     rangeApplyBtn: {
       flexDirection: 'row',
