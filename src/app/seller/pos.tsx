@@ -92,8 +92,11 @@ function buildCalendarCells(year: number, month: number): (string | null)[] {
 interface CartItem {
   id: number;
   name: string;
-  price: number;
+  basePrice: number;   // catalog price — discount/markup derived from edits
+  price: number;       // effective unit price (editable)
+  priceText: string;   // raw digits backing the editable price field
   stock: number;
+  image?: string;
   quantity: number;
 }
 
@@ -269,7 +272,26 @@ export default function SellerPOSScreen() {
 
   // Cart calculations
   const subtotal = useMemo(() => {
+    // Net subtotal — item.price may be below (discount) or above (markup) basePrice
     return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
+
+  const grossSubtotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.basePrice * item.quantity, 0);
+  }, [cart]);
+
+  const itemDiscountTotal = useMemo(() => {
+    return cart.reduce(
+      (sum, item) => sum + Math.max(0, item.basePrice - item.price) * item.quantity,
+      0
+    );
+  }, [cart]);
+
+  const itemMarkupTotal = useMemo(() => {
+    return cart.reduce(
+      (sum, item) => sum + Math.max(0, item.price - item.basePrice) * item.quantity,
+      0
+    );
   }, [cart]);
 
   const discountAmount = useMemo(() => {
@@ -322,8 +344,11 @@ export default function SellerPOSScreen() {
         {
           id: product.id,
           name: product.name,
+          basePrice: pPrice,
           price: pPrice,
+          priceText: String(pPrice),
           stock: pStock,
+          image: product.primary_image_url || product.primary_image || undefined,
           quantity: 1,
         },
       ];
@@ -346,6 +371,18 @@ export default function SellerPOSScreen() {
 
   const removeItem = (id: number) => {
     setCart((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  // Editable unit price — digits only, comma-formatted; markups above
+  // the catalog price are allowed (discount/markup derived automatically)
+  const updatePrice = (id: number, text: string) => {
+    const digits = text.replace(/\D/g, '').slice(0, 12);
+    const num = Math.max(0, parseInt(digits || '0', 10) || 0);
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, priceText: digits, price: num } : item
+      )
+    );
   };
 
   const clearCart = () => {
@@ -383,12 +420,18 @@ export default function SellerPOSScreen() {
         payment_method: paymentMethod,
         discount: discountAmount,
         amount_paid: paymentMethod === 'cash' ? (tenderedNum || grandTotal) : grandTotal,
-        items: cart.map((i) => ({
-          product_id: i.id,
-          name: i.name,
-          quantity: i.quantity,
-          unit_price: i.price,
-        })),
+        items: cart.map((i) => {
+          const discounted = i.price < i.basePrice;
+          return {
+            product_id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            // discounted: keep catalog price + discount field;
+            // marked-up: actual (raised) price becomes the unit price
+            unit_price: discounted ? i.basePrice : i.price,
+            discount: discounted ? (i.basePrice - i.price) * i.quantity : 0,
+          };
+        }),
       };
 
       const res = await createPOSSale(payload);
@@ -1005,13 +1048,39 @@ export default function SellerPOSScreen() {
             {/* Cart Items List */}
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>Items ({totalCartCount})</Text>
-              {cart.map((item) => (
+              {cart.map((item) => {
+                const lineSaving = (item.basePrice - item.price) * item.quantity;
+                return (
                 <View key={item.id} style={styles.cartRow}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.cartThumb} />
+                  ) : (
+                    <View style={[styles.cartThumb, styles.cartThumbPlaceholder]}>
+                      <MaterialCommunityIcons name="package-variant" size={16} color={colors.textSecondary} />
+                    </View>
+                  )}
                   <View style={styles.cartRowInfo}>
                     <Text style={styles.cartRowName} numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text style={styles.cartRowUnit}>UGX {item.price.toLocaleString()} each</Text>
+                    <View style={styles.cartRowUnitWrap}>
+                      <Text style={styles.cartRowUnit}>UGX </Text>
+                      <TextInput
+                        style={styles.priceInput}
+                        keyboardType="numeric"
+                        value={withCommas(item.priceText)}
+                        onChangeText={(t) => updatePrice(item.id, t)}
+                      />
+                      <Text style={styles.cartRowUnit}> each</Text>
+                      {lineSaving !== 0 && (
+                        <Text style={[
+                          styles.cartRowUnit,
+                          { color: lineSaving > 0 ? Brand.danger : Brand.success, fontWeight: '700' },
+                        ]}>
+                          {lineSaving > 0 ? ` -UGX ${lineSaving.toLocaleString()}` : ` +UGX ${(-lineSaving).toLocaleString()}`}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                   <View style={styles.qtyControls}>
                     <Pressable
@@ -1035,15 +1104,32 @@ export default function SellerPOSScreen() {
                     <MaterialCommunityIcons name="close" size={18} color={Brand.danger} />
                   </Pressable>
                 </View>
-              ))}
+                );
+              })}
             </View>
 
             {/* Order Summary & Discount */}
             <View style={styles.modalSection}>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryVal}>UGX {subtotal.toLocaleString()}</Text>
+                <Text style={styles.summaryVal}>UGX {grossSubtotal.toLocaleString()}</Text>
               </View>
+              {itemDiscountTotal > 0 && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Item discounts</Text>
+                  <Text style={[styles.summaryVal, { color: Brand.danger }]}>
+                    -UGX {itemDiscountTotal.toLocaleString()}
+                  </Text>
+                </View>
+              )}
+              {itemMarkupTotal > 0 && (
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Item markups</Text>
+                  <Text style={[styles.summaryVal, { color: Brand.success }]}>
+                    +UGX {itemMarkupTotal.toLocaleString()}
+                  </Text>
+                </View>
+              )}
 
               {/* Modern Discount Module */}
               <View style={styles.discountCard}>
@@ -1969,6 +2055,17 @@ const createStyles = (colors: ThemeColors) =>
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    cartThumb: {
+      width: 36,
+      height: 36,
+      borderRadius: 6,
+      marginRight: 8,
+      backgroundColor: colors.surfaceAlt,
+    },
+    cartThumbPlaceholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     cartRowInfo: {
       flex: 1,
     },
@@ -1977,10 +2074,25 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '600',
       color: colors.text,
     },
+    cartRowUnitWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 2,
+      flexWrap: 'wrap',
+    },
     cartRowUnit: {
       fontSize: 11,
       color: colors.textSecondary,
-      marginTop: 2,
+    },
+    priceInput: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.text,
+      minWidth: 50,
+      paddingVertical: 0,
+      paddingHorizontal: 2,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     qtyControls: {
       flexDirection: 'row',
