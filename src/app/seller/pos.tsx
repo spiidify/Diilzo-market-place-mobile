@@ -763,8 +763,8 @@ export default function SellerPOSScreen() {
             )}
           </View>
 
-          {/* Payment methods — wrapping icon chips, all labels visible */}
-          <View style={styles.methodChipRow}>
+          {/* Payment methods — segmented row matching the date filter */}
+          <View style={styles.methodSeg}>
             {HISTORY_METHODS.map((m) => {
               const active = historyMethod === m.key;
               const mColor = m.key ? METHOD_COLORS[m.key] : Brand.primary;
@@ -772,18 +772,18 @@ export default function SellerPOSScreen() {
                 <Pressable
                   key={m.key}
                   style={[
-                    styles.methodChip,
-                    active && { backgroundColor: mColor, borderColor: mColor },
+                    styles.methodSegBtn,
+                    active && { backgroundColor: mColor },
                   ]}
                   onPress={() => setHistoryMethod(m.key)}
                 >
                   <MaterialCommunityIcons
                     name={m.icon as any}
-                    size={13}
+                    size={11}
                     color={active ? '#FFFFFF' : mColor}
                   />
                   <Text
-                    style={[styles.methodChipText, active && { color: '#FFFFFF' }]}
+                    style={[styles.methodSegText, { color: active ? '#FFFFFF' : mColor }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -1932,30 +1932,29 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 13.5,
       fontWeight: '800',
     },
-    methodChipRow: {
+    methodSeg: {
       flexDirection: 'row',
-      gap: 4,
-      paddingHorizontal: 12,
-      marginTop: 10,
-      paddingBottom: 2,
+      marginHorizontal: 12,
+      marginTop: 8,
+      backgroundColor: colors.surface,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 3,
     },
-    methodChip: {
+    methodSegBtn: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 3,
-      paddingHorizontal: 4,
-      paddingVertical: 6,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
+      gap: 2,
+      paddingVertical: 7,
+      paddingHorizontal: 1,
+      borderRadius: 8,
     },
-    methodChipText: {
+    methodSegText: {
       fontSize: 10.5,
-      fontWeight: '700',
-      color: colors.text,
+      fontWeight: '600',
     },
     rangeSegReset: {
       alignItems: 'center',
