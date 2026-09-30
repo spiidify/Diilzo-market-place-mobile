@@ -779,10 +779,15 @@ export default function SellerPOSScreen() {
                 >
                   <MaterialCommunityIcons
                     name={m.icon as any}
-                    size={14}
+                    size={13}
                     color={active ? '#FFFFFF' : mColor}
                   />
-                  <Text style={[styles.methodChipText, active && { color: '#FFFFFF' }]}>
+                  <Text
+                    style={[styles.methodChipText, active && { color: '#FFFFFF' }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
                     {m.label}
                   </Text>
                 </Pressable>
@@ -1929,17 +1934,18 @@ const createStyles = (colors: ThemeColors) =>
     },
     methodChipRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 5,
+      gap: 4,
       paddingHorizontal: 12,
       marginTop: 10,
       paddingBottom: 2,
     },
     methodChip: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 8,
+      justifyContent: 'center',
+      gap: 3,
+      paddingHorizontal: 4,
       paddingVertical: 6,
       borderRadius: 14,
       borderWidth: 1,
@@ -1947,7 +1953,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.surface,
     },
     methodChipText: {
-      fontSize: 11,
+      fontSize: 10.5,
       fontWeight: '700',
       color: colors.text,
     },
