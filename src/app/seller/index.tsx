@@ -185,6 +185,13 @@ export default function SellerDashboardScreen() {
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.quickBtn, styles.quickBtnGhost, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/seller/pos' as any)}
+          >
+            <MaterialCommunityIcons name="cash-register" size={18} color="#7C3AED" />
+            <Text style={styles.quickBtnTextDark}>POS</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.quickBtn, styles.quickBtnGhost, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/seller/orders' as any)}
           >
             <MaterialCommunityIcons name="clipboard-list-outline" size={18} color={Brand.primary} />
