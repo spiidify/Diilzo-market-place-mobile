@@ -1047,7 +1047,7 @@ export default function SellerPOSScreen() {
         animationType="slide"
         transparent={false}
         statusBarTranslucent
-        onRequestClose={() => setShowCartModal(false)}
+        onRequestClose={() => (showClearConfirm ? setShowClearConfirm(false) : setShowCartModal(false))}
       >
         <View style={styles.modalContainer}>
           <LinearGradient
@@ -1383,6 +1383,37 @@ export default function SellerPOSScreen() {
               )}
             </Pressable>
           </View>
+
+          {/* Clear Cart confirmation — rendered inside this Modal so it
+              stacks above the checkout sheet (nested Modals don't on Android) */}
+          {showClearConfirm && (
+            <Pressable style={styles.clearModalBackdrop} onPress={() => setShowClearConfirm(false)}>
+              <Pressable style={styles.clearModalCard} onPress={(e) => e.stopPropagation()}>
+                <View style={styles.clearModalIconWrap}>
+                  <MaterialCommunityIcons name="trash-can-outline" size={26} color="#DC2626" />
+                </View>
+                <Text style={styles.clearModalTitle}>Clear Cart?</Text>
+                <Text style={styles.clearModalText}>
+                  This will remove all {totalCartCount} item{totalCartCount === 1 ? '' : 's'} from the current order. This cannot be undone.
+                </Text>
+                <View style={styles.clearModalActions}>
+                  <Pressable
+                    style={[styles.clearModalBtn, styles.clearModalCancel]}
+                    onPress={() => setShowClearConfirm(false)}
+                  >
+                    <Text style={styles.clearModalCancelText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.clearModalBtn, styles.clearModalDanger]}
+                    onPress={confirmClearCart}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={14} color="#FFFFFF" />
+                    <Text style={styles.clearModalDangerText}>Clear Cart</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Pressable>
+          )}
         </View>
       </Modal>
 
@@ -1432,40 +1463,6 @@ export default function SellerPOSScreen() {
         </View>
       </Modal>
 
-      {/* Clear Cart Confirmation Modal */}
-      <Modal
-        visible={showClearConfirm}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowClearConfirm(false)}
-      >
-        <Pressable style={styles.clearModalBackdrop} onPress={() => setShowClearConfirm(false)}>
-          <Pressable style={styles.clearModalCard} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.clearModalIconWrap}>
-              <MaterialCommunityIcons name="trash-can-outline" size={26} color="#DC2626" />
-            </View>
-            <Text style={styles.clearModalTitle}>Clear Cart?</Text>
-            <Text style={styles.clearModalText}>
-              This will remove all {totalCartCount} item{totalCartCount === 1 ? '' : 's'} from the current order. This cannot be undone.
-            </Text>
-            <View style={styles.clearModalActions}>
-              <Pressable
-                style={[styles.clearModalBtn, styles.clearModalCancel]}
-                onPress={() => setShowClearConfirm(false)}
-              >
-                <Text style={styles.clearModalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.clearModalBtn, styles.clearModalDanger]}
-                onPress={confirmClearCart}
-              >
-                <MaterialCommunityIcons name="trash-can-outline" size={14} color="#FFFFFF" />
-                <Text style={styles.clearModalDangerText}>Clear Cart</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -2280,7 +2277,13 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.surfaceAlt,
     },
     clearModalBackdrop: {
-      flex: 1,
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 20,
+      elevation: 20,
       backgroundColor: 'rgba(0,0,0,0.5)',
       alignItems: 'center',
       justifyContent: 'center',
