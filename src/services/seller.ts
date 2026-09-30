@@ -1123,6 +1123,7 @@ export interface POSSaleItemPayload {
 }
 
 export interface POSSalePayload {
+  sale_id?: number;
   customer_name?: string;
   customer_phone?: string;
   payment_method: string;
@@ -1132,6 +1133,30 @@ export interface POSSalePayload {
   currency?: string;
   notes?: string;
   items: POSSaleItemPayload[];
+}
+
+export interface POSSaleDetailItem {
+  product_id: number | null;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  base_price: number;
+  stock: number;
+  image: string;
+}
+
+export interface POSSaleDetail {
+  id: number;
+  sale_number: string;
+  customer_name: string;
+  customer_phone?: string;
+  payment_method: string;
+  amount_paid: string;
+  discount: string;
+  tax: string;
+  notes?: string;
+  items: POSSaleDetailItem[];
 }
 
 export interface POSSaleRecord {
@@ -1192,9 +1217,14 @@ export async function getPOSSales(
   });
 }
 
-/** POST /pos/sales/ — create a new in-store POS sale */
+/** POST /pos/sales/ — create a new in-store POS sale (or update when sale_id is set) */
 export async function createPOSSale(payload: POSSalePayload): Promise<any> {
   return apiRequest<any>({ method: 'POST', url: '/pos/sales/', data: payload });
+}
+
+/** GET /pos/sales/?id=<pk> — full sale detail for refilling the cart (edit) */
+export async function getPOSSale(id: number): Promise<POSSaleDetail> {
+  return apiRequest<POSSaleDetail>({ method: 'GET', url: '/pos/sales/', params: { id } });
 }
 
 /** GET /pos/registers/ — list store registers */

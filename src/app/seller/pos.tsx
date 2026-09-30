@@ -3,21 +3,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Image,
-    Keyboard,
-    Modal,
-    Platform,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Keyboard,
+  Modal,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,14 +25,16 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-    createPOSSale,
-    getMyProducts,
-    getPOSDashboard,
-    getPOSSales,
-    type POSDashboardData,
-    type POSSalePayload,
-    type POSSaleRecord,
-    type POSSalesSummary,
+  createPOSSale,
+  getMyProducts,
+  getPOSDashboard,
+  getPOSSale,
+  getPOSSales,
+  type POSDashboardData,
+  type POSSaleDetailItem,
+  type POSSalePayload,
+  type POSSaleRecord,
+  type POSSalesSummary
 } from '@/services/seller';
 
 type HistoryRange = 'all' | 'today' | '7d' | '30d' | 'custom';
@@ -116,6 +118,11 @@ export default function SellerPOSScreen() {
   // Mode: 'register' | 'history'
   const [activeTab, setActiveTab] = useState<'register' | 'history'>('register');
 
+  // Edit mode: refilling the cart from a past sale
+  const [editingSale, setEditingSale] = useState<{ id: number; number: string } | null>(null);
+  const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
   // Products
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -198,14 +205,13 @@ export default function SellerPOSScreen() {
       }
       const res = await getMyProducts({
         search: search.trim() || undefined,
-        has_images: 'true',
         page,
         page_size: 20,
       });
       const raw = Array.isArray(res) ? res : (res as any)?.results || [];
-      // Only image-bearing products are sellable — mirrors the backend
-      // has_images filter and guards against older server builds.
-      const list = raw.filter((p: any) => Boolean(p.primary_image_url || p.primary_image || (p.images && p.images.length)));
+      // All active products are sellable; image-less products get the
+      // placeholder icon in the grid and cart, same as the web POS.
+      const list = raw;
       const hasNext = Boolean((res as any)?.next);
 
       if (append) {
@@ -387,10 +393,61 @@ export default function SellerPOSScreen() {
 
   const clearCart = () => {
     if (cart.length === 0) return;
-    Alert.alert('Clear Cart', 'Remove all items from current counter order?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => setCart([]) },
-    ]);
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearCart = () => {
+    setCart([]);
+    setAmountTendered('');
+    setDiscount('0');
+    setShowClearConfirm(false);
+  };
+
+  // Edit an existing sale: fetch full detail and refill the cart.
+  // POSTing with sale_id replaces items and re-adjusts stock/balance.
+  const startEditSale = async (saleId: number) => {
+    try {
+      setLoadingEditId(saleId);
+      const sale = await getPOSSale(saleId);
+      setCart(
+        sale.items.map((it: POSSaleDetailItem, idx: number) => {
+          const qty = it.quantity || 1;
+          const netUnit = qty ? (it.unit_price * qty - it.discount) / qty : it.unit_price;
+          return {
+            id: it.product_id ?? -(idx + 1),
+            name: it.name,
+            basePrice: it.base_price,
+            price: netUnit,
+            priceText: String(Math.round(netUnit)),
+            stock: it.stock,
+            image: it.image || undefined,
+            quantity: qty,
+          };
+        })
+      );
+      setCustomerName(sale.customer_name === 'Walk-in Customer' ? '' : sale.customer_name);
+      setCustomerPhone(sale.customer_phone || '');
+      const method = sale.payment_method as 'cash' | 'mtn_momo' | 'airtel_money' | 'card';
+      setPaymentMethod(['cash', 'mtn_momo', 'airtel_money', 'card'].includes(method) ? method : 'cash');
+      setDiscount(String(Math.round(Number(sale.discount) || 0)));
+      setDiscountMode('ugx');
+      setAmountTendered(String(Math.round(Number(sale.amount_paid) || 0)));
+      setEditingSale({ id: sale.id, number: sale.sale_number });
+      setActiveTab('register');
+      setShowCartModal(true);
+    } catch (err: any) {
+      Alert.alert('Cannot Edit', err?.message || 'Could not load this sale.');
+    } finally {
+      setLoadingEditId(null);
+    }
+  };
+
+  // Leaving edit mode also clears the refilled cart — it belongs to the sale
+  const cancelEdit = () => {
+    setEditingSale(null);
+    setCart([]);
+    setAmountTendered('');
+    setDiscount('0');
   };
 
   // Quick cash chips
@@ -415,6 +472,7 @@ export default function SellerPOSScreen() {
     try {
       setSubmittingSale(true);
       const payload: POSSalePayload = {
+        sale_id: editingSale?.id,
         customer_name: customerName.trim() || 'Walk-in Customer',
         customer_phone: customerPhone.trim() || undefined,
         payment_method: paymentMethod,
@@ -423,7 +481,8 @@ export default function SellerPOSScreen() {
         items: cart.map((i) => {
           const discounted = i.price < i.basePrice;
           return {
-            product_id: i.id,
+            // negative ids are custom (non-catalog) lines from an edited sale
+            product_id: i.id > 0 ? i.id : undefined,
             name: i.name,
             quantity: i.quantity,
             // discounted: keep catalog price + discount field;
@@ -448,6 +507,7 @@ export default function SellerPOSScreen() {
       setCart([]);
       setAmountTendered('');
       setDiscount('0');
+      setEditingSale(null);
       setShowCartModal(false);
       setShowReceiptModal(true);
 
@@ -802,6 +862,18 @@ export default function SellerPOSScreen() {
                         {item.payment_method.replace(/_/g, ' ').toUpperCase()}
                       </Text>
                     </View>
+                    <Pressable
+                      onPress={() => startEditSale(item.id)}
+                      hitSlop={8}
+                      style={styles.histEditBtn}
+                      disabled={loadingEditId !== null}
+                    >
+                      {loadingEditId === item.id ? (
+                        <ActivityIndicator size={12} color={Brand.primary} />
+                      ) : (
+                        <MaterialCommunityIcons name="pencil-outline" size={15} color={Brand.primary} />
+                      )}
+                    </Pressable>
                   </View>
                 </View>
               );
@@ -1014,6 +1086,18 @@ export default function SellerPOSScreen() {
               </View>
             </View>
           </LinearGradient>
+
+          {editingSale && (
+            <View style={styles.editBanner}>
+              <MaterialCommunityIcons name="pencil-outline" size={16} color="#B45309" />
+              <Text style={styles.editBannerText} numberOfLines={1}>
+                Editing {editingSale.number} — updating replaces this sale
+              </Text>
+              <Pressable onPress={cancelEdit} hitSlop={8}>
+                <MaterialCommunityIcons name="close-circle" size={18} color="#B45309" />
+              </Pressable>
+            </View>
+          )}
 
           <ScrollView
             ref={modalScrollRef}
@@ -1346,6 +1430,41 @@ export default function SellerPOSScreen() {
             </Pressable>
           </View>
         </View>
+      </Modal>
+
+      {/* Clear Cart Confirmation Modal */}
+      <Modal
+        visible={showClearConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowClearConfirm(false)}
+      >
+        <Pressable style={styles.clearModalBackdrop} onPress={() => setShowClearConfirm(false)}>
+          <Pressable style={styles.clearModalCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.clearModalIconWrap}>
+              <MaterialCommunityIcons name="trash-can-outline" size={26} color="#DC2626" />
+            </View>
+            <Text style={styles.clearModalTitle}>Clear Cart?</Text>
+            <Text style={styles.clearModalText}>
+              This will remove all {totalCartCount} item{totalCartCount === 1 ? '' : 's'} from the current order. This cannot be undone.
+            </Text>
+            <View style={styles.clearModalActions}>
+              <Pressable
+                style={[styles.clearModalBtn, styles.clearModalCancel]}
+                onPress={() => setShowClearConfirm(false)}
+              >
+                <Text style={styles.clearModalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.clearModalBtn, styles.clearModalDanger]}
+                onPress={confirmClearCart}
+              >
+                <MaterialCommunityIcons name="trash-can-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.clearModalDangerText}>Clear Cart</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
@@ -2087,7 +2206,7 @@ const createStyles = (colors: ThemeColors) =>
     priceInput: {
       fontSize: 11,
       fontWeight: '700',
-      color: colors.text,
+      color: '#7C3AED',
       minWidth: 50,
       paddingVertical: 0,
       paddingHorizontal: 2,
@@ -2125,13 +2244,107 @@ const createStyles = (colors: ThemeColors) =>
     cartRowTotal: {
       fontSize: 13,
       fontWeight: '700',
-      color: colors.text,
+      color: '#7C3AED',
       minWidth: 75,
       textAlign: 'right',
     },
     removeBtn: {
       padding: 6,
       marginLeft: 4,
+    },
+    editBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: '#FEF3C7',
+      borderBottomWidth: 1,
+      borderBottomColor: '#FDE68A',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+    },
+    editBannerText: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#B45309',
+    },
+    histEditBtn: {
+      width: 26,
+      height: 26,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 6,
+      backgroundColor: colors.surfaceAlt,
+    },
+    clearModalBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    clearModalCard: {
+      width: 300,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 14,
+      padding: 22,
+      alignItems: 'center',
+    },
+    clearModalIconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: '#DC262618',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    clearModalTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 6,
+    },
+    clearModalText: {
+      fontSize: 12.5,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 18,
+    },
+    clearModalActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    clearModalBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      paddingVertical: 9,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+    },
+    clearModalCancel: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceElevated,
+    },
+    clearModalCancelText: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    clearModalDanger: {
+      backgroundColor: '#DC2626',
+    },
+    clearModalDangerText: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: '#FFFFFF',
     },
     summaryRow: {
       flexDirection: 'row',
