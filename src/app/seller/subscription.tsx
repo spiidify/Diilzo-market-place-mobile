@@ -2,15 +2,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Alert,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -18,12 +18,12 @@ import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
-  cancelSubscription,
-  getSellerPlans,
-  getSubscription,
-  subscribeToPlan,
-  type SellerPlan,
-  type SubscriptionSummary,
+    cancelSubscription,
+    getSellerPlans,
+    getSubscription,
+    subscribeToPlan,
+    type SellerPlan,
+    type SubscriptionSummary,
 } from '@/services/financial';
 
 export default function SellerSubscriptionScreen() {
@@ -163,10 +163,45 @@ export default function SellerSubscriptionScreen() {
             <View style={styles.freeBanner}>
               <MaterialCommunityIcons name="information-outline" size={20} color={Brand.primary} />
               <Text style={styles.freeBannerText}>
-                You're on the Free plan. Upgrade to unlock more products, lower commissions, and premium features.
+                You're on the Free plan. Upgrade to unlock POS, inventory tools, more products, and lower commissions.
               </Text>
             </View>
           )}
+
+          {/* Fees & access — what the store pays and unlocks */}
+          <View style={styles.feeCard}>
+            <Text style={styles.feeCardTitle}>Your Store's Fees & Access</Text>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>Marketplace commission</Text>
+              <Text style={styles.feeValue}>
+                {subscription?.effective_commission ?? '—'}%
+                {subscription?.plan_discount && Number(subscription.plan_discount) > 0
+                  ? ` (−${subscription.plan_discount}% plan)` : ''}
+              </Text>
+            </View>
+            {(subscription?.seller_fees?.length ?? 0) > 0 && (
+              <View style={styles.feeRow}>
+                <Text style={styles.feeLabel}>Seller fees</Text>
+                <Text style={styles.feeValue}>
+                  {subscription!.seller_fees!.map((f) => `${f.name} ${f.percentage}%`).join(', ')}
+                </Text>
+              </View>
+            )}
+            {(subscription?.buyer_fees?.length ?? 0) > 0 && (
+              <View style={styles.feeRow}>
+                <Text style={styles.feeLabel}>Buyer fees</Text>
+                <Text style={styles.feeValue}>
+                  {subscription!.buyer_fees!.map((f) => `${f.name} ${f.percentage}%`).join(', ')}
+                </Text>
+              </View>
+            )}
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>POS & Inventory</Text>
+              <Text style={[styles.feeValue, subscription?.tools_access ? styles.feeOk : styles.feeWarn]}>
+                {subscription?.tools_access ? 'Included' : 'Paid plans only'}
+              </Text>
+            </View>
+          </View>
 
           {/* Plans grid */}
           {plans.map((plan) => {
@@ -194,6 +229,11 @@ export default function SellerSubscriptionScreen() {
 
                 <View style={styles.featuresList}>
                   <FeatureItem text={`${plan.product_limit || 'Unlimited'} products`} styles={styles} />
+                  <FeatureItem
+                    text={plan.selling_tools ? 'POS & inventory tools' : 'POS & inventory — paid plans'}
+                    locked={!plan.selling_tools}
+                    styles={styles}
+                  />
                   <FeatureItem text={`${plan.commission_discount}% commission discount`} styles={styles} />
                   {plan.features?.advanced_analytics ? <FeatureItem text="Advanced analytics" styles={styles} /> : null}
                   {plan.features?.priority_support ? <FeatureItem text="Priority support" styles={styles} /> : null}
@@ -265,10 +305,10 @@ export default function SellerSubscriptionScreen() {
   );
 }
 
-function FeatureItem({ text, styles }: { text: string; styles: ReturnType<typeof createStyles> }) {
+function FeatureItem({ text, locked, styles }: { text: string; locked?: boolean; styles: ReturnType<typeof createStyles> }) {
   return (
     <View style={styles.featureItem}>
-      <MaterialCommunityIcons name="check" size={14} color={Brand.success} />
+      <MaterialCommunityIcons name={locked ? 'lock-outline' : 'check'} size={14} color={locked ? '#94A3B8' : Brand.success} />
       <Text style={styles.featureText}>{text}</Text>
     </View>
   );
@@ -280,6 +320,20 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+
+  feeCard: {
+    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: c.border,
+  },
+  feeCardTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 10 },
+  feeRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    gap: 12, paddingVertical: 5,
+  },
+  feeLabel: { fontSize: 12.5, color: c.textSecondary, flexShrink: 0 },
+  feeValue: { fontSize: 12.5, fontWeight: '600', color: c.text, flex: 1, textAlign: 'right' },
+  feeOk: { color: Brand.success },
+  feeWarn: { color: '#B45309' },
 
   body: { padding: 12, paddingBottom: 32 },
 

@@ -150,10 +150,20 @@ export interface SellerPlan {
   };
   is_featured: boolean;
   is_free: boolean;
+  /** POS & inventory tools included (all paid plans). */
+  selling_tools?: boolean;
 }
 
 export interface PlansResponse {
   plans: SellerPlan[];
+}
+
+export interface PlatformFeeInfo {
+  name: string;
+  fee_type: string;
+  percentage: string;
+  fixed_amount: string;
+  max_amount: string;
 }
 
 export interface SubscriptionSummary {
@@ -167,6 +177,11 @@ export interface SubscriptionSummary {
   days_remaining: number;
   period_end: string | null;
   transactions?: any[];
+  tools_access?: boolean;
+  plan_discount?: string;
+  effective_commission?: string;
+  seller_fees?: PlatformFeeInfo[];
+  buyer_fees?: PlatformFeeInfo[];
 }
 
 export interface SubscriptionTransaction {
