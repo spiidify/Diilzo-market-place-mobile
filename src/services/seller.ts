@@ -182,9 +182,13 @@ export interface EscrowHold {
   order_number: string;
   buyer_email: string;
   amount_held: string;
+  refunded_amount?: string;
+  remaining_amount?: string;
   currency: string;
   status: string;
+  release_reason?: string;
   buyer_confirmed_receipt: boolean;
+  days_until_auto_release?: number | null;
   auto_release_date: string | null;
   held_at: string;
   released_at: string | null;

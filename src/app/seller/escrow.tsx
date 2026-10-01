@@ -1,13 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Pressable,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -76,15 +76,40 @@ export default function SellerEscrowScreen() {
             <Text style={styles.metricLabel}>Buyer</Text>
           </View>
         </View>
+        {item.refunded_amount && Number(item.refunded_amount) > 0 ? (
+          <View style={styles.refundRow}>
+            <MaterialCommunityIcons name="undo-variant" size={14} color={Brand.danger} />
+            <Text style={styles.refundText}>
+              {item.currency} {Number(item.refunded_amount).toLocaleString()} refunded
+            </Text>
+          </View>
+        ) : null}
+        {item.release_reason ? (
+          <View style={styles.footerItem}>
+            <MaterialCommunityIcons name="tag-outline" size={13} color={colors.textTertiary} />
+            <Text style={styles.footerText}>
+              {item.release_reason === 'auto_release' ? 'Auto-released'
+                : item.release_reason === 'buyer_confirmation' ? 'Buyer confirmed'
+                : item.release_reason === 'dispute_resolution' ? 'Dispute resolved'
+                : 'Released by admin'}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.cardFooter}>
           <View style={styles.footerItem}>
             <MaterialCommunityIcons name="calendar-clock" size={14} color={colors.textTertiary} />
             <Text style={styles.footerText}>Held: {new Date(item.held_at).toLocaleDateString()}</Text>
           </View>
-          {item.auto_release_date && (
+          {item.auto_release_date && (item.status === 'held' || item.status === 'disputed') && (
             <View style={styles.footerItem}>
               <MaterialCommunityIcons name="lock-clock" size={14} color={Brand.rating} />
-              <Text style={styles.footerText}>Auto-release: {new Date(item.auto_release_date).toLocaleDateString()}</Text>
+              <Text style={[styles.footerText, item.days_until_auto_release != null && item.days_until_auto_release <= 3 && { color: Brand.danger, fontWeight: '700' }]}>
+                {item.days_until_auto_release === 0
+                  ? 'Auto-releases today'
+                  : item.days_until_auto_release != null
+                    ? `Auto-release in ${item.days_until_auto_release}d`
+                    : `Auto-release: ${new Date(item.auto_release_date).toLocaleDateString()}`}
+              </Text>
             </View>
           )}
         </View>
@@ -229,6 +254,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
 
   cardFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
+  refundRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  refundText: { fontSize: 12, fontWeight: '700', color: Brand.danger },
   footerItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   footerText: { fontSize: 12, color: c.textSecondary },
 

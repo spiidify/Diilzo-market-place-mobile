@@ -143,8 +143,13 @@ export interface AdminEscrow {
   id: number;
   order_number: string;
   amount_held: string;
+  refunded_amount?: string;
+  remaining_amount?: string;
   currency: string;
   status: string;
+  release_reason?: string;
+  buyer_confirmed_receipt?: boolean;
+  days_until_auto_release?: number | null;
   held_at: string | null;
   released_at: string | null;
   auto_release_date: string | null;
