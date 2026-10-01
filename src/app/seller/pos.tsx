@@ -122,6 +122,7 @@ export default function SellerPOSScreen() {
   const [editingSale, setEditingSale] = useState<{ id: number; number: string } | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [locked, setLocked] = useState(false);
 
   // Products
   const [products, setProducts] = useState<any[]>([]);
@@ -257,8 +258,14 @@ export default function SellerPOSScreen() {
       }
 
       const [statsData, salesData] = await Promise.all([
-        getPOSDashboard().catch(() => null),
-        getPOSSales(filters).catch(() => ({ results: [], summary: undefined })),
+        getPOSDashboard().catch((e: any) => {
+          if (e?.response?.status === 403 && e?.response?.data?.upgrade_required) setLocked(true);
+          return null;
+        }),
+        getPOSSales(filters).catch((e: any) => {
+          if (e?.response?.status === 403 && e?.response?.data?.upgrade_required) setLocked(true);
+          return { results: [], summary: undefined };
+        }),
       ]);
       if (statsData) setStats(statsData);
       setSalesHistory(salesData.results || []);
@@ -514,11 +521,44 @@ export default function SellerPOSScreen() {
       // Refresh sales data
       loadData();
     } catch (err: any) {
+      if (err?.response?.status === 403 && err?.response?.data?.upgrade_required) {
+        setLocked(true);
+        return;
+      }
       Alert.alert('Sale Error', err?.message || 'Could not complete sale.');
     } finally {
       setSubmittingSale(false);
     }
   };
+
+  // Paid-plan gate — POS is unlocked by an active subscription/membership.
+  if (locked) {
+    return (
+      <View style={styles.container}>
+        <GradientHeader
+          title="Point of Sale"
+          subtitle="Counter checkout & in-store inventory"
+          onBack={() => router.back()}
+        />
+        <View style={styles.lockedWrap}>
+          <View style={styles.lockedIcon}>
+            <MaterialCommunityIcons name="lock-outline" size={34} color="#7C3AED" />
+          </View>
+          <Text style={styles.lockedTitle}>POS requires a paid plan</Text>
+          <Text style={styles.lockedBody}>
+            The POS terminal and inventory tools are included with paid seller plans
+            (Basic, Pro, Premium) or an active Verified/Gold supplier membership.
+          </Text>
+          <Pressable
+            style={styles.lockedBtn}
+            onPress={() => router.push('/seller/subscription' as any)}
+          >
+            <Text style={styles.lockedBtnText}>View Plans &amp; Upgrade</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -2653,6 +2693,46 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 8,
     },
     newSaleBtnText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    lockedWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+    },
+    lockedIcon: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: '#EDE9FE',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    lockedTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    lockedBody: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    lockedBtn: {
+      backgroundColor: Brand.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 28,
+    },
+    lockedBtnText: {
       fontSize: 14,
       fontWeight: '700',
       color: '#FFFFFF',

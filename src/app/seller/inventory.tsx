@@ -91,6 +91,7 @@ export default function SellerInventoryScreen() {
 
   const [tab, setTab] = useState<Tab>('stock');
   const [reorderCount, setReorderCount] = useState(0);
+  const [locked, setLocked] = useState(false);
 
   // ── Stock tab state ──
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -158,7 +159,9 @@ export default function SellerInventoryScreen() {
       if (data.kpis) setKpis(data.kpis);
       setPage(pageNum);
     } catch (e: any) {
-      if (seq === fetchSeq.current) Alert.alert('Error', e?.message || 'Failed to load inventory');
+      if (e?.response?.status === 403 && e?.response?.data?.upgrade_required) {
+        if (seq === fetchSeq.current) setLocked(true);
+      } else if (seq === fetchSeq.current) Alert.alert('Error', e?.message || 'Failed to load inventory');
     } finally {
       if (seq === fetchSeq.current) {
         setLoading(false);
@@ -431,6 +434,31 @@ export default function SellerInventoryScreen() {
       </View>
     );
   };
+
+  // Paid-plan gate — inventory tools unlock with an active subscription.
+  if (locked) {
+    return (
+      <View style={styles.screen}>
+        <GradientHeader title="Inventory" subtitle="Stock management" />
+        <View style={styles.lockedWrap}>
+          <View style={styles.lockedIcon}>
+            <MaterialCommunityIcons name="lock-outline" size={34} color="#7C3AED" />
+          </View>
+          <Text style={styles.lockedTitle}>Inventory requires a paid plan</Text>
+          <Text style={styles.lockedBody}>
+            Stock management, receiving, transfers and warehouses are included with
+            paid seller plans (Basic, Pro, Premium) or a Verified/Gold membership.
+          </Text>
+          <Pressable
+            style={styles.lockedBtn}
+            onPress={() => router.push('/seller/subscription' as any)}
+          >
+            <Text style={styles.lockedBtnText}>View Plans &amp; Upgrade</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   // ── Render ──
   return (
@@ -1214,4 +1242,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     elevation: 4,
   },
   receiveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+
+  lockedWrap: {
+    flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32,
+  },
+  lockedIcon: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#EDE9FE',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  lockedTitle: {
+    fontSize: 18, fontWeight: '700', color: colors.text,
+    marginBottom: 8, textAlign: 'center',
+  },
+  lockedBody: {
+    fontSize: 13, lineHeight: 20, color: colors.textSecondary,
+    textAlign: 'center', marginBottom: 20,
+  },
+  lockedBtn: {
+    backgroundColor: Brand.primary, borderRadius: 10,
+    paddingVertical: 12, paddingHorizontal: 28,
+  },
+  lockedBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });
