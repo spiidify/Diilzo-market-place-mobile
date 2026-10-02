@@ -606,10 +606,18 @@ const ProductTabsSection = memo(function ProductTabsSection({
           return (
             <Pressable
               key={t.key}
-              style={({ pressed }) => [styles.tabBtn, isActive && styles.tabBtnActive, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [styles.tabBtn, isActive ? styles.tabBtnActive : styles.tabBtnIdle, pressed && { opacity: 0.85 }]}
               onPress={() => setActiveKey(t.key)}
             >
-              <MaterialCommunityIcons name={t.icon as any} size={14} color={isActive ? '#FFFFFF' : colors.textSecondary} />
+              {isActive && (
+                <LinearGradient
+                  colors={[Brand.primary, Brand.accent]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              )}
+              <MaterialCommunityIcons name={t.icon as any} size={15} color={isActive ? '#FFFFFF' : Brand.accent} />
               <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
                 {t.title}
               </Text>
@@ -1770,14 +1778,25 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 8,
+    gap: 5,
+    paddingVertical: 9,
     paddingHorizontal: 6,
     borderRadius: 20,
-    backgroundColor: c.surfaceAlt,
+    overflow: 'hidden',
   },
-  tabBtnActive: { backgroundColor: Brand.primary },
-  tabBtnText: { fontSize: 11, fontWeight: '700', color: c.textSecondary, flexShrink: 1 },
+  tabBtnIdle: {
+    backgroundColor: Brand.primary + '14',
+    borderWidth: 1,
+    borderColor: Brand.primary + '40',
+  },
+  tabBtnActive: {
+    elevation: 4,
+    shadowColor: Brand.primary,
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  tabBtnText: { fontSize: 11, fontWeight: '700', color: Brand.accent, flexShrink: 1 },
   tabBtnTextActive: { color: '#FFFFFF' },
   tabGrid: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.two },
   tabRow: { flexDirection: 'row', gap: Spacing.two, marginBottom: Spacing.two },
