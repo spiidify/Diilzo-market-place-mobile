@@ -400,19 +400,17 @@ const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: Clai
           return (
             <View key={`v-${v.code}`} style={styles.voucherCard}>
               <View style={styles.voucherIconWrap}>
-                <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
+                <MaterialCommunityIcons name="ticket-percent" size={16} color="#FFFFFF" />
               </View>
               <View style={styles.voucherBody}>
-                <Text style={styles.voucherCode}>{v.code}</Text>
-                <Text style={styles.voucherDesc}>
+                <Text style={styles.voucherCode} numberOfLines={1}>{v.code}</Text>
+                <Text style={styles.voucherDesc} numberOfLines={1}>
                   {v.discount_type === 'percentage'
-                    ? `${v.discount_value}% OFF`
-                    : `${v.discount_value} OFF`}
+                    ? `${Number(v.discount_value)}% OFF`
+                    : `UGX ${Number(v.discount_value).toLocaleString()} OFF`}
                   {v.store_name ? ` • ${v.store_name}` : ''}
+                  {Number(v.min_order_amount) > 0 ? ` · Min ${Number(v.min_order_amount).toLocaleString()}` : ''}
                 </Text>
-                {v.min_order_amount && Number(v.min_order_amount) > 0 && (
-                  <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
-                )}
               </View>
               <Pressable
                 style={({ pressed }) => [styles.voucherClaimBtn, (claimed || copied) && styles.voucherClaimedBtn, pressed && { opacity: 0.8 }]}
@@ -2409,9 +2407,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Brand.primary,
-    borderRadius: 12,
-    padding: 12,
-    gap: 10,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    gap: 7,
     flexBasis: '48%',
     flexGrow: 0,
     flexShrink: 1,
@@ -2422,23 +2421,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   voucherIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  voucherBody: { flex: 1, gap: 1 },
-  voucherCode: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
-  voucherDesc: { color: 'rgba(255,255,255,0.95)', fontSize: 12, fontWeight: '600' },
-  voucherMin: { color: 'rgba(255,255,255,0.8)', fontSize: 10 },
+  voucherBody: { flex: 1, gap: 0, minWidth: 0 },
+  voucherCode: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '900', letterSpacing: 0.4 },
+  voucherDesc: { color: 'rgba(255,255,255,0.9)', fontSize: 10.5, fontWeight: '600' },
   voucherClaimBtn: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minWidth: 52,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2447,7 +2445,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.7)',
   },
-  voucherClaimText: { color: Brand.primary, fontSize: 11, fontWeight: '800' },
+  voucherClaimText: { color: Brand.primary, fontSize: 10, fontWeight: '800' },
   voucherClaimedText: { color: '#FFFFFF' },
 
   // ── Dual promo banner tiles ──────────────────────────────────────
