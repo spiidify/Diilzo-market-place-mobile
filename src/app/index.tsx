@@ -336,80 +336,6 @@ function useCountdown(endsAt: string | null) {
   return { h, m, s };
 }
 
-// ── Flash Sale shelf with live countdown ───────────────────────────
-const FlashSaleShelf = memo(function FlashSaleShelf({
-  products,
-  endsAt,
-  onPress,
-}: {
-  products: Product[];
-  endsAt: string | null;
-  onPress: (slug: string) => void;
-}) {
-  const { colors } = useAppTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
-  const cd = useCountdown(endsAt);
-  if (!products.length) return null;
-  return (
-    <View style={styles.flashSection}>
-      <LinearGradient
-        colors={['#F97316', '#EF4444']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.flashHeader}
-      >
-        <View style={styles.flashTitleRow}>
-          <MaterialCommunityIcons name="flash" size={22} color="#FFFFFF" />
-          <Text style={styles.flashTitle}>Flash Sale</Text>
-        </View>
-        {cd && (
-          <View style={styles.countdownRow}>
-            <Text style={styles.countdownLabel}>Ends in</Text>
-            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.h).padStart(2, '0')}</Text></View>
-            <Text style={styles.countdownColon}>:</Text>
-            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.m).padStart(2, '0')}</Text></View>
-            <Text style={styles.countdownColon}>:</Text>
-            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.s).padStart(2, '0')}</Text></View>
-          </View>
-        )}
-      </LinearGradient>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.carouselTrack}
-        decelerationRate="fast"
-        snapToInterval={160}
-        snapToAlignment="start"
-      >
-        {products.map((item) => (
-          <Pressable
-            key={`flash-${item.id}`}
-            style={({ pressed }) => [styles.carouselCard, pressed && styles.cardPressed]}
-            onPress={() => onPress(item.slug)}
-          >
-            <View style={styles.carouselImageWrap}>
-              {item.primary_image_url ? (
-                <Image source={{ uri: item.primary_image_url }} style={styles.carouselImage} resizeMode="contain" />
-              ) : (
-                <View style={styles.noImage}><MaterialCommunityIcons name="image-outline" size={32} color={colors.textTertiary} /></View>
-              )}
-              <View style={styles.flashBadge}><Text style={styles.flashBadgeText}>-{item.discount_percentage}%</Text></View>
-            </View>
-            <Text style={styles.carouselName} numberOfLines={2}>{item.name}</Text>
-            <View style={styles.carouselPriceRow}>
-              <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
-              <Text style={styles.carouselPrice}>{Number(item.display_price || item.final_price).toLocaleString()}</Text>
-            </View>
-            {item.is_on_sale && (
-              <Text style={styles.carouselOrigPrice}>{item.display_currency || item.currency} {Number(item.display_original_price || item.price).toLocaleString()}</Text>
-            )}
-          </Pressable>
-        ))}
-      </ScrollView>
-    </View>
-  );
-});
-
 // ── Voucher banner (claimable coupons) ─────────────────────────────
 const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: ClaimableCoupon[] }) {
   const { colors } = useAppTheme();
@@ -634,7 +560,7 @@ const ProductTabsSection = memo(function ProductTabsSection({
   onPress,
   onChat,
 }: {
-  tabs: { key: string; icon: string; title: string; data: Product[] }[];
+  tabs: { key: string; icon: string; title: string; data: Product[]; endsAt?: string | null }[];
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
 }) {
@@ -643,6 +569,7 @@ const ProductTabsSection = memo(function ProductTabsSection({
   const visibleTabs = tabs.filter((t) => t.data && t.data.length > 0);
   const [activeKey, setActiveKey] = useState<string>(visibleTabs[0]?.key ?? '');
   const active = visibleTabs.find((t) => t.key === activeKey) ?? visibleTabs[0];
+  const cd = useCountdown(active?.endsAt ?? null);
   if (visibleTabs.length === 0 || !active) return null;
 
   const rows: Product[][] = [];
@@ -652,6 +579,27 @@ const ProductTabsSection = memo(function ProductTabsSection({
 
   return (
     <View style={styles.section}>
+      {active.endsAt && cd ? (
+        <LinearGradient
+          colors={['#F97316', '#EF4444']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.tabFlashBanner}
+        >
+          <View style={styles.flashTitleRow}>
+            <MaterialCommunityIcons name="flash" size={20} color="#FFFFFF" />
+            <Text style={styles.flashTitle}>Flash Sale</Text>
+          </View>
+          <View style={styles.countdownRow}>
+            <Text style={styles.countdownLabel}>Ends in</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.h).padStart(2, '0')}</Text></View>
+            <Text style={styles.countdownColon}>:</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.m).padStart(2, '0')}</Text></View>
+            <Text style={styles.countdownColon}>:</Text>
+            <View style={styles.countdownBox}><Text style={styles.countdownDigit}>{String(cd.s).padStart(2, '0')}</Text></View>
+          </View>
+        </LinearGradient>
+      ) : null}
       <View style={styles.tabBar}>
         {visibleTabs.map((t) => {
           const isActive = t.key === active.key;
@@ -1149,15 +1097,13 @@ export default function ProductFeedScreen() {
       {/* ── Homepage carousel ─────────────────────────────────────── */}
       <HomeCarousel slides={slides} />
 
-      {/* ── Flash Sale shelf with live countdown ─────────────────── */}
-      <FlashSaleShelf products={flashSale} endsAt={flashEndsAt} onPress={handleProductPress} />
-
       {/* ── Shop by Category ────────────────────────────────────────── */}
       <CategorySection categories={categories} onPressCategory={handleCategoryPress} />
 
       {/* ── Tabbed product shelf: Today's Deals / New Arrivals / Recommended ── */}
       <ProductTabsSection
         tabs={[
+          { key: 'flash', icon: 'flash', title: 'Flash Sale', data: flashSale, endsAt: flashEndsAt },
           { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
           { key: 'new', icon: 'package-variant-closed', title: 'New Arrivals', data: newArrivals },
           { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
@@ -1806,6 +1752,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
 
   // ── Tabbed product shelf ──────────────────────────────────────────
+  tabFlashBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    marginHorizontal: Spacing.two,
+    marginTop: Spacing.two,
+    borderRadius: 12,
+  },
   tabBar: {
     flexDirection: 'row',
     gap: Spacing.two,
