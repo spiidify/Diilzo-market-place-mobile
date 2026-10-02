@@ -1837,7 +1837,7 @@ const createStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 16,
+      paddingHorizontal: 12,
       paddingVertical: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
@@ -2235,7 +2235,7 @@ const createStyles = (colors: ThemeColors) =>
   payLinkBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Brand.primary, borderRadius: 10,
-    paddingHorizontal: 16, paddingVertical: 10, marginTop: 10,
+    paddingHorizontal: 12, paddingVertical: 10, marginTop: 10,
   },
   payLinkBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   methodBadge: {
@@ -2311,12 +2311,12 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     modalScrollContent: {
-      padding: 16,
+      padding: 12,
     },
     modalSection: {
       backgroundColor: colors.surface,
       borderRadius: 12,
-      padding: 16,
+      padding: 12,
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 16,
@@ -2502,7 +2502,7 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       gap: 6,
       paddingVertical: 9,
-      paddingHorizontal: 16,
+      paddingHorizontal: 12,
       borderRadius: 8,
     },
     clearModalCancel: {
@@ -2744,7 +2744,7 @@ const createStyles = (colors: ThemeColors) =>
       color: '#15803D',
     },
     modalFooter: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 12,
       paddingTop: 10,
       backgroundColor: colors.surface,
       borderTopWidth: 1,

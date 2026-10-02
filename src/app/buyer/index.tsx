@@ -409,7 +409,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   sellerCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Brand.primary, marginTop: 12,
-    padding: 16, borderRadius: 16,
+    padding: 12, borderRadius: 16,
     elevation: 3, shadowColor: Brand.primary, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   sellerCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
@@ -421,7 +421,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   switchCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: c.surface, marginTop: 12,
-    padding: 16, borderRadius: 16,
+    padding: 12, borderRadius: 16,
     borderWidth: 1, borderColor: c.border,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -436,7 +436,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   adminCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: c.surface,
-    padding: 16, borderRadius: 14,
+    padding: 12, borderRadius: 14,
     borderWidth: 1, borderColor: c.border,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -455,7 +455,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   menuItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 14, paddingHorizontal: 16,
+    paddingVertical: 14, paddingHorizontal: 12,
     borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   menuIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
@@ -471,7 +471,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Theme section
   themeSection: {
-    backgroundColor: c.background, borderRadius: 14, padding: 16, marginTop: 16,
+    backgroundColor: c.background, borderRadius: 14, padding: 12, marginTop: 16,
     gap: 12,
     borderWidth: 1, borderColor: c.border,
   },

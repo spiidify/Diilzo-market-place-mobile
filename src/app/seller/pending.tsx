@@ -188,7 +188,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   subtitle: { fontSize: 14, color: c.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 22, marginBottom: 24 },
 
   statusCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12,
     width: '100%', marginBottom: 16, elevation: 2, shadowColor: '#000',
     shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
@@ -199,7 +199,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   infoCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12,
     width: '100%', marginBottom: 20, elevation: 2, shadowColor: '#000',
     shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },

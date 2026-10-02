@@ -314,8 +314,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 14, color: c.textTertiary },
-  scrollContent: { padding: 16, gap: 12, paddingBottom: 40 },
-  card: { backgroundColor: c.surface, borderRadius: 12, padding: 16, gap: 12, borderWidth: 1, borderColor: c.border },
+  scrollContent: { padding: 12, gap: 12, paddingBottom: 40 },
+  card: { backgroundColor: c.surface, borderRadius: 12, padding: 12, gap: 12, borderWidth: 1, borderColor: c.border },
   cardTitle: { fontSize: 13, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Profile
   profileHeader: { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 8 },

@@ -267,11 +267,11 @@ export default function AdminStaffScreen() {
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: 16, gap: 12 },
+  list: { padding: 12, gap: 12 },
   card: {
     backgroundColor: c.surface,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     gap: 12,
     borderWidth: 1,
     borderColor: c.border,
@@ -299,7 +299,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   emptyText: { fontSize: 14, fontWeight: '600', color: c.textSecondary },
   emptySub: { fontSize: 12, color: c.textTertiary, textAlign: 'center' },
   // Modal
-  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 16 },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 12 },
   modalCard: { backgroundColor: c.surface, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, gap: 8 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: c.text },
   modalSub: { fontSize: 12, color: c.textTertiary, marginBottom: 8 },

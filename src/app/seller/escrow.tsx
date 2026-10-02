@@ -222,7 +222,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   assuranceBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Brand.primary + '10', borderWidth: 1, borderColor: Brand.primary + '30',
-    borderRadius: 14, padding: 16, marginBottom: 14,
+    borderRadius: 14, padding: 12, marginBottom: 14,
   },
   assuranceTitle: { fontSize: 15, fontWeight: '800', color: Brand.primary },
   assuranceSub: { fontSize: 12, color: c.textSecondary, marginTop: 4, lineHeight: 18 },
@@ -240,7 +240,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12,
     marginBottom: 10, elevation: 2, shadowColor: '#000',
     shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },

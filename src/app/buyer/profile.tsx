@@ -263,7 +263,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
   body: { flex: 1 },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 12, paddingBottom: 40 },
 
   // ── Avatar ──────────────────────────────────────────────────────
   avatarSection: { alignItems: 'center', marginBottom: 24 },

@@ -114,7 +114,7 @@ export function OrderSkeleton() {
 // ── Order list skeleton ────────────────────────────────────────────
 export function OrderListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <View style={{ padding: 16 }}>
+    <View style={{ padding: 12 }}>
       {Array.from({ length: count }).map((_, i) => (
         <OrderSkeleton key={i} />
       ))}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   orderCard: {
-    padding: 16,
+    padding: 12,
     marginBottom: 12,
     borderRadius: 12,
   },

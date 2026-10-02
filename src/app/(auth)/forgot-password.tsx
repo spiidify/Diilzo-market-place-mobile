@@ -145,7 +145,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // White form card
   card: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     borderRadius: 20,
     padding: 20,
     backgroundColor: c.surface,

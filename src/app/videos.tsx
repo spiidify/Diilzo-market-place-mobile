@@ -1521,7 +1521,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   headerBg: { width: '100%' },
   headerBar: {
     width: '100%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1537,7 +1537,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 12,
     backgroundColor: '#0a0a0a',
   },
@@ -1550,7 +1550,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: Brand.primary,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 20,
     marginTop: 16,
@@ -1658,7 +1658,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   searchCountText: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 4,
   },
 
@@ -1720,7 +1720,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     bottom: 100,
     left: 0,
     right: 70,
-    padding: 16,
+    padding: 12,
     paddingBottom: 16,
   },
   storeRow: {

@@ -1421,7 +1421,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   gwDot: { width: 10, height: 10, borderRadius: 5 },
   whCancelBtn: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 12,
-    paddingHorizontal: 16, justifyContent: 'center',
+    paddingHorizontal: 12, justifyContent: 'center',
   },
   whCancelBtnText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
   rcvSearchInput: { flex: 1, fontSize: 14, color: colors.text, padding: 0 },

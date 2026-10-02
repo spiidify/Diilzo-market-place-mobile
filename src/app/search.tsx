@@ -1274,7 +1274,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#FFFBEB',
     marginHorizontal: 12,
@@ -1316,7 +1316,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: c.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -1327,7 +1327,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
     color: c.text,
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 10,
   },
   contextCount: {
@@ -1408,7 +1408,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: c.border,
   },
@@ -1419,7 +1419,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   countryListItem: {
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: c.border,
   },
@@ -1479,7 +1479,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   applyBtn: {
     backgroundColor: Brand.primary,
     borderRadius: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 9,
   },
   applyBtnText: {
@@ -1517,7 +1517,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Idle state sections ─────────────────────────────────────────
   idleScroll: { flex: 1 },
   section: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 20,
   },
   sectionHeader: {
@@ -1603,7 +1603,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
   },
   countText: { fontSize: 13, color: c.textSecondary, fontWeight: '500', flex: 1 },

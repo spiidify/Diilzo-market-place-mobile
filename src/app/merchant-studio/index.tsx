@@ -338,7 +338,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Order card ──────────────────────────────────────────────────
   orderCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 16, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },

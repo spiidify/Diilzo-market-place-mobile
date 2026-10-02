@@ -349,7 +349,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingTop: 16 },
   card: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     padding: 20,
     borderRadius: 20,
     backgroundColor: c.surface,

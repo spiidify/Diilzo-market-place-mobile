@@ -192,7 +192,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kpiValue: { fontSize: 15, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   sectionCard: {
-    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 12, marginBottom: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 },
@@ -207,7 +207,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   netBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: c.surfaceAlt, borderRadius: 16, padding: 16,
+    backgroundColor: c.surfaceAlt, borderRadius: 16, padding: 12,
   },
   netBannerTitle: { fontSize: 13, color: c.textSecondary, fontWeight: '600' },
   netBannerValue: { fontSize: 22, fontWeight: '900', color: Brand.success },

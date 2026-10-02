@@ -468,7 +468,7 @@ export default function SellerPromotionsScreen() {
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.surfaceAlt },
   body: { flex: 1 },
-  bodyContent: { padding: 16, paddingBottom: 40 },
+  bodyContent: { padding: 12, paddingBottom: 40 },
   centerBody: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   loadingText: { marginTop: 12, color: c.textSecondary, fontSize: 14 },
   errorText: { marginTop: 12, color: Brand.danger, fontSize: 14, textAlign: 'center' },
@@ -481,7 +481,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Analytics
   analyticsCard: {
-    backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    backgroundColor: c.surface, borderRadius: 12, padding: 12,
     marginBottom: 20, borderWidth: 1, borderColor: c.borderLight,
   },
   analyticsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -492,7 +492,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Packages
   packagesScroll: { marginBottom: 20 },
   packageCard: {
-    width: 140, backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    width: 140, backgroundColor: c.surface, borderRadius: 12, padding: 12,
     marginRight: 12, alignItems: 'center', borderWidth: 1, borderColor: c.borderLight,
   },
   packageIcon: {
@@ -505,7 +505,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Promotion cards
   promoCard: {
-    backgroundColor: c.surface, borderRadius: 12, padding: 16,
+    backgroundColor: c.surface, borderRadius: 12, padding: 12,
     marginBottom: 12, borderWidth: 1, borderColor: c.borderLight,
   },
   promoHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },

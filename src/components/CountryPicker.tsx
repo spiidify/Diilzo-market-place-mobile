@@ -136,7 +136,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginVertical: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,

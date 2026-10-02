@@ -249,7 +249,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kpiValue: { fontSize: 16, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   topUpCard: {
-    backgroundColor: c.surface, borderRadius: 16, padding: 16, marginBottom: 16,
+    backgroundColor: c.surface, borderRadius: 16, padding: 12, marginBottom: 16,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   topUpTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 4 },

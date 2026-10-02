@@ -291,7 +291,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   chatContainer: { flex: 1, backgroundColor: c.surfaceAlt },
-  productBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  productBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
   productBarText: { flex: 1, fontSize: 13, fontWeight: '600', color: c.text },
   chatList: { padding: 12, paddingBottom: 80 },
   msgRow: { flexDirection: 'row', marginBottom: 8 },
@@ -307,6 +307,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   sendWarningBar: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#FFFBEB' },
   sendWarningText: { flex: 1, fontSize: 11, color: '#92400E', lineHeight: 16 },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.borderLight },
-  replyInput: { flex: 1, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 14, color: c.text, maxHeight: 100 },
+  replyInput: { flex: 1, borderWidth: 1.5, borderColor: c.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.text, maxHeight: 100 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Brand.primary, justifyContent: 'center', alignItems: 'center' },
 });

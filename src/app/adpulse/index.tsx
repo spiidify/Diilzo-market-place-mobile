@@ -376,7 +376,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Campaign card ───────────────────────────────────────────────
   campaignCard: {
     backgroundColor: c.surface, marginHorizontal: 12, marginBottom: 10,
-    padding: 16, borderRadius: 14,
+    padding: 12, borderRadius: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   campaignHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
