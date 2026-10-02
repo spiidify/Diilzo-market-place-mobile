@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -26,14 +26,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
-import { addToCart } from '@/services/cart';
+import { addToCart, getCart, removeCartItem } from '@/services/cart';
 import { createReview, fetchProductReviews, trackProductView } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
-import type { Product, ProductSpecification, Review } from '@/types';
+import type { CartItem, Product, ProductSpecification, Review } from '@/types';
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -62,6 +62,7 @@ export default function ProductDetailScreen() {
   const [showCallModal, setShowCallModal] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
+  const [inCartItem, setInCartItem] = useState<CartItem | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   // Structured option selection: { [optionId]: optionValueId }
   const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
@@ -160,6 +161,21 @@ export default function ProductDetailScreen() {
   }, [slug, isAuthenticated]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Check cart membership whenever the screen gains focus (product-level).
+  useFocusEffect(
+    useCallback(() => {
+      if (!product?.id) return;
+      let active = true;
+      getCart()
+        .then((cart) => {
+          if (!active) return;
+          setInCartItem(cart.items.find((i) => i.product.id === product.id) ?? null);
+        })
+        .catch(() => { });
+      return () => { active = false; };
+    }, [product?.id]),
+  );
 
   // ── Derived variant state ──────────────────────────────────────
   const hasOptions = (product?.options?.length ?? 0) > 0;
@@ -314,7 +330,8 @@ export default function ProductDetailScreen() {
     }
     setAddingToCart(true);
     try {
-      await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
+      const item = await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
+      setInCartItem(item);
       incrementCartCount(quantity);
       playSound(Sounds.ADD_TO_CART);
       showToast('success', `${quantity} ${quantity === 1 ? 'item' : 'items'} added to cart`);
@@ -344,7 +361,8 @@ export default function ProductDetailScreen() {
     }
     setBuyingNow(true);
     try {
-      await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
+      const item = await addToCart(product.id, quantity, resolvedVariantId ?? undefined);
+      setInCartItem(item);
       incrementCartCount(quantity);
       // Navigate directly to checkout
       router.push('/checkout');
@@ -361,6 +379,25 @@ export default function ProductDetailScreen() {
       setBuyingNow(false);
     }
   }, [product, quantity, resolvedVariantId, selectedVariant, comboUnavailable, incrementCartCount, showToast, router]);
+
+  const handleViewCart = useCallback(() => {
+    router.push('/cart');
+  }, [router]);
+
+  const handleRemoveFromCart = useCallback(async () => {
+    if (!inCartItem) return;
+    setBuyingNow(true);
+    try {
+      await removeCartItem(inCartItem.id);
+      incrementCartCount(-inCartItem.quantity);
+      setInCartItem(null);
+      showToast('success', 'Removed from cart');
+    } catch (e: any) {
+      showToast('error', e?.response?.data?.detail || 'Could not remove this item from cart.');
+    } finally {
+      setBuyingNow(false);
+    }
+  }, [inCartItem, incrementCartCount, showToast]);
 
   const handleShare = useCallback(async () => {
     if (!product) return;
@@ -1445,15 +1482,15 @@ export default function ProductDetailScreen() {
         <View style={styles.actionBar}>
           <Pressable
             style={({ pressed }) => [styles.cartBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleAddToCart}
+            onPress={inCartItem ? handleViewCart : handleAddToCart}
             disabled={addingToCart || buyingNow}
           >
             {addingToCart ? (
               <ActivityIndicator size="small" color={Brand.primary} />
             ) : (
-              <MaterialCommunityIcons name="cart-plus" size={20} color={Brand.primary} />
+              <MaterialCommunityIcons name={inCartItem ? 'cart-check' : 'cart-plus'} size={20} color={Brand.primary} />
             )}
-            <Text style={styles.cartBtnText}>Add to Cart</Text>
+            <Text style={styles.cartBtnText}>{inCartItem ? 'View Cart' : 'Add to Cart'}</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.85 }, !product?.video_file_url && { opacity: 0.5 }]}
@@ -1464,14 +1501,14 @@ export default function ProductDetailScreen() {
             <Text style={styles.callBtnText}>See Video</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }, (buyingNow || addingToCart) && { opacity: 0.6 }]}
-            onPress={handleBuyNow}
+            style={({ pressed }) => [styles.buyBtn, inCartItem && styles.buyBtnRemove, pressed && { opacity: 0.85 }, (buyingNow || addingToCart) && { opacity: 0.6 }]}
+            onPress={inCartItem ? handleRemoveFromCart : handleBuyNow}
             disabled={buyingNow || addingToCart}
           >
             {buyingNow ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.buyBtnText}>Buy Now</Text>
+              <Text style={styles.buyBtnText}>{inCartItem ? 'Remove' : 'Buy Now'}</Text>
             )}
           </Pressable>
         </View>
@@ -2282,6 +2319,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     borderRadius: 8,
     paddingVertical: 12,
   },
+  buyBtnRemove: { backgroundColor: '#DC2626' },
   buyBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 
   // ── Toast ────────────────────────────────────────────────────────
