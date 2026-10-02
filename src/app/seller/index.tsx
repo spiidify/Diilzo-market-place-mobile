@@ -227,6 +227,51 @@ export default function SellerDashboardScreen() {
           </View>
         )}
 
+        {/* ── POS in-store sales (separate from marketplace earnings) ── */}
+        {data?.pos_stats && (
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <Text style={styles.cardTitle}>Point of Sale</Text>
+              <Pressable style={styles.cardLink} onPress={() => router.push('/seller/pos' as any)} hitSlop={8}>
+                <Text style={styles.cardLinkText}>Open terminal</Text>
+                <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
+              </Pressable>
+            </View>
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiItem}>
+                <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.today_total).toLocaleString()}</Text>
+                <Text style={styles.kpiLabel}>Today · {data.pos_stats.today_count} sale{data.pos_stats.today_count === 1 ? '' : 's'}</Text>
+              </View>
+              <View style={styles.kpiDivider} />
+              <View style={styles.kpiItem}>
+                <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.lifetime_total).toLocaleString()}</Text>
+                <Text style={styles.kpiLabel}>POS Lifetime</Text>
+              </View>
+              <View style={styles.kpiDivider} />
+              <Pressable style={styles.kpiItem} onPress={() => router.push('/seller/pos-payments' as any)}>
+                <Text style={[styles.kpiValue, (data.pos_stats.pending_payments || 0) > 0 && { color: '#F59E0B' }]}>
+                  {data.pos_stats.pending_payments}
+                </Text>
+                <Text style={styles.kpiLabel}>Pending</Text>
+              </Pressable>
+            </View>
+            {data.pos_stats.recent_sales.slice(0, 3).map((s, idx) => (
+              <View key={`pos-${idx}`} style={styles.listRow}>
+                <MaterialCommunityIcons
+                  name={s.payment_status === 'paid' ? 'check-circle' : s.payment_status === 'pending' ? 'clock-outline' : 'close-circle'}
+                  size={16}
+                  color={s.payment_status === 'paid' ? '#16A34A' : s.payment_status === 'pending' ? '#F59E0B' : '#EF4444'}
+                />
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>#{s.sale_number}</Text>
+                  <Text style={styles.rowSub}>{new Date(s.sale_date).toLocaleDateString()} · {s.payment_method}</Text>
+                </View>
+                <Text style={styles.rowAmount}>UGX {Number(s.total).toLocaleString()}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* ── Profile completion ────────────────────────────────────── */}
         {data?.profile_completion && data.profile_completion.percentage < 100 && (
           <Pressable

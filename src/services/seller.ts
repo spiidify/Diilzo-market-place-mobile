@@ -53,8 +53,26 @@ export interface SellerDashboard {
   stats: SellerStats;
   recent_orders?: SellerRecentOrder[];
   low_stock_products?: SellerLowStockProduct[];
+  pos_stats?: SellerPosStats | null;
   supplier_stats?: SellerSupplierStats | null;
   profile_completion?: SellerProfileCompletion | null;
+}
+
+export interface SellerPosRecentSale {
+  id: number;
+  sale_number: string;
+  total: string;
+  payment_method: string;
+  payment_status: 'pending' | 'paid' | 'failed';
+  sale_date: string;
+}
+
+export interface SellerPosStats {
+  today_total: string;
+  today_count: number;
+  lifetime_total: string;
+  pending_payments: number;
+  recent_sales: SellerPosRecentSale[];
 }
 
 export interface SellerOrder {
