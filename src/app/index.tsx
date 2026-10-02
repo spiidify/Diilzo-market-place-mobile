@@ -4,16 +4,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Linking,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,25 +30,25 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
-    fetchBecauseYouViewed,
-    fetchCategories,
-    fetchClaimableCoupons,
-    fetchFlashSaleProducts,
-    fetchRecentlyViewed,
-    fetchSlides,
-    fetchTopBrands,
-    fetchTopStores
+  fetchBecauseYouViewed,
+  fetchCategories,
+  fetchClaimableCoupons,
+  fetchFlashSaleProducts,
+  fetchRecentlyViewed,
+  fetchSlides,
+  fetchTopBrands,
+  fetchTopStores
 } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
-    Brand as BrandType,
-    Category,
-    ClaimableCoupon,
-    Product,
-    Slide,
-    SlidePosition,
-    Store,
+  Brand as BrandType,
+  Category,
+  ClaimableCoupon,
+  Product,
+  Slide,
+  SlidePosition,
+  Store,
 } from '@/types';
 
 // ── Memoized product card for FlatList performance ──────────────────
@@ -628,6 +628,61 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
   );
 });
 
+// ── Tabbed product section — switches between product sets in a 2-col grid ──
+const ProductTabsSection = memo(function ProductTabsSection({
+  tabs,
+  onPress,
+  onChat,
+}: {
+  tabs: { key: string; icon: string; title: string; data: Product[] }[];
+  onPress: (slug: string) => void;
+  onChat: (product: Product) => void;
+}) {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const visibleTabs = tabs.filter((t) => t.data && t.data.length > 0);
+  const [activeKey, setActiveKey] = useState<string>(visibleTabs[0]?.key ?? '');
+  const active = visibleTabs.find((t) => t.key === activeKey) ?? visibleTabs[0];
+  if (visibleTabs.length === 0 || !active) return null;
+
+  const rows: Product[][] = [];
+  for (let i = 0; i < active.data.length; i += 2) {
+    rows.push(active.data.slice(i, i + 2));
+  }
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.tabBar}>
+        {visibleTabs.map((t) => {
+          const isActive = t.key === active.key;
+          return (
+            <Pressable
+              key={t.key}
+              style={({ pressed }) => [styles.tabBtn, isActive && styles.tabBtnActive, pressed && { opacity: 0.8 }]}
+              onPress={() => setActiveKey(t.key)}
+            >
+              <MaterialCommunityIcons name={t.icon as any} size={14} color={isActive ? '#FFFFFF' : colors.textSecondary} />
+              <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
+                {t.title}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.tabGrid}>
+        {rows.map((row, i) => (
+          <View key={`${active.key}-row-${i}`} style={styles.tabRow}>
+            {row.map((item) => (
+              <ProductCard key={item.id} item={item} onPress={onPress} onChat={onChat} />
+            ))}
+            {row.length === 1 && <View style={{ flex: 1 }} />}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+});
+
 // ── Top Stores section (memoized) ───────────────────────────────────
 const TopStoresSection = memo(function TopStoresSection({
   stores,
@@ -1100,20 +1155,22 @@ export default function ProductFeedScreen() {
       {/* ── Shop by Category ────────────────────────────────────────── */}
       <CategorySection categories={categories} onPressCategory={handleCategoryPress} />
 
-      {/* ── Today's Deals ─────────────────────────────────────────── */}
-      <ProductCarouselSection icon="fire" title="Today's Deals" data={deals} onPress={handleProductPress} />
+      {/* ── Tabbed product shelf: Today's Deals / New Arrivals / Recommended ── */}
+      <ProductTabsSection
+        tabs={[
+          { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
+          { key: 'new', icon: 'package-variant-closed', title: 'New Arrivals', data: newArrivals },
+          { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
+        ]}
+        onPress={handleProductPress}
+        onChat={handleChat}
+      />
 
       {/* ── Voucher banner (claimable coupons) ───────────────────── */}
       <VoucherBanner vouchers={vouchers} />
 
       {/* ── Dual promo banner tiles ──────────────────────────────── */}
       <DualBannerTiles tileA={tileA} tileB={tileB} onPress={handleSlidePress} />
-
-      {/* ── New Arrivals ─────────────────────────────────────────── */}
-      <ProductCarouselSection icon="package-variant-closed" title="New Arrivals" data={newArrivals} onPress={handleProductPress} />
-
-      {/* ── Recommended for You ──────────────────────────────────── */}
-      <ProductCarouselSection icon="thumb-up-outline" title="Recommended for You" data={recommended} onPress={handleProductPress} />
 
       {/* ── Because You Viewed ───────────────────────────────────── */}
       <ProductCarouselSection icon="lightbulb-on-outline" title="Because You Viewed" data={becauseYouViewed} onPress={handleProductPress} />
@@ -1747,6 +1804,31 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.two,
     gap: Spacing.two,
   },
+
+  // ── Tabbed product shelf ──────────────────────────────────────────
+  tabBar: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    marginTop: Spacing.two,
+    marginBottom: Spacing.two,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 20,
+    backgroundColor: c.surfaceAlt,
+  },
+  tabBtnActive: { backgroundColor: Brand.primary },
+  tabBtnText: { fontSize: 11, fontWeight: '700', color: c.textSecondary, flexShrink: 1 },
+  tabBtnTextActive: { color: '#FFFFFF' },
+  tabGrid: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.two },
+  tabRow: { flexDirection: 'row', gap: Spacing.two, marginBottom: Spacing.two },
   carouselCard: {
     width: 150,
     backgroundColor: c.surface,
