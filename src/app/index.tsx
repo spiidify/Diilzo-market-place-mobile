@@ -399,18 +399,20 @@ const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: Clai
           const copied = copiedCode === v.code;
           return (
             <View key={`v-${v.code}`} style={styles.voucherCard}>
-              <View style={styles.voucherIconWrap}>
-                <MaterialCommunityIcons name="ticket-percent" size={16} color="#FFFFFF" />
-              </View>
-              <View style={styles.voucherBody}>
-                <Text style={styles.voucherCode} numberOfLines={1}>{v.code}</Text>
-                <Text style={styles.voucherDesc} numberOfLines={1}>
-                  {v.discount_type === 'percentage'
-                    ? `${Number(v.discount_value)}% OFF`
-                    : `UGX ${Number(v.discount_value).toLocaleString()} OFF`}
-                  {v.store_name ? ` • ${v.store_name}` : ''}
-                  {Number(v.min_order_amount) > 0 ? ` · Min ${Number(v.min_order_amount).toLocaleString()}` : ''}
-                </Text>
+              <View style={styles.voucherTopRow}>
+                <View style={styles.voucherIconWrap}>
+                  <MaterialCommunityIcons name="ticket-percent" size={16} color="#FFFFFF" />
+                </View>
+                <View style={styles.voucherBody}>
+                  <Text style={styles.voucherCode} numberOfLines={1}>{v.code}</Text>
+                  <Text style={styles.voucherDesc} numberOfLines={1}>
+                    {v.discount_type === 'percentage'
+                      ? `${Number(v.discount_value)}% OFF`
+                      : `UGX ${Number(v.discount_value).toLocaleString()} OFF`}
+                    {v.store_name ? ` • ${v.store_name}` : ''}
+                    {Number(v.min_order_amount) > 0 ? ` · Min ${Number(v.min_order_amount).toLocaleString()}` : ''}
+                  </Text>
+                </View>
               </View>
               <Pressable
                 style={({ pressed }) => [styles.voucherClaimBtn, (claimed || copied) && styles.voucherClaimedBtn, pressed && { opacity: 0.8 }]}
@@ -2404,12 +2406,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   voucherCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'stretch',
     backgroundColor: Brand.primary,
     borderRadius: 10,
     paddingHorizontal: 8,
-    paddingVertical: 7,
+    paddingVertical: 8,
     gap: 7,
     flexBasis: '48%',
     flexGrow: 0,
@@ -2419,6 +2421,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
+  },
+  voucherTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
   },
   voucherIconWrap: {
     width: 28,
@@ -2434,9 +2441,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   voucherClaimBtn: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    minWidth: 46,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
