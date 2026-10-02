@@ -247,10 +247,15 @@ export default function SellerDashboardScreen() {
                 <Text style={styles.kpiLabel}>POS Lifetime</Text>
               </View>
               <Pressable style={[styles.kpiItem, styles.kpiTileAmber]} onPress={() => router.push('/seller/pos-payments' as any)}>
-                <Text style={[styles.kpiValue, (data.pos_stats.pending_payments || 0) > 0 && { color: '#F59E0B' }]}>
+                <Text
+                  style={[styles.kpiValueSm, (data.pos_stats.pending_payments || 0) > 0 && { color: '#F59E0B' }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {data.pos_stats.pending_payments}
                 </Text>
-                <Text style={styles.kpiLabel}>Pending</Text>
+                <Text style={styles.kpiLabel} numberOfLines={1}>Pending</Text>
               </Pressable>
             </View>
             {data.pos_stats.recent_sales.slice(0, 3).map((s, idx) => (
