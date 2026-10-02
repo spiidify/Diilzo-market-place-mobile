@@ -679,9 +679,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Supplier KPIs ─────────────────────────────────────────────────
   kpiRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
   kpiItem: { flex: 1, alignItems: 'center', gap: 1, paddingVertical: 6 },
-  kpiTileGreen: { backgroundColor: '#10B98114', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
-  kpiTileBlue: { backgroundColor: '#3B82F614', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
-  kpiTileAmber: { backgroundColor: '#F59E0B14', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
+  kpiTileGreen: { backgroundColor: '#10B9812E', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
+  kpiTileBlue: { backgroundColor: '#3B82F62E', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
+  kpiTileAmber: { backgroundColor: '#F59E0B2E', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiValue: { fontSize: 17, fontWeight: '900', color: c.text },
   kpiValueSm: { fontSize: 12, fontWeight: '900', color: '#7C3AED', width: '100%', textAlign: 'center' },
   kpiLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
