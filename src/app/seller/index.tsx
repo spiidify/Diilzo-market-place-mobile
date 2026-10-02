@@ -231,7 +231,7 @@ export default function SellerDashboardScreen() {
         {data?.pos_stats && (
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text style={styles.cardTitle}>Point of Sale</Text>
+              <Text style={styles.cardTitle}>Point of Sale (POS)</Text>
               <Pressable style={styles.cardLink} onPress={() => router.push('/seller/pos' as any)} hitSlop={8}>
                 <Text style={styles.cardLinkText}>Open terminal</Text>
                 <MaterialCommunityIcons name="chevron-right" size={14} color={Brand.primary} />
