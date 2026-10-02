@@ -219,7 +219,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   statusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 16, padding: 12, marginBottom: 12,
+    borderRadius: 16, padding: 8, marginBottom: 12,
   },
   statusTitle: { fontSize: 16, fontWeight: '800' },
   statusSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
@@ -233,7 +233,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kpiValue: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginTop: 2 },
 
   sectionCard: {
-    backgroundColor: c.surface, borderRadius: 16, padding: 12, marginBottom: 12,
+    backgroundColor: c.surface, borderRadius: 16, padding: 8, marginBottom: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 10 },

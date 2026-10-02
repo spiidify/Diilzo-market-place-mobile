@@ -141,7 +141,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   retryBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   retryText: { color: '#FFFFFF', fontWeight: '700' },
 
-  lastUpdated: { fontSize: 11, color: c.textTertiary, paddingHorizontal: 12, paddingTop: 12, fontWeight: '600' },
+  lastUpdated: { fontSize: 11, color: c.textTertiary, paddingHorizontal: 8, paddingTop: 12, fontWeight: '600' },
 
   errorBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -156,7 +156,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   metricCard: {
     flex: 1, minWidth: '46%', backgroundColor: c.surface,
-    borderRadius: 14, padding: 12, gap: 8,
+    borderRadius: 14, padding: 8, gap: 8,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   metricIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
@@ -165,7 +165,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   infoCard: {
     backgroundColor: c.surface, marginHorizontal: 12, marginTop: 16, marginBottom: 32,
-    padding: 12, borderRadius: 14,
+    padding: 8, borderRadius: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   infoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },

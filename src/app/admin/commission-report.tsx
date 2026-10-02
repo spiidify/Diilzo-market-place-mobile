@@ -131,7 +131,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   summaryValue: { fontSize: 14, fontWeight: '800' },
   section: { marginBottom: 16 },
   sectionTitle: { fontSize: 14, fontWeight: '800', color: c.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
-  chartCard: { backgroundColor: c.surface, borderRadius: 14, padding: 12, flexDirection: 'row', alignItems: 'flex-end', minHeight: 160, gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  chartCard: { backgroundColor: c.surface, borderRadius: 14, padding: 8, flexDirection: 'row', alignItems: 'flex-end', minHeight: 160, gap: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   chartBar: { flex: 1, alignItems: 'center' },
   barContainer: { width: '100%', height: 100, justifyContent: 'flex-end', marginBottom: 4 },
   barFill: { width: '100%', borderRadius: 4, minHeight: 2 },

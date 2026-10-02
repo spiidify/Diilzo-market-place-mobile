@@ -126,7 +126,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
   listContent: { padding: 12 },
-  card: { backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 8, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   orderNumber: { fontSize: 15, fontWeight: '800', color: c.text },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

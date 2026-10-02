@@ -1995,7 +1995,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
+    padding: 8,
   },
   supplierBannerIcon: {
     width: 56,

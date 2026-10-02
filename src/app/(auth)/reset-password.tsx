@@ -180,7 +180,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // White form card
   card: {
-    marginHorizontal: 12,
+    marginHorizontal: 8,
     borderRadius: 20,
     padding: 20,
     backgroundColor: c.surface,

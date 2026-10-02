@@ -314,14 +314,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 14,
   },
   list: {
-    padding: 12,
+    padding: 8,
     paddingBottom: 32,
   },
   // Header card
   headerCard: {
     backgroundColor: c.surface,
     borderRadius: 14,
-    padding: 12,
+    padding: 8,
     marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',

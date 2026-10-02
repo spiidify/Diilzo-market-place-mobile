@@ -372,7 +372,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 12,
   },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -419,7 +419,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Chat card ───────────────────────────────────────────────────
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 12, paddingVertical: 14,
+    paddingHorizontal: 8, paddingVertical: 14,
   },
   supportCard: {
     backgroundColor: c.surfaceAlt,

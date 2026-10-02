@@ -135,7 +135,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   bannerTitle: { fontSize: 13, fontWeight: '800', color: c.text, marginBottom: 3 },
   bannerText: { fontSize: 12, color: c.textSecondary, lineHeight: 17 },
-  card: { backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 8, marginBottom: 10, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   nameWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontSize: 16, fontWeight: '800', color: c.text },

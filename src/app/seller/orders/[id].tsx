@@ -280,7 +280,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   bodyContent: { padding: 12, paddingBottom: 32, gap: 10 },
 
   detailCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12,
+    backgroundColor: c.surface, borderRadius: 14, padding: 8,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   detailHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -321,8 +321,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   cancelBtn: { backgroundColor: c.surface, borderWidth: 1.5, borderColor: Brand.danger },
   actionBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 
-  deliveredBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: '#16A34A15', borderRadius: 12 },
+  deliveredBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, backgroundColor: '#16A34A15', borderRadius: 12 },
   deliveredText: { fontSize: 14, fontWeight: '600', color: '#16A34A', flex: 1 },
-  cancelledBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: Brand.danger + '15', borderRadius: 12 },
+  cancelledBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, backgroundColor: Brand.danger + '15', borderRadius: 12 },
   cancelledText: { fontSize: 14, fontWeight: '600', color: Brand.danger, flex: 1 },
 });

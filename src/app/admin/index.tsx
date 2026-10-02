@@ -249,7 +249,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   roleSwitchSection: { marginTop: 16, marginBottom: 8, gap: 8 },
   roleSwitchBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: c.surface, padding: 12, borderRadius: 14,
+    backgroundColor: c.surface, padding: 8, borderRadius: 14,
     borderWidth: 1, borderColor: c.borderLight,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },

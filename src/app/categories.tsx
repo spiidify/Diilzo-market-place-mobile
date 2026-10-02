@@ -399,7 +399,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Search bar (white, below gradient header) ───────────────────
   searchWrap: {
     backgroundColor: c.surface,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: c.borderLight,

@@ -128,7 +128,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   scrollContent: { padding: 12, paddingBottom: 40 },
   section: { marginBottom: 16 },
   sectionTitle: { fontSize: 14, fontWeight: '800', color: c.textSecondary, marginBottom: 8, textTransform: 'uppercase' },
-  card: { backgroundColor: c.surface, borderRadius: 14, padding: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  card: { backgroundColor: c.surface, borderRadius: 14, padding: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   fieldLabel: { fontSize: 13, fontWeight: '700', color: c.textSecondary, marginBottom: 6 },
   input: { borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 12, fontSize: 14, color: c.text, marginBottom: 16 },
   saveBtn: { backgroundColor: Brand.primary, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginTop: 8 },

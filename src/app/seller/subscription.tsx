@@ -322,7 +322,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
   feeCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 14,
+    backgroundColor: c.surface, borderRadius: 14, padding: 8, marginBottom: 14,
     borderWidth: 1, borderColor: c.border,
   },
   feeCardTitle: { fontSize: 15, fontWeight: '700', color: c.text, marginBottom: 10 },
@@ -354,7 +354,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   freeBannerText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
   planCard: {
-    backgroundColor: c.surface, borderRadius: 16, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: c.border,
+    backgroundColor: c.surface, borderRadius: 16, padding: 8, marginBottom: 12, borderWidth: 1, borderColor: c.border,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   planHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },

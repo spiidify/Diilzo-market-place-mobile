@@ -447,7 +447,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Hero ────────────────────────────────────────────────────────
   heroBanner: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 20,
     position: 'relative',
   },
@@ -493,7 +493,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     backgroundColor: c.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -514,9 +514,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   actionBtnText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
 
   // ── Section cards ───────────────────────────────────────────────
-  sectionWrap: { paddingHorizontal: 12, paddingTop: 14 },
+  sectionWrap: { paddingHorizontal: 8, paddingTop: 14 },
   sectionCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12, gap: 14,
+    backgroundColor: c.surface, borderRadius: 14, padding: 8, gap: 14,
     elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text },
@@ -537,7 +537,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Products ────────────────────────────────────────────────────
   productsHeader: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 14,
     marginTop: 14,
     marginBottom: 12,
@@ -554,7 +554,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: c.text, paddingVertical: 2 },
   list: { paddingBottom: 20 },
-  productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 12 },
+  productRow: { gap: 10, marginBottom: 10, paddingHorizontal: 8 },
   tabletProductRow: { gap: 16, marginBottom: 16, paddingHorizontal: 24 },
   productCard: {
     flex: 1,

@@ -241,7 +241,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Status banner
   statusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 12, borderRadius: 14, marginBottom: 12,
+    padding: 8, borderRadius: 14, marginBottom: 12,
   },
   statusIcon: {
     width: 44, height: 44, borderRadius: 12,
@@ -253,7 +253,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12,
+    backgroundColor: c.surface, borderRadius: 14, padding: 8,
     marginBottom: 12, elevation: 2, shadowColor: '#000',
     shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },

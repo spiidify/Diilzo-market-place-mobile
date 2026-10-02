@@ -253,7 +253,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Current banner
   currentBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    padding: 12, borderRadius: 14, marginBottom: 16,
+    padding: 8, borderRadius: 14, marginBottom: 16,
   },
   currentIcon: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   currentTier: { fontSize: 18, fontWeight: '800', color: c.text },
