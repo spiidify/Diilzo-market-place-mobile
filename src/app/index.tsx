@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +31,7 @@ import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import {
+  claimCoupon,
   fetchBecauseYouViewed,
   fetchCategories,
   fetchClaimableCoupons,
@@ -340,6 +342,40 @@ function useCountdown(endsAt: string | null) {
 const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: ClaimableCoupon[] }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const [claimedCodes, setClaimedCodes] = useState<Set<string>>(
+    () => new Set(vouchers.filter((v) => v.claimed).map((v) => v.code))
+  );
+  const [claimingCode, setClaimingCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    setClaimedCodes(new Set(vouchers.filter((v) => v.claimed).map((v) => v.code)));
+  }, [vouchers]);
+
+  const handleClaim = useCallback(async (code: string) => {
+    if (claimingCode) return;
+    setClaimingCode(code);
+    try {
+      await Clipboard.setStringAsync(code);
+      if (isAuthenticated) {
+        await claimCoupon(code);
+        setClaimedCodes((prev) => new Set(prev).add(code));
+      } else {
+        setCopiedCode(code);
+        setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1800);
+      }
+    } catch {
+      // claim failed — the code is still on the clipboard
+      await Clipboard.setStringAsync(code).catch(() => { });
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1800);
+    } finally {
+      setClaimingCode(null);
+    }
+  }, [claimingCode, isAuthenticated]);
+
   if (!vouchers.length) return null;
   return (
     <View style={styles.voucherSection}>
@@ -348,27 +384,52 @@ const VoucherBanner = memo(function VoucherBanner({ vouchers }: { vouchers: Clai
           <MaterialCommunityIcons name="ticket-percent" size={20} color={Brand.primary} />
           <Text style={styles.sectionTitle}>Grab a Voucher</Text>
         </View>
+        <Pressable
+          style={({ pressed }) => [styles.seeAllBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => router.push('/buyer/coupons' as any)}
+        >
+          <Text style={styles.seeAllText}>See All</Text>
+          <MaterialCommunityIcons name="chevron-right" size={16} color={Brand.primary} />
+        </Pressable>
       </View>
       <View style={styles.voucherGrid}>
-        {vouchers.map((v) => (
-          <View key={`v-${v.code}`} style={styles.voucherCard}>
-            <View style={styles.voucherIconWrap}>
-              <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
+        {vouchers.map((v) => {
+          const claimed = claimedCodes.has(v.code);
+          const claiming = claimingCode === v.code;
+          const copied = copiedCode === v.code;
+          return (
+            <View key={`v-${v.code}`} style={styles.voucherCard}>
+              <View style={styles.voucherIconWrap}>
+                <MaterialCommunityIcons name="ticket-percent" size={22} color="#FFFFFF" />
+              </View>
+              <View style={styles.voucherBody}>
+                <Text style={styles.voucherCode}>{v.code}</Text>
+                <Text style={styles.voucherDesc}>
+                  {v.discount_type === 'percentage'
+                    ? `${v.discount_value}% OFF`
+                    : `${v.discount_value} OFF`}
+                  {v.store_name ? ` • ${v.store_name}` : ''}
+                </Text>
+                {v.min_order_amount && Number(v.min_order_amount) > 0 && (
+                  <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
+                )}
+              </View>
+              <Pressable
+                style={({ pressed }) => [styles.voucherClaimBtn, (claimed || copied) && styles.voucherClaimedBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => handleClaim(v.code)}
+                disabled={claiming}
+              >
+                {claiming ? (
+                  <ActivityIndicator size="small" color={claimed ? Brand.primary : '#FFFFFF'} />
+                ) : (
+                  <Text style={[styles.voucherClaimText, (claimed || copied) && styles.voucherClaimedText]}>
+                    {claimed ? 'Claimed' : copied ? 'Copied' : 'Claim'}
+                  </Text>
+                )}
+              </Pressable>
             </View>
-            <View style={styles.voucherBody}>
-              <Text style={styles.voucherCode}>{v.code}</Text>
-              <Text style={styles.voucherDesc}>
-                {v.discount_type === 'percentage'
-                  ? `${v.discount_value}% OFF`
-                  : `${v.discount_value} OFF`}
-                {v.store_name ? ` • ${v.store_name}` : ''}
-              </Text>
-              {v.min_order_amount && Number(v.min_order_amount) > 0 && (
-                <Text style={styles.voucherMin}>Min order {v.min_order_amount}</Text>
-              )}
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
     </View>
   );
@@ -2353,6 +2414,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 10,
     flexBasis: '48%',
     flexGrow: 0,
+    flexShrink: 1,
     elevation: 2,
     shadowColor: '#000000',
     shadowOpacity: 0.1,
@@ -2371,6 +2433,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   voucherCode: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
   voucherDesc: { color: 'rgba(255,255,255,0.95)', fontSize: 12, fontWeight: '600' },
   voucherMin: { color: 'rgba(255,255,255,0.8)', fontSize: 10 },
+  voucherClaimBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minWidth: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voucherClaimedBtn: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
+  voucherClaimText: { color: Brand.primary, fontSize: 11, fontWeight: '800' },
+  voucherClaimedText: { color: '#FFFFFF' },
 
   // ── Dual promo banner tiles ──────────────────────────────────────
   dualTilesWrap: {

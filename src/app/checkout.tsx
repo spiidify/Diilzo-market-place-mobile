@@ -402,6 +402,7 @@ export default function CheckoutScreen() {
         data: {
           shipping_address: shippingAddress,
           notes: orderNote || undefined,
+          coupon_code: discount > 0 && couponCode.trim() ? couponCode.trim() : undefined,
           fulfillment_method: fulfillmentMethod,
           pickup_station_id: fulfillmentMethod === 'pickup_station' ? selectedStationId ?? undefined : undefined,
         },

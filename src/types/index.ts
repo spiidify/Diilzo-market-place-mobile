@@ -246,6 +246,11 @@ export interface ClaimableCoupon {
   min_order_amount: string;
   store_name: string | null;
   valid_to: string | null;
+  /** Present on authed responses — whether the user already grabbed it. */
+  claimed?: boolean;
+  claimed_at?: string | null;
+  used?: boolean;
+  is_valid_now?: boolean;
 }
 
 // ── RFQ (Request for Quotation) ──────────────────────────────────

@@ -1,19 +1,19 @@
 // ── Catalog API Service (Categories, Brands, Stores, Reviews) ─────
 
 import type {
-  Brand,
-  Category,
-  ClaimableCoupon,
-  PaginatedResponse,
-  Product,
-  RFQPayload,
-  RFQResponse,
-  Review,
-  Slide,
-  SlidePosition,
-  Store,
-  StoreDetail,
-  StoreReview
+    Brand,
+    Category,
+    ClaimableCoupon,
+    PaginatedResponse,
+    Product,
+    RFQPayload,
+    RFQResponse,
+    Review,
+    Slide,
+    SlidePosition,
+    Store,
+    StoreDetail,
+    StoreReview
 } from '../types';
 import { apiRequest } from './api';
 import { swr } from './cache';
@@ -311,6 +311,17 @@ export async function fetchFlashSaleProducts(
 /** GET /api/v1/coupons/claimable/ — claimable vouchers for the home banner. */
 export async function fetchClaimableCoupons(): Promise<ClaimableCoupon[]> {
   const data = await apiRequest<{ results: ClaimableCoupon[] }>({ method: 'GET', url: '/coupons/claimable/' });
+  return data.results || [];
+}
+
+/** POST /api/v1/coupons/claim/ — grab a voucher for the signed-in user. */
+export async function claimCoupon(code: string): Promise<ClaimableCoupon> {
+  return apiRequest<ClaimableCoupon>({ method: 'POST', url: '/coupons/claim/', data: { code } });
+}
+
+/** GET /api/v1/coupons/mine/ — vouchers the user has claimed. */
+export async function fetchMyCoupons(): Promise<ClaimableCoupon[]> {
+  const data = await apiRequest<{ results: ClaimableCoupon[] }>({ method: 'GET', url: '/coupons/mine/' });
   return data.results || [];
 }
 
