@@ -248,7 +248,7 @@ export default function SellerDashboardScreen() {
               </View>
               <Pressable style={[styles.kpiItem, styles.kpiTileAmber]} onPress={() => router.push('/seller/pos-payments' as any)}>
                 <Text
-                  style={[styles.kpiValueSm, (data.pos_stats.pending_payments || 0) > 0 && { color: '#F59E0B' }]}
+                  style={styles.kpiValueSm}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.7}
@@ -683,7 +683,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kpiTileBlue: { backgroundColor: '#3B82F614', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiTileAmber: { backgroundColor: '#F59E0B14', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiValue: { fontSize: 17, fontWeight: '900', color: c.text },
-  kpiValueSm: { fontSize: 12, fontWeight: '900', color: c.text, width: '100%', textAlign: 'center' },
+  kpiValueSm: { fontSize: 12, fontWeight: '900', color: '#7C3AED', width: '100%', textAlign: 'center' },
   kpiLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
   kpiDivider: { width: 1, height: 28, backgroundColor: c.borderLight },
 
