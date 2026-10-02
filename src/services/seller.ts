@@ -124,6 +124,9 @@ export interface SellerEarnings {
   commission_rate: string;
   total_earned?: string;
   total_payouts?: string;
+  commission_to_diilzo?: string;
+  paid_to_diilzo?: string;
+  owed_to_diilzo?: string;
   ledger: any[];
   payouts: any[];
 }
