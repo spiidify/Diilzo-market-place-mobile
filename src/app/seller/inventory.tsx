@@ -22,20 +22,24 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
+    deleteSellerWarehouse,
     getInventory,
     getInventoryMovements,
     getInventoryProductDetail,
     getInventoryReorderCount,
     getProductReservations,
+    getSellerWarehouses,
     receiveStock,
+    saveSellerWarehouse,
     updateStock,
     type InventoryItem,
     type InventoryKpis,
     type InventoryProductDetail,
-    type StockMovementRow,
+    type SellerWarehouse,
+    type StockMovementRow
 } from '@/services/seller';
 
-type Tab = 'stock' | 'activity' | 'receive';
+type Tab = 'stock' | 'activity' | 'receive' | 'warehouses';
 type StatusFilter = '' | 'in' | 'low' | 'out';
 type AdjustMode = 'set' | 'add' | 'remove';
 
@@ -141,6 +145,18 @@ export default function SellerInventoryScreen() {
   const [resRows, setResRows] = useState<{ id: number; quantity: number; holder: string; expires_at: string }[]>([]);
   const [resLoading, setResLoading] = useState(false);
 
+  // ── Warehouses tab state ──
+  const [warehouses, setWarehouses] = useState<SellerWarehouse[]>([]);
+  const [diilzoWarehouses, setDiilzoWarehouses] = useState<SellerWarehouse[]>([]);
+  const [whLoading, setWhLoading] = useState(false);
+  const [whLoaded, setWhLoaded] = useState(false);
+  const [whSaving, setWhSaving] = useState(false);
+  const [whEditId, setWhEditId] = useState<number | null>(null);
+  const [whName, setWhName] = useState('');
+  const [whCity, setWhCity] = useState('');
+  const [whAddress, setWhAddress] = useState('');
+  const [whCap, setWhCap] = useState('');
+
   // ── Stock list loading ──
   const load = useCallback(async (pageNum = 1, append = false, q = search, st = status) => {
     const seq = ++fetchSeq.current;
@@ -212,6 +228,62 @@ export default function SellerInventoryScreen() {
   useEffect(() => {
     if (tab === 'activity' && !mvLoaded) loadMovements(1);
   }, [tab, mvLoaded, loadMovements]);
+
+  // ── Warehouses ──
+  const loadWarehouses = useCallback(async () => {
+    try {
+      setWhLoading(true);
+      const data = await getSellerWarehouses();
+      setWarehouses(data.warehouses);
+      setDiilzoWarehouses(data.diilzo_warehouses);
+      setWhLoaded(true);
+    } catch {
+      // non-critical
+    } finally {
+      setWhLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'warehouses' && !whLoaded) loadWarehouses();
+  }, [tab, whLoaded, loadWarehouses]);
+
+  const submitWarehouse = async () => {
+    if (!whName.trim()) { Alert.alert('Name required', 'Give the warehouse a name.'); return; }
+    try {
+      setWhSaving(true);
+      await saveSellerWarehouse({
+        ...(whEditId ? { id: whEditId } : {}),
+        name: whName.trim(),
+        city: whCity.trim() || undefined,
+        address: whAddress.trim() || undefined,
+        ...(whCap.trim() ? { capacity_cubic_meters: parseInt(whCap, 10) || 0 } : {}),
+      });
+      setWhEditId(null); setWhName(''); setWhCity(''); setWhAddress(''); setWhCap('');
+      await loadWarehouses();
+    } catch (e: any) {
+      Alert.alert('Save Failed', e?.response?.data?.error || e?.message || 'Could not save warehouse.');
+    } finally {
+      setWhSaving(false);
+    }
+  };
+
+  const confirmDeleteWarehouse = (w: SellerWarehouse) => {
+    Alert.alert(
+      'Remove Warehouse',
+      `"${w.name}" will be removed (deactivated if it has stock or transfer history).`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            try { await deleteSellerWarehouse(w.id); await loadWarehouses(); }
+            catch (e: any) { Alert.alert('Error', e?.response?.data?.error || 'Could not remove.'); }
+          },
+        },
+      ],
+    );
+  };
 
   // ── Receive: product picker search ──
   const onRcvQueryChange = (text: string) => {
@@ -472,7 +544,7 @@ export default function SellerInventoryScreen() {
 
       {/* ── Tabs ── */}
       <View style={styles.tabBar}>
-        {([['stock', 'cube-outline', 'Stock'], ['activity', 'history', 'Activity'], ['receive', 'truck-delivery-outline', 'Receive']] as [Tab, string, string][]).map(([t, icon, label]) => (
+        {([['stock', 'cube-outline', 'Stock'], ['activity', 'history', 'Activity'], ['receive', 'truck-delivery-outline', 'Receive'], ['warehouses', 'warehouse', 'Warehouses']] as [Tab, string, string][]).map(([t, icon, label]) => (
           <Pressable key={t} style={[styles.tabBtn, tab === t && styles.tabBtnActive]} onPress={() => setTab(t)}>
             <MaterialCommunityIcons name={icon as any} size={17} color={tab === t ? Brand.primary : colors.textTertiary} />
             <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>{label}</Text>
@@ -742,6 +814,143 @@ export default function SellerInventoryScreen() {
               </>
             )}
           </Pressable>
+        </ScrollView>
+      )}
+
+      {tab === 'warehouses' && (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          {/* Hero */}
+          <View style={styles.rcvHero}>
+            <View style={styles.rcvHeroIcon}>
+              <MaterialCommunityIcons name="warehouse" size={26} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rcvHeroTitle}>My Warehouses</Text>
+              <Text style={styles.rcvHeroSub}>Your own stock locations — stores, backrooms, depots.</Text>
+            </View>
+          </View>
+
+          {/* Create / edit form */}
+          <View style={styles.rcvCard}>
+            <Text style={styles.fieldLabel}>{whEditId ? 'Edit warehouse' : 'Add a warehouse'}</Text>
+            <View style={styles.rcvInputWrap}>
+              <MaterialCommunityIcons name="warehouse" size={16} color={colors.textTertiary} />
+              <TextInput
+                style={styles.rcvInput}
+                placeholder="Warehouse name *"
+                placeholderTextColor={colors.textTertiary}
+                value={whName}
+                onChangeText={setWhName}
+              />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+              <View style={[styles.rcvInputWrap, { flex: 1 }]}>
+                <MaterialCommunityIcons name="city" size={16} color={colors.textTertiary} />
+                <TextInput
+                  style={styles.rcvInput}
+                  placeholder="City"
+                  placeholderTextColor={colors.textTertiary}
+                  value={whCity}
+                  onChangeText={setWhCity}
+                />
+              </View>
+              <View style={[styles.rcvInputWrap, { flex: 1 }]}>
+                <MaterialCommunityIcons name="map-marker-outline" size={16} color={colors.textTertiary} />
+                <TextInput
+                  style={styles.rcvInput}
+                  placeholder="Address"
+                  placeholderTextColor={colors.textTertiary}
+                  value={whAddress}
+                  onChangeText={setWhAddress}
+                />
+              </View>
+            </View>
+            <View style={[styles.rcvInputWrap, { marginTop: 10 }]}>
+              <MaterialCommunityIcons name="cube-outline" size={16} color={colors.textTertiary} />
+              <TextInput
+                style={styles.rcvInput}
+                placeholder="Capacity in m³ (optional)"
+                placeholderTextColor={colors.textTertiary}
+                value={whCap}
+                onChangeText={setWhCap}
+                keyboardType="number-pad"
+              />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              {whEditId ? (
+                <Pressable style={styles.whCancelBtn} onPress={() => { setWhEditId(null); setWhName(''); setWhCity(''); setWhAddress(''); setWhCap(''); }}>
+                  <Text style={styles.whCancelBtnText}>Cancel</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                style={[styles.receiveBtn, { flex: 1, marginTop: 0 }, whSaving && { opacity: 0.45 }]}
+                onPress={submitWarehouse}
+                disabled={whSaving}
+              >
+                {whSaving ? <ActivityIndicator size="small" color="#fff" /> : (
+                  <>
+                    <MaterialCommunityIcons name="check" size={18} color="#fff" />
+                    <Text style={styles.receiveBtnText}>{whEditId ? 'Update Warehouse' : 'Add Warehouse'}</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Your warehouses */}
+          {whLoading && warehouses.length === 0 ? (
+            <ActivityIndicator size="large" color={Brand.primary} style={{ marginTop: 30 }} />
+          ) : warehouses.length === 0 ? (
+            <View style={styles.rcvCard}>
+              <Text style={[styles.rcvHeroSub, { textAlign: 'center' }]}>
+                No warehouses yet — add one above to organize stock and enable transfers.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.rcvCard}>
+              {warehouses.map((w) => (
+                <View key={w.id} style={styles.whRow}>
+                  <View style={[styles.gwDot, { backgroundColor: w.is_active ? '#8B5CF6' : colors.textTertiary }]} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.rowName} numberOfLines={1}>{w.name}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>
+                      {w.code} · {[w.city, w.country].filter(Boolean).join(', ') || 'No location'}
+                      {!w.is_active ? ' · inactive' : ''}
+                    </Text>
+                  </View>
+                  <Pressable
+                    hitSlop={8}
+                    style={{ padding: 4 }}
+                    onPress={() => {
+                      setWhEditId(w.id); setWhName(w.name); setWhCity(w.city);
+                      setWhAddress(w.address); setWhCap(String(w.capacity_cubic_meters || ''));
+                    }}
+                  >
+                    <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.textSecondary} />
+                  </Pressable>
+                  <Pressable hitSlop={8} style={{ padding: 4 }} onPress={() => confirmDeleteWarehouse(w)}>
+                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Diilzo fulfillment warehouses (transfer targets) */}
+          {diilzoWarehouses.length > 0 && (
+            <View style={styles.rcvCard}>
+              <Text style={styles.fieldLabel}>Diilzo fulfillment warehouses</Text>
+              {diilzoWarehouses.map((w) => (
+                <View key={w.id} style={styles.whRow}>
+                  <MaterialCommunityIcons name="warehouse" size={18} color={colors.textTertiary} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.rowName} numberOfLines={1}>{w.name}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>{w.code} · {w.city}, {w.country}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
 
@@ -1207,6 +1416,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: Brand.primary + '55',
     borderRadius: 12, paddingHorizontal: 12, height: 48, width: '100%',
   },
+
+  // Warehouses tab
+  gwDot: { width: 10, height: 10, borderRadius: 5 },
+  whCancelBtn: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    paddingHorizontal: 16, justifyContent: 'center',
+  },
+  whCancelBtnText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
   rcvSearchInput: { flex: 1, fontSize: 14, color: colors.text, padding: 0 },
   rcvNoResults: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', paddingVertical: 14 },
 

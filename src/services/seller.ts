@@ -1289,3 +1289,40 @@ export async function checkPOSPaymentStatus(
 ): Promise<{ id: number; payment_status: string; provider_status?: string }> {
   return apiRequest({ method: 'GET', url: '/pos/payment_status/', params: { id: saleId } });
 }
+
+// ── Warehouses (seller's own stock locations) ──────────────────────
+
+export interface SellerWarehouse {
+  id: number;
+  name: string;
+  code: string;
+  city: string;
+  country: string;
+  address: string;
+  capacity_cubic_meters: number;
+  used_capacity: string;
+  is_active: boolean;
+  is_own: boolean;
+}
+
+export async function getSellerWarehouses(): Promise<{
+  warehouses: SellerWarehouse[];
+  diilzo_warehouses: SellerWarehouse[];
+}> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/warehouses/` });
+}
+
+export async function saveSellerWarehouse(payload: {
+  id?: number;
+  name: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  capacity_cubic_meters?: number;
+}): Promise<SellerWarehouse> {
+  return apiRequest({ method: 'POST', url: `${SELLER_BASE}/warehouses/`, data: payload });
+}
+
+export async function deleteSellerWarehouse(id: number): Promise<{ detail: string }> {
+  return apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/warehouses/`, params: { id } });
+}
