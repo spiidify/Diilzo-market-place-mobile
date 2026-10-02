@@ -238,17 +238,15 @@ export default function SellerDashboardScreen() {
               </Pressable>
             </View>
             <View style={styles.kpiRow}>
-              <View style={styles.kpiItem}>
+              <View style={[styles.kpiItem, styles.kpiTileGreen]}>
                 <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.today_total).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>Today · {data.pos_stats.today_count} sale{data.pos_stats.today_count === 1 ? '' : 's'}</Text>
               </View>
-              <View style={styles.kpiDivider} />
-              <View style={styles.kpiItem}>
+              <View style={[styles.kpiItem, styles.kpiTileBlue]}>
                 <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.lifetime_total).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>POS Lifetime</Text>
               </View>
-              <View style={styles.kpiDivider} />
-              <Pressable style={styles.kpiItem} onPress={() => router.push('/seller/pos-payments' as any)}>
+              <Pressable style={[styles.kpiItem, styles.kpiTileAmber]} onPress={() => router.push('/seller/pos-payments' as any)}>
                 <Text style={[styles.kpiValue, (data.pos_stats.pending_payments || 0) > 0 && { color: '#F59E0B' }]}>
                   {data.pos_stats.pending_payments}
                 </Text>
@@ -676,6 +674,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Supplier KPIs ─────────────────────────────────────────────────
   kpiRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
   kpiItem: { flex: 1, alignItems: 'center', gap: 1, paddingVertical: 6 },
+  kpiTileGreen: { backgroundColor: '#10B98114', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
+  kpiTileBlue: { backgroundColor: '#3B82F614', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
+  kpiTileAmber: { backgroundColor: '#F59E0B14', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiValue: { fontSize: 17, fontWeight: '900', color: c.text },
   kpiLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
   kpiDivider: { width: 1, height: 28, backgroundColor: c.borderLight },
