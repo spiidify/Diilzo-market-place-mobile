@@ -239,11 +239,11 @@ export default function SellerDashboardScreen() {
             </View>
             <View style={styles.kpiRow}>
               <View style={[styles.kpiItem, styles.kpiTileGreen]}>
-                <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.today_total).toLocaleString()}</Text>
+                <Text style={styles.kpiValueSm} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>UGX {Number(data.pos_stats.today_total).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>Today · {data.pos_stats.today_count} sale{data.pos_stats.today_count === 1 ? '' : 's'}</Text>
               </View>
               <View style={[styles.kpiItem, styles.kpiTileBlue]}>
-                <Text style={styles.kpiValue}>UGX {Number(data.pos_stats.lifetime_total).toLocaleString()}</Text>
+                <Text style={styles.kpiValueSm} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>UGX {Number(data.pos_stats.lifetime_total).toLocaleString()}</Text>
                 <Text style={styles.kpiLabel}>POS Lifetime</Text>
               </View>
               <Pressable style={[styles.kpiItem, styles.kpiTileAmber]} onPress={() => router.push('/seller/pos-payments' as any)}>
@@ -678,6 +678,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   kpiTileBlue: { backgroundColor: '#3B82F614', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiTileAmber: { backgroundColor: '#F59E0B14', borderRadius: 10, paddingVertical: 10, marginHorizontal: 3 },
   kpiValue: { fontSize: 17, fontWeight: '900', color: c.text },
+  kpiValueSm: { fontSize: 12, fontWeight: '900', color: c.text, width: '100%', textAlign: 'center' },
   kpiLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
   kpiDivider: { width: 1, height: 28, backgroundColor: c.borderLight },
 
