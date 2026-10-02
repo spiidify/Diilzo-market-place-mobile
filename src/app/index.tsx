@@ -1779,7 +1779,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingVertical: 9,
+    paddingVertical: 6,
     paddingHorizontal: 6,
     borderRadius: 20,
     overflow: 'hidden',
