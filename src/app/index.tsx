@@ -191,8 +191,8 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { contentWidth: windowWidth } = useResponsiveLayout();
-  // Single source of truth: carousel has Spacing.two (8px) horizontal margin
-  // on each side, so the visible ScrollView viewport = windowWidth - 16.
+  // Single source of truth: the list content has Spacing.two (8px) horizontal
+  // padding on each side, so the visible ScrollView viewport = windowWidth - 16.
   // Each slide card must match this exactly for pagingEnabled to snap cleanly.
   const slideWidth = windowWidth - Spacing.two * 2;
   const [activeSlide, setActiveSlide] = useState(0);
@@ -534,7 +534,7 @@ const CategorySection = memo(function CategorySection({
             pages.push(categories.slice(i, i + PER_PAGE));
           }
           return pages.map((pageCats, pageIdx) => (
-            <View key={`cat-page-${pageIdx}`} style={[styles.categoryPage, { width: contentWidth - 2 * Spacing.two - 8 }]}>
+            <View key={`cat-page-${pageIdx}`} style={[styles.categoryPage, { width: contentWidth - 4 * Spacing.two }]}>
               {pageCats.map((cat) => (
                 <Pressable
                   key={`cat-${cat.id}-${cat.slug}`}
@@ -1536,7 +1536,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: c.border,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
     paddingHorizontal: Spacing.two,
@@ -1548,7 +1548,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     marginBottom: Spacing.one,
     paddingHorizontal: 4,
     paddingVertical: 4,
@@ -1576,7 +1576,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Homepage carousel ───────────────────────────────────────────
   carouselWrap: {
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     marginVertical: Spacing.two,
     borderRadius: 16,
     overflow: 'hidden',
@@ -1675,7 +1675,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: Spacing.two,
     gap: Spacing.two,
     backgroundColor: c.surface,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     marginVertical: Spacing.one,
     borderRadius: 12,
   },
@@ -1708,7 +1708,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: Spacing.two,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     elevation: 1,
     shadowColor: '#000000',
     shadowOpacity: 0.04,
@@ -1799,7 +1799,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: 0,
     paddingTop: Spacing.three,
     paddingBottom: Spacing.two,
     marginTop: Spacing.three,
@@ -1821,7 +1821,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     borderRadius: 16,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
@@ -1832,7 +1832,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
   },
   categoryCarousel: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
   },
   categoryPage: {
     flexDirection: 'row',
@@ -1883,7 +1883,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     marginTop: Spacing.three,
     marginBottom: Spacing.one,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     paddingVertical: Spacing.three,
     borderRadius: 16,
     elevation: 2,
@@ -1984,7 +1984,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Supplier banner ─────────────────────────────────────────────
   supplierBanner: {
-    marginHorizontal: Spacing.three,
+    marginHorizontal: 0,
     marginTop: Spacing.three,
     marginBottom: Spacing.two,
     borderRadius: 12,
@@ -2227,7 +2227,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // ── Flash Sale shelf ─────────────────────────────────────────────
   flashSection: {
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     marginVertical: Spacing.two,
     borderRadius: 16,
     overflow: 'hidden',
@@ -2275,7 +2275,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.one,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     borderRadius: 16,
     paddingVertical: Spacing.two,
     elevation: 2,
@@ -2324,7 +2324,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     marginTop: Spacing.two,
     marginBottom: Spacing.two,
-    marginHorizontal: Spacing.two,
+    marginHorizontal: 0,
     borderRadius: 16,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
