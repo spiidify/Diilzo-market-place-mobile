@@ -1394,7 +1394,10 @@ export default function SellerPOSScreen() {
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>Payment Method</Text>
               <View style={styles.pmGrid}>
-                {(['cash', 'mtn_momo', 'airtel_money', 'card',
+                {(['cash',
+                   ...(posGateways.includes('mtn_momo') ? (['mtn_momo'] as const) : []),
+                   ...(posGateways.includes('airtel_money') ? (['airtel_money'] as const) : []),
+                   ...(posGateways.includes('stripe') ? (['card'] as const) : []),
                    ...(posGateways.includes('paypal') ? (['paypal'] as const) : [])] as const).map((m) => (
                   <Pressable
                     key={m}
@@ -1437,6 +1440,13 @@ export default function SellerPOSScreen() {
                     ? 'Customer will get a payment prompt on their phone — money goes straight to your account.'
                     : 'A payment link will be generated for the customer — money goes straight to your account.'}
                 </Text>
+              )}
+              {posGateways.length === 0 && (
+                <Pressable onPress={() => { setShowCartModal(false); router.push('/seller/pos-payments' as any); }}>
+                  <Text style={styles.pmSetupHint}>
+                    Only cash is enabled. Tap here to connect MTN MoMo, Airtel, Stripe or PayPal.
+                  </Text>
+                </Pressable>
               )}
             </View>
 
@@ -2212,6 +2222,7 @@ const createStyles = (colors: ThemeColors) =>
     borderRadius: 4, backgroundColor: '#16A34A',
   },
   pmLiveHint: { fontSize: 11, color: colors.textTertiary, marginTop: 8, lineHeight: 16 },
+  pmSetupHint: { fontSize: 11, color: Brand.primary, marginTop: 8, lineHeight: 16, fontWeight: '600' },
   payPendingBox: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#FEF3C7', borderRadius: 10, padding: 12,
