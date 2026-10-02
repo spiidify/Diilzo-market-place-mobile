@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -154,6 +154,19 @@ export default function CheckoutScreen() {
   const [shippingEstimate, setShippingEstimate] = useState<{ method_name: string; estimated_days: number } | null>(null);
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
 
+  // Fetch addresses and (re)select the default — keeps the current
+  // selection if it still exists, otherwise falls back to is_default.
+  const refreshAddresses = useCallback(async () => {
+    const raw = await apiRequest<{ results: Address[] } | Address[]>({ method: 'GET', url: '/auth/addresses/' });
+    const addrData = Array.isArray(raw) ? raw : (raw.results || []);
+    setAddresses(addrData);
+    setSelectedAddressId((prev) => {
+      if (prev && addrData.some((a) => a.id === prev)) return prev;
+      const defaultAddr = addrData.find((a) => a.is_default) || addrData[0];
+      return defaultAddr ? defaultAddr.id : null;
+    });
+  }, []);
+
   const loadCheckout = useCallback(async () => {
     if (!isAuthenticated) {
       setLoading(false);
@@ -172,11 +185,7 @@ export default function CheckoutScreen() {
       }
 
       try {
-        const raw = await apiRequest<{ results: Address[] } | Address[]>({ method: 'GET', url: '/auth/addresses/' });
-        const addrData = Array.isArray(raw) ? raw : (raw.results || []);
-        setAddresses(addrData);
-        const defaultAddr = addrData.find((a) => a.is_default) || addrData[0];
-        if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+        await refreshAddresses();
       } catch (e: any) {
         console.error('Address load error:', e?.message);
         setAddresses([]);
@@ -199,11 +208,19 @@ export default function CheckoutScreen() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user?.phone]);
+  }, [isAuthenticated, user?.phone, refreshAddresses]);
 
   useEffect(() => {
     loadCheckout();
   }, [loadCheckout]);
+
+  // Re-fetch addresses when returning from the address book so a newly
+  // added/changed default is picked up and auto-selected.
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) refreshAddresses().catch(() => { });
+    }, [isAuthenticated, refreshAddresses]),
+  );
 
   // Fetch dynamic shipping cost when cart, address, or fulfillment method changes
   useEffect(() => {
