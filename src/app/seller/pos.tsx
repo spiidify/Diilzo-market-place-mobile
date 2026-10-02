@@ -1545,6 +1545,9 @@ export default function SellerPOSScreen() {
       >
         <View style={styles.receiptOverlay}>
           <View style={styles.receiptContent}>
+            {!!completedSale?.store_logo && (
+              <Image source={{ uri: completedSale.store_logo }} style={styles.receiptLogo} resizeMode="contain" />
+            )}
             <MaterialCommunityIcons
               name={completedSale?.paymentStatus === 'pending' ? 'clock-outline'
                 : completedSale?.paymentStatus === 'failed' ? 'close-circle' : 'check-circle'}
@@ -2777,6 +2780,13 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: 16,
       padding: 24,
       alignItems: 'center',
+    },
+    receiptLogo: {
+      width: 72,
+      height: 44,
+      borderRadius: 8,
+      marginBottom: 6,
+      backgroundColor: '#F3F4F6',
     },
     receiptSuccessTitle: {
       fontSize: 18,
