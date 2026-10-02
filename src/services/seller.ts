@@ -1175,6 +1175,7 @@ export interface POSSaleRecord {
   register?: string;
   cashier?: string;
   completed?: boolean;
+  payment_status?: string;
 }
 
 export interface POSSalesSummary {
@@ -1239,4 +1240,52 @@ export async function getPOSRegisters(): Promise<{ results: POSRegisterRecord[] 
 /** POST /pos/cashup/ — submit register end-of-day cash reconciliation */
 export async function submitPOSCashup(payload: POSCashupPayload): Promise<any> {
   return apiRequest<any>({ method: 'POST', url: '/pos/cashup/', data: payload });
+}
+
+// ── POS Payment Gateways (seller's own MTN/Airtel/Stripe/PayPal) ─────
+
+export interface POSGatewayField {
+  key: string;
+  label: string;
+  secret: boolean;
+}
+
+export interface POSGateway {
+  id: number | null;
+  gateway: string;
+  label: string;
+  is_enabled: boolean;
+  environment: string;
+  has_credentials: boolean;
+  credentials: Record<string, string>;
+  fields: POSGatewayField[];
+}
+
+/** GET /pos/payment_gateways/ — configured POS collection gateways */
+export async function getPOSPaymentGateways(): Promise<{ results: POSGateway[] }> {
+  return apiRequest<{ results: POSGateway[] }>({ method: 'GET', url: '/pos/payment_gateways/' });
+}
+
+/** POST /pos/payment_gateways/ — create/update a gateway (secrets are write-only) */
+export async function savePOSPaymentGateway(payload: {
+  gateway: string;
+  is_enabled: boolean;
+  environment: string;
+  credentials: Record<string, string>;
+}): Promise<POSGateway> {
+  return apiRequest<POSGateway>({ method: 'POST', url: '/pos/payment_gateways/', data: payload });
+}
+
+/** DELETE /pos/payment_gateways/?id=<pk> — remove a gateway config */
+export async function deletePOSPaymentGateway(id: number): Promise<{ deleted: boolean }> {
+  return apiRequest<{ deleted: boolean }>({
+    method: 'DELETE', url: '/pos/payment_gateways/', params: { id },
+  });
+}
+
+/** GET /pos/payment_status/?id=<sale> — poll the gateway payment status of a sale */
+export async function checkPOSPaymentStatus(
+  saleId: number,
+): Promise<{ id: number; payment_status: string; provider_status?: string }> {
+  return apiRequest({ method: 'GET', url: '/pos/payment_status/', params: { id: saleId } });
 }

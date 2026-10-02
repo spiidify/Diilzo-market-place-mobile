@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -25,9 +26,11 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
+  checkPOSPaymentStatus,
   createPOSSale,
   getMyProducts,
   getPOSDashboard,
+  getPOSPaymentGateways,
   getPOSSale,
   getPOSSales,
   type POSDashboardData,
@@ -139,9 +142,11 @@ export default function SellerPOSScreen() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [discount, setDiscount] = useState('0');
   const [discountMode, setDiscountMode] = useState<'ugx' | 'pct'>('ugx');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mtn_momo' | 'airtel_money' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mtn_momo' | 'airtel_money' | 'card' | 'paypal'>('cash');
   const [amountTendered, setAmountTendered] = useState('');
   const [submittingSale, setSubmittingSale] = useState(false);
+  // Enabled seller payment gateways (mtn_momo/airtel_money/stripe/paypal)
+  const [posGateways, setPosGateways] = useState<string[]>([]);
 
   // Keyboard handling inside the review sheet — KeyboardAvoidingView can't
   // be used inside a Modal (mis-measures, collapses children), so we pad the
@@ -165,6 +170,21 @@ export default function SellerPOSScreen() {
   // Completed Receipt Modal
   const [completedSale, setCompletedSale] = useState<any | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+
+  // Poll the seller's gateway while a POS collection is pending
+  useEffect(() => {
+    if (!showReceiptModal || completedSale?.paymentStatus !== 'pending' || !completedSale?.id) return;
+    const timer = setInterval(async () => {
+      try {
+        const r = await checkPOSPaymentStatus(completedSale.id);
+        if (r.payment_status !== 'pending') {
+          setCompletedSale((prev: any) => prev ? { ...prev, paymentStatus: r.payment_status } : prev);
+          clearInterval(timer);
+        }
+      } catch { /* keep polling */ }
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [showReceiptModal, completedSale?.id, completedSale?.paymentStatus]);
 
   // Stats & History
   const [stats, setStats] = useState<POSDashboardData | null>(null);
@@ -270,6 +290,12 @@ export default function SellerPOSScreen() {
       if (statsData) setStats(statsData);
       setSalesHistory(salesData.results || []);
       setSalesSummary(salesData.summary || null);
+
+      // Seller's own payment gateways — determines whether MoMo/Airtel/
+      // card collections go live to the seller's account
+      getPOSPaymentGateways()
+        .then((g) => setPosGateways(g.results.filter((x) => x.is_enabled).map((x) => x.gateway)))
+        .catch(() => {});
     } finally {
       setRefreshing(false);
     }
@@ -467,12 +493,31 @@ export default function SellerPOSScreen() {
     }
   };
 
+  // Map the POS payment-method chip to the seller's configured gateway
+  const GATEWAY_FOR: Record<string, string> = {
+    mtn_momo: 'mtn_momo',
+    airtel_money: 'airtel_money',
+    card: 'stripe',
+    paypal: 'paypal',
+  };
+  const liveGateway = posGateways.includes(GATEWAY_FOR[paymentMethod] || '');
+
   // Complete POS sale
   const handleCompleteSale = async () => {
     if (cart.length === 0) return;
 
     if (paymentMethod === 'cash' && tenderedNum > 0 && tenderedNum < grandTotal) {
       Alert.alert('Insufficient Cash', 'Amount tendered is less than the Grand Total.');
+      return;
+    }
+
+    // Live MoMo/Airtel collection needs the buyer's phone number
+    if (liveGateway && (paymentMethod === 'mtn_momo' || paymentMethod === 'airtel_money')
+        && !customerPhone.trim()) {
+      Alert.alert(
+        'Customer Phone Required',
+        'Enter the customer\'s phone number to send them a payment request.',
+      );
       return;
     }
 
@@ -508,6 +553,10 @@ export default function SellerPOSScreen() {
         changeDue: paymentMethod === 'cash' ? changeDue : 0,
         paymentMethod,
         customerName: customerName || 'Walk-in Customer',
+        paymentStatus: res.payment_status || 'paid',
+        paymentUrl: res.payment_url || null,
+        paymentMessage: res.payment_message || '',
+        paymentError: res.payment_error || '',
       });
 
       // Clear cart & close checkout sheet
@@ -1345,7 +1394,8 @@ export default function SellerPOSScreen() {
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>Payment Method</Text>
               <View style={styles.pmGrid}>
-                {(['cash', 'mtn_momo', 'airtel_money', 'card'] as const).map((m) => (
+                {(['cash', 'mtn_momo', 'airtel_money', 'card',
+                   ...(posGateways.includes('paypal') ? (['paypal'] as const) : [])] as const).map((m) => (
                   <Pressable
                     key={m}
                     style={[styles.pmBtn, paymentMethod === m && styles.pmBtnActive]}
@@ -1357,6 +1407,8 @@ export default function SellerPOSScreen() {
                           ? 'cash'
                           : m === 'card'
                           ? 'credit-card-outline'
+                          : m === 'paypal'
+                          ? 'wallet-outline'
                           : 'cellphone'
                       }
                       size={20}
@@ -1369,11 +1421,23 @@ export default function SellerPOSScreen() {
                         ? 'MTN MoMo'
                         : m === 'airtel_money'
                         ? 'Airtel Money'
+                        : m === 'paypal'
+                        ? 'PayPal'
                         : 'Card'}
                     </Text>
+                    {posGateways.includes(GATEWAY_FOR[m] || '') && (
+                      <View style={styles.pmLiveDot} />
+                    )}
                   </Pressable>
                 ))}
               </View>
+              {liveGateway && (
+                <Text style={styles.pmLiveHint}>
+                  {(paymentMethod === 'mtn_momo' || paymentMethod === 'airtel_money')
+                    ? 'Customer will get a payment prompt on their phone — money goes straight to your account.'
+                    : 'A payment link will be generated for the customer — money goes straight to your account.'}
+                </Text>
+              )}
             </View>
 
             {/* Cash Tendered & Quick Chips */}
@@ -1471,9 +1535,43 @@ export default function SellerPOSScreen() {
       >
         <View style={styles.receiptOverlay}>
           <View style={styles.receiptContent}>
-            <MaterialCommunityIcons name="check-circle" size={48} color={Brand.primary} />
-            <Text style={styles.receiptSuccessTitle}>Sale Completed!</Text>
+            <MaterialCommunityIcons
+              name={completedSale?.paymentStatus === 'pending' ? 'clock-outline'
+                : completedSale?.paymentStatus === 'failed' ? 'close-circle' : 'check-circle'}
+              size={48}
+              color={completedSale?.paymentStatus === 'pending' ? Brand.rating
+                : completedSale?.paymentStatus === 'failed' ? Brand.danger : Brand.primary}
+            />
+            <Text style={styles.receiptSuccessTitle}>
+              {completedSale?.paymentStatus === 'pending' ? 'Awaiting Payment'
+                : completedSale?.paymentStatus === 'failed' ? 'Payment Failed' : 'Sale Completed!'}
+            </Text>
             <Text style={styles.receiptNumber}>{completedSale?.sale_number || 'POS Sale'}</Text>
+
+            {completedSale?.paymentStatus === 'pending' && (
+              <View style={styles.payPendingBox}>
+                <ActivityIndicator size="small" color={Brand.rating} />
+                <Text style={styles.payPendingText}>
+                  {completedSale?.paymentMessage || 'Waiting for the customer to approve the payment on their phone…'}
+                </Text>
+              </View>
+            )}
+            {completedSale?.paymentStatus === 'failed' && (
+              <View style={[styles.payPendingBox, { backgroundColor: '#FEE2E2' }]}>
+                <Text style={[styles.payPendingText, { color: '#B91C1C' }]}>
+                  {completedSale?.paymentError || 'The payment request failed or was declined.'}
+                </Text>
+              </View>
+            )}
+            {completedSale?.paymentUrl && completedSale?.paymentStatus === 'pending' && (
+              <Pressable
+                style={styles.payLinkBtn}
+                onPress={() => Linking.openURL(completedSale.paymentUrl)}
+              >
+                <MaterialCommunityIcons name="open-in-new" size={16} color="#FFFFFF" />
+                <Text style={styles.payLinkBtnText}>Open Customer Payment Link</Text>
+              </Pressable>
+            )}
 
             <View style={styles.receiptDivider} />
             <View style={styles.receiptRow}>
@@ -2109,7 +2207,24 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '800',
       color: Brand.primary,
     },
-    methodBadge: {
+    pmLiveDot: {
+    position: 'absolute', top: 6, right: 6, width: 8, height: 8,
+    borderRadius: 4, backgroundColor: '#16A34A',
+  },
+  pmLiveHint: { fontSize: 11, color: colors.textTertiary, marginTop: 8, lineHeight: 16 },
+  payPendingBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FEF3C7', borderRadius: 10, padding: 12,
+    marginTop: 10, alignSelf: 'stretch',
+  },
+  payPendingText: { flex: 1, fontSize: 12, color: '#92400E', lineHeight: 17 },
+  payLinkBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Brand.primary, borderRadius: 10,
+    paddingHorizontal: 16, paddingVertical: 10, marginTop: 10,
+  },
+  payLinkBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  methodBadge: {
       backgroundColor: colors.surfaceAlt,
       paddingHorizontal: 8,
       paddingVertical: 3,
