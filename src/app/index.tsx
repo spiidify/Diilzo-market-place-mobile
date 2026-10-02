@@ -796,7 +796,6 @@ export default function ProductFeedScreen() {
 
   // Section data
   const [deals, setDeals] = useState<Product[]>([]);
-  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [recommended, setRecommended] = useState<Product[]>([]);
   const [topStores, setTopStores] = useState<Store[]>([]);
   const [topBrands, setTopBrands] = useState<BrandType[]>([]);
@@ -823,11 +822,10 @@ export default function ProductFeedScreen() {
   const loadAllSections = useCallback(async () => {
     try {
       const [
-        dealsRes, newArrRes, featRes, stores, slideData, brandsData,
+        dealsRes, featRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
       ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
-        fetchProducts({ new_arrival: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] newArr error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchTopStores(storeLogoSize).catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
         fetchSlides(undefined, slideSize).catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
@@ -839,7 +837,6 @@ export default function ProductFeedScreen() {
         fetchBecauseYouViewed(productCardSize).catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
-      setNewArrivals(newArrRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
       setTopStores(stores.slice(0, 10));
       setSlides(slideData);
@@ -1105,7 +1102,6 @@ export default function ProductFeedScreen() {
         tabs={[
           { key: 'flash', icon: 'flash', title: 'Flash Sale', data: flashSale, endsAt: flashEndsAt },
           { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
-          { key: 'new', icon: 'package-variant-closed', title: 'New Arrivals', data: newArrivals },
           { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
         ]}
         onPress={handleProductPress}
@@ -1144,7 +1140,7 @@ export default function ProductFeedScreen() {
       ) : null}
     </View>
   ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
-    deals, newArrivals, recommended, becauseYouViewed, recentlyViewed,
+    deals, recommended, becauseYouViewed, recentlyViewed,
     vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
     handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory,
     country, countryIso2, countryPickerVisible, onRefresh]);
