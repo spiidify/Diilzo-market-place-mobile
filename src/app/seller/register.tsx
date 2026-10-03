@@ -155,6 +155,9 @@ export default function SellerRegisterScreen() {
                   onPress={() => setBusinessType(t.key)}
                 >
                   <Text style={[styles.chipText, businessType === t.key && styles.chipTextActive]}>{t.label}</Text>
+                  {businessType === t.key && (
+                    <MaterialCommunityIcons name="check-circle" size={16} color="#FFFFFF" />
+                  )}
                 </Pressable>
               ))}
             </View>
@@ -212,6 +215,9 @@ export default function SellerRegisterScreen() {
                 onPress={() => setPayoutMethod(m.key)}
               >
                 <Text style={[styles.chipText, payoutMethod === m.key && styles.chipTextActive]}>{m.label}</Text>
+                {payoutMethod === m.key && (
+                  <MaterialCommunityIcons name="check-circle" size={16} color="#FFFFFF" />
+                )}
               </Pressable>
             ))}
           </View>
@@ -296,13 +302,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   textArea: { minHeight: 72, textAlignVertical: 'top' },
   rowFields: { flexDirection: 'row', gap: 10 },
 
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
+  chipsWrap: { flexDirection: 'column', gap: 6, marginBottom: 6 },
   chip: {
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingVertical: 11, borderRadius: 10,
     backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
   },
   chipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
-  chipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  chipText: { fontSize: 13, fontWeight: '700', color: c.textSecondary },
   chipTextActive: { color: '#FFFFFF' },
   b2bHint: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   b2bHintText: { fontSize: 11, color: Brand.primary, fontWeight: '600' },
