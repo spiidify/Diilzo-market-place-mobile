@@ -481,16 +481,17 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+            colors={[Brand.dark, Brand.accent, Brand.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.topBar}
           >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.topBarTitle}>Loading…</Text>
-            <View style={{ width: 24 }} />
+            <View style={styles.headerBar}>
+              <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
+                <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+              </Pressable>
+              <Text style={styles.headerStoreName}>Loading…</Text>
+              <View style={{ width: 40 }} />
+            </View>
           </LinearGradient>
         </SafeAreaView>
         <View style={styles.center}>
@@ -507,16 +508,17 @@ export default function ProductDetailScreen() {
       <View style={styles.screen}>
         <SafeAreaView style={styles.safeArea} edges={['top']}>
           <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+            colors={[Brand.dark, Brand.accent, Brand.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.topBar}
           >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.topBarTitle}>Not Found</Text>
-            <View style={{ width: 24 }} />
+            <View style={styles.headerBar}>
+              <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
+                <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+              </Pressable>
+              <Text style={styles.headerStoreName}>Not Found</Text>
+              <View style={{ width: 40 }} />
+            </View>
           </LinearGradient>
         </SafeAreaView>
         <View style={styles.center}>
@@ -549,17 +551,15 @@ export default function ProductDetailScreen() {
   return (
     <View style={styles.screen}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* ── Header (gradient with store + product info) ─────────── */}
+        {/* ── Header — app gradient strip + white bar (matches other pages) ── */}
         <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
+          colors={[Brand.dark, Brand.accent, Brand.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.header}
         >
-          {/* Row 1: back, store name, actions */}
-          <View style={styles.headerTopRow}>
+          <View style={styles.headerBar}>
             <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
-              <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
+              <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
             </Pressable>
             {product.store ? (
               <Pressable
@@ -569,7 +569,7 @@ export default function ProductDetailScreen() {
                 {product.store.logo_url ? (
                   <Image source={{ uri: product.store.logo_url }} style={styles.headerStoreLogo} resizeMode="cover" />
                 ) : (
-                  <MaterialCommunityIcons name="storefront-outline" size={12} color="rgba(255,255,255,0.85)" />
+                  <MaterialCommunityIcons name="storefront-outline" size={14} color={Brand.primary} />
                 )}
                 <Text style={styles.headerStoreName} numberOfLines={1}>{product.store.name}</Text>
                 {product.store.is_wholesaler && (
@@ -578,60 +578,18 @@ export default function ProductDetailScreen() {
               </Pressable>
             ) : (
               <View style={styles.headerStore}>
-                <MaterialCommunityIcons name="shopping-outline" size={12} color="rgba(255,255,255,0.85)" />
+                <MaterialCommunityIcons name="shopping-outline" size={14} color={Brand.primary} />
                 <Text style={styles.headerStoreName} numberOfLines={1}>Diilzo Marketplace</Text>
               </View>
             )}
             <View style={styles.headerActions}>
               <Pressable hitSlop={8} onPress={handleWishlist} style={styles.headerBtn}>
-                <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={20} color={isWishlisted ? '#FF4757' : '#FFFFFF'} />
+                <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={20} color={isWishlisted ? Brand.danger : colors.text} />
               </Pressable>
               <Pressable hitSlop={8} onPress={handleShare} style={styles.headerBtn}>
-                <MaterialCommunityIcons name="share-variant-outline" size={19} color="#FFFFFF" />
+                <MaterialCommunityIcons name="share-variant-outline" size={19} color={colors.text} />
               </Pressable>
             </View>
-          </View>
-
-          {/* Row 2: product name + price */}
-          <View style={styles.headerInfoRow}>
-            <Text style={styles.headerProductName} numberOfLines={2}>{product.name}</Text>
-            <View style={styles.headerPriceCol}>
-              <Text style={styles.headerPriceCurrency}>{dispCurrency}</Text>
-              <Text style={styles.headerPriceAmount} numberOfLines={1}>
-                {dispFinalPrice.toLocaleString()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Row 3: rating + stock chips */}
-          <View style={styles.headerChipsRow}>
-            {rating > 0 && (
-              <View style={styles.headerChip}>
-                <MaterialCommunityIcons name="star" size={10} color="#FFD600" />
-                <Text style={styles.headerChipText}>{rating.toFixed(1)}</Text>
-                {reviewCount > 0 && <Text style={styles.headerChipSubtext}> ({reviewCount})</Text>}
-              </View>
-            )}
-            <View style={[styles.headerChip, product.is_in_stock ? styles.headerChipGreen : styles.headerChipRed]}>
-              <MaterialCommunityIcons
-                name={product.is_in_stock ? 'check-circle' : 'close-circle'}
-                size={10}
-                color="#FFFFFF"
-              />
-              <Text style={styles.headerChipTextWhite}>{product.is_in_stock ? 'In Stock' : 'Out of Stock'}</Text>
-            </View>
-            {product.is_on_sale && (
-              <View style={styles.headerChipRed}>
-                <MaterialCommunityIcons name="tag" size={10} color="#FFFFFF" />
-                <Text style={styles.headerChipTextWhite}>SALE -{Math.round(product.discount_percentage)}%</Text>
-              </View>
-            )}
-            {product.is_featured && (
-              <View style={styles.headerChipGold}>
-                <MaterialCommunityIcons name="crown" size={10} color="#FFFFFF" />
-                <Text style={styles.headerChipTextWhite}>Featured</Text>
-              </View>
-            )}
           </View>
         </LinearGradient>
 
@@ -1772,106 +1730,47 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   screen: { flex: 1, backgroundColor: c.surface },
   safeArea: { flex: 1, backgroundColor: c.surface },
 
-  // ── Header (compact gradient with store + product info) ─────────
-  topBar: {
+  // ── Header — gradient strip + white bar (matches GradientHeader) ──
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    backgroundColor: c.surface,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  topBarTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF', flex: 1, textAlign: 'center' },
-
-  header: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  headerBtn: { padding: 1 },
+  headerBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   headerStore: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginHorizontal: 8,
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: 4,
   },
   headerStoreLogo: {
-    width: 16, height: 16, borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: c.surfaceAlt,
   },
   headerStoreName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+    color: c.text,
     flexShrink: 1,
+    letterSpacing: -0.3,
   },
   headerWholesaleTag: {
-    width: 14, height: 14, borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 16, height: 16, borderRadius: 4,
+    backgroundColor: Brand.primary,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerWholesaleText: { fontSize: 8, fontWeight: '800', color: '#FFFFFF' },
-
-  headerInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 5,
-  },
-  headerProductName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 18,
-  },
-  headerPriceCol: { flexDirection: 'row', alignItems: 'baseline', gap: 1 },
-  headerPriceCurrency: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
-  headerPriceAmount: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
-
-  headerChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  headerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  headerChipText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-  headerChipSubtext: { fontSize: 9, color: 'rgba(255,255,255,0.7)' },
-  headerChipGreen: { backgroundColor: 'rgba(255,255,255,0.25)' },
-  headerChipRed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(220,38,38,0.85)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  headerChipGold: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(255,193,7,0.85)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  headerChipTextWhite: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
+  headerWholesaleText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
 
   // ── Scroll ──────────────────────────────────────────────────────
   scroll: { flex: 1 },
