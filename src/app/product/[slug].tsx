@@ -481,12 +481,12 @@ export default function ProductDetailScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient
-            colors={[Brand.dark, Brand.accent, Brand.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+        <LinearGradient
+          colors={[Brand.dark, Brand.accent, Brand.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <SafeAreaView edges={['top']} style={{ flex: 0 }}>
             <View style={styles.headerBar}>
               <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
                 <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
@@ -494,8 +494,8 @@ export default function ProductDetailScreen() {
               <Text style={styles.headerStoreName}>Loading…</Text>
               <View style={{ width: 40 }} />
             </View>
-          </LinearGradient>
-        </SafeAreaView>
+          </SafeAreaView>
+        </LinearGradient>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Brand.primary} />
           <Text style={styles.centerText}>Loading product...</Text>
@@ -508,12 +508,12 @@ export default function ProductDetailScreen() {
   if (error || !product) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-          <LinearGradient
-            colors={[Brand.dark, Brand.accent, Brand.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+        <LinearGradient
+          colors={[Brand.dark, Brand.accent, Brand.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <SafeAreaView edges={['top']} style={{ flex: 0 }}>
             <View style={styles.headerBar}>
               <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
                 <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
@@ -521,8 +521,8 @@ export default function ProductDetailScreen() {
               <Text style={styles.headerStoreName}>Not Found</Text>
               <View style={{ width: 40 }} />
             </View>
-          </LinearGradient>
-        </SafeAreaView>
+          </SafeAreaView>
+        </LinearGradient>
         <View style={styles.center}>
           <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
           <Text style={styles.errorTitle}>{error || 'Product not found'}</Text>
@@ -559,14 +559,14 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* ── Header — app gradient strip + white bar (matches other pages) ── */}
-        <LinearGradient
-          colors={[Brand.dark, Brand.accent, Brand.primary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerBar}
-        >
+      {/* ── Header — brand gradient band reaching the top edge ── */}
+      <LinearGradient
+        colors={[Brand.dark, Brand.accent, Brand.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <SafeAreaView edges={['top']} style={{ flex: 0 }}>
+          <View style={styles.headerBar}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
             <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
           </Pressable>
@@ -599,8 +599,11 @@ export default function ProductDetailScreen() {
               <MaterialCommunityIcons name="share-variant-outline" size={19} color="#FFFFFF" />
             </Pressable>
           </View>
-        </LinearGradient>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
+      <SafeAreaView style={styles.safeArea} edges={[]}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
