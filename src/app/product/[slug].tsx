@@ -29,6 +29,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { addToCart, getCart, removeCartItem } from '@/services/cart';
 import { createReview, fetchProductReviews, trackProductView } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
+import { getWatchStatus, setWatch } from '@/services/orders';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
@@ -73,6 +74,8 @@ export default function ProductDetailScreen() {
   const galleryRef = useRef<FlatList<string>>(null);
   const fsGalleryRef = useRef<FlatList<string>>(null);
   const [chatCreating, setChatCreating] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
+  const [watchToggling, setWatchToggling] = useState(false);
   const { isAuthenticated } = useAuth();
   const { colors } = useAppTheme();
   const { width: windowWidth, contentWidth, isTablet } = useResponsiveLayout();
@@ -93,6 +96,7 @@ export default function ProductDetailScreen() {
       if (data.id) trackPromoClick(data.id).catch(() => { });
       if (isAuthenticated && data.id) {
         checkWishlist(data.id).then((r: any) => setIsWishlisted(!!r.is_wishlisted)).catch(() => { });
+        getWatchStatus(slug).then(setIsWatching).catch(() => { });
       }
       // Cart count is managed globally via CartContext
       refreshCartCount();
@@ -318,6 +322,30 @@ export default function ProductDetailScreen() {
       setChatCreating(false);
     }
   }, [product, isAuthenticated, router, chatCreating, showToast]);
+
+  const handleWatch = useCallback(async () => {
+    if (!product) return;
+    if (!isAuthenticated) {
+      router.push('/(auth)/login');
+      return;
+    }
+    if (watchToggling) return;
+    setWatchToggling(true);
+    try {
+      const nowWatching = await setWatch(slug, !isWatching);
+      setIsWatching(nowWatching);
+      showToast(
+        'success',
+        nowWatching
+          ? "You'll be notified of price drops & restocks"
+          : 'Stopped watching this item'
+      );
+    } catch {
+      showToast('error', 'Could not update alert');
+    } finally {
+      setWatchToggling(false);
+    }
+  }, [product, isAuthenticated, router, watchToggling, isWatching, slug, showToast]);
 
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
@@ -912,6 +940,22 @@ export default function ProductDetailScreen() {
                 <MaterialCommunityIcons name="chat-outline" size={18} color={Brand.link} />
               )}
               <Text style={styles.actionChipText}>{chatCreating ? 'Starting...' : 'Chat with Seller'}</Text>
+            </Pressable>
+          </View>
+          <View style={[styles.actionsRow, { marginTop: 8 }]}>
+            <Pressable style={styles.actionChip} onPress={handleWatch} disabled={watchToggling}>
+              {watchToggling ? (
+                <ActivityIndicator size="small" color={Brand.rating} />
+              ) : (
+                <MaterialCommunityIcons
+                  name={isWatching ? 'bell-ring' : 'bell-ring-outline'}
+                  size={18}
+                  color={isWatching ? Brand.rating : colors.textSecondary}
+                />
+              )}
+              <Text style={[styles.actionChipText, isWatching && { color: Brand.rating }]}>
+                {isWatching ? 'Watching — alerts on' : 'Watch for price drops'}
+              </Text>
             </Pressable>
           </View>
 

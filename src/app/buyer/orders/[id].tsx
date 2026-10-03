@@ -347,6 +347,24 @@ export default function OrderDetailScreen() {
             </View>
           </View>
 
+          {/* Cross-border / customs notice */}
+          {order.import_notice && (
+            <View style={styles.importBanner}>
+              <MaterialCommunityIcons name="earth" size={20} color="#B45309" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.importTitle}>International order</Text>
+                <Text style={styles.importText}>
+                  Ships from {order.import_notice.origin_countries.join(', ')} — {order.import_notice.message}
+                </Text>
+                <Text style={styles.importEstimate}>
+                  Estimated duties: UGX {Number(order.import_notice.estimated_duty_min).toLocaleString()}
+                  {' '}– {Number(order.import_notice.estimated_duty_max).toLocaleString()}
+                  {' '}(payable on arrival, set by customs)
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Order items */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -489,6 +507,20 @@ export default function OrderDetailScreen() {
             >
               <MaterialCommunityIcons name="chat-outline" size={20} color="#EC4899" />
               <Text style={styles.actionBtnOutlineText}>Message Seller</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnOutline, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push(`/buyer/orders/invoice/${orderId}` as any)}
+            >
+              <MaterialCommunityIcons name="file-document-outline" size={20} color="#06B6D4" />
+              <Text style={styles.actionBtnOutlineText}>Invoice / Receipt</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnOutline, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push({ pathname: '/buyer/support', params: { order_id: String(orderId), order_number: order.order_number } } as any)}
+            >
+              <MaterialCommunityIcons name="headset" size={20} color="#8B5CF6" />
+              <Text style={styles.actionBtnOutlineText}>Contact Support</Text>
             </Pressable>
             {canDispute && (
               <Pressable
@@ -766,6 +798,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: Brand.rating,
   },
   actionBtnDisputeText: { color: Brand.rating, fontWeight: '700', fontSize: 15 },
+
+  // Cross-border customs banner
+  importBanner: {
+    flexDirection: 'row', gap: 10, alignItems: 'flex-start',
+    backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A',
+    borderRadius: 12, padding: 12, marginBottom: Spacing.three,
+  },
+  importTitle: { fontSize: 13, fontWeight: '800', color: '#B45309' },
+  importText: { fontSize: 12, color: '#92400E', marginTop: 2, lineHeight: 17 },
+  importEstimate: { fontSize: 11, fontWeight: '700', color: '#B45309', marginTop: 6 },
 
   // Dispute modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

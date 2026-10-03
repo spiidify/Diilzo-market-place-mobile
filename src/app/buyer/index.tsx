@@ -12,7 +12,7 @@ import { useBadges } from '@/context/BadgeContext';
 import { useCountry } from '@/context/CountryContext';
 import { useAppTheme, type ThemeMode } from '@/context/ThemeContext';
 import { fetchRecentlyViewed } from '@/services/catalog';
-import { fetchMyReferral, fetchOrderStats, type OrderStats } from '@/services/orders';
+import { fetchLoyalty, fetchMyReferral, fetchOrderStats, type LoyaltyInfo, type OrderStats } from '@/services/orders';
 import type { Product } from '@/types';
 
 const fmtMoney = (v: string | number, currency = 'UGX') =>
@@ -30,19 +30,22 @@ export default function BuyerDashboardScreen() {
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [recent, setRecent] = useState<Product[]>([]);
   const [referral, setReferral] = useState<{ code: string; referred_count: number } | null>(null);
+  const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   const [countryPickerVisible, setCountryPickerVisible] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const [s, r, ref] = await Promise.allSettled([
+      const [s, r, ref, l] = await Promise.allSettled([
         fetchOrderStats(),
         fetchRecentlyViewed(),
         fetchMyReferral(),
+        fetchLoyalty(),
       ]);
       if (s.status === 'fulfilled') setStats(s.value);
       if (r.status === 'fulfilled') setRecent(r.value.slice(0, 12));
       if (ref.status === 'fulfilled') setReferral(ref.value);
+      if (l.status === 'fulfilled') setLoyalty(l.value);
     } catch { /* dashboard extras are non-fatal */ }
   }, [isAuthenticated]);
 
@@ -80,6 +83,7 @@ export default function BuyerDashboardScreen() {
     { icon: 'heart-outline', label: 'Wishlist', color: Brand.danger, route: '/buyer/wishlist' as any },
     { icon: 'star-outline', label: 'My Reviews', color: Brand.rating, route: '/buyer/reviews' as any },
     { icon: 'ticket-outline', label: 'My Coupons', color: '#06B6D4', route: '/buyer/coupons' as any },
+    { icon: 'wallet-outline', label: 'Wallet & Rewards', color: '#F59E0B', route: '/buyer/wallet' as any },
     { icon: 'map-marker-outline', label: 'Addresses', color: '#16A34A', route: '/buyer/addresses' as any },
     { icon: 'credit-card-outline', label: 'Payment Methods', color: '#8B5CF6', route: '/buyer/payments' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
@@ -171,6 +175,12 @@ export default function BuyerDashboardScreen() {
               <View style={styles.buyerBadge}>
                 <MaterialCommunityIcons name="shopping" size={11} color="#FFFFFF" />
                 <Text style={styles.buyerBadgeText}>Buyer</Text>
+                {loyalty && loyalty.points > 0 && (
+                  <>
+                    <MaterialCommunityIcons name="star-four-points" size={11} color="#FCD34D" style={{ marginLeft: 6 }} />
+                    <Text style={styles.buyerBadgeText}>{loyalty.points.toLocaleString()} pts{loyalty.tier !== 'Member' ? ` · ${loyalty.tier}` : ''}</Text>
+                  </>
+                )}
               </View>
             </View>
             {isAuthenticated && (

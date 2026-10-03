@@ -438,12 +438,23 @@ export interface SubOrder {
   id: number;
   store_name: string;
   store_slug?: string;
+  store_country?: string | null;
+  store_country_code?: string | null;
   status: string;
   subtotal: string;
   commission_amount: string;
   seller_amount: string;
   items: OrderItem[];
   created_at: string;
+}
+
+export interface ImportNotice {
+  international: boolean;
+  origin_countries: string[];
+  cross_border_subtotal: string;
+  estimated_duty_min: string;
+  estimated_duty_max: string;
+  message: string;
 }
 
 export interface Order {
@@ -461,6 +472,7 @@ export interface Order {
   tracking_number: string;
   notes: string;
   suborders: SubOrder[];
+  import_notice?: ImportNotice | null;
   total_items: number;
   created_at: string;
   updated_at: string;

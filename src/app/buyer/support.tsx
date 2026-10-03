@@ -1,20 +1,27 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
     Pressable,
     Linking as RNLinking,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    TextInput,
+    View
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { createTicket, fetchMyTickets, type SupportTicket } from '@/services/orders';
 
 interface FAQ {
   question: string;
@@ -65,11 +72,85 @@ const FAQS: FAQ[] = [
 const SUPPORT_EMAIL = 'support@diilzo.com';
 const SUPPORT_PHONE = '+256700000000';
 
+const TICKET_CATEGORIES = [
+  { key: 'order', label: 'Order issue' },
+  { key: 'payment', label: 'Payment' },
+  { key: 'delivery', label: 'Delivery' },
+  { key: 'return', label: 'Return / refund' },
+  { key: 'account', label: 'Account' },
+  { key: 'seller', label: 'Seller' },
+  { key: 'other', label: 'Other' },
+];
+
+const TICKET_STATUS: Record<string, { label: string; color: string }> = {
+  open: { label: 'Open', color: '#F59E0B' },
+  in_progress: { label: 'In Progress', color: '#3B82F6' },
+  resolved: { label: 'Resolved', color: '#10B981' },
+  closed: { label: 'Closed', color: '#6B7280' },
+};
+
 export default function SupportScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { isAuthenticated } = useAuth();
+  const params = useLocalSearchParams<{ order_id?: string; order_number?: string }>();
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // Support tickets
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketModal, setTicketModal] = useState(false);
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketMessage, setTicketMessage] = useState('');
+  const [ticketCategory, setTicketCategory] = useState('order');
+  const [ticketSubmitting, setTicketSubmitting] = useState(false);
+
+  const loadTickets = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      setTicketsLoading(true);
+      setTickets(await fetchMyTickets());
+    } catch { /* non-fatal */ } finally {
+      setTicketsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => { loadTickets(); }, [loadTickets]);
+
+  // Open the form pre-filled when arriving from an order's "Contact Support"
+  useEffect(() => {
+    if (params.order_number) {
+      setTicketSubject(`Problem with order ${params.order_number}`);
+      setTicketCategory('order');
+      setTicketModal(true);
+    }
+  }, [params.order_number]);
+
+  const submitTicket = async () => {
+    if (!ticketSubject.trim() || !ticketMessage.trim()) {
+      Alert.alert('Missing details', 'Please add a subject and describe your issue.');
+      return;
+    }
+    setTicketSubmitting(true);
+    try {
+      await createTicket({
+        subject: ticketSubject.trim(),
+        message: ticketMessage.trim(),
+        category: ticketCategory,
+        order_id: params.order_id ? Number(params.order_id) : undefined,
+      });
+      setTicketModal(false);
+      setTicketSubject('');
+      setTicketMessage('');
+      Alert.alert('Ticket Created', 'Our support team will respond shortly. You can track progress under "My Tickets" below.');
+      loadTickets();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to create ticket');
+    } finally {
+      setTicketSubmitting(false);
+    }
+  };
 
   const handleChat = () => {
     router.push('/chat' as any);
@@ -151,6 +232,57 @@ export default function SupportScreen() {
           ))}
         </View>
 
+        {/* Support tickets */}
+        {isAuthenticated && (
+          <View style={styles.card}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <Text style={styles.cardTitle}>My Tickets</Text>
+              <Pressable
+                style={({ pressed }) => [styles.newTicketBtn, pressed && { opacity: 0.85 }]}
+                onPress={() => {
+                  if (!isAuthenticated) { router.push('/(auth)/login' as any); return; }
+                  setTicketSubject(params.order_number ? `Problem with order ${params.order_number}` : '');
+                  setTicketCategory('order');
+                  setTicketModal(true);
+                }}
+              >
+                <MaterialCommunityIcons name="plus" size={14} color="#FFFFFF" />
+                <Text style={styles.newTicketText}>New Ticket</Text>
+              </Pressable>
+            </View>
+            {ticketsLoading ? (
+              <ActivityIndicator size="small" color={Brand.primary} style={{ paddingVertical: 12 }} />
+            ) : tickets.length === 0 ? (
+              <Text style={styles.ticketsEmpty}>
+                No support tickets — open one and our team will help you.
+              </Text>
+            ) : (
+              tickets.map((t) => {
+                const meta = TICKET_STATUS[t.status] || TICKET_STATUS.open;
+                return (
+                  <View key={t.id} style={styles.ticketRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.ticketSubject} numberOfLines={1}>#{t.id} {t.subject}</Text>
+                      <Text style={styles.ticketMeta}>
+                        {t.order_number ? `Order ${t.order_number} · ` : ''}
+                        {new Date(t.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </Text>
+                      {!!t.admin_reply && (
+                        <Text style={styles.ticketReply} numberOfLines={2}>
+                          <MaterialCommunityIcons name="reply" size={11} color={Brand.primary} /> {t.admin_reply}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={[styles.ticketPill, { backgroundColor: meta.color + '15' }]}>
+                      <Text style={[styles.ticketPillText, { color: meta.color }]}>{meta.label}</Text>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
+
         {/* FAQ */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>FAQs</Text>
@@ -189,6 +321,79 @@ export default function SupportScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* New ticket modal */}
+      <Modal visible={ticketModal} transparent animationType="slide" onRequestClose={() => setTicketModal(false)}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>New Support Ticket</Text>
+                {!!params.order_number && (
+                  <Text style={styles.modalSub}>Linked to order {params.order_number}</Text>
+                )}
+              </View>
+              <Pressable onPress={() => setTicketModal(false)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.fieldLabel}>Category</Text>
+              <View style={styles.chipRow}>
+                {TICKET_CATEGORIES.map((cat) => (
+                  <Pressable
+                    key={cat.key}
+                    style={[styles.chip, ticketCategory === cat.key && styles.chipActive]}
+                    onPress={() => setTicketCategory(cat.key)}
+                  >
+                    <Text style={[styles.chipText, ticketCategory === cat.key && styles.chipTextActive]}>
+                      {cat.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.fieldLabel}>Subject</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Brief summary of your issue"
+                placeholderTextColor={colors.textTertiary}
+                value={ticketSubject}
+                onChangeText={setTicketSubject}
+                maxLength={150}
+              />
+
+              <Text style={styles.fieldLabel}>Message</Text>
+              <TextInput
+                style={[styles.input, styles.messageInput]}
+                multiline
+                numberOfLines={4}
+                placeholder="Describe the issue in detail…"
+                placeholderTextColor={colors.textTertiary}
+                value={ticketMessage}
+                onChangeText={setTicketMessage}
+                textAlignVertical="top"
+              />
+
+              <Pressable
+                style={[styles.submitBtn, ticketSubmitting && { opacity: 0.7 }]}
+                onPress={submitTicket}
+                disabled={ticketSubmitting}
+              >
+                {ticketSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitText}>Submit Ticket</Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -225,6 +430,53 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   faqQuestion: { flex: 1, fontSize: 13, fontWeight: '700', color: c.text },
   faqBody: { paddingHorizontal: 2, paddingBottom: 10, paddingTop: 0 },
   faqAnswer: { fontSize: 12, color: c.textSecondary, lineHeight: 18 },
+
+  // Tickets
+  newTicketBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Brand.primary, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  newTicketText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
+  ticketsEmpty: { fontSize: 12, color: c.textTertiary, paddingVertical: 10 },
+  ticketRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 9, borderTopWidth: 1, borderTopColor: c.borderLight,
+  },
+  ticketSubject: { fontSize: 13, fontWeight: '700', color: c.text },
+  ticketMeta: { fontSize: 11, color: c.textTertiary, marginTop: 1 },
+  ticketReply: { fontSize: 11, color: c.textSecondary, marginTop: 4, fontStyle: 'italic' },
+  ticketPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  ticketPillText: { fontSize: 10, fontWeight: '800' },
+
+  // Ticket modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: c.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    padding: 18, maxHeight: '88%',
+  },
+  modalHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: c.text },
+  modalSub: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+  fieldLabel: { fontSize: 12, fontWeight: '800', color: c.text, marginTop: 12, marginBottom: 8 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16,
+    backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
+  },
+  chipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  chipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  chipTextActive: { color: '#FFFFFF' },
+  input: {
+    borderWidth: 1, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.text,
+    backgroundColor: c.surfaceAlt,
+  },
+  messageInput: { minHeight: 90 },
+  submitBtn: {
+    marginTop: 16, marginBottom: 20, backgroundColor: Brand.primary,
+    borderRadius: 10, paddingVertical: 12, alignItems: 'center',
+  },
+  submitText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
 
   appInfoSection: { alignItems: 'center', paddingVertical: 18, gap: 3 },
   appInfoName: { fontSize: 15, fontWeight: '800', color: c.text },

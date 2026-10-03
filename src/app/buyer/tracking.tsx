@@ -1,21 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 import { Brand, Spacing } from '@/constants/theme';
-import { fetchOrderTracking } from '@/services/orders';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { fetchOrderTracking } from '@/services/orders';
 
 interface TrackingData {
   order_id: number;
@@ -25,10 +26,25 @@ interface TrackingData {
     carrier: string;
     tracking_number: string;
     status: string;
+    store_name?: string;
+    origin_lat?: number | null;
+    origin_lng?: number | null;
+    destination_address?: Record<string, string>;
     shipped_at: string | null;
     delivered_at: string | null;
     estimated_delivery: string | null;
   }>;
+}
+
+/** OpenStreetMap embed HTML centered on the shipment origin. */
+function osmMapHtml(lat: number, lng: number, label: string): string {
+  const bbox = `${lng - 0.02},${lat - 0.012},${lng + 0.02},${lat + 0.012}`;
+  return `<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>html,body,iframe{margin:0;padding:0;height:100%;width:100%;border:0;}</style>
+    </head><body>
+    <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}"></iframe>
+    </body></html>`;
 }
 
 // Timeline steps in order
@@ -224,6 +240,47 @@ export default function OrderTrackingScreen() {
             </View>
           </View>
 
+          {/* Dispatch map — shows where the shipment originates */}
+          {(() => {
+            const withCoords = tracking.shipments.filter(
+              (s) => s.origin_lat != null && s.origin_lng != null
+            );
+            if (withCoords.length === 0) return null;
+            const first = withCoords[0];
+            const dest = first.destination_address || {};
+            return (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <MaterialCommunityIcons name="map-outline" size={20} color={Brand.primary} />
+                  <Text style={styles.sectionTitle}>Delivery Route</Text>
+                </View>
+                <View style={styles.mapCard}>
+                  <WebView
+                    source={{ html: osmMapHtml(first.origin_lat!, first.origin_lng!, first.store_name || 'Dispatch') }}
+                    style={styles.map}
+                    scrollEnabled={false}
+                  />
+                  <View style={styles.mapLegend}>
+                    <View style={styles.mapLegendRow}>
+                      <MaterialCommunityIcons name="store-marker" size={15} color={Brand.primary} />
+                      <Text style={styles.mapLegendText} numberOfLines={1}>
+                        From: {first.store_name || 'Seller dispatch point'}
+                      </Text>
+                    </View>
+                    {(dest.city || dest.country) && (
+                      <View style={styles.mapLegendRow}>
+                        <MaterialCommunityIcons name="map-marker" size={15} color={Brand.danger} />
+                        <Text style={styles.mapLegendText} numberOfLines={1}>
+                          To: {[dest.city, dest.country].filter(Boolean).join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+            );
+          })()}
+
           {/* Shipment cards */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -400,6 +457,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   emptyShipment: { alignItems: 'center', paddingVertical: Spacing.three, gap: Spacing.two },
   emptyShipmentText: { fontSize: 14, color: c.textSecondary, textAlign: 'center' },
+
+  mapCard: {
+    backgroundColor: c.surface, borderRadius: 14, overflow: 'hidden',
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 }, marginBottom: Spacing.two,
+  },
+  map: { height: 200, backgroundColor: c.surfaceAlt },
+  mapLegend: { padding: Spacing.two, gap: 4 },
+  mapLegendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  mapLegendText: { fontSize: 12, color: c.textSecondary, flex: 1 },
 
   shipmentHeader: {
     flexDirection: 'row',

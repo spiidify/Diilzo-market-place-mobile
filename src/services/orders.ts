@@ -242,3 +242,124 @@ export async function setDefaultAddress(id: number): Promise<{
 }> {
   return apiRequest({ method: 'POST', url: `/auth/addresses/${id}/set-default/` });
 }
+
+// ── Wallet (store credit) ─────────────────────────────────────────
+
+export interface WalletTransaction {
+  id: number;
+  amount: string;
+  is_credit: boolean;
+  tx_type: 'refund' | 'promo' | 'reward' | 'purchase' | 'adjustment';
+  note: string;
+  reference: string;
+  order_number: string | null;
+  balance_after: string;
+  created_at: string;
+}
+
+export interface Wallet {
+  balance: string;
+  currency: string;
+  transactions: WalletTransaction[];
+}
+
+/** GET /api/v1/wallet/ — wallet balance + history */
+export async function fetchWallet(): Promise<Wallet> {
+  return apiRequest<Wallet>({ method: 'GET', url: '/wallet/' });
+}
+
+// ── Loyalty Points ────────────────────────────────────────────────
+
+export interface LoyaltyInfo {
+  points: number;
+  tier: string;
+  next_tier: string | null;
+  points_to_next: number;
+  earn_rate: string;
+  transactions: {
+    id: number;
+    points: number;
+    tx_type: 'earn' | 'redeem' | 'bonus' | 'adjustment';
+    note: string;
+    order_number: string | null;
+    created_at: string;
+  }[];
+}
+
+/** GET /api/v1/loyalty/ — points balance + history */
+export async function fetchLoyalty(): Promise<LoyaltyInfo> {
+  return apiRequest<LoyaltyInfo>({ method: 'GET', url: '/loyalty/' });
+}
+
+// ── Product Watch (price-drop / restock) ──────────────────────────
+
+/** GET /api/v1/products/<slug>/watch/ — is the user watching? */
+export async function getWatchStatus(slug: string): Promise<boolean> {
+  const res = await apiRequest<{ watching: boolean }>({ method: 'GET', url: `/products/${slug}/watch/` });
+  return res.watching;
+}
+
+/** POST = watch · DELETE = unwatch */
+export async function setWatch(slug: string, watch: boolean): Promise<boolean> {
+  const res = await apiRequest<{ watching: boolean }>({
+    method: watch ? 'POST' : 'DELETE',
+    url: `/products/${slug}/watch/`,
+  });
+  return res.watching;
+}
+
+// ── Support Tickets ───────────────────────────────────────────────
+
+export interface SupportTicket {
+  id: number;
+  subject: string;
+  category: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: string;
+  order_number: string | null;
+  admin_reply: string;
+  replied_at: string | null;
+  created_at: string;
+}
+
+/** GET /api/v1/support/tickets/ — my tickets */
+export async function fetchMyTickets(): Promise<SupportTicket[]> {
+  return apiRequest<SupportTicket[]>({ method: 'GET', url: '/support/tickets/' });
+}
+
+/** POST /api/v1/support/tickets/ — open a ticket */
+export async function createTicket(params: {
+  subject: string;
+  message: string;
+  category?: string;
+  order_id?: number;
+}): Promise<{ id: number; status: string; detail: string }> {
+  return apiRequest({ method: 'POST', url: '/support/tickets/', data: params });
+}
+
+// ── Order Invoice ─────────────────────────────────────────────────
+
+export interface OrderInvoice {
+  order_number: string;
+  status: string;
+  payment_status: string;
+  currency: string;
+  created_at: string;
+  paid_at: string | null;
+  customer: { name: string; email: string; phone: string };
+  ship_to: { name: string; street: string; city: string; country: string; phone: string };
+  suborders: {
+    store_name: string;
+    store_country: string;
+    items: { name: string; variant: string; quantity: number; unit_price: string; total: string }[];
+  }[];
+  totals: {
+    subtotal: string; shipping: string; tax: string;
+    discount: string; platform_fees: string; total: string;
+  };
+}
+
+/** GET /api/v1/orders/<id>/invoice/ — structured invoice data */
+export async function fetchOrderInvoice(id: number): Promise<OrderInvoice> {
+  return apiRequest<OrderInvoice>({ method: 'GET', url: `/orders/${id}/invoice/` });
+}
