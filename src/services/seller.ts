@@ -649,6 +649,10 @@ export interface SellerKYC {
   business_type: string;
   trading_license_number: string;
   tax_id: string;
+  id_document?: string;
+  id_back_document?: string;
+  license_document?: string;
+  selfie?: string;
   status: string;
   review_notes: string;
   submitted_at: string | null;
@@ -674,13 +678,29 @@ export async function getKYC(): Promise<SellerKYC | null> {
   }
 }
 
+export type KYCDocumentKey = 'id_document' | 'id_back_document' | 'license_document' | 'selfie';
+
 export async function submitKYC(payload: {
   business_name: string;
   business_type: string;
   trading_license_number: string;
   tax_id: string;
-}): Promise<any> {
-  return apiRequest<any>({ method: 'POST', url: `${SELLER_BASE}/kyc/`, data: payload });
+}, documents?: Partial<Record<KYCDocumentKey, string>>): Promise<any> {
+  const form = new FormData();
+  form.append('business_name', payload.business_name);
+  form.append('business_type', payload.business_type);
+  form.append('trading_license_number', payload.trading_license_number);
+  form.append('tax_id', payload.tax_id);
+  if (documents) {
+    for (const [key, uri] of Object.entries(documents)) {
+      if (!uri) continue;
+      const filename = uri.split('/').pop() || `${key}.jpg`;
+      const ext = /\.(\w+)$/.exec(filename)?.[1]?.toLowerCase();
+      const type = ext === 'png' ? 'image/png' : 'image/jpeg';
+      form.append(key, { uri, name: filename, type } as any);
+    }
+  }
+  return uploadMultipart(`${SELLER_BASE}/kyc/`, 'POST', form);
 }
 
 export async function getVerificationLogs(): Promise<VerificationLog[]> {

@@ -2,13 +2,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { Brand } from '@/constants/theme';
@@ -129,7 +129,7 @@ export default function SellerPendingScreen() {
           <Text style={styles.infoTitle}>What happens next?</Text>
           <View style={styles.stepRow}>
             <View style={styles.stepNum}><Text style={styles.stepNumText}>1</Text></View>
-            <Text style={styles.stepText}>Our team reviews your store details and documents</Text>
+            <Text style={styles.stepText}>Submit your ID, selfie and business documents for verification</Text>
           </View>
           <View style={styles.stepRow}>
             <View style={styles.stepNum}><Text style={styles.stepNumText}>2</Text></View>
@@ -143,6 +143,13 @@ export default function SellerPendingScreen() {
 
         {/* Actions */}
         <View style={styles.actionsRow}>
+          <Pressable
+            style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.push('/seller/verification' as any)}
+          >
+            <MaterialCommunityIcons name="shield-check-outline" size={20} color={Brand.primary} />
+            <Text style={styles.actionBtnText}>Verify Identity</Text>
+          </Pressable>
           <Pressable
             style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/seller/settings' as any)}

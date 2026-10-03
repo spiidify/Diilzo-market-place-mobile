@@ -1,22 +1,24 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { getKYC, getVerificationLogs, submitKYC, type SellerKYC, type VerificationLog } from '@/services/seller';
+import { getKYC, getVerificationLogs, submitKYC, type KYCDocumentKey, type SellerKYC, type VerificationLog } from '@/services/seller';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
@@ -24,6 +26,13 @@ const STATUS_COLORS: Record<string, string> = {
   approved: Brand.primary,
   rejected: Brand.danger,
 };
+
+const DOC_FIELDS: { key: KYCDocumentKey; label: string; hint: string; icon: string; required: boolean }[] = [
+  { key: 'id_document', label: 'National ID (Front)', hint: 'Passport or national ID, front side', icon: 'card-account-details-outline', required: true },
+  { key: 'id_back_document', label: 'National ID (Back)', hint: 'Back side of the same document', icon: 'card-account-details-outline', required: true },
+  { key: 'selfie', label: 'Selfie', hint: 'Clear photo of your face holding the ID', icon: 'face-recognition', required: true },
+  { key: 'license_document', label: 'Trading License', hint: 'Required for registered businesses', icon: 'file-certificate-outline', required: false },
+];
 
 export default function SellerVerificationScreen() {
   const router = useRouter();
@@ -40,6 +49,7 @@ export default function SellerVerificationScreen() {
   const [businessType, setBusinessType] = useState('individual');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [taxId, setTaxId] = useState('');
+  const [docs, setDocs] = useState<Partial<Record<KYCDocumentKey, string>>>({});
 
   const load = useCallback(async () => {
     try {
@@ -64,9 +74,30 @@ export default function SellerVerificationScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  const pickDocument = async (key: KYCDocumentKey) => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission required', 'Allow photo access to upload documents.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setDocs((d) => ({ ...d, [key]: result.assets[0].uri }));
+    }
+  };
+
+  const docUri = (key: KYCDocumentKey) => docs[key] || (kyc as any)?.[key] || '';
+  const isBusiness = businessType !== 'individual';
+
   const handleSubmit = async () => {
     if (!businessName.trim()) { Alert.alert('Validation', 'Business name is required'); return; }
-    if (!licenseNumber.trim()) { Alert.alert('Validation', 'License number is required'); return; }
+    if (isBusiness && !licenseNumber.trim()) { Alert.alert('Validation', 'License number is required for registered businesses'); return; }
+    if (!docUri('id_document')) { Alert.alert('Validation', 'Upload the front of your national ID'); return; }
+    if (!docUri('selfie')) { Alert.alert('Validation', 'Upload a selfie for identity verification'); return; }
+    if (isBusiness && !docUri('license_document')) { Alert.alert('Validation', 'Upload your trading license'); return; }
     setSubmitting(true);
     try {
       await submitKYC({
@@ -74,8 +105,9 @@ export default function SellerVerificationScreen() {
         business_type: businessType,
         trading_license_number: licenseNumber.trim(),
         tax_id: taxId.trim(),
-      });
+      }, docs);
       Alert.alert('Success', 'KYC submitted for review');
+      setDocs({});
       load();
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.error || 'Failed to submit');
@@ -155,6 +187,38 @@ export default function SellerVerificationScreen() {
                 <Text style={styles.formLabel}>Tax ID (TIN)</Text>
                 <TextInput style={styles.formInput} value={taxId} onChangeText={setTaxId} placeholder="Optional" placeholderTextColor={colors.textTertiary} autoCapitalize="characters" />
 
+                <Text style={styles.formLabel}>Documents *</Text>
+                <Text style={styles.docHint}>Clear photos of your ID and a selfie — required before your store can be approved.</Text>
+                {DOC_FIELDS.map((doc) => {
+                  const uri = docUri(doc.key);
+                  const uploaded = !!(kyc as any)?.[doc.key] && !docs[doc.key];
+                  const required = doc.required || (doc.key === 'license_document' && isBusiness);
+                  return (
+                    <Pressable key={doc.key} style={styles.docRow} onPress={() => pickDocument(doc.key)}>
+                      {uri ? (
+                        <Image source={{ uri }} style={styles.docThumb} />
+                      ) : (
+                        <View style={[styles.docThumb, styles.docThumbEmpty]}>
+                          <MaterialCommunityIcons name={doc.icon as any} size={26} color={Brand.primary} />
+                        </View>
+                      )}
+                      <View style={styles.docInfo}>
+                        <Text style={styles.docLabel}>
+                          {doc.label}{required ? ' *' : ''}
+                        </Text>
+                        <Text style={styles.docHintText}>
+                          {docs[doc.key] ? 'New photo selected — submit to upload' : uploaded ? 'Uploaded — tap to replace' : doc.hint}
+                        </Text>
+                      </View>
+                      <MaterialCommunityIcons
+                        name={docs[doc.key] ? 'check-circle' : uploaded ? 'check-circle-outline' : 'camera-outline'}
+                        size={22}
+                        color={uri ? Brand.primary : colors.textTertiary}
+                      />
+                    </Pressable>
+                  );
+                })}
+
                 <Pressable style={({ pressed }) => [styles.submitBtn, (submitting || pressed) && { opacity: 0.85 }]} onPress={handleSubmit} disabled={submitting}>
                   {submitting ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.submitBtnText}>Submit for Review</Text>}
                 </Pressable>
@@ -216,6 +280,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   formSub: { fontSize: 13, color: c.textTertiary, marginBottom: 16, marginTop: 2 },
   formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 12 },
   formInput: { borderWidth: 1.5, borderColor: c.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text },
+  docHint: { fontSize: 12, color: c.textTertiary, marginBottom: 10 },
+  docRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: c.border, borderRadius: 12, padding: 10, marginBottom: 8, backgroundColor: c.surface },
+  docThumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: c.surfaceAlt },
+  docThumbEmpty: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.borderLight, borderStyle: 'dashed' },
+  docInfo: { flex: 1 },
+  docLabel: { fontSize: 14, fontWeight: '700', color: c.text },
+  docHintText: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
   typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   typeBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: c.border },
   typeBtnActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '12' },
