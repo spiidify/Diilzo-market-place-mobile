@@ -487,7 +487,7 @@ export default function ProductDetailScreen() {
           >
             <View style={styles.headerBar}>
               <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
-                <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+                <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
               </Pressable>
               <Text style={styles.headerStoreName}>Loading…</Text>
               <View style={{ width: 40 }} />
@@ -514,7 +514,7 @@ export default function ProductDetailScreen() {
           >
             <View style={styles.headerBar}>
               <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
-                <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+                <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
               </Pressable>
               <Text style={styles.headerStoreName}>Not Found</Text>
               <View style={{ width: 40 }} />
@@ -556,40 +556,39 @@ export default function ProductDetailScreen() {
           colors={[Brand.dark, Brand.accent, Brand.primary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          style={styles.headerBar}
         >
-          <View style={styles.headerBar}>
-            <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
-              <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
+            <MaterialCommunityIcons name="arrow-left" size={22} color="#FFFFFF" />
+          </Pressable>
+          {product.store ? (
+            <Pressable
+              style={styles.headerStore}
+              onPress={() => product.store?.slug && router.push(`/store/${product.store.slug}` as any)}
+            >
+              {product.store.logo_url ? (
+                <Image source={{ uri: product.store.logo_url }} style={styles.headerStoreLogo} resizeMode="cover" />
+              ) : (
+                <MaterialCommunityIcons name="storefront-outline" size={14} color="rgba(255,255,255,0.9)" />
+              )}
+              <Text style={styles.headerStoreName} numberOfLines={1}>{product.store.name}</Text>
+              {product.store.is_wholesaler && (
+                <View style={styles.headerWholesaleTag}><Text style={styles.headerWholesaleText}>W</Text></View>
+              )}
             </Pressable>
-            {product.store ? (
-              <Pressable
-                style={styles.headerStore}
-                onPress={() => product.store?.slug && router.push(`/store/${product.store.slug}` as any)}
-              >
-                {product.store.logo_url ? (
-                  <Image source={{ uri: product.store.logo_url }} style={styles.headerStoreLogo} resizeMode="cover" />
-                ) : (
-                  <MaterialCommunityIcons name="storefront-outline" size={14} color={Brand.primary} />
-                )}
-                <Text style={styles.headerStoreName} numberOfLines={1}>{product.store.name}</Text>
-                {product.store.is_wholesaler && (
-                  <View style={styles.headerWholesaleTag}><Text style={styles.headerWholesaleText}>W</Text></View>
-                )}
-              </Pressable>
-            ) : (
-              <View style={styles.headerStore}>
-                <MaterialCommunityIcons name="shopping-outline" size={14} color={Brand.primary} />
-                <Text style={styles.headerStoreName} numberOfLines={1}>Diilzo Marketplace</Text>
-              </View>
-            )}
-            <View style={styles.headerActions}>
-              <Pressable hitSlop={8} onPress={handleWishlist} style={styles.headerBtn}>
-                <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={20} color={isWishlisted ? Brand.danger : colors.text} />
-              </Pressable>
-              <Pressable hitSlop={8} onPress={handleShare} style={styles.headerBtn}>
-                <MaterialCommunityIcons name="share-variant-outline" size={19} color={colors.text} />
-              </Pressable>
+          ) : (
+            <View style={styles.headerStore}>
+              <MaterialCommunityIcons name="shopping-outline" size={14} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.headerStoreName} numberOfLines={1}>Diilzo Marketplace</Text>
             </View>
+          )}
+          <View style={styles.headerActions}>
+            <Pressable hitSlop={8} onPress={handleWishlist} style={styles.headerBtn}>
+              <MaterialCommunityIcons name={isWishlisted ? 'heart' : 'heart-outline'} size={20} color={isWishlisted ? '#FF6B81' : '#FFFFFF'} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={handleShare} style={styles.headerBtn}>
+              <MaterialCommunityIcons name="share-variant-outline" size={19} color="#FFFFFF" />
+            </Pressable>
           </View>
         </LinearGradient>
 
@@ -1727,17 +1726,16 @@ export default function ProductDetailScreen() {
 }
 
 const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surface },
-  safeArea: { flex: 1, backgroundColor: c.surface },
+  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  safeArea: { flex: 1, backgroundColor: c.surfaceAlt },
 
-  // ── Header — gradient strip + white bar (matches GradientHeader) ──
+  // ── Header — brand gradient band (matches app gradient pages) ──
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: c.surface,
+    paddingHorizontal: 6,
+    paddingVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -1753,21 +1751,26 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     justifyContent: 'center',
     gap: 6,
     marginHorizontal: 4,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   headerStoreLogo: {
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   headerStoreName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
-    color: c.text,
+    color: '#FFFFFF',
     flexShrink: 1,
     letterSpacing: -0.3,
   },
   headerWholesaleTag: {
     width: 16, height: 16, borderRadius: 4,
-    backgroundColor: Brand.primary,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
   headerWholesaleText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
@@ -1779,7 +1782,16 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   // ── Gallery (swipeable carousel) ────────────────────────────────
   gallerySection: {
     backgroundColor: c.surface,
+    borderRadius: 14,
+    marginHorizontal: 8,
+    marginTop: 8,
     paddingBottom: 8,
+    overflow: 'hidden',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   tabletProductOverview: {
     flexDirection: 'row',
@@ -1975,12 +1987,17 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   // ── Title section ───────────────────────────────────────────────
   titleSection: {
     backgroundColor: c.surface,
-    marginTop: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.surfaceAlt,
-    paddingHorizontal: 8,
+    borderRadius: 14,
+    marginHorizontal: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     paddingVertical: 14,
     gap: 10,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   tabletTitleSection: {
     flex: 1,
@@ -2045,12 +2062,17 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   // ── Qty + delivery card ─────────────────────────────────────────
   qtyDeliveryCard: {
     backgroundColor: c.surface,
-    marginTop: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.surfaceAlt,
-    paddingHorizontal: 8,
+    borderRadius: 14,
+    marginHorizontal: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   qtyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   qtyLabel: { fontSize: 14, fontWeight: '600', color: c.text },
@@ -2066,12 +2088,17 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   // ── Cards ───────────────────────────────────────────────────────
   card: {
     backgroundColor: c.surface,
-    marginTop: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.surfaceAlt,
-    paddingHorizontal: 8,
+    borderRadius: 14,
+    marginHorizontal: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     paddingVertical: 14,
     gap: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   cardTitle: { fontSize: 15, fontWeight: '700', color: c.text },
 
@@ -2273,7 +2300,8 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
 
   // ── Related Products & Customers Also Viewed ────────────────────
   sectionCard: {
-    backgroundColor: c.surface, marginTop: 8, paddingVertical: 14, paddingHorizontal: 4,
+    backgroundColor: c.surface, marginTop: 8, marginHorizontal: 8, paddingVertical: 14, paddingHorizontal: 12,
+    borderRadius: 14, elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
