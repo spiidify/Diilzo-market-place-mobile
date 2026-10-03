@@ -1300,7 +1300,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/chat')}
               >
-                <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
+                <MaterialCommunityIcons name="message-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {chatUnreadCount > 0 && (
                   <View style={styles.chatBadge}>
                     <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
@@ -1364,7 +1364,7 @@ export default function ProductFeedScreen() {
                 style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
                 onPress={() => router.push('/chat')}
               >
-                <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
+                <MaterialCommunityIcons name="message-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
                 {chatUnreadCount > 0 && (
                   <View style={styles.chatBadge}>
                     <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
@@ -1435,7 +1435,7 @@ export default function ProductFeedScreen() {
               style={({ pressed }) => [styles.chatBtn, pressed && styles.iconPressed]}
               onPress={() => router.push('/chat')}
             >
-              <MaterialCommunityIcons name="chat-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
+              <MaterialCommunityIcons name="message-outline" size={22} color={isDark ? "#FFFFFF" : Brand.dark} />
               {chatUnreadCount > 0 && (
                 <View style={styles.chatBadge}>
                   <Text style={styles.chatBadgeText}>{chatUnreadCount > 9 ? '9+' : chatUnreadCount}</Text>
