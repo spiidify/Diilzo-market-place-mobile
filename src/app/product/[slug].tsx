@@ -566,7 +566,11 @@ export default function ProductDetailScreen() {
                 style={styles.headerStore}
                 onPress={() => product.store?.slug && router.push(`/store/${product.store.slug}` as any)}
               >
-                <MaterialCommunityIcons name="storefront-outline" size={12} color="rgba(255,255,255,0.85)" />
+                {product.store.logo_url ? (
+                  <Image source={{ uri: product.store.logo_url }} style={styles.headerStoreLogo} resizeMode="cover" />
+                ) : (
+                  <MaterialCommunityIcons name="storefront-outline" size={12} color="rgba(255,255,255,0.85)" />
+                )}
                 <Text style={styles.headerStoreName} numberOfLines={1}>{product.store.name}</Text>
                 {product.store.is_wholesaler && (
                   <View style={styles.headerWholesaleTag}><Text style={styles.headerWholesaleText}>W</Text></View>
@@ -1227,7 +1231,11 @@ export default function ProductDetailScreen() {
               <Text style={styles.cardTitle}>Seller</Text>
               <View style={styles.sellerRow}>
                 <View style={styles.sellerLogo}>
-                  <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
+                  {product.store.logo_url ? (
+                    <Image source={{ uri: product.store.logo_url }} style={styles.sellerLogoImg} resizeMode="cover" />
+                  ) : (
+                    <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
+                  )}
                 </View>
                 <View style={styles.sellerInfo}>
                   <View style={styles.sellerNameRow}>
@@ -1793,6 +1801,10 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     gap: 4,
     marginHorizontal: 8,
   },
+  headerStoreLogo: {
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
   headerStoreName: {
     fontSize: 12,
     fontWeight: '600',
@@ -2255,8 +2267,9 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   sellerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sellerLogo: {
     width: 40, height: 40, borderRadius: 8, backgroundColor: Brand.primary,
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
   },
+  sellerLogoImg: { width: '100%', height: '100%' },
   sellerInfo: { flex: 1, gap: 1 },
   sellerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sellerName: { fontSize: 14, fontWeight: '600', color: c.text },

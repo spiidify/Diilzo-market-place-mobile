@@ -100,6 +100,16 @@ const ProductCard = memo(function ProductCard({
         <Text style={styles.name} numberOfLines={2}>
           {item.name}
         </Text>
+        {item.store && (
+          <View style={styles.cardStoreRow}>
+            {item.store.logo_url ? (
+              <Image source={{ uri: item.store.logo_url }} style={styles.cardStoreLogo} resizeMode="cover" />
+            ) : (
+              <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.textTertiary} />
+            )}
+            <Text style={styles.cardStoreName} numberOfLines={1}>{item.store.name}</Text>
+          </View>
+        )}
         <View style={styles.ratingRow}>
           {renderStarsStatic(item.rating, styles)}
           <Text style={styles.reviewCount}>{item.review_count}</Text>
@@ -2178,6 +2188,23 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontWeight: '600',
     color: c.text,
     lineHeight: 17,
+  },
+  cardStoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  cardStoreLogo: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: c.borderLight,
+  },
+  cardStoreName: {
+    flex: 1,
+    fontSize: 9.5,
+    fontWeight: '600',
+    color: c.textTertiary,
   },
   ratingRow: {
     flexDirection: 'row',
