@@ -534,7 +534,7 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const galleryItemWidth = galleryWidth - 16;
+  const galleryItemWidth = galleryWidth;
   const goToImage = (idx: number) => {
     const i = Math.max(0, Math.min(idx, images.length - 1));
     setActiveImage(i);
@@ -1817,16 +1817,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   // ── Gallery (swipeable carousel) ────────────────────────────────
   gallerySection: {
     backgroundColor: c.surface,
-    borderRadius: 14,
-    marginHorizontal: 8,
-    marginTop: 8,
     paddingBottom: 8,
-    overflow: 'hidden',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
   },
   tabletProductOverview: {
     flexDirection: 'row',
@@ -1838,11 +1829,11 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   tabletGallerySection: { width: galleryWidth, flexShrink: 0 },
   mainImageWrap: {
     width: '100%',
-    height: galleryWidth - 16,
+    height: galleryWidth,
     backgroundColor: c.surface,
     position: 'relative',
   },
-  carousel: { width: '100%', height: galleryWidth - 16 },
+  carousel: { width: '100%', height: galleryWidth },
   mainImage: { width: '100%', height: '100%' },
   navArrow: {
     position: 'absolute',
