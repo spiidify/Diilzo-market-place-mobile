@@ -30,6 +30,7 @@ import { useCountry } from '@/context/CountryContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { addToCart } from '@/services/cart';
 import {
   claimCoupon,
   fetchBecauseYouViewed,
@@ -58,14 +59,26 @@ const ProductCard = memo(function ProductCard({
   item,
   onPress,
   onChat,
+  onQuickAdd,
 }: {
   item: Product;
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
+  onQuickAdd?: (product: Product) => Promise<boolean>;
 }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const isSupplier = item.store?.is_wholesaler === true;
+  const [quickAdded, setQuickAdded] = useState(false);
+
+  const handleQuickAdd = useCallback(async () => {
+    if (!onQuickAdd || quickAdded) return;
+    const ok = await onQuickAdd(item);
+    if (ok) {
+      setQuickAdded(true);
+      setTimeout(() => setQuickAdded(false), 1400);
+    }
+  }, [onQuickAdd, quickAdded, item]);
 
   return (
     <Pressable
@@ -115,16 +128,36 @@ const ProductCard = memo(function ProductCard({
           <Text style={styles.reviewCount}>{item.review_count}</Text>
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
-          <Text style={styles.price}>
-            {Number(item.display_price || item.final_price).toLocaleString()}
-          </Text>
+          <View style={styles.priceLeft}>
+            <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
+            <Text style={styles.price} numberOfLines={1} adjustsFontSizeToFit>
+              {Number(item.display_price || item.final_price).toLocaleString()}
+            </Text>
+          </View>
+          <View style={styles.priceRight}>
+            {item.is_on_sale && (
+              <View style={styles.salePill}>
+                <Text style={styles.salePillText}>-{item.discount_percentage}%</Text>
+              </View>
+            )}
+            {onQuickAdd && (
+              <Pressable
+                style={({ pressed }) => [styles.quickAddBtn, quickAdded && styles.quickAddBtnDone, pressed && { opacity: 0.8 }]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleQuickAdd();
+                }}
+                hitSlop={6}
+              >
+                <MaterialCommunityIcons
+                  name={quickAdded ? 'check' : 'plus'}
+                  size={15}
+                  color={quickAdded ? '#FFFFFF' : Brand.primary}
+                />
+              </Pressable>
+            )}
+          </View>
         </View>
-        {item.is_on_sale && (
-          <Text style={styles.saleText}>
-            {item.discount_percentage}% OFF
-          </Text>
-        )}
         {/* ── Action buttons: different for supplier vs local seller ── */}
         {isSupplier ? (
           <View style={styles.cardActions}>
@@ -630,10 +663,12 @@ const ProductTabsSection = memo(function ProductTabsSection({
   tabs,
   onPress,
   onChat,
+  onQuickAdd,
 }: {
   tabs: { key: string; icon: string; title: string; data: Product[]; endsAt?: string | null }[];
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
+  onQuickAdd?: (product: Product) => Promise<boolean>;
 }) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -700,7 +735,7 @@ const ProductTabsSection = memo(function ProductTabsSection({
         {rows.map((row, i) => (
           <View key={`${active.key}-row-${i}`} style={styles.tabRow}>
             {row.map((item) => (
-              <ProductCard key={item.id} item={item} onPress={onPress} onChat={onChat} />
+              <ProductCard key={item.id} item={item} onPress={onPress} onChat={onChat} onQuickAdd={onQuickAdd} />
             ))}
             {row.length === 1 && <View style={{ flex: 1 }} />}
           </View>
@@ -1132,11 +1167,29 @@ export default function ProductFeedScreen() {
     router.push('/suppliers');
   }, [router]);
 
+  // Quick-add from the card's "+" button — simple products go straight
+  // to cart; variants/MOQ products open the detail page to configure.
+  const handleQuickAdd = useCallback(async (product: Product): Promise<boolean> => {
+    const needsDetail = (product.variants?.length ?? 0) > 0 || product.is_wholesale;
+    if (needsDetail) {
+      router.push(`/product/${product.slug}`);
+      return true;
+    }
+    try {
+      await addToCart(product.id, Math.max(1, product.min_order_quantity || 1));
+      refreshCartCount();
+      return true;
+    } catch (e: any) {
+      console.error('Quick add error:', e?.message);
+      return false;
+    }
+  }, [router, refreshCartCount]);
+
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => (
-      <ProductCard item={item} onPress={handleProductPress} onChat={handleChat} />
+      <ProductCard item={item} onPress={handleProductPress} onChat={handleChat} onQuickAdd={handleQuickAdd} />
     ),
-    [handleProductPress, handleChat]
+    [handleProductPress, handleChat, handleQuickAdd]
   );
 
   const renderHeader = useCallback(() => (
@@ -1185,6 +1238,7 @@ export default function ProductFeedScreen() {
         ]}
         onPress={handleProductPress}
         onChat={handleChat}
+        onQuickAdd={handleQuickAdd}
       />
 
       {/* ── Voucher banner (claimable coupons) ───────────────────── */}
@@ -2222,9 +2276,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   priceRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+    marginTop: 2,
+  },
+  priceLeft: {
+    flexDirection: 'row',
     alignItems: 'baseline',
     gap: 2,
-    marginTop: 2,
+    flex: 1,
+    minWidth: 0,
+  },
+  priceRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   currency: {
     fontSize: 11,
@@ -2235,11 +2302,31 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: c.text,
+    flexShrink: 1,
   },
-  saleText: {
+  salePill: {
+    backgroundColor: Brand.danger + '14',
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  salePillText: {
     color: Brand.danger,
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9.5,
+    fontWeight: '800',
+  },
+  quickAddBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Brand.primary + '14',
+    borderWidth: 1,
+    borderColor: Brand.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickAddBtnDone: {
+    backgroundColor: Brand.primary,
   },
   // ── Card action buttons ─────────────────────────────────────────
   cardActions: {
