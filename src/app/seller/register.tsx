@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -11,7 +12,7 @@ import {
     View,
 } from 'react-native';
 
-import { ModernHeader } from '@/components/ModernHeader';
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
@@ -110,15 +111,34 @@ export default function SellerRegisterScreen() {
 
   return (
     <View style={styles.screen}>
-      <ModernHeader title="Become a Seller" />
+      <GradientHeader title="Become a Seller" subtitle="Start selling on Diilzo" />
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <View style={styles.heroCard}>
-          <MaterialCommunityIcons name="store-plus" size={30} color={Brand.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroTitle}>Open your store on Diilzo</Text>
-            <Text style={styles.heroSub}>Fill in your details — our team reviews and approves stores within 1–2 business days.</Text>
+        <LinearGradient
+          colors={[Brand.dark, Brand.accent, Brand.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroIconWrap}>
+            <MaterialCommunityIcons name="store-plus" size={30} color="#FFFFFF" />
           </View>
-        </View>
+          <Text style={styles.heroTitle}>Open your store on Diilzo</Text>
+          <Text style={styles.heroSub}>Reach thousands of buyers across Uganda — online and in-store.</Text>
+          <View style={styles.heroSteps}>
+            {[
+              { icon: 'store-edit-outline', label: 'Register' },
+              { icon: 'shield-check-outline', label: 'Verify' },
+              { icon: 'cash-multiple', label: 'Sell & Earn' },
+            ].map((s, i) => (
+              <View key={s.icon} style={styles.heroStepItem}>
+                <View style={styles.heroStepIcon}>
+                  <MaterialCommunityIcons name={s.icon as any} size={16} color={Brand.primary} />
+                </View>
+                <Text style={styles.heroStepText}>{i + 1}. {s.label}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
 
         {/* Store basics */}
         <View style={styles.sectionCard}>
@@ -240,11 +260,25 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   body: { padding: 10, paddingBottom: 40 },
 
   heroCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Brand.primary + '12', borderRadius: 14, padding: 14, marginBottom: 10,
+    borderRadius: 16, padding: 16, marginBottom: 10,
+    elevation: 3, shadowColor: Brand.accent, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
   },
-  heroTitle: { fontSize: 15, fontWeight: '800', color: c.text },
-  heroSub: { fontSize: 12, color: c.textSecondary, marginTop: 2, lineHeight: 17 },
+  heroIconWrap: {
+    width: 52, height: 52, borderRadius: 26, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  heroTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
+  heroSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, lineHeight: 17 },
+  heroSteps: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  heroStepItem: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 8,
+  },
+  heroStepIcon: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
+  },
+  heroStepText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF', flexShrink: 1 },
 
   sectionCard: {
     backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
