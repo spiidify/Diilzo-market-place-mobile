@@ -70,6 +70,8 @@ export default function ProductDetailScreen() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const toastAnim = useRef(new Animated.Value(-100)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const galleryRef = useRef<FlatList<string>>(null);
+  const fsGalleryRef = useRef<FlatList<string>>(null);
   const [chatCreating, setChatCreating] = useState(false);
   const { isAuthenticated } = useAuth();
   const { colors } = useAppTheme();
@@ -532,6 +534,13 @@ export default function ProductDetailScreen() {
     );
   }
 
+  const galleryItemWidth = galleryWidth - 16;
+  const goToImage = (idx: number) => {
+    const i = Math.max(0, Math.min(idx, images.length - 1));
+    setActiveImage(i);
+    galleryRef.current?.scrollToOffset({ offset: i * galleryItemWidth, animated: true });
+  };
+
   const rating = parseFloat(product.rating) || 0;
   const reviewCount = product.review_count ?? 0;
   const images = product.images?.length
@@ -603,20 +612,21 @@ export default function ProductDetailScreen() {
             <View style={styles.mainImageWrap}>
               {images.length > 0 ? (
                 <FlatList
+                  ref={galleryRef}
                   data={images}
                   horizontal
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
                   keyExtractor={(_, idx) => `img-${idx}`}
                   onScroll={(e) => {
-                    const idx = Math.round(e.nativeEvent.contentOffset.x / galleryWidth);
+                    const idx = Math.round(e.nativeEvent.contentOffset.x / galleryItemWidth);
                     if (idx !== activeImage) setActiveImage(idx);
                   }}
                   scrollEventThrottle={16}
                   renderItem={({ item, index }) => (
                     <Pressable
                       onPress={() => { setFullscreenIndex(index); setShowFullscreenGallery(true); }}
-                      style={{ width: galleryWidth, height: galleryWidth }}
+                      style={{ width: galleryItemWidth, height: galleryItemWidth }}
                     >
                       <Image
                         source={{ uri: item }}
@@ -631,6 +641,21 @@ export default function ProductDetailScreen() {
                 <View style={styles.noImage}>
                   <MaterialCommunityIcons name="image-off" size={56} color={colors.textTertiary} />
                 </View>
+              )}
+              {/* Prev / next arrows */}
+              {images.length > 1 && (
+                <>
+                  {activeImage > 0 && (
+                    <Pressable style={[styles.navArrow, { left: 8 }]} onPress={() => goToImage(activeImage - 1)} hitSlop={6}>
+                      <MaterialCommunityIcons name="chevron-left" size={24} color="#FFFFFF" />
+                    </Pressable>
+                  )}
+                  {activeImage < images.length - 1 && (
+                    <Pressable style={[styles.navArrow, { right: 8 }]} onPress={() => goToImage(activeImage + 1)} hitSlop={6}>
+                      <MaterialCommunityIcons name="chevron-right" size={24} color="#FFFFFF" />
+                    </Pressable>
+                  )}
+                </>
               )}
               {/* Badges */}
               <View style={styles.badgeStack}>
@@ -663,8 +688,10 @@ export default function ProductDetailScreen() {
             {images.length > 1 && (
               <View style={styles.dotsRow}>
                 {images.map((_, idx) => (
-                  <View
+                  <Pressable
                     key={idx}
+                    onPress={() => goToImage(idx)}
+                    hitSlop={6}
                     style={[styles.dot, activeImage === idx && styles.dotActive]}
                   />
                 ))}
@@ -677,7 +704,7 @@ export default function ProductDetailScreen() {
                 {images.map((img, idx) => (
                   <Pressable
                     key={idx}
-                    onPress={() => setActiveImage(idx)}
+                    onPress={() => goToImage(idx)}
                     style={[styles.thumb, activeImage === idx && styles.thumbActive]}
                   >
                     <Image source={{ uri: img }} style={styles.thumbImg} resizeMode="contain" />
@@ -1518,11 +1545,13 @@ export default function ProductDetailScreen() {
           {/* Swipeable fullscreen images */}
           {images.length > 0 && (
             <FlatList
+              ref={fsGalleryRef}
               data={images}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, idx) => `fs-img-${idx}`}
+              initialScrollIndex={fullscreenIndex}
               onScroll={(e) => {
                 const idx = Math.round(e.nativeEvent.contentOffset.x / windowWidth);
                 if (idx !== fullscreenIndex) setFullscreenIndex(idx);
@@ -1552,7 +1581,10 @@ export default function ProductDetailScreen() {
                 {images.map((img, idx) => (
                   <Pressable
                     key={idx}
-                    onPress={() => setFullscreenIndex(idx)}
+                    onPress={() => {
+                      setFullscreenIndex(idx);
+                      fsGalleryRef.current?.scrollToOffset({ offset: idx * windowWidth, animated: true });
+                    }}
                     style={[styles.fsThumb, fullscreenIndex === idx && styles.fsThumbActive]}
                   >
                     <Image source={{ uri: img }} style={styles.fsThumbImg} resizeMode="contain" />
@@ -1803,12 +1835,24 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   tabletGallerySection: { width: galleryWidth, flexShrink: 0 },
   mainImageWrap: {
     width: '100%',
-    height: galleryWidth,
+    height: galleryWidth - 16,
     backgroundColor: c.surface,
     position: 'relative',
   },
-  carousel: { width: '100%', height: galleryWidth },
+  carousel: { width: '100%', height: galleryWidth - 16 },
   mainImage: { width: '100%', height: '100%' },
+  navArrow: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -17,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
   noImage: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.surfaceAlt },
   badgeStack: { position: 'absolute', top: 12, left: 12, gap: 4 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
