@@ -140,19 +140,19 @@ const ProductCard = memo(function ProductCard({
                 <Text style={styles.salePillText}>-{item.discount_percentage}%</Text>
               </View>
             )}
-            {onQuickAdd && (
+            {item.store && (
               <Pressable
-                style={({ pressed }) => [styles.quickAddBtn, quickAdded && styles.quickAddBtnDone, pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.quickAddBtn, pressed && { opacity: 0.8 }]}
                 onPress={(e) => {
                   e.stopPropagation();
-                  handleQuickAdd();
+                  onChat(item);
                 }}
                 hitSlop={6}
               >
                 <MaterialCommunityIcons
-                  name={quickAdded ? 'check' : 'plus'}
-                  size={15}
-                  color={quickAdded ? '#FFFFFF' : Brand.primary}
+                  name="chat-outline"
+                  size={14}
+                  color={Brand.primary}
                 />
               </Pressable>
             )}
@@ -188,11 +188,11 @@ const ProductCard = memo(function ProductCard({
               style={({ pressed }) => [styles.viewBtn, pressed && styles.viewBtnPressed]}
               onPress={(e) => {
                 e.stopPropagation();
-                onPress(item.slug);
+                handleQuickAdd();
               }}
             >
-              <MaterialCommunityIcons name="eye-outline" size={14} color={Brand.primary} />
-              <Text style={styles.viewBtnText}>View</Text>
+              <MaterialCommunityIcons name={quickAdded ? 'check' : 'cart-plus'} size={14} color={Brand.primary} />
+              <Text style={styles.viewBtnText}>{quickAdded ? 'Added' : 'Add to Cart'}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.addToCartBtn, pressed && styles.addToCartPressed]}
@@ -2318,9 +2318,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: Brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  quickAddBtnDone: {
-    backgroundColor: Brand.primary,
   },
   // ── Card action buttons ─────────────────────────────────────────
   cardActions: {
