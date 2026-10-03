@@ -1607,8 +1607,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   notifBadge: {
     position: 'absolute',
-    top: 2,
-    right: 0,
+    top: -2,
+    right: -1,
     backgroundColor: Brand.danger,
     minWidth: 18,
     height: 18,
