@@ -1616,8 +1616,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: Brand.primary,
   },
   notifBadgeText: {
     color: '#FFFFFF',
