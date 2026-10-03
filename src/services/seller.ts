@@ -441,9 +441,16 @@ export async function registerStore(data: {
   phone?: string;
   email?: string;
   city?: string;
+  address?: string;
   country?: string;
   business_type?: string;
   is_wholesaler?: boolean;
+  company_name?: string;
+  payout_method?: string;
+  payout_phone?: string;
+  bank_name?: string;
+  bank_account?: string;
+  bank_holder?: string;
 }): Promise<any> {
   return apiRequest<any>({
     method: 'POST',

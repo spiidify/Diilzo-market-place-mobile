@@ -63,12 +63,17 @@ export default function SellerDashboardScreen() {
         router.replace('/seller/pending' as any);
       }
     } catch (e: any) {
-      setError(e?.message || 'Failed to load dashboard');
+      const serverMsg = e?.response?.data?.error || e?.message || '';
+      if (e?.response?.status === 404 || serverMsg.includes('No store')) {
+        router.replace('/seller/register' as any);
+        return;
+      }
+      setError(serverMsg || 'Failed to load dashboard');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => { load(); }, [load]);
 
