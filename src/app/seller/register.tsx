@@ -302,10 +302,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   textArea: { minHeight: 72, textAlignVertical: 'top' },
   rowFields: { flexDirection: 'row', gap: 10 },
 
-  chipsWrap: { flexDirection: 'column', gap: 6, marginBottom: 6 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 12, paddingVertical: 11, borderRadius: 10,
+    flexBasis: '31.5%', flexGrow: 1,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    paddingHorizontal: 6, paddingVertical: 11, borderRadius: 10,
     backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
   },
   chipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
