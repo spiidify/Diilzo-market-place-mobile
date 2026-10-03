@@ -2,15 +2,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
@@ -30,6 +30,7 @@ export default function RegisterScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -72,6 +73,7 @@ export default function RegisterScreen() {
         sanitizeString(firstName, 60),
         sanitizeString(lastName, 60),
         sanitizeString(phone, 20),
+        sanitizeString(referralCode, 20).toUpperCase(),
       );
       router.replace('/');
     } catch (e: any) {
@@ -171,6 +173,24 @@ export default function RegisterScreen() {
                 placeholder="+256 700 000 000"
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="phone-pad"
+              />
+            </View>
+
+            {/* Referral code (optional) */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons
+                name="gift-outline"
+                size={20}
+                color={colors.textTertiary}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={referralCode}
+                onChangeText={setReferralCode}
+                placeholder="Referral code (optional)"
+                placeholderTextColor={colors.textTertiary}
+                autoCapitalize="characters"
               />
             </View>
 

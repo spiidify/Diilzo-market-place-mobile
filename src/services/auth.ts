@@ -29,7 +29,8 @@ export async function register(
   password: string,
   firstName: string,
   lastName: string,
-  phone?: string
+  phone?: string,
+  referralCode?: string
 ): Promise<RegisterResponse> {
   const data = await apiRequest<RegisterResponse>({
     method: 'POST',
@@ -41,6 +42,7 @@ export async function register(
       first_name: firstName,
       last_name: lastName,
       phone: phone || '',
+      referral_code: referralCode?.trim() || '',
     },
   });
   await setTokens(data.access, data.refresh);

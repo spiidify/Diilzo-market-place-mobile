@@ -1,13 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 
+import { CountryPicker } from '@/components/CountryPicker';
 import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
+import { useCountry } from '@/context/CountryContext';
 import { useAppTheme, type ThemeMode } from '@/context/ThemeContext';
+import { fetchRecentlyViewed } from '@/services/catalog';
+import { fetchMyReferral, fetchOrderStats, type OrderStats } from '@/services/orders';
+import type { Product } from '@/types';
+
+const fmtMoney = (v: string | number, currency = 'UGX') =>
+  `${currency} ${Number(v || 0).toLocaleString()}`;
 
 export default function BuyerDashboardScreen() {
   const router = useRouter();
@@ -15,10 +24,57 @@ export default function BuyerDashboardScreen() {
   const { chatUnread } = useBadges();
   const { mode, setMode, isDark } = useAppTheme();
   const { colors } = useAppTheme();
+  const { country, currencyCode } = useCountry();
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const [stats, setStats] = useState<OrderStats | null>(null);
+  const [recent, setRecent] = useState<Product[]>([]);
+  const [referral, setReferral] = useState<{ code: string; referred_count: number } | null>(null);
+  const [countryPickerVisible, setCountryPickerVisible] = useState(false);
+
+  const loadDashboard = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const [s, r, ref] = await Promise.allSettled([
+        fetchOrderStats(),
+        fetchRecentlyViewed(),
+        fetchMyReferral(),
+      ]);
+      if (s.status === 'fulfilled') setStats(s.value);
+      if (r.status === 'fulfilled') setRecent(r.value.slice(0, 12));
+      if (ref.status === 'fulfilled') setReferral(ref.value);
+    } catch { /* dashboard extras are non-fatal */ }
+  }, [isAuthenticated]);
+
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  const shareReferral = async () => {
+    if (!referral) return;
+    try {
+      await Share.share({
+        message: `Join me on Diilzo — Africa's marketplace for local & international shopping. Use my code ${referral.code} when you sign up!`,
+      });
+    } catch { /* dismissed */ }
+  };
+
+  const copyReferral = async () => {
+    if (!referral) return;
+    await Clipboard.setStringAsync(referral.code);
+    Alert.alert('Copied', 'Referral code copied to clipboard.');
+  };
+
+  const statusShortcuts = stats ? [
+    { icon: 'credit-card-clock-outline', label: 'To Pay', count: stats.to_pay, color: '#F59E0B', route: '/buyer/orders?status=to_pay' as any },
+    { icon: 'package-variant-closed', label: 'To Ship', count: stats.to_ship, color: '#8B5CF6', route: '/buyer/orders?status=to_ship' as any },
+    { icon: 'truck-fast-outline', label: 'To Receive', count: stats.to_receive, color: '#06B6D4', route: '/buyer/orders?status=to_receive' as any },
+    { icon: 'star-outline', label: 'To Review', count: stats.to_review, color: Brand.rating, route: '/buyer/orders?status=to_review' as any },
+    { icon: 'shield-check-outline', label: 'Escrow', count: stats.active_escrow, color: Brand.primary, route: '/buyer/escrow' as any },
+  ] : [];
 
   const menuItems = [
     { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
+    { icon: 'file-document-outline', label: 'My RFQs', color: '#8B5CF6', route: '/buyer/rfqs' as any },
+    { icon: 'shield-check-outline', label: 'Trade Assurance', color: Brand.primary, route: '/buyer/escrow' as any },
     { icon: 'storefront', label: 'My Sellers', color: '#10B981', route: '/buyer/my-sellers' as any },
     { icon: 'refresh', label: 'Buy Again', color: '#F59E0B', route: '/buyer/buy-again' as any },
     { icon: 'heart-outline', label: 'Wishlist', color: Brand.danger, route: '/buyer/wishlist' as any },
@@ -129,6 +185,60 @@ export default function BuyerDashboardScreen() {
           </View>
         </View>
 
+        {/* Order status shortcuts (Jumia/AliExpress-style) */}
+        {stats && stats.total_orders > 0 && (
+          <View style={styles.statsCard}>
+            {statusShortcuts.map((s) => (
+              <Pressable key={s.label} style={styles.statItem} onPress={() => router.push(s.route)}>
+                <View style={[styles.statIconWrap, { backgroundColor: s.color + '15' }]}>
+                  <MaterialCommunityIcons name={s.icon as any} size={22} color={s.color} />
+                  {s.count > 0 && (
+                    <View style={styles.statBadge}>
+                      <Text style={styles.statBadgeText}>{s.count > 99 ? '99+' : s.count}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* Region / currency row */}
+        <Pressable
+          style={({ pressed }) => [styles.regionRow, pressed && { backgroundColor: colors.surfaceAlt }]}
+          onPress={() => setCountryPickerVisible(true)}
+        >
+          <MaterialCommunityIcons name="map-marker-outline" size={18} color={Brand.primary} />
+          <Text style={styles.regionText}>
+            Ship to: <Text style={styles.regionValue}>{country?.name || 'Uganda'}</Text>
+            <Text style={styles.regionCurrency}> · {currencyCode}</Text>
+          </Text>
+          <MaterialCommunityIcons name="chevron-down" size={18} color={colors.textTertiary} />
+        </Pressable>
+
+        {/* Referral card */}
+        {referral && (
+          <View style={styles.referralCard}>
+            <View style={styles.referralIcon}>
+              <MaterialCommunityIcons name="gift-outline" size={22} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.referralTitle}>Invite Friends, Earn Rewards</Text>
+              <Text style={styles.referralSub}>
+                Share code <Text style={styles.referralCode}>{referral.code}</Text>
+                {referral.referred_count > 0 ? ` — ${referral.referred_count} joined` : ''}
+              </Text>
+            </View>
+            <Pressable onPress={copyReferral} hitSlop={8} style={styles.referralBtn}>
+              <MaterialCommunityIcons name="content-copy" size={16} color="#FFFFFF" />
+            </Pressable>
+            <Pressable onPress={shareReferral} hitSlop={8} style={[styles.referralBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+              <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        )}
+
         {/* Become a seller CTA */}
         {!user?.has_store && (
           <Pressable
@@ -235,6 +345,38 @@ export default function BuyerDashboardScreen() {
           </View>
         )}
 
+        {/* Recently viewed strip */}
+        {recent.length > 0 && (
+          <View style={styles.recentCard}>
+            <View style={styles.recentHeader}>
+              <MaterialCommunityIcons name="history" size={18} color={colors.textSecondary} />
+              <Text style={styles.recentTitle}>Recently Viewed</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+              {recent.map((p) => {
+                const img = p.primary_image_url || (p as any).image_url;
+                return (
+                  <Pressable
+                    key={p.id}
+                    style={styles.recentItem}
+                    onPress={() => router.push(`/product/${p.slug}` as any)}
+                  >
+                    {img ? (
+                      <Image source={{ uri: img }} style={styles.recentImg} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.recentImg, { alignItems: 'center', justifyContent: 'center' }]}>
+                        <MaterialCommunityIcons name="image-outline" size={20} color={colors.textTertiary} />
+                      </View>
+                    )}
+                    <Text style={styles.recentName} numberOfLines={2}>{p.name}</Text>
+                    <Text style={styles.recentPrice}>{fmtMoney(p.final_price || p.price, p.display_currency || p.currency)}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Menu items — grouped in a single card with dividers */}
         <View style={styles.menuCard}>
           {menuItems.map((item, index) => (
@@ -302,6 +444,12 @@ export default function BuyerDashboardScreen() {
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
       </ScrollView>
+
+      <CountryPicker
+        visible={countryPickerVisible}
+        onClose={() => setCountryPickerVisible(false)}
+        onSelected={() => setCountryPickerVisible(false)}
+      />
     </View>
   );
 }
@@ -446,6 +594,64 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   adminCtaSub: { fontSize: 12, color: c.textTertiary },
 
   // Menu — single grouped card with dividers
+  // Order status shortcuts
+  statsCard: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    backgroundColor: c.surface, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 8, marginBottom: 10,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  },
+  statItem: { alignItems: 'center', flex: 1 },
+  statIconWrap: {
+    width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 6,
+  },
+  statBadge: {
+    position: 'absolute', top: -2, right: -4, backgroundColor: Brand.danger,
+    minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.surface,
+  },
+  statBadgeText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
+  statLabel: { fontSize: 10, fontWeight: '600', color: c.textSecondary, textAlign: 'center' },
+
+  // Region / currency row
+  regionRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: c.surface, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10,
+    borderWidth: 1, borderColor: c.border,
+  },
+  regionText: { flex: 1, fontSize: 13, color: c.textSecondary },
+  regionValue: { fontWeight: '700', color: c.text },
+  regionCurrency: { fontWeight: '700', color: Brand.primary },
+
+  // Referral card
+  referralCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: Brand.accent, borderRadius: 14, padding: 12, marginBottom: 10,
+    elevation: 2, shadowColor: Brand.accent, shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+  },
+  referralIcon: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  referralTitle: { fontSize: 13, fontWeight: '800', color: '#FFFFFF' },
+  referralSub: { fontSize: 11, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
+  referralCode: { fontWeight: '800', color: '#FFFFFF' },
+  referralBtn: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  // Recently viewed
+  recentCard: {
+    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  },
+  recentHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  recentTitle: { fontSize: 14, fontWeight: '800', color: c.text },
+  recentItem: { width: 92 },
+  recentImg: { width: 92, height: 92, borderRadius: 10, backgroundColor: c.surfaceAlt },
+  recentName: { fontSize: 10, color: c.textSecondary, marginTop: 4, lineHeight: 13 },
+  recentPrice: { fontSize: 11, fontWeight: '800', color: c.text, marginTop: 2 },
+
   menuCard: {
     backgroundColor: c.surface,
     borderRadius: 16,

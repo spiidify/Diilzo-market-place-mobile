@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     FlatList,
@@ -21,8 +21,31 @@ interface Order {
   order_number: string;
   total: string;
   status: string;
+  payment_status?: string;
   created_at: string;
   items_count?: number;
+}
+
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'to_pay', label: 'To Pay' },
+  { key: 'to_ship', label: 'To Ship' },
+  { key: 'to_receive', label: 'To Receive' },
+  { key: 'to_review', label: 'To Review' },
+  { key: 'cancelled', label: 'Cancelled' },
+] as const;
+
+type FilterKey = typeof FILTERS[number]['key'];
+
+function matchesFilter(o: Order, f: FilterKey): boolean {
+  switch (f) {
+    case 'to_pay': return o.payment_status === 'pending' && o.status === 'pending';
+    case 'to_ship': return o.payment_status === 'paid' && (o.status === 'pending' || o.status === 'processing');
+    case 'to_receive': return o.status === 'shipped';
+    case 'to_review': return o.status === 'delivered';
+    case 'cancelled': return o.status === 'cancelled' || o.status === 'refunded';
+    default: return true;
+  }
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -41,6 +64,8 @@ export default function BuyerOrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ status?: string }>();
+  const [filter, setFilter] = useState<FilterKey>((params.status as FilterKey) || 'all');
 
   const load = useCallback(async () => {
     try {
@@ -57,6 +82,11 @@ export default function BuyerOrdersScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => matchesFilter(o, filter)),
+    [orders, filter]
+  );
 
   const renderItem = ({ item }: { item: Order }) => {
     const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
@@ -93,6 +123,19 @@ export default function BuyerOrdersScreen() {
         subtitle={!loading && orders.length > 0 ? `${orders.length} order${orders.length === 1 ? '' : 's'}` : undefined}
       />
 
+      {/* Status filter chips */}
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            style={[styles.filterChip, filter === f.key && styles.filterChipActive]}
+            onPress={() => setFilter(f.key)}
+          >
+            <Text style={[styles.filterChipText, filter === f.key && styles.filterChipTextActive]}>{f.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {loading ? (
         <OrderListSkeleton count={4} />
       ) : error ? (
@@ -103,17 +146,17 @@ export default function BuyerOrdersScreen() {
             <Text style={styles.shopBtnText}>Retry</Text>
           </Pressable>
         </View>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <View style={styles.centerBody}>
           <MaterialCommunityIcons name="shopping-outline" size={48} color={colors.textTertiary} />
-          <Text style={styles.emptyText}>No orders yet</Text>
+          <Text style={styles.emptyText}>{filter === 'all' ? 'No orders yet' : `No orders in "${FILTERS.find(f => f.key === filter)?.label}"`}</Text>
           <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
             <Text style={styles.shopBtnText}>Start Shopping</Text>
           </Pressable>
         </View>
       ) : (
         <FlatList
-          data={orders}
+          data={filteredOrders}
           keyExtractor={(item) => `${item.id}`}
           renderItem={renderItem}
           style={styles.listCard}
@@ -137,6 +180,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
+
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingVertical: 8 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
+  filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  filterChipTextActive: { color: '#FFFFFF' },
 
   listCard: { flex: 1 },
   list: {

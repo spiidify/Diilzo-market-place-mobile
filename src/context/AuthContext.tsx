@@ -6,12 +6,12 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { useImageDimensions } from '../hooks/useImageDimensions';
 import { getAccessToken, setTokens } from '../services/api';
 import {
-  login as apiLogin,
-  logout as apiLogout,
-  register as apiRegister,
-  getProfile,
-  loginWithCredentials,
-  type TwoFactorRequiredResponse,
+    login as apiLogin,
+    logout as apiLogout,
+    register as apiRegister,
+    getProfile,
+    loginWithCredentials,
+    type TwoFactorRequiredResponse,
 } from '../services/auth';
 import { clearGuestCartId } from '../services/cart';
 import { socialLogin as apiSocialLogin, type SocialProvider } from '../services/socialAuth';
@@ -37,7 +37,7 @@ export class TwoFactorRequiredError extends Error {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   loginWithEmailOrPhone: (emailOrPhone: string, password: string) => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName: string, phone?: string) => Promise<void>;
+  register: (email: string, password: string, firstName: string, lastName: string, phone?: string, referralCode?: string) => Promise<void>;
   socialLogin: (provider: SocialProvider, payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -92,9 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [avatarSize]);
 
   const register = useCallback(async (
-    email: string, password: string, firstName: string, lastName: string, phone?: string
+    email: string, password: string, firstName: string, lastName: string, phone?: string, referralCode?: string
   ) => {
-    await apiRegister(email, password, firstName, lastName, phone);
+    await apiRegister(email, password, firstName, lastName, phone, referralCode);
     const user = await getProfile(avatarSize);
     await clearGuestCartId();
     setState({ user, isLoading: false, isAuthenticated: true });

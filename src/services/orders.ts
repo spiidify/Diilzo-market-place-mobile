@@ -73,6 +73,115 @@ export async function reorder(id: number): Promise<{ detail: string; added: numb
   return apiRequest({ method: 'POST', url: `/orders/${id}/reorder/` });
 }
 
+// ── Buyer Dashboard Stats ─────────────────────────────────────────
+
+export interface OrderStats {
+  to_pay: number;
+  to_ship: number;
+  to_receive: number;
+  to_review: number;
+  unreviewed_items: number;
+  open_disputes: number;
+  active_escrow: number;
+  total_orders: number;
+  by_status: Record<string, number>;
+}
+
+/** GET /api/v1/orders/stats/ — dashboard order-status counts */
+export async function fetchOrderStats(): Promise<OrderStats> {
+  return apiRequest<OrderStats>({ method: 'GET', url: '/orders/stats/' });
+}
+
+// ── Buyer Escrow ──────────────────────────────────────────────────
+
+export interface EscrowHoldItem {
+  id: number;
+  order_id: number;
+  order_number: string;
+  amount_held: string;
+  refunded_amount: string;
+  remaining_amount: string;
+  currency: string;
+  status: string;
+  release_reason: string;
+  buyer_confirmed_receipt: boolean;
+  days_until_auto_release: number | null;
+  tracking_number: string;
+  held_at: string;
+  released_at: string | null;
+  auto_release_date: string | null;
+}
+
+/** GET /api/v1/orders/escrow/ — buyer's escrow-protected payments */
+export async function fetchMyEscrow(): Promise<EscrowHoldItem[]> {
+  return apiRequest<EscrowHoldItem[]>({ method: 'GET', url: '/orders/escrow/' });
+}
+
+// ── Buyer Disputes ────────────────────────────────────────────────
+
+export interface BuyerDispute {
+  id: number;
+  order_id: number;
+  order_number: string;
+  store_name: string;
+  reason: string;
+  description: string;
+  status: string;
+  resolution: string;
+  created_at: string;
+}
+
+/** GET /api/v1/orders/disputes/ — list buyer's disputes */
+export async function fetchMyDisputes(): Promise<BuyerDispute[]> {
+  return apiRequest<BuyerDispute[]>({ method: 'GET', url: '/orders/disputes/' });
+}
+
+/** POST /api/v1/orders/<id>/dispute/ — open a dispute */
+export async function openDispute(orderId: number, params: {
+  reason: string;
+  description: string;
+  suborder_id?: number;
+}): Promise<{ id: number; status: string; detail: string }> {
+  return apiRequest({ method: 'POST', url: `/orders/${orderId}/dispute/`, data: params });
+}
+
+// ── Buyer RFQs ────────────────────────────────────────────────────
+
+export interface BuyerRFQ {
+  id: number;
+  store_id: number;
+  store_name: string;
+  product_id: number | null;
+  product_name: string;
+  product_slug: string;
+  quantity: number;
+  target_price: string | null;
+  notes: string;
+  quoted_price: string | null;
+  quoted_total: string | null;
+  seller_notes: string;
+  quoted_at: string | null;
+  status: string;
+  created_at: string;
+}
+
+/** GET /api/v1/my-rfqs/ — buyer's quotation requests */
+export async function fetchMyRFQs(): Promise<BuyerRFQ[]> {
+  return apiRequest<BuyerRFQ[]>({ method: 'GET', url: '/my-rfqs/' });
+}
+
+/** POST /api/v1/my-rfqs/<id>/<action>/ — accept or reject a quote */
+export async function respondToRFQ(rfqId: number, action: 'accept' | 'reject'): Promise<{ id: number; status: string }> {
+  return apiRequest({ method: 'POST', url: `/my-rfqs/${rfqId}/${action}/` });
+}
+
+// ── Referral ──────────────────────────────────────────────────────
+
+/** GET /api/v1/me/referral/ — referral code + invite count */
+export async function fetchMyReferral(): Promise<{ code: string; referred_count: number }> {
+  return apiRequest({ method: 'GET', url: '/me/referral/' });
+}
+
 // ── Shipping Calculator (dual-engine) ─────────────────────────────
 
 export interface ShippingFeePart {

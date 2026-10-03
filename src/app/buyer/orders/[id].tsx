@@ -3,16 +3,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,10 +23,11 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { createChatThread } from '@/services/chat';
 import {
-  cancelOrder,
-  fetchOrderById,
-  reorder,
-  requestReturn,
+    cancelOrder,
+    fetchOrderById,
+    openDispute,
+    reorder,
+    requestReturn,
 } from '@/services/orders';
 import type { Order } from '@/types';
 
@@ -43,6 +47,15 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   failed: Brand.danger,
 };
 
+const DISPUTE_REASONS = [
+  { key: 'item_not_received', label: 'Item not received' },
+  { key: 'item_not_as_described', label: 'Not as described' },
+  { key: 'damaged', label: 'Arrived damaged' },
+  { key: 'wrong_item', label: 'Wrong item sent' },
+  { key: 'quality_issue', label: 'Quality issue' },
+  { key: 'other', label: 'Other' },
+];
+
 export default function OrderDetailScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -54,6 +67,40 @@ export default function OrderDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Dispute flow
+  const [disputeVisible, setDisputeVisible] = useState(false);
+  const [disputeSuborder, setDisputeSuborder] = useState<number | null>(null);
+  const [disputeReason, setDisputeReason] = useState('item_not_received');
+  const [disputeDesc, setDisputeDesc] = useState('');
+
+  const handleOpenDispute = () => {
+    setDisputeSuborder(order?.suborders?.[0]?.id ?? null);
+    setDisputeReason('item_not_received');
+    setDisputeDesc('');
+    setDisputeVisible(true);
+  };
+
+  const submitDispute = async () => {
+    if (!disputeDesc.trim()) {
+      Alert.alert('Missing details', 'Please describe the problem so we can investigate.');
+      return;
+    }
+    setActionLoading('dispute');
+    try {
+      const res = await openDispute(orderId, {
+        reason: disputeReason,
+        description: disputeDesc.trim(),
+        suborder_id: disputeSuborder ?? undefined,
+      });
+      setDisputeVisible(false);
+      Alert.alert('Dispute Opened', res.detail || 'Diilzo will review your dispute shortly.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to open dispute');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const load = useCallback(async () => {
     if (!orderId) return;
@@ -207,6 +254,7 @@ export default function OrderDetailScreen() {
   const canCancel = order.status === 'pending' || order.status === 'processing';
   const canReturn = order.status === 'delivered';
   const canTrack = order.status === 'shipped' || order.status === 'delivered' || !!order.tracking_number;
+  const canDispute = ['processing', 'shipped', 'delivered'].includes(order.status);
 
   const addr = order.shipping_address || {};
   const addressStr = [
@@ -442,6 +490,22 @@ export default function OrderDetailScreen() {
               <MaterialCommunityIcons name="chat-outline" size={20} color="#EC4899" />
               <Text style={styles.actionBtnOutlineText}>Message Seller</Text>
             </Pressable>
+            {canDispute && (
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, styles.actionBtnDispute, pressed && { opacity: 0.85 }]}
+                onPress={handleOpenDispute}
+                disabled={actionLoading === 'dispute'}
+              >
+                {actionLoading === 'dispute' ? (
+                  <ActivityIndicator size="small" color={Brand.rating} />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="alert-octagon-outline" size={20} color={Brand.rating} />
+                    <Text style={styles.actionBtnDisputeText}>Report a Problem</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
             {canCancel && (
               <Pressable
                 style={({ pressed }) => [styles.actionBtn, styles.actionBtnDanger, pressed && { opacity: 0.85 }]}
@@ -461,6 +525,88 @@ export default function OrderDetailScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Dispute modal */}
+      <Modal visible={disputeVisible} transparent animationType="slide" onRequestClose={() => setDisputeVisible(false)}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>Report a Problem</Text>
+                <Text style={styles.modalSub}>
+                  Your payment stays protected in escrow while we review the dispute.
+                </Text>
+              </View>
+              <Pressable onPress={() => setDisputeVisible(false)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {(order?.suborders?.length || 0) > 1 && (
+                <>
+                  <Text style={styles.fieldLabel}>Which seller?</Text>
+                  <View style={styles.chipRow}>
+                    {order?.suborders?.map((s) => (
+                      <Pressable
+                        key={s.id}
+                        style={[styles.chip, disputeSuborder === s.id && styles.chipActive]}
+                        onPress={() => setDisputeSuborder(s.id)}
+                      >
+                        <Text style={[styles.chipText, disputeSuborder === s.id && styles.chipTextActive]}>
+                          {s.store_name}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              <Text style={styles.fieldLabel}>What's wrong?</Text>
+              <View style={styles.chipRow}>
+                {DISPUTE_REASONS.map((r) => (
+                  <Pressable
+                    key={r.key}
+                    style={[styles.chip, disputeReason === r.key && styles.chipActive]}
+                    onPress={() => setDisputeReason(r.key)}
+                  >
+                    <Text style={[styles.chipText, disputeReason === r.key && styles.chipTextActive]}>
+                      {r.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.fieldLabel}>Describe the issue</Text>
+              <TextInput
+                style={styles.disputeInput}
+                multiline
+                numberOfLines={4}
+                placeholder="Tell us what happened — include order details, what you received vs. expected…"
+                placeholderTextColor={colors.textTertiary}
+                value={disputeDesc}
+                onChangeText={setDisputeDesc}
+                textAlignVertical="top"
+              />
+
+              <Pressable
+                style={[styles.submitDisputeBtn, actionLoading === 'dispute' && { opacity: 0.7 }]}
+                onPress={submitDispute}
+                disabled={actionLoading === 'dispute'}
+              >
+                {actionLoading === 'dispute' ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitDisputeText}>Submit Dispute</Text>
+                )}
+              </Pressable>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -614,4 +760,43 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   actionBtnOutlineText: { color: Brand.primary, fontWeight: '700', fontSize: 15 },
   actionBtnDanger: { backgroundColor: Brand.danger },
   actionBtnDangerText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  actionBtnDispute: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Brand.rating,
+  },
+  actionBtnDisputeText: { color: Brand.rating, fontWeight: '700', fontSize: 15 },
+
+  // Dispute modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: c.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: Spacing.four,
+    maxHeight: '88%',
+  },
+  modalHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.three },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: c.text },
+  modalSub: { fontSize: 12, color: c.textSecondary, marginTop: 3 },
+  fieldLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginTop: Spacing.two, marginBottom: 8 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18,
+    backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
+  },
+  chipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  chipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  chipTextActive: { color: '#FFFFFF' },
+  disputeInput: {
+    borderWidth: 1, borderColor: c.border, borderRadius: 12,
+    padding: 12, minHeight: 96, fontSize: 14, color: c.text,
+    backgroundColor: c.surfaceAlt,
+  },
+  submitDisputeBtn: {
+    marginTop: Spacing.three, marginBottom: Spacing.four,
+    backgroundColor: Brand.danger, borderRadius: 12,
+    paddingVertical: 13, alignItems: 'center',
+  },
+  submitDisputeText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
 });
