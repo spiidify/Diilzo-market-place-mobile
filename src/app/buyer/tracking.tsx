@@ -223,7 +223,7 @@ const stepperStyles = StyleSheet.create({
   stepDotDone: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   stepDotCurrent: { borderColor: '#FFFFFF', elevation: 4, shadowColor: Brand.primary, shadowOpacity: 0.4, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
   stepLabel: { fontSize: 8.5, marginTop: 4, textAlign: 'center', width: 60, marginLeft: -17 },
-  stepLabelFirst: { textAlign: 'left', marginLeft: 0, width: 44 },
+  stepLabelFirst: { textAlign: 'left', marginLeft: 0, width: 44, alignSelf: 'flex-start' },
   stepLabelLast: { textAlign: 'right', marginLeft: 0, marginRight: -4, width: 44, alignSelf: 'flex-end' },
 });
 
