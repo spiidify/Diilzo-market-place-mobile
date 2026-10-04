@@ -5,6 +5,7 @@ import {
     ActivityIndicator,
     Pressable,
     RefreshControl,
+    ScrollView,
     SectionList,
     StyleSheet,
     Text,
@@ -247,9 +248,14 @@ export default function NotificationsScreen() {
         subtitle={!loading && unreadCount > 0 ? `${unreadCount} unread` : undefined}
       />
 
-      {/* Filter tabs */}
+      {/* Filter tabs — horizontally scrollable, Mark-all pinned to the right */}
       <View style={styles.filterWrap}>
-        <View style={styles.filterRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          style={styles.filterScroll}
+        >
           {FILTERS.map((f) => {
             const active = filter === f.key;
             const count = filterCounts[f.key] || 0;
@@ -270,7 +276,8 @@ export default function NotificationsScreen() {
               </Pressable>
             );
           })}
-          <View style={{ flex: 1 }} />
+        </ScrollView>
+        <View style={styles.markAllWrap}>
           <Pressable
             onPress={handleMarkAllRead}
             disabled={markingAll || unreadCount === 0}
@@ -280,16 +287,11 @@ export default function NotificationsScreen() {
             {markingAll ? (
               <ActivityIndicator size="small" color={Brand.primary} />
             ) : (
-              <>
-                <MaterialCommunityIcons
-                  name="check-all"
-                  size={16}
-                  color={unreadCount === 0 ? colors.textTertiary : Brand.primary}
-                />
-                <Text style={[styles.markAllText, unreadCount === 0 && { color: colors.textTertiary }]}>
-                  Mark all
-                </Text>
-              </>
+              <MaterialCommunityIcons
+                name="check-all"
+                size={16}
+                color={unreadCount === 0 ? colors.textTertiary : Brand.primary}
+              />
             )}
           </Pressable>
         </View>
@@ -356,10 +358,18 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
 
   // Filter row
-  filterWrap: { backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  filterWrap: {
+    backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight,
+    flexDirection: 'row', alignItems: 'center',
+  },
+  filterScroll: { flex: 1 },
   filterRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 12, paddingVertical: 10,
+  },
+  markAllWrap: {
+    paddingHorizontal: 10, borderLeftWidth: 1, borderLeftColor: c.borderLight,
+    alignSelf: 'stretch', justifyContent: 'center',
   },
   filterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
