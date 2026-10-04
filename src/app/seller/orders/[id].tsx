@@ -2,25 +2,25 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  acceptOrder,
-  cancelOrder,
-  deliverOrder,
-  getOrderDetail,
-  shipOrder,
-  type SellerOrderDetail,
+    acceptOrder,
+    cancelOrder,
+    deliverOrder,
+    getOrderDetail,
+    shipOrder,
+    type SellerOrderDetail,
 } from '@/services/seller';
 
 export default function SellerOrderDetailScreen() {
@@ -63,7 +63,12 @@ export default function SellerOrderDetailScreen() {
     setActionLoading(true);
     try {
       if (action === 'accept') await acceptOrder(orderId);
-      else if (action === 'ship') await shipOrder(orderId);
+      else if (action === 'ship') {
+        const res = await shipOrder(orderId);
+        if (res?.tracking_number) {
+          Alert.alert('Order Shipped', `Tracking number: ${res.tracking_number}`);
+        }
+      }
       else if (action === 'deliver') await deliverOrder(orderId);
       else if (action === 'cancel') await cancelOrder(orderId);
       await load();
