@@ -3,10 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +21,17 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// expo-speech-recognition is a native module — it throws in Expo Go or a
+// dev build compiled before it was added. Lazy-require it so the app still
+// opens everywhere; voice search just reports "unavailable" there.
+let SpeechModule: any = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  SpeechModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+} catch {
+  SpeechModule = null;
+}
 
 import { CountryPicker } from '@/components/CountryPicker';
 import { DiilzoLogo } from '@/components/diilzo-logo';
@@ -939,20 +946,28 @@ export default function ProductFeedScreen() {
   const voiceTextRef = useRef('');
   const voicePulse = useRef(new Animated.Value(0)).current;
 
-  useSpeechRecognitionEvent('start', () => setListening(true));
-  useSpeechRecognitionEvent('end', () => {
-    setListening(false);
-    const q = voiceTextRef.current.trim();
-    if (q) {
-      router.push({ pathname: '/search', params: { q } } as any);
-    }
-  });
-  useSpeechRecognitionEvent('result', (event) => {
-    const t = event.results?.[0]?.transcript || '';
-    voiceTextRef.current = t;
-    setVoiceText(t);
-  });
-  useSpeechRecognitionEvent('error', () => setListening(false));
+  // Speech events via imperative listeners — safe when SpeechModule is null
+  // (Expo Go / stale dev build) because nothing is subscribed.
+  useEffect(() => {
+    if (!SpeechModule) return;
+    const subs = [
+      SpeechModule.addListener('start', () => setListening(true)),
+      SpeechModule.addListener('end', () => {
+        setListening(false);
+        const q = voiceTextRef.current.trim();
+        if (q) {
+          router.push({ pathname: '/search', params: { q } } as any);
+        }
+      }),
+      SpeechModule.addListener('result', (event: any) => {
+        const t = event.results?.[0]?.transcript || '';
+        voiceTextRef.current = t;
+        setVoiceText(t);
+      }),
+      SpeechModule.addListener('error', () => setListening(false)),
+    ];
+    return () => subs.forEach((s) => s?.remove?.());
+  }, [router]);
 
   useEffect(() => {
     if (!listening) return;
@@ -967,14 +982,21 @@ export default function ProductFeedScreen() {
   }, [listening, voicePulse]);
 
   const handleVoiceSearch = useCallback(async () => {
+    if (!SpeechModule) {
+      Alert.alert(
+        'Voice search needs the Diilzo app build',
+        'Speech recognition requires the installed app — it is not available in this environment.'
+      );
+      return;
+    }
     if (listening) {
-      ExpoSpeechRecognitionModule.stop();
+      SpeechModule.stop();
       return;
     }
     voiceTextRef.current = '';
     setVoiceText('');
     try {
-      const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const perm = await SpeechModule.requestPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
           'Microphone access needed',
@@ -982,7 +1004,7 @@ export default function ProductFeedScreen() {
         );
         return;
       }
-      ExpoSpeechRecognitionModule.start({
+      SpeechModule.start({
         lang: 'en-US',
         interimResults: true,
         continuous: false,
@@ -991,7 +1013,7 @@ export default function ProductFeedScreen() {
     } catch {
       Alert.alert('Voice search unavailable', 'Speech recognition is not available on this device.');
     }
-  }, [listening, router]);
+  }, [listening]);
 
   // ── Cloudinary image sizes per component layout ─────────────────
   const productCardSize = useImageDimensions('productCard');
@@ -1283,11 +1305,11 @@ export default function ProductFeedScreen() {
         visible={listening}
         transparent
         animationType="fade"
-        onRequestClose={() => ExpoSpeechRecognitionModule.stop()}
+        onRequestClose={() => SpeechModule?.stop()}
       >
         <View style={styles.voiceOverlay}>
           <View style={styles.voiceCard}>
-            <Pressable style={styles.voiceMicWrap} onPress={() => ExpoSpeechRecognitionModule.stop()}>
+            <Pressable style={styles.voiceMicWrap} onPress={() => SpeechModule?.stop()}>
               <Animated.View
                 style={[
                   styles.voicePulse,
