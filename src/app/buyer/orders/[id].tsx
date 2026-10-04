@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -17,8 +16,8 @@ import {
     TextInput,
     View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GradientHeader } from '@/components/GradientHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { createChatThread } from '@/services/chat';
@@ -200,23 +199,10 @@ export default function OrderDetailScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Order Details</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
-          </View>
-        </SafeAreaView>
+        <GradientHeader title="Order Details" />
+        <View style={styles.centerBody}>
+          <ActivityIndicator size="large" color={Brand.primary} />
+        </View>
       </View>
     );
   }
@@ -224,27 +210,14 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <View style={styles.screen}>
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <LinearGradient
-            colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.header}
-          >
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-            </Pressable>
-            <Text style={styles.headerTitle}>Order Details</Text>
-            <View style={{ width: 24 }} />
-          </LinearGradient>
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="package-variant-remove" size={48} color={colors.textTertiary} />
-            <Text style={styles.emptyText}>Order not found</Text>
-            <Pressable style={styles.shopBtn} onPress={() => router.back()}>
-              <Text style={styles.shopBtnText}>Go Back</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <GradientHeader title="Order Details" />
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="package-variant-remove" size={48} color={colors.textTertiary} />
+          <Text style={styles.emptyText}>Order not found</Text>
+          <Pressable style={styles.shopBtn} onPress={() => router.back()}>
+            <Text style={styles.shopBtnText}>Go Back</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -267,21 +240,9 @@ export default function OrderDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Order Details</Text>
-          <View style={{ width: 24 }} />
-        </LinearGradient>
+      <GradientHeader title="Order Details" subtitle={`#${order.order_number}`} />
 
-        <ScrollView
+      <ScrollView
           style={styles.body}
           contentContainerStyle={styles.bodyContent}
           refreshControl={
@@ -556,7 +517,6 @@ export default function OrderDetailScreen() {
             )}
           </View>
         </ScrollView>
-      </SafeAreaView>
 
       {/* Dispute modal */}
       <Modal visible={disputeVisible} transparent animationType="slide" onRequestClose={() => setDisputeVisible(false)}>
@@ -645,15 +605,6 @@ export default function OrderDetailScreen() {
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: Spacing.three, fontSize: 15, color: c.textSecondary },
   shopBtn: {
@@ -665,20 +616,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   shopBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
 
-  body: { flex: 1 },
-  bodyContent: { padding: Spacing.three, paddingBottom: Spacing.six },
+  body: { flex: 1, backgroundColor: c.background },
+  bodyContent: { padding: 12, paddingBottom: Spacing.six },
 
   // Order header card
   orderHeaderCard: {
     backgroundColor: c.surface,
-    borderRadius: 16,
+    borderRadius: 14,
     padding: Spacing.three,
     marginBottom: Spacing.three,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: c.borderLight,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
   },
   orderHeaderTop: {
     flexDirection: 'row',
@@ -718,10 +671,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     borderRadius: 14,
     padding: Spacing.three,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: c.borderLight,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
   },
 
