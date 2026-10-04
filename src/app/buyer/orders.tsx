@@ -214,33 +214,27 @@ export default function BuyerOrdersScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.total} numberOfLines={1} adjustsFontSizeToFit>
-            {item.currency || 'UGX'} {Number(item.total).toLocaleString()}
-          </Text>
-        </View>
-
-        {/* Actions */}
-        {actions.length > 0 && (
-          <View style={styles.actionRow}>
+          <View style={styles.rightCol}>
+            <Text style={styles.total} numberOfLines={1} adjustsFontSizeToFit>
+              {item.currency || 'UGX'} {Number(item.total).toLocaleString()}
+            </Text>
+            {/* Inline actions — same block as the order row, keeps cards compact */}
             {actions.map((a) => (
               <Pressable
                 key={a.label}
-                style={[styles.actionBtn, a.primary ? styles.actionPrimary : styles.actionOutline]}
+                style={styles.inlineAction}
                 disabled={busy}
+                hitSlop={6}
                 onPress={(e) => { e.stopPropagation(); a.onPress(); }}
               >
-                <MaterialCommunityIcons
-                  name={a.icon as any}
-                  size={12}
-                  color={a.primary ? '#FFFFFF' : Brand.primary}
-                />
-                <Text style={a.primary ? styles.actionPrimaryText : styles.actionOutlineText}>
+                <MaterialCommunityIcons name={a.icon as any} size={11} color={a.primary ? Brand.primary : colors.textSecondary} />
+                <Text style={[styles.inlineActionText, a.primary && { color: Brand.primary, fontWeight: '800' }]}>
                   {a.label}
                 </Text>
               </Pressable>
             ))}
           </View>
-        )}
+        </View>
       </Pressable>
     );
   };
@@ -391,15 +385,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: '#FFFBEB', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5, marginTop: 3,
   },
   unpaidText: { fontSize: 9, fontWeight: '700', color: '#B45309' },
-  total: { fontSize: 13, fontWeight: '800', color: c.text, maxWidth: 100 },
+  rightCol: { alignItems: 'flex-end', gap: 3 },
+  total: { fontSize: 13, fontWeight: '800', color: c.text, maxWidth: 110 },
 
-  actionRow: { flexDirection: 'row', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.borderLight },
-  actionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7,
-  },
-  actionPrimary: { backgroundColor: Brand.primary },
-  actionPrimaryText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
-  actionOutline: { borderWidth: 1, borderColor: Brand.primary },
-  actionOutlineText: { fontSize: 11, fontWeight: '800', color: Brand.primary },
+  inlineAction: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingVertical: 2 },
+  inlineActionText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
 });
