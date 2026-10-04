@@ -2,29 +2,23 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+    Alert,
     FlatList,
+    Image,
     Pressable,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
-    View
+    View,
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
 import { OrderListSkeleton } from '@/components/skeleton';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { apiRequest } from '@/services/api';
-
-interface Order {
-  id: number;
-  order_number: string;
-  total: string;
-  status: string;
-  payment_status?: string;
-  created_at: string;
-  items_count?: number;
-}
+import { confirmReceipt, fetchOrders, reorder } from '@/services/orders';
+import type { Order } from '@/types';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -48,13 +42,17 @@ function matchesFilter(o: Order, f: FilterKey): boolean {
   }
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: Brand.rating,
-  processing: '#8B5CF6',
-  shipped: '#06B6D4',
-  delivered: '#16A34A',
-  cancelled: Brand.danger,
+const STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
+  pending: { label: 'Pending', color: '#F59E0B', icon: 'clock-outline' },
+  processing: { label: 'Processing', color: '#8B5CF6', icon: 'package-variant' },
+  shipped: { label: 'On the way', color: '#06B6D4', icon: 'truck-fast-outline' },
+  delivered: { label: 'Delivered', color: '#16A34A', icon: 'check-decagram-outline' },
+  cancelled: { label: 'Cancelled', color: '#EF4444', icon: 'close-circle-outline' },
+  refunded: { label: 'Refunded', color: '#06B6D4', icon: 'cash-refund' },
 };
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 export default function BuyerOrdersScreen() {
   const router = useRouter();
@@ -64,6 +62,7 @@ export default function BuyerOrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState<number | null>(null);
   const params = useLocalSearchParams<{ status?: string }>();
   const [filter, setFilter] = useState<FilterKey>((params.status as FilterKey) || 'all');
 
@@ -71,8 +70,8 @@ export default function BuyerOrdersScreen() {
     try {
       setRefreshing(true);
       setError(null);
-      const data = await apiRequest<any>({ method: 'GET', url: '/orders/' });
-      setOrders(Array.isArray(data) ? data : data.results || []);
+      const data = await fetchOrders();
+      setOrders(data);
     } catch (e: any) {
       setError(e?.message || 'Failed to load orders');
     } finally {
@@ -88,30 +87,160 @@ export default function BuyerOrdersScreen() {
     [orders, filter]
   );
 
+  // Per-filter counts for the chips
+  const filterCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const f of FILTERS) {
+      counts[f.key] = f.key === 'all' ? orders.length : orders.filter((o) => matchesFilter(o, f.key)).length;
+    }
+    return counts;
+  }, [orders]);
+
+  const handleConfirm = (order: Order) => {
+    Alert.alert(
+      'Confirm Receipt',
+      'Confirming releases the escrow payment to the seller. Only confirm if you received everything.',
+      [
+        { text: 'Not yet', style: 'cancel' },
+        {
+          text: 'I received it',
+          onPress: async () => {
+            try {
+              setActionBusy(order.id);
+              await confirmReceipt(order.id);
+              load();
+            } catch (e: any) {
+              Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Failed to confirm receipt');
+            } finally {
+              setActionBusy(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleBuyAgain = async (order: Order) => {
+    try {
+      setActionBusy(order.id);
+      const res = await reorder(order.id);
+      Alert.alert('Added to Cart', `${res.added} item(s) added to your cart.`, [
+        { text: 'Keep Shopping', style: 'cancel' },
+        { text: 'View Cart', onPress: () => router.push('/cart' as any) },
+      ]);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || e?.message || 'Could not reorder');
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
   const renderItem = ({ item }: { item: Order }) => {
-    const statusColor = STATUS_COLORS[item.status] || colors.textTertiary;
+    const meta = STATUS_META[item.status] || { label: item.status, color: colors.textTertiary, icon: 'circle-outline' };
+    const unpaid = item.payment_status === 'pending';
+    const thumbs = (item.suborders || [])
+      .flatMap((s) => s.items || [])
+      .map((i) => i.product_image_url || i.product_image)
+      .filter(Boolean) as string[];
+    const stores = [...new Set((item.suborders || []).map((s) => s.store_name).filter(Boolean))];
+    const busy = actionBusy === item.id;
+
+    // Contextual actions
+    const actions: { label: string; icon: string; primary?: boolean; onPress: () => void }[] = [];
+    if (item.status === 'shipped') {
+      actions.push({ label: 'Track', icon: 'truck-fast-outline', primary: true, onPress: () => router.push(`/buyer/tracking?order_id=${item.id}` as any) });
+      actions.push({ label: 'Confirm Receipt', icon: 'check-decagram-outline', onPress: () => handleConfirm(item) });
+    }
+    if (item.status === 'delivered') {
+      const firstSlug = item.suborders?.[0]?.items?.[0]?.product_slug;
+      actions.push({ label: 'Review', icon: 'star-outline', primary: true, onPress: () => firstSlug ? router.push(`/product/${firstSlug}` as any) : router.push('/buyer/reviews' as any) });
+      actions.push({ label: 'Buy Again', icon: 'refresh', onPress: () => handleBuyAgain(item) });
+    }
+    if (unpaid && item.status === 'pending') {
+      actions.push({ label: 'Pay Now', icon: 'credit-card-outline', primary: true, onPress: () => router.push(`/buyer/orders/${item.id}` as any) });
+    }
+    if (item.status === 'cancelled' || item.status === 'refunded') {
+      actions.push({ label: 'Buy Again', icon: 'refresh', primary: true, onPress: () => handleBuyAgain(item) });
+    }
+    if (item.status === 'pending' || item.status === 'processing') {
+      actions.push({ label: 'Track', icon: 'truck-fast-outline', onPress: () => router.push(`/buyer/tracking?order_id=${item.id}` as any) });
+    }
+
     return (
       <Pressable
-        style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
+        style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
         onPress={() => router.push(`/buyer/orders/${item.id}` as any)}
       >
-        <View style={styles.info}>
-          <View style={styles.topRow}>
-            <Text style={styles.orderNumber}>#{item.order_number}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
-            </View>
+        {/* Header: store + status */}
+        <View style={styles.cardHead}>
+          <View style={styles.storeRow}>
+            <MaterialCommunityIcons name="storefront-outline" size={14} color={colors.textSecondary} />
+            <Text style={styles.storeText} numberOfLines={1}>
+              {stores.length > 0 ? stores.join(', ') : 'Diilzo'}
+            </Text>
           </View>
-          <Text style={styles.meta}>
-            {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-            {item.items_count != null ? ` · ${item.items_count} item${item.items_count === 1 ? '' : 's'}` : ''}
+          <View style={[styles.statusPill, { backgroundColor: meta.color + '15' }]}>
+            <MaterialCommunityIcons name={meta.icon as any} size={12} color={meta.color} />
+            <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+          </View>
+        </View>
+
+        {/* Thumbnails + order meta */}
+        <View style={styles.bodyRow}>
+          <View style={styles.thumbRow}>
+            {thumbs.slice(0, 4).map((uri, i) => (
+              <Image key={i} source={{ uri }} style={styles.thumb} resizeMode="cover" />
+            ))}
+            {thumbs.length === 0 && (
+              <View style={[styles.thumb, styles.thumbFallback]}>
+                <MaterialCommunityIcons name="package-variant-closed" size={20} color={colors.textTertiary} />
+              </View>
+            )}
+            {thumbs.length > 4 && (
+              <View style={[styles.thumb, styles.thumbMore]}>
+                <Text style={styles.thumbMoreText}>+{thumbs.length - 4}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.metaCol}>
+            <Text style={styles.orderNo}>#{item.order_number}</Text>
+            <Text style={styles.metaText}>
+              {fmtDate(item.created_at)} · {item.total_items || thumbs.length || 1} item{(item.total_items || thumbs.length || 1) === 1 ? '' : 's'}
+            </Text>
+            {unpaid && (
+              <View style={styles.unpaidPill}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={10} color="#B45309" />
+                <Text style={styles.unpaidText}>Awaiting payment</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.total} numberOfLines={1} adjustsFontSizeToFit>
+            {item.currency || 'UGX'} {Number(item.total).toLocaleString()}
           </Text>
         </View>
-        <View style={styles.right}>
-          <Text style={styles.totalValue}>UGX {Number(item.total).toLocaleString()}</Text>
-          <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
-        </View>
+
+        {/* Actions */}
+        {actions.length > 0 && (
+          <View style={styles.actionRow}>
+            {actions.map((a) => (
+              <Pressable
+                key={a.label}
+                style={[styles.actionBtn, a.primary ? styles.actionPrimary : styles.actionOutline]}
+                disabled={busy}
+                onPress={(e) => { e.stopPropagation(); a.onPress(); }}
+              >
+                <MaterialCommunityIcons
+                  name={a.icon as any}
+                  size={14}
+                  color={a.primary ? '#FFFFFF' : Brand.primary}
+                />
+                <Text style={a.primary ? styles.actionPrimaryText : styles.actionOutlineText}>
+                  {a.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </Pressable>
     );
   };
@@ -123,17 +252,30 @@ export default function BuyerOrdersScreen() {
         subtitle={!loading && orders.length > 0 ? `${orders.length} order${orders.length === 1 ? '' : 's'}` : undefined}
       />
 
-      {/* Status filter chips */}
-      <View style={styles.filterRow}>
-        {FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            style={[styles.filterChip, filter === f.key && styles.filterChipActive]}
-            onPress={() => setFilter(f.key)}
-          >
-            <Text style={[styles.filterChipText, filter === f.key && styles.filterChipTextActive]}>{f.label}</Text>
-          </Pressable>
-        ))}
+      {/* Status filter chips with counts */}
+      <View style={styles.filterWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            const count = filterCounts[f.key] || 0;
+            return (
+              <Pressable
+                key={f.key}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => setFilter(f.key)}
+              >
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{f.label}</Text>
+                {count > 0 && (
+                  <View style={[styles.filterCount, active && styles.filterCountActive]}>
+                    <Text style={[styles.filterCountText, active && styles.filterCountTextActive]}>
+                      {count > 99 ? '99+' : count}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {loading ? (
@@ -148,10 +290,19 @@ export default function BuyerOrdersScreen() {
         </View>
       ) : filteredOrders.length === 0 ? (
         <View style={styles.centerBody}>
-          <MaterialCommunityIcons name="shopping-outline" size={48} color={colors.textTertiary} />
-          <Text style={styles.emptyText}>{filter === 'all' ? 'No orders yet' : `No orders in "${FILTERS.find(f => f.key === filter)?.label}"`}</Text>
-          <Pressable style={styles.shopBtn} onPress={() => router.push('/')}>
-            <Text style={styles.shopBtnText}>Start Shopping</Text>
+          <View style={styles.emptyIcon}>
+            <MaterialCommunityIcons name="shopping-outline" size={40} color={colors.textTertiary} />
+          </View>
+          <Text style={styles.emptyTitle}>
+            {filter === 'all' ? 'No orders yet' : `Nothing in "${FILTERS.find((f) => f.key === filter)?.label}"`}
+          </Text>
+          <Text style={styles.emptySub}>
+            {filter === 'all'
+              ? 'Your orders will appear here once you start shopping.'
+              : 'Try another filter to see your orders.'}
+          </Text>
+          <Pressable style={styles.shopBtn} onPress={() => filter === 'all' ? router.push('/') : setFilter('all')}>
+            <Text style={styles.shopBtnText}>{filter === 'all' ? 'Start Shopping' : 'View All Orders'}</Text>
           </Pressable>
         </View>
       ) : (
@@ -159,12 +310,10 @@ export default function BuyerOrdersScreen() {
           data={filteredOrders}
           keyExtractor={(item) => `${item.id}`}
           renderItem={renderItem}
-          style={styles.listCard}
           contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.rowDivider} />}
-          maxToRenderPerBatch={12}
+          maxToRenderPerBatch={10}
           windowSize={11}
-          initialNumToRender={12}
+          initialNumToRender={10}
           removeClippedSubviews={true}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
         />
@@ -174,37 +323,83 @@ export default function BuyerOrdersScreen() {
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
-  screen: { flex: 1, backgroundColor: c.surfaceAlt },
+  screen: { flex: 1, backgroundColor: c.background },
   centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  emptyText: { marginTop: 12, fontSize: 14, color: c.textSecondary },
+  emptyIcon: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: c.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  emptyTitle: { marginTop: 14, fontSize: 16, fontWeight: '800', color: c.text },
+  emptySub: { marginTop: 6, fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 19 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
-  shopBtn: { marginTop: 16, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  shopBtnText: { color: '#FFFFFF', fontWeight: '700' },
+  shopBtn: { marginTop: 18, backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 11, borderRadius: 10 },
+  shopBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13 },
 
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 10, paddingVertical: 8 },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border },
+  // Filters
+  filterWrap: { backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  filterRow: { gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  filterChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18,
+    backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
+  },
   filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
   filterChipTextActive: { color: '#FFFFFF' },
+  filterCount: {
+    minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+    backgroundColor: c.border, alignItems: 'center', justifyContent: 'center',
+  },
+  filterCountActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  filterCountText: { fontSize: 10, fontWeight: '800', color: c.textSecondary },
+  filterCountTextActive: { color: '#FFFFFF' },
 
-  listCard: { flex: 1 },
-  list: {
-    margin: 10, borderRadius: 14, overflow: 'hidden',
-    backgroundColor: c.surface,
-    elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  list: { padding: 12, paddingBottom: 30 },
+
+  // Order card
+  card: {
+    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
+    borderWidth: 1, borderColor: c.borderLight,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 12, paddingVertical: 9,
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  storeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1, marginRight: 8 },
+  storeText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  statusPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
   },
-  info: { flex: 1, gap: 2 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  orderNumber: { fontSize: 13, fontWeight: '700', color: c.text },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
-  statusDot: { width: 5, height: 5, borderRadius: 3 },
-  statusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
-  meta: { fontSize: 11, color: c.textTertiary, fontWeight: '500' },
-  right: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  totalValue: { fontSize: 14, fontWeight: '800', color: Brand.primary },
-  rowDivider: { height: 1, backgroundColor: c.borderLight, marginLeft: 12 },
+  statusText: { fontSize: 11, fontWeight: '800' },
+
+  bodyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  thumbRow: { flexDirection: 'row' },
+  thumb: {
+    width: 44, height: 44, borderRadius: 9, backgroundColor: c.surfaceAlt,
+    marginRight: -8, borderWidth: 2, borderColor: c.surface,
+  },
+  thumbFallback: { alignItems: 'center', justifyContent: 'center', marginRight: 0 },
+  thumbMore: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: c.surfaceAlt, zIndex: 1,
+  },
+  thumbMoreText: { fontSize: 11, fontWeight: '800', color: c.textSecondary },
+  metaCol: { flex: 1, marginLeft: 12 },
+  orderNo: { fontSize: 13, fontWeight: '800', color: c.text },
+  metaText: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+  unpaidPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start',
+    backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 4,
+  },
+  unpaidText: { fontSize: 10, fontWeight: '700', color: '#B45309' },
+  total: { fontSize: 15, fontWeight: '800', color: c.text, maxWidth: 110 },
+
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.borderLight },
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
+  },
+  actionPrimary: { backgroundColor: Brand.primary },
+  actionPrimaryText: { fontSize: 12, fontWeight: '800', color: '#FFFFFF' },
+  actionOutline: { borderWidth: 1, borderColor: Brand.primary },
+  actionOutlineText: { fontSize: 12, fontWeight: '800', color: Brand.primary },
 });

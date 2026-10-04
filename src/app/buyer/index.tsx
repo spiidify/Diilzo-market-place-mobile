@@ -21,7 +21,7 @@ const fmtMoney = (v: string | number, currency = 'UGX') =>
 export default function BuyerDashboardScreen() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { chatUnread } = useBadges();
+  const { chatUnread, notificationCount } = useBadges();
   const { mode, setMode, isDark } = useAppTheme();
   const { colors } = useAppTheme();
   const { country, currencyCode } = useCountry();
@@ -74,8 +74,10 @@ export default function BuyerDashboardScreen() {
     { icon: 'shield-check-outline', label: 'Escrow', count: stats.active_escrow, color: Brand.primary, route: '/buyer/escrow' as any },
   ] : [];
 
+  const activeOrders = stats ? stats.to_pay + stats.to_ship + stats.to_receive : 0;
+
   const menuItems = [
-    { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any },
+    { icon: 'shopping', label: 'My Orders', color: '#3B82F6', route: '/buyer/orders' as any, badge: activeOrders },
     { icon: 'file-document-outline', label: 'My RFQs', color: '#8B5CF6', route: '/buyer/rfqs' as any },
     { icon: 'shield-check-outline', label: 'Trade Assurance', color: Brand.primary, route: '/buyer/escrow' as any },
     { icon: 'storefront', label: 'My Sellers', color: '#10B981', route: '/buyer/my-sellers' as any },
@@ -87,7 +89,7 @@ export default function BuyerDashboardScreen() {
     { icon: 'map-marker-outline', label: 'Addresses', color: '#16A34A', route: '/buyer/addresses' as any },
     { icon: 'credit-card-outline', label: 'Payment Methods', color: '#8B5CF6', route: '/buyer/payments' as any },
     { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/chat' as any },
-    { icon: 'bell-outline', label: 'Notifications', color: Brand.rating, route: '/buyer/notifications' as any },
+    { icon: 'bell-outline', label: 'Notifications', color: Brand.rating, route: '/buyer/notifications' as any, badge: notificationCount },
     { icon: 'shield-account-outline', label: 'Privacy & Security', color: colors.textSecondary, route: '/buyer/privacy' as any },
     { icon: 'help-circle-outline', label: 'Help & Support', color: '#06B6D4', route: '/buyer/support' as any },
   ];
@@ -397,8 +399,18 @@ export default function BuyerDashboardScreen() {
             >
               <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
                 <MaterialCommunityIcons name={item.icon as any} size={20} color={item.color} />
+                {!!item.badge && item.badge > 0 && (
+                  <View style={styles.menuIconBadge}>
+                    <Text style={styles.menuIconBadgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
+              {!!item.badge && item.badge > 0 && (
+                <View style={styles.menuBadge}>
+                  <Text style={styles.menuBadgeText}>{item.badge > 99 ? '99+' : item.badge}</Text>
+                </View>
+              )}
               <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
           ))}
@@ -675,7 +687,18 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: c.borderLight,
   },
   menuIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  menuIconBadge: {
+    position: 'absolute', top: -4, right: -4, backgroundColor: Brand.danger,
+    minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.surface,
+  },
+  menuIconBadgeText: { fontSize: 8, fontWeight: '800', color: '#FFFFFF' },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: c.text },
+  menuBadge: {
+    backgroundColor: Brand.danger, minWidth: 20, height: 20, borderRadius: 10,
+    paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', marginRight: 4,
+  },
+  menuBadgeText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
 
   // Logout
   logoutBtn: {
