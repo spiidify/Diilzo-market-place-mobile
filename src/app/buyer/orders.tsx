@@ -222,13 +222,17 @@ export default function BuyerOrdersScreen() {
             {actions.map((a) => (
               <Pressable
                 key={a.label}
-                style={styles.inlineAction}
+                style={[styles.inlineAction, a.primary && styles.inlineActionPrimary]}
                 disabled={busy}
                 hitSlop={6}
                 onPress={(e) => { e.stopPropagation(); a.onPress(); }}
               >
-                <MaterialCommunityIcons name={a.icon as any} size={11} color={a.primary ? Brand.primary : colors.textSecondary} />
-                <Text style={[styles.inlineActionText, a.primary && { color: Brand.primary, fontWeight: '800' }]}>
+                <MaterialCommunityIcons
+                  name={a.icon as any}
+                  size={11}
+                  color={a.primary ? '#FFFFFF' : colors.textSecondary}
+                />
+                <Text style={[styles.inlineActionText, a.primary && styles.inlineActionTextPrimary]}>
                   {a.label}
                 </Text>
               </Pressable>
@@ -389,5 +393,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   total: { fontSize: 13, fontWeight: '800', color: c.text, maxWidth: 110 },
 
   inlineAction: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingVertical: 2 },
+  inlineActionPrimary: {
+    backgroundColor: Brand.primary, paddingHorizontal: 9, paddingVertical: 4,
+    borderRadius: 12, alignSelf: 'flex-end', marginTop: 1,
+  },
   inlineActionText: { fontSize: 11, fontWeight: '600', color: c.textSecondary },
+  inlineActionTextPrimary: { color: '#FFFFFF', fontWeight: '800' },
 });
