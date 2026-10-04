@@ -23,7 +23,7 @@ interface TrackingData {
   order_id: number;
   order_status: string;
   shipments: Array<{
-    id: number;
+    id: number | string;
     carrier: string;
     tracking_number: string;
     status: string;
