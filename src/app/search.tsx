@@ -239,7 +239,7 @@ const SearchProductCard = memo(function SearchProductCard({
 
 export default function SearchScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string }>();
+  const params = useLocalSearchParams<{ category?: string; categoryName?: string; brand?: string; brandName?: string; q?: string }>();
   const { isAuthenticated } = useAuth();
   const { productColumns, isTablet } = useResponsiveLayout();
   const { colors } = useAppTheme();
@@ -252,7 +252,12 @@ export default function SearchScreen() {
   const [pinned, setPinned] = useState<Product[]>([]);
   const [sponsored, setSponsored] = useState<Product[]>([]);
   const [count, setCount] = useState(0);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(params.q || '');
+
+  // Voice/deep-link search: sync q param into the input whenever it changes.
+  useEffect(() => {
+    if (params.q) setQuery(params.q);
+  }, [params.q]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);

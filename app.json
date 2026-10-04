@@ -87,7 +87,8 @@
       ],
       "expo-video",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-speech-recognition"
     ],
     "extra": {
       "EXPO_PUBLIC_API_URL": "https://diilzo.com/api/v1",

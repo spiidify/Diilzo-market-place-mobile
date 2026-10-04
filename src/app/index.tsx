@@ -3,18 +3,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Animated,
+  Easing,
   FlatList,
   Image,
   Linking,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -925,6 +933,66 @@ export default function ProductFeedScreen() {
   const { country, countryIso2 } = useCountry();
   const [countryPickerVisible, setCountryPickerVisible] = useState(false);
 
+  // ── Voice search ─────────────────────────────────────────────────
+  const [listening, setListening] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
+  const voiceTextRef = useRef('');
+  const voicePulse = useRef(new Animated.Value(0)).current;
+
+  useSpeechRecognitionEvent('start', () => setListening(true));
+  useSpeechRecognitionEvent('end', () => {
+    setListening(false);
+    const q = voiceTextRef.current.trim();
+    if (q) {
+      router.push({ pathname: '/search', params: { q } } as any);
+    }
+  });
+  useSpeechRecognitionEvent('result', (event) => {
+    const t = event.results?.[0]?.transcript || '';
+    voiceTextRef.current = t;
+    setVoiceText(t);
+  });
+  useSpeechRecognitionEvent('error', () => setListening(false));
+
+  useEffect(() => {
+    if (!listening) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(voicePulse, { toValue: 1, duration: 800, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(voicePulse, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [listening, voicePulse]);
+
+  const handleVoiceSearch = useCallback(async () => {
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    voiceTextRef.current = '';
+    setVoiceText('');
+    try {
+      const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          'Microphone access needed',
+          'Allow microphone access to search products with your voice.'
+        );
+        return;
+      }
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        continuous: false,
+        maxAlternatives: 1,
+      });
+    } catch {
+      Alert.alert('Voice search unavailable', 'Speech recognition is not available on this device.');
+    }
+  }, [listening, router]);
+
   // ── Cloudinary image sizes per component layout ─────────────────
   const productCardSize = useImageDimensions('productCard');
   const categorySize = useImageDimensions('category');
@@ -1201,10 +1269,45 @@ export default function ProductFeedScreen() {
       >
         <MaterialCommunityIcons name="magnify" size={26} color={colors.textTertiary} />
         <Text style={styles.searchPlaceholder}>Search Diilzo</Text>
-        <View style={styles.searchIconRight}>
-          <MaterialCommunityIcons name="camera-outline" size={26} color={Brand.primary} />
-        </View>
+        <Pressable
+          style={styles.searchIconRight}
+          hitSlop={10}
+          onPress={(e) => { e.stopPropagation(); handleVoiceSearch(); }}
+        >
+          <MaterialCommunityIcons name="microphone-outline" size={24} color={Brand.primary} />
+        </Pressable>
       </Pressable>
+
+      {/* Voice search listening overlay */}
+      <Modal
+        visible={listening}
+        transparent
+        animationType="fade"
+        onRequestClose={() => ExpoSpeechRecognitionModule.stop()}
+      >
+        <View style={styles.voiceOverlay}>
+          <View style={styles.voiceCard}>
+            <Pressable style={styles.voiceMicWrap} onPress={() => ExpoSpeechRecognitionModule.stop()}>
+              <Animated.View
+                style={[
+                  styles.voicePulse,
+                  {
+                    transform: [{ scale: voicePulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.9] }) }],
+                    opacity: voicePulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
+                  },
+                ]}
+              />
+              <View style={styles.voiceMic}>
+                <MaterialCommunityIcons name="microphone" size={30} color="#FFFFFF" />
+              </View>
+            </Pressable>
+            <Text style={styles.voiceText} numberOfLines={3}>
+              {voiceText || 'Listening…'}
+            </Text>
+            <Text style={styles.voiceHint}>Say a product name — tap the mic to stop</Text>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Ship-to country selector (Jumia-style) ───────────────── */}
       <Pressable
@@ -1699,6 +1802,33 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderLeftColor: c.borderLight,
     paddingLeft: Spacing.two,
   },
+
+  // ── Voice search overlay ──────────────────────────────────────────
+  voiceOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', alignItems: 'center', padding: 32,
+  },
+  voiceCard: {
+    backgroundColor: c.surface, borderRadius: 20,
+    paddingHorizontal: 28, paddingVertical: 32,
+    alignItems: 'center', width: '100%', maxWidth: 320,
+  },
+  voiceMicWrap: {
+    width: 76, height: 76, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 18,
+  },
+  voicePulse: {
+    position: 'absolute', width: 76, height: 76, borderRadius: 38,
+    backgroundColor: Brand.primary,
+  },
+  voiceMic: {
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center',
+    elevation: 4, shadowColor: Brand.primary, shadowOpacity: 0.4,
+    shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+  },
+  voiceText: { fontSize: 16, fontWeight: '700', color: c.text, textAlign: 'center', minHeight: 22 },
+  voiceHint: { fontSize: 12, color: c.textTertiary, marginTop: 8, textAlign: 'center' },
 
   // ── Homepage carousel ───────────────────────────────────────────
   carouselWrap: {
