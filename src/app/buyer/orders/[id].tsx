@@ -226,7 +226,7 @@ export default function OrderDetailScreen() {
   const payColor = PAYMENT_STATUS_COLORS[order.payment_status] || colors.textTertiary;
   const canCancel = order.status === 'pending' || order.status === 'processing';
   const canReturn = order.status === 'delivered';
-  const canTrack = order.status === 'shipped' || order.status === 'delivered' || !!order.tracking_number;
+  const canTrack = order.status !== 'cancelled' && order.status !== 'refunded';
   const canDispute = ['processing', 'shipped', 'delivered'].includes(order.status);
 
   const addr = order.shipping_address || {};
