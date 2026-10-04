@@ -34,7 +34,7 @@ type FilterKey = typeof FILTERS[number]['key'];
 function matchesFilter(o: Order, f: FilterKey): boolean {
   switch (f) {
     case 'to_pay': return o.payment_status === 'pending' && o.status === 'pending';
-    case 'to_ship': return o.payment_status === 'paid' && (o.status === 'pending' || o.status === 'processing');
+    case 'to_ship': return o.payment_status === 'paid' && ['pending', 'accepted', 'processing'].includes(o.status);
     case 'to_receive': return o.status === 'shipped';
     case 'to_review': return o.status === 'delivered';
     case 'cancelled': return o.status === 'cancelled' || o.status === 'refunded';
@@ -44,6 +44,7 @@ function matchesFilter(o: Order, f: FilterKey): boolean {
 
 const STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
   pending: { label: 'Pending', color: '#F59E0B', icon: 'clock-outline' },
+  accepted: { label: 'Accepted', color: '#3B82F6', icon: 'check-circle-outline' },
   processing: { label: 'Processing', color: '#8B5CF6', icon: 'package-variant' },
   shipped: { label: 'On the way', color: '#06B6D4', icon: 'truck-fast-outline' },
   delivered: { label: 'Delivered', color: '#16A34A', icon: 'check-decagram-outline' },
@@ -170,7 +171,7 @@ export default function BuyerOrdersScreen() {
     if (item.status === 'cancelled' || item.status === 'refunded') {
       actions.push({ label: 'Buy Again', icon: 'refresh', primary: true, onPress: () => handleBuyAgain(item) });
     }
-    if (item.status === 'pending' || item.status === 'processing') {
+    if (item.status === 'pending' || item.status === 'accepted' || item.status === 'processing') {
       actions.push({ label: 'Track', icon: 'truck-fast-outline', onPress: () => router.push(`/buyer/tracking?order_id=${item.id}` as any) });
     }
 

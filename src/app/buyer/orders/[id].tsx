@@ -32,6 +32,7 @@ import type { Order } from '@/types';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: Brand.rating,
+  accepted: '#3B82F6',
   processing: '#8B5CF6',
   confirmed: '#3B82F6',
   shipped: '#06B6D4',
@@ -224,10 +225,10 @@ export default function OrderDetailScreen() {
 
   const statusColor = STATUS_COLORS[order.status] || colors.textTertiary;
   const payColor = PAYMENT_STATUS_COLORS[order.payment_status] || colors.textTertiary;
-  const canCancel = order.status === 'pending' || order.status === 'processing';
+  const canCancel = order.status === 'pending' || order.status === 'accepted' || order.status === 'processing';
   const canReturn = order.status === 'delivered';
   const canTrack = order.status !== 'cancelled' && order.status !== 'refunded';
-  const canDispute = ['processing', 'shipped', 'delivered'].includes(order.status);
+  const canDispute = ['accepted', 'processing', 'shipped', 'delivered'].includes(order.status);
 
   const addr = order.shipping_address || {};
   const addressStr = [

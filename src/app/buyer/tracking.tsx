@@ -51,17 +51,18 @@ function osmMapHtml(lat: number, lng: number): string {
 // Journey steps — keys map to backend order statuses
 const STEPS = [
   { key: 'pending', label: 'Placed', icon: 'clipboard-check-outline' as const },
+  { key: 'accepted', label: 'Accepted', icon: 'check-circle-outline' as const },
   { key: 'processing', label: 'Preparing', icon: 'package-variant' as const },
   { key: 'shipped', label: 'On the Way', icon: 'truck-fast-outline' as const },
   { key: 'delivered', label: 'Delivered', icon: 'package-variant-closed-check' as const },
 ];
 
-// Map backend statuses onto the 4-step journey
+// Map backend statuses onto the 5-step journey
 function stepIndexFor(status: string): number {
   switch (status) {
-    case 'delivered': return 3;
-    case 'shipped': return 2;
-    case 'processing':
+    case 'delivered': return 4;
+    case 'shipped': return 3;
+    case 'processing': return 2;
     case 'accepted':
     case 'confirmed': return 1;
     default: return 0;
@@ -69,10 +70,11 @@ function stepIndexFor(status: string): number {
 }
 
 const STATUS_HEADLINE: Record<number, { title: string; icon: string; sub: string }> = {
-  0: { title: 'Order received', icon: 'clipboard-check-outline', sub: 'The seller has your order and will start preparing it.' },
-  1: { title: 'Preparing your package', icon: 'package-variant', sub: 'Your items are being packed and handed to the carrier.' },
-  2: { title: 'On the way', icon: 'truck-fast-outline', sub: 'Your package is moving toward your delivery address.' },
-  3: { title: 'Delivered', icon: 'check-decagram-outline', sub: 'Package delivered. Enjoy your purchase!' },
+  0: { title: 'Order received', icon: 'clipboard-check-outline', sub: 'Waiting for the seller to accept your order.' },
+  1: { title: 'Seller accepted', icon: 'check-circle-outline', sub: 'The seller accepted your order and will start preparing it.' },
+  2: { title: 'Preparing your package', icon: 'package-variant', sub: 'Your items are being packed and handed to the carrier.' },
+  3: { title: 'On the way', icon: 'truck-fast-outline', sub: 'Your package is moving toward your delivery address.' },
+  4: { title: 'Delivered', icon: 'check-decagram-outline', sub: 'Package delivered. Enjoy your purchase!' },
 };
 
 function formatDate(dateStr: string | null): string {
