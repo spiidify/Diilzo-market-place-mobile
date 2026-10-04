@@ -263,9 +263,9 @@ export default function OrderDetailScreen() {
           {/* Order header card */}
           <View style={styles.orderHeaderCard}>
             <View style={styles.orderHeaderTop}>
-              <View>
+              <View style={{ flex: 1, marginRight: 8 }}>
                 <Text style={styles.orderNumberLabel}>Order</Text>
-                <Text style={styles.orderNumber}>#{order.order_number}</Text>
+                <Text style={styles.orderNumber} numberOfLines={1} adjustsFontSizeToFit>#{order.order_number}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
@@ -652,8 +652,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: Spacing.three,
   },
-  orderNumberLabel: { fontSize: 12, color: c.textTertiary },
-  orderNumber: { fontSize: 20, fontWeight: '800', color: c.text },
+  orderNumberLabel: { fontSize: 11, color: c.textTertiary },
+  orderNumber: { fontSize: 14, fontWeight: '800', color: c.text },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
