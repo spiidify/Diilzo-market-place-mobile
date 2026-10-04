@@ -746,32 +746,40 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   grandTotalLabel: { fontSize: 16, fontWeight: '700', color: c.text },
   grandTotalValue: { fontSize: 16, fontWeight: '800', color: Brand.primary },
 
-  // Actions
-  actionsSection: { gap: Spacing.two, marginTop: Spacing.one, marginBottom: Spacing.six },
+  // Actions — 2-column grid
+  actionsSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    marginTop: Spacing.one,
+    marginBottom: Spacing.six,
+  },
   actionBtn: {
+    flexBasis: '47%',
+    flexGrow: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.two,
-    paddingVertical: Platform.select({ ios: 14, android: 12 }),
+    gap: 6,
+    paddingVertical: Platform.select({ ios: 13, android: 11 }),
     borderRadius: 12,
   },
   actionBtnPrimary: { backgroundColor: Brand.primary },
-  actionBtnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  actionBtnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   actionBtnOutline: {
     backgroundColor: c.surface,
     borderWidth: 1.5,
     borderColor: Brand.primary,
   },
-  actionBtnOutlineText: { color: Brand.primary, fontWeight: '700', fontSize: 15 },
+  actionBtnOutlineText: { color: Brand.primary, fontWeight: '700', fontSize: 13 },
   actionBtnDanger: { backgroundColor: Brand.danger },
-  actionBtnDangerText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  actionBtnDangerText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
   actionBtnDispute: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: Brand.rating,
   },
-  actionBtnDisputeText: { color: Brand.rating, fontWeight: '700', fontSize: 15 },
+  actionBtnDisputeText: { color: Brand.rating, fontWeight: '700', fontSize: 13 },
 
   // Cross-border customs banner
   importBanner: {
