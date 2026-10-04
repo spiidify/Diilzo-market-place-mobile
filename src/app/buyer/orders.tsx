@@ -174,13 +174,13 @@ export default function BuyerOrdersScreen() {
         {/* Header: store + status */}
         <View style={styles.cardHead}>
           <View style={styles.storeRow}>
-            <MaterialCommunityIcons name="storefront-outline" size={14} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="storefront-outline" size={12} color={colors.textSecondary} />
             <Text style={styles.storeText} numberOfLines={1}>
               {stores.length > 0 ? stores.join(', ') : 'Diilzo'}
             </Text>
           </View>
           <View style={[styles.statusPill, { backgroundColor: meta.color + '15' }]}>
-            <MaterialCommunityIcons name={meta.icon as any} size={12} color={meta.color} />
+            <MaterialCommunityIcons name={meta.icon as any} size={10} color={meta.color} />
             <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
           </View>
         </View>
@@ -193,7 +193,7 @@ export default function BuyerOrdersScreen() {
             ))}
             {thumbs.length === 0 && (
               <View style={[styles.thumb, styles.thumbFallback]}>
-                <MaterialCommunityIcons name="package-variant-closed" size={20} color={colors.textTertiary} />
+                <MaterialCommunityIcons name="package-variant-closed" size={16} color={colors.textTertiary} />
               </View>
             )}
             {thumbs.length > 4 && (
@@ -231,7 +231,7 @@ export default function BuyerOrdersScreen() {
               >
                 <MaterialCommunityIcons
                   name={a.icon as any}
-                  size={14}
+                  size={12}
                   color={a.primary ? '#FFFFFF' : Brand.primary}
                 />
                 <Text style={a.primary ? styles.actionPrimaryText : styles.actionOutlineText}>
@@ -354,52 +354,52 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   filterCountText: { fontSize: 10, fontWeight: '800', color: c.textSecondary },
   filterCountTextActive: { color: '#FFFFFF' },
 
-  list: { padding: 12, paddingBottom: 30 },
+  list: { padding: 10, paddingBottom: 30 },
 
   // Order card
   card: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 12, padding: 10, marginBottom: 8,
     borderWidth: 1, borderColor: c.borderLight,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
-  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  storeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1, marginRight: 8 },
-  storeText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  storeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, marginRight: 8 },
+  storeText: { fontSize: 11, fontWeight: '700', color: c.textSecondary },
   statusPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8,
   },
-  statusText: { fontSize: 11, fontWeight: '800' },
+  statusText: { fontSize: 10, fontWeight: '800' },
 
-  bodyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bodyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   thumbRow: { flexDirection: 'row' },
   thumb: {
-    width: 44, height: 44, borderRadius: 9, backgroundColor: c.surfaceAlt,
-    marginRight: -8, borderWidth: 2, borderColor: c.surface,
+    width: 36, height: 36, borderRadius: 8, backgroundColor: c.surfaceAlt,
+    marginRight: -6, borderWidth: 2, borderColor: c.surface,
   },
   thumbFallback: { alignItems: 'center', justifyContent: 'center', marginRight: 0 },
   thumbMore: {
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: c.surfaceAlt, zIndex: 1,
   },
-  thumbMoreText: { fontSize: 11, fontWeight: '800', color: c.textSecondary },
-  metaCol: { flex: 1, marginLeft: 12 },
-  orderNo: { fontSize: 13, fontWeight: '800', color: c.text },
-  metaText: { fontSize: 11, color: c.textTertiary, marginTop: 2 },
+  thumbMoreText: { fontSize: 10, fontWeight: '800', color: c.textSecondary },
+  metaCol: { flex: 1, marginLeft: 10 },
+  orderNo: { fontSize: 12, fontWeight: '800', color: c.text },
+  metaText: { fontSize: 10, color: c.textTertiary, marginTop: 1 },
   unpaidPill: {
     flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start',
-    backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 4,
+    backgroundColor: '#FFFBEB', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 5, marginTop: 3,
   },
-  unpaidText: { fontSize: 10, fontWeight: '700', color: '#B45309' },
-  total: { fontSize: 15, fontWeight: '800', color: c.text, maxWidth: 110 },
+  unpaidText: { fontSize: 9, fontWeight: '700', color: '#B45309' },
+  total: { fontSize: 13, fontWeight: '800', color: c.text, maxWidth: 100 },
 
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.borderLight },
+  actionRow: { flexDirection: 'row', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.borderLight },
   actionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 7,
   },
   actionPrimary: { backgroundColor: Brand.primary },
-  actionPrimaryText: { fontSize: 12, fontWeight: '800', color: '#FFFFFF' },
+  actionPrimaryText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
   actionOutline: { borderWidth: 1, borderColor: Brand.primary },
-  actionOutlineText: { fontSize: 12, fontWeight: '800', color: Brand.primary },
+  actionOutlineText: { fontSize: 11, fontWeight: '800', color: Brand.primary },
 });
