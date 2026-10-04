@@ -240,7 +240,12 @@ export default function OrderDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      <GradientHeader title="Order Details" subtitle={`#${order.order_number}`} />
+      <GradientHeader
+        title="Order Details"
+        subtitle={`#${order.order_number}`}
+        rightIcon={canTrack ? 'map-marker-path' : undefined}
+        onRightPress={canTrack ? handleTrack : undefined}
+      />
 
       <ScrollView
           style={styles.body}
@@ -262,11 +267,19 @@ export default function OrderDetailScreen() {
                 <Text style={styles.orderNumberLabel}>Order</Text>
                 <Text style={styles.orderNumber}>#{order.order_number}</Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                <Text style={[styles.statusText, { color: statusColor }]}>
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+                  <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                  <Text style={[styles.statusText, { color: statusColor }]}>
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </Text>
+                </View>
+                {canTrack && (
+                  <Pressable style={styles.trackPill} onPress={handleTrack} hitSlop={6}>
+                    <MaterialCommunityIcons name="map-marker-path" size={13} color="#FFFFFF" />
+                    <Text style={styles.trackPillText}>Track</Text>
+                  </Pressable>
+                )}
               </View>
             </View>
             <View style={styles.orderHeaderRow}>
@@ -651,6 +664,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: '700' },
+  trackPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Brand.primary, paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 12,
+  },
+  trackPillText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
   orderHeaderRow: { flexDirection: 'row', justifyContent: 'space-between' },
   orderHeaderInfo: { gap: 4 },
   infoLabel: { fontSize: 11, color: c.textTertiary },
