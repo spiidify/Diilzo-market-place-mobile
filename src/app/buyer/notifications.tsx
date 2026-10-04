@@ -1,63 +1,94 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    SectionList,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Brand, Spacing } from '@/constants/theme';
+import { GradientHeader } from '@/components/GradientHeader';
+import { Skeleton } from '@/components/skeleton';
+import { Brand } from '@/constants/theme';
+import { useBadges } from '@/context/BadgeContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  fetchNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-  type AppNotification,
+    fetchNotifications,
+    markAllNotificationsRead,
+    markNotificationRead,
+    type AppNotification,
 } from '@/services/notifications';
 
 // Map notification type to icon + color
 const TYPE_CONFIG: Record<string, {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   color: string;
+  label: string;
 }> = {
-  order: { icon: 'shopping', color: '#3B82F6' },
-  payment: { icon: 'credit-card-outline', color: '#8B5CF6' },
-  shipping: { icon: 'truck-fast-outline', color: '#06B6D4' },
-  promo: { icon: 'tag-outline', color: Brand.rating },
-  review: { icon: 'star-outline', color: Brand.rating },
-  message: { icon: 'chat-outline', color: '#EC4899' },
-  chat: { icon: 'chat-outline', color: '#EC4899' },
-  dispute: { icon: 'alert-circle-outline', color: '#EF4444' },
-  payout: { icon: 'wallet-outline', color: '#10B981' },
-  rfq: { icon: 'file-document-outline', color: '#F59E0B' },
-  default: { icon: 'bell-outline', color: Brand.primary },
+  order: { icon: 'shopping', color: '#3B82F6', label: 'Order' },
+  payment: { icon: 'credit-card-outline', color: '#8B5CF6', label: 'Payment' },
+  shipping: { icon: 'truck-fast-outline', color: '#06B6D4', label: 'Shipping' },
+  promo: { icon: 'tag-outline', color: '#F59E0B', label: 'Promo' },
+  review: { icon: 'star-outline', color: '#F59E0B', label: 'Review' },
+  message: { icon: 'chat-outline', color: '#EC4899', label: 'Message' },
+  chat: { icon: 'chat-outline', color: '#EC4899', label: 'Message' },
+  dispute: { icon: 'alert-circle-outline', color: '#EF4444', label: 'Dispute' },
+  payout: { icon: 'wallet-outline', color: '#10B981', label: 'Payout' },
+  rfq: { icon: 'file-document-outline', color: '#F59E0B', label: 'Quote' },
+  system: { icon: 'information-outline', color: '#64748B', label: 'Info' },
+  default: { icon: 'bell-outline', color: Brand.primary, label: 'Update' },
 };
 
-function getIcon(type: string, colors: ThemeColors) {
-  if (type === 'system') {
-    return { icon: 'bell-outline' as keyof typeof MaterialCommunityIcons.glyphMap, color: colors.textSecondary };
-  }
+function getTypeConfig(type: string) {
   return TYPE_CONFIG[type] || TYPE_CONFIG.default;
+}
+
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'unread', label: 'Unread' },
+  { key: 'orders', label: 'Orders' },
+  { key: 'promos', label: 'Promos' },
+  { key: 'messages', label: 'Messages' },
+] as const;
+
+type FilterKey = typeof FILTERS[number]['key'];
+
+const ORDER_TYPES = ['order', 'payment', 'shipping', 'dispute', 'payout', 'rfq', 'review'];
+const PROMO_TYPES = ['promo', 'system'];
+const MESSAGE_TYPES = ['message', 'chat'];
+
+function matchesFilter(n: AppNotification, f: FilterKey): boolean {
+  switch (f) {
+    case 'unread': return !n.is_read;
+    case 'orders': return ORDER_TYPES.includes(n.notification_type);
+    case 'promos': return PROMO_TYPES.includes(n.notification_type);
+    case 'messages': return MESSAGE_TYPES.includes(n.notification_type);
+    default: return true;
+  }
+}
+
+function dayBucket(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
+  if (date >= startOfToday) return 'Today';
+  if (date >= startOfYesterday) return 'Yesterday';
+  return 'Earlier';
 }
 
 function formatTimestamp(dateStr: string): string {
   const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHr / 24);
-
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
   if (diffMin < 1) return 'Just now';
   if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
   if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 7) return `${diffDay}d ago`;
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
@@ -66,11 +97,13 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { refreshBadges } = useBadges();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterKey>('all');
 
   const load = useCallback(async () => {
     try {
@@ -79,44 +112,34 @@ export default function NotificationsScreen() {
       const data = await fetchNotifications();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load data');
+      setError(e?.message || 'Failed to load notifications');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const handlePressNotification = async (item: AppNotification) => {
-    // Mark as read if unread
     if (!item.is_read) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
       );
       try {
         await markNotificationRead(item.id);
+        refreshBadges();
       } catch {
-        // revert on failure
         setNotifications((prev) =>
           prev.map((n) => (n.id === item.id ? { ...n, is_read: false } : n))
         );
       }
     }
-    // Navigate if link_url present
     if (item.link_url) {
-      // link_url may be a route path like /buyer/orders/123
       let route = item.link_url.startsWith('/') ? item.link_url : `/${item.link_url}`;
-      // Strip trailing slash
       route = route.replace(/\/$/, '');
-      // Map backend web routes to mobile routes
-      // Order: /orders/{id} → /buyer/orders/{id}
       route = route.replace(/^\/orders\/(\d+)$/, '/buyer/orders/$1');
-      // Order tracking: /orders/{id}/track → /buyer/orders/{id}
-      route = route.replace(/^\/orders\/(\d+)\/track$/, '/buyer/orders/$1');
-      // Chat: /chat/{id} → /chat/{id} (already correct)
+      route = route.replace(/^\/orders\/(\d+)\/track$/, '/buyer/tracking?order_id=$1');
       try {
         router.push(route as any);
       } catch {
@@ -129,12 +152,11 @@ export default function NotificationsScreen() {
     if (markingAll) return;
     setMarkingAll(true);
     const prev = notifications;
-    // Optimistically update
     setNotifications((items) => items.map((n) => ({ ...n, is_read: true })));
     try {
       await markAllNotificationsRead();
+      refreshBadges();
     } catch {
-      // revert
       setNotifications(prev);
     } finally {
       setMarkingAll(false);
@@ -143,8 +165,33 @@ export default function NotificationsScreen() {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
+  const filterCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const f of FILTERS) {
+      counts[f.key] = f.key === 'all'
+        ? notifications.length
+        : notifications.filter((n) => matchesFilter(n, f.key)).length;
+    }
+    return counts;
+  }, [notifications]);
+
+  // Group filtered notifications into Today / Yesterday / Earlier sections
+  const sections = useMemo(() => {
+    const filtered = notifications.filter((n) => matchesFilter(n, filter));
+    const buckets: { title: string; data: AppNotification[] }[] = [
+      { title: 'Today', data: [] },
+      { title: 'Yesterday', data: [] },
+      { title: 'Earlier', data: [] },
+    ];
+    for (const n of filtered) {
+      const bucket = dayBucket(n.created_at);
+      buckets.find((b) => b.title === bucket)?.data.push(n);
+    }
+    return buckets.filter((b) => b.data.length > 0);
+  }, [notifications, filter]);
+
   const renderItem = ({ item }: { item: AppNotification }) => {
-    const config = getIcon(item.notification_type, colors);
+    const config = getTypeConfig(item.notification_type);
     return (
       <Pressable
         style={({ pressed }) => [
@@ -154,8 +201,8 @@ export default function NotificationsScreen() {
         ]}
         onPress={() => handlePressNotification(item)}
       >
-        <View style={[styles.notifIcon, { backgroundColor: config.color + '20' }]}>
-          <MaterialCommunityIcons name={config.icon} size={22} color={config.color} />
+        <View style={[styles.notifIcon, { backgroundColor: config.color + '15' }]}>
+          <MaterialCommunityIcons name={config.icon} size={20} color={config.color} />
         </View>
         <View style={styles.notifContent}>
           <View style={styles.notifHeader}>
@@ -167,142 +214,212 @@ export default function NotificationsScreen() {
           <Text style={styles.notifMessage} numberOfLines={2}>
             {item.message}
           </Text>
-          <Text style={styles.notifTime}>{formatTimestamp(item.created_at)}</Text>
+          <View style={styles.notifFooter}>
+            <View style={[styles.typeTag, { backgroundColor: config.color + '12' }]}>
+              <Text style={[styles.typeTagText, { color: config.color }]}>{config.label}</Text>
+            </View>
+            <Text style={styles.notifTime}>{formatTimestamp(item.created_at)}</Text>
+          </View>
         </View>
       </Pressable>
     );
   };
 
+  const renderLoading = () => (
+    <View style={styles.list}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <View key={i} style={[styles.notifCard, { marginBottom: 10 }]}>
+          <Skeleton width={44} height={44} borderRadius={12} />
+          <View style={styles.notifContent}>
+            <Skeleton width="65%" height={14} />
+            <Skeleton width="90%" height={12} style={{ marginTop: 8 }} />
+            <Skeleton width="40%" height={10} style={{ marginTop: 8 }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <LinearGradient
-          colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitle}>Notifications</Text>
+      <GradientHeader
+        title="Notifications"
+        subtitle={!loading && unreadCount > 0 ? `${unreadCount} unread` : undefined}
+      />
+
+      {/* Filter tabs */}
+      <View style={styles.filterWrap}>
+        <View style={styles.filterRow}>
+          {FILTERS.map((f) => {
+            const active = filter === f.key;
+            const count = filterCounts[f.key] || 0;
+            return (
+              <Pressable
+                key={f.key}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => setFilter(f.key)}
+              >
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{f.label}</Text>
+                {count > 0 && (
+                  <View style={[styles.filterCount, active && styles.filterCountActive]}>
+                    <Text style={[styles.filterCountText, active && styles.filterCountTextActive]}>
+                      {count > 99 ? '99+' : count}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+          <View style={{ flex: 1 }} />
           <Pressable
             onPress={handleMarkAllRead}
             disabled={markingAll || unreadCount === 0}
             hitSlop={12}
+            style={styles.markAllBtn}
           >
             {markingAll ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={Brand.primary} />
             ) : (
-              <Text
-                style={[
-                  styles.markAllText,
-                  unreadCount === 0 && styles.markAllTextDisabled,
-                ]}
-              >
-                Mark all read
-              </Text>
+              <>
+                <MaterialCommunityIcons
+                  name="check-all"
+                  size={16}
+                  color={unreadCount === 0 ? colors.textTertiary : Brand.primary}
+                />
+                <Text style={[styles.markAllText, unreadCount === 0 && { color: colors.textTertiary }]}>
+                  Mark all
+                </Text>
+              </>
             )}
           </Pressable>
-        </LinearGradient>
+        </View>
+      </View>
 
-        {loading ? (
-          <View style={styles.centerBody}>
-            <ActivityIndicator size="large" color={Brand.primary} />
+      {loading ? (
+        renderLoading()
+      ) : error ? (
+        <View style={styles.centerBody}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : sections.length === 0 ? (
+        <View style={styles.centerBody}>
+          <View style={styles.emptyIcon}>
+            <MaterialCommunityIcons name="bell-off-outline" size={40} color={colors.textTertiary} />
           </View>
-        ) : error ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={Brand.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-            <Pressable style={styles.retryBtn} onPress={load}>
-              <Text style={styles.retryBtnText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : notifications.length === 0 ? (
-          <View style={styles.centerBody}>
-            <MaterialCommunityIcons name="bell-off-outline" size={56} color={colors.textTertiary} />
-            <Text style={styles.emptyText}>No notifications yet</Text>
-            <Text style={styles.emptySubtext}>You'll see updates about your orders here</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={notifications}
-            keyExtractor={(item) => `${item.id}`}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            maxToRenderPerBatch={10}
-            windowSize={11}
-            initialNumToRender={10}
-            removeClippedSubviews={true}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={load}
-                colors={[Brand.primary]}
-                tintColor={Brand.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ height: Spacing.two }} />}
-          />
-        )}
-      </SafeAreaView>
+          <Text style={styles.emptyTitle}>
+            {filter === 'unread' ? 'All caught up' : 'No notifications yet'}
+          </Text>
+          <Text style={styles.emptySub}>
+            {filter === 'unread'
+              ? 'You have read all your notifications.'
+              : filter === 'all'
+                ? "You'll see updates about your orders, promos and messages here."
+                : 'Try another filter to see notifications.'}
+          </Text>
+        </View>
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => `${item.id}`}
+          renderItem={renderItem}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          )}
+          contentContainerStyle={styles.list}
+          stickySectionHeadersEnabled={false}
+          maxToRenderPerBatch={12}
+          windowSize={11}
+          initialNumToRender={12}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={load}
+              colors={[Brand.primary]}
+              tintColor={Brand.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          SectionSeparatorComponent={() => <View style={{ height: 4 }} />}
+        />
+      )}
     </View>
   );
 }
 
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: c.background },
-  safeArea: { flex: 1, backgroundColor: Brand.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + Spacing.one,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  markAllText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
-  markAllTextDisabled: { opacity: 0.5 },
 
-  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.four },
-  emptyText: { marginTop: Spacing.three, fontSize: 16, fontWeight: '700', color: c.text },
-  emptySubtext: { marginTop: Spacing.one + 2, fontSize: 14, color: c.textSecondary, textAlign: 'center' },
+  // Filter row
+  filterWrap: { backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.borderLight },
+  filterRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  filterChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18,
+    backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
+  },
+  filterChipActive: { backgroundColor: Brand.primary, borderColor: Brand.primary },
+  filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  filterChipTextActive: { color: '#FFFFFF' },
+  filterCount: {
+    minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+    backgroundColor: c.border, alignItems: 'center', justifyContent: 'center',
+  },
+  filterCountActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  filterCountText: { fontSize: 10, fontWeight: '800', color: c.textSecondary },
+  filterCountTextActive: { color: '#FFFFFF' },
+  markAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 4 },
+  markAllText: { fontSize: 12, fontWeight: '700', color: Brand.primary },
+
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  emptyIcon: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: c.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  emptyTitle: { marginTop: 14, fontSize: 16, fontWeight: '800', color: c.text },
+  emptySub: { marginTop: 6, fontSize: 13, color: c.textSecondary, textAlign: 'center', lineHeight: 19 },
   errorText: { marginTop: 12, fontSize: 14, color: Brand.danger, textAlign: 'center', marginBottom: 16 },
   retryBtn: { backgroundColor: Brand.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
 
-  list: { padding: Spacing.three, paddingBottom: Spacing.six },
+  list: { padding: 12, paddingBottom: 30 },
+  sectionHeader: {
+    fontSize: 12, fontWeight: '800', color: c.textTertiary,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+    marginBottom: 10, marginTop: 6, marginLeft: 4,
+  },
 
+  // Notification card
   notifCard: {
-    flexDirection: 'row',
-    gap: Spacing.three - 4,
-    backgroundColor: c.surface,
-    borderRadius: 14,
-    padding: Spacing.three,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+    flexDirection: 'row', gap: 12,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12,
+    borderWidth: 1, borderColor: c.borderLight,
+    elevation: 1, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
   notifCardUnread: {
-    backgroundColor: c.surfaceAlt,
-    borderLeftWidth: 3,
-    borderLeftColor: Brand.primary,
+    backgroundColor: '#F0F7FF',
+    borderColor: '#BFDBFE',
   },
   notifIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 44, height: 44, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
   },
   notifContent: { flex: 1, gap: 4 },
-  notifHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  notifTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: c.textSecondary },
-  notifTitleUnread: { fontWeight: '700', color: c.text },
+  notifHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  notifTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: c.textSecondary },
+  notifTitleUnread: { fontWeight: '800', color: c.text },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Brand.primary },
-  notifMessage: { fontSize: 14, color: c.textSecondary, lineHeight: 20 },
-  notifTime: { fontSize: 12, color: c.textTertiary, marginTop: 2 },
+  notifMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 19 },
+  notifFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  typeTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  typeTagText: { fontSize: 10, fontWeight: '800' },
+  notifTime: { fontSize: 11, color: c.textTertiary },
 });
