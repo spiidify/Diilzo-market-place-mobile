@@ -109,9 +109,9 @@ function JourneyStepper({ currentStep, colors }: { currentStep: number; colors: 
     return () => loop.stop();
   }, [pulse]);
 
-  const stepSpacing = Math.max(0, (trackWidth - 38) / (STEPS.length - 1));
-  const truckX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(0, trackWidth - 38)] });
-  const fillWidth = progress.interpolate({ inputRange: [0, 1], outputRange: [19, Math.max(19, trackWidth - 19)] });
+  const stepSpacing = Math.max(0, (trackWidth - 26) / (STEPS.length - 1));
+  const truckX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, Math.max(0, trackWidth - 24)] });
+  const fillWidth = progress.interpolate({ inputRange: [0, 1], outputRange: [13, Math.max(13, trackWidth - 13)] });
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.9] });
   const pulseOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] });
   const cancelled = currentStep < 0;
@@ -122,7 +122,7 @@ function JourneyStepper({ currentStep, colors }: { currentStep: number; colors: 
       {!cancelled && trackWidth > 0 && (
         <Animated.View style={[stepperStyles.truck, { transform: [{ translateX: truckX }] }]}>
           <View style={stepperStyles.truckBubble}>
-            <MaterialCommunityIcons name="truck-fast" size={15} color="#FFFFFF" />
+            <MaterialCommunityIcons name="truck-fast" size={11} color="#FFFFFF" />
           </View>
           <View style={stepperStyles.truckTail} />
         </Animated.View>
@@ -164,7 +164,7 @@ function JourneyStepper({ currentStep, colors }: { currentStep: number; colors: 
               >
                 <MaterialCommunityIcons
                   name={step.icon}
-                  size={15}
+                  size={11}
                   color={done ? '#FFFFFF' : colors.textTertiary}
                 />
               </View>
@@ -190,41 +190,41 @@ function JourneyStepper({ currentStep, colors }: { currentStep: number; colors: 
 const stepperStyles = StyleSheet.create({
   truck: { position: 'absolute', top: 0, left: 0, zIndex: 2, alignItems: 'center' },
   truckBubble: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 22, height: 22, borderRadius: 11,
     backgroundColor: Brand.primary, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: '#FFFFFF',
     elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
   truckTail: {
-    width: 0, height: 0, borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 6,
+    width: 0, height: 0, borderLeftWidth: 4, borderRightWidth: 4, borderTopWidth: 5,
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
     borderTopColor: Brand.primary, marginTop: -2,
   },
-  track: { flexDirection: 'row', height: 34, marginTop: 46 },
+  track: { flexDirection: 'row', height: 26, marginTop: 34 },
   trackBg: {
-    position: 'absolute', left: 0, right: 0, top: 15, height: 4,
+    position: 'absolute', left: 0, right: 0, top: 11, height: 3,
     borderRadius: 2, backgroundColor: '#E5E9F0',
   },
   trackFill: {
-    position: 'absolute', left: 0, top: 15, height: 4,
+    position: 'absolute', left: 0, top: 11, height: 3,
     borderRadius: 2, backgroundColor: Brand.primary,
   },
-  stepWrap: { position: 'absolute', top: -2, width: 38, alignItems: 'center' },
+  stepWrap: { position: 'absolute', top: -1, width: 26, alignItems: 'center' },
   pulseRing: {
     position: 'absolute', top: 0,
-    width: 38, height: 38, borderRadius: 19,
+    width: 26, height: 26, borderRadius: 13,
     backgroundColor: Brand.primary,
   },
   stepDot: {
-    width: 34, height: 34, borderRadius: 17, marginTop: 2,
+    width: 24, height: 24, borderRadius: 12, marginTop: 1,
     backgroundColor: '#EEF1F5', borderWidth: 2, borderColor: '#E5E9F0',
     alignItems: 'center', justifyContent: 'center',
   },
   stepDotDone: { backgroundColor: Brand.primary, borderColor: Brand.primary },
   stepDotCurrent: { borderColor: '#FFFFFF', elevation: 4, shadowColor: Brand.primary, shadowOpacity: 0.4, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
-  stepLabel: { fontSize: 9.5, marginTop: 6, textAlign: 'center', width: 70, marginLeft: -16 },
-  stepLabelFirst: { textAlign: 'left', marginLeft: 0, width: 50 },
-  stepLabelLast: { textAlign: 'right', marginLeft: 0, marginRight: -4, width: 50, alignSelf: 'flex-end' },
+  stepLabel: { fontSize: 8.5, marginTop: 4, textAlign: 'center', width: 60, marginLeft: -17 },
+  stepLabelFirst: { textAlign: 'left', marginLeft: 0, width: 44 },
+  stepLabelLast: { textAlign: 'right', marginLeft: 0, marginRight: -4, width: 44, alignSelf: 'flex-end' },
 });
 
 export default function OrderTrackingScreen() {
@@ -488,7 +488,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   heroSub: { fontSize: 12, color: c.textSecondary, marginTop: 2, lineHeight: 17 },
   heroEtaRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: 44, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.borderLight,
+    marginTop: 34, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.borderLight,
   },
   heroEta: { fontSize: 12, fontWeight: '600', color: c.textSecondary },
   cancelledRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
