@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -62,6 +62,7 @@ function stepIndexFor(status: string): number {
     case 'delivered': return 3;
     case 'shipped': return 2;
     case 'processing':
+    case 'accepted':
     case 'confirmed': return 1;
     default: return 0;
   }
@@ -257,6 +258,13 @@ export default function OrderTrackingScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Refetch whenever the screen regains focus so seller status updates show up
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const cancelled = tracking?.order_status === 'cancelled' || tracking?.order_status === 'refunded';
   const currentStep = tracking ? (cancelled ? -1 : stepIndexFor(tracking.order_status)) : 0;
