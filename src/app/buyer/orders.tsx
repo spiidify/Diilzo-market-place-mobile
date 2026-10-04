@@ -66,6 +66,14 @@ export default function BuyerOrdersScreen() {
   const params = useLocalSearchParams<{ status?: string }>();
   const [filter, setFilter] = useState<FilterKey>((params.status as FilterKey) || 'all');
 
+  // Keep the filter in sync when deep-linked shortcuts change while this
+  // screen is already mounted (e.g. tapping another status chip after back).
+  useEffect(() => {
+    if (params.status && FILTERS.some((f) => f.key === params.status)) {
+      setFilter(params.status as FilterKey);
+    }
+  }, [params.status]);
+
   const load = useCallback(async () => {
     try {
       setRefreshing(true);
