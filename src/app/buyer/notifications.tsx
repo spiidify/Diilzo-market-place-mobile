@@ -72,6 +72,71 @@ function matchesFilter(n: AppNotification, f: FilterKey): boolean {
   }
 }
 
+// Translate web link_url values (emitted by the Django backend) into
+// Expo Router paths. Returns null for routes that have no mobile screen.
+function mapNotificationRoute(linkUrl: string): string | null {
+  if (!linkUrl) return null;
+  let path = linkUrl.startsWith('/') ? linkUrl : `/${linkUrl}`;
+  path = path.split('#')[0].split('?')[0].replace(/\/+$/, '') || '/';
+
+  // Orders
+  let m = path.match(/^\/orders\/(\d+)$/);
+  if (m) return `/buyer/orders/${m[1]}`;
+  m = path.match(/^\/orders\/(\d+)\/track$/);
+  if (m) return `/buyer/tracking?order_id=${m[1]}`;
+
+  // Chat / messages — web uses /chat/<thread>/, /account/messages/<thread>/
+  // and /sellers/messages/<thread>/; mobile thread screen is /chat/[id]
+  m = path.match(/^\/chat\/(\d+)$/);
+  if (m) return `/chat/${m[1]}`;
+  m = path.match(/^\/(?:account|sellers)\/messages\/(\d+)$/);
+  if (m) return `/chat/${m[1]}`;
+  if (path === '/account/messages') return '/chat';
+  if (path === '/sellers/messages') return '/seller/messages';
+
+  // Products
+  m = path.match(/^\/products\/([\w-]+)$/);
+  if (m) return `/product/${m[1]}`;
+  if (path === '/products') return '/search';
+
+  // Seller detail pages
+  m = path.match(/^\/sellers\/orders\/(\d+)$/);
+  if (m) return `/seller/orders/${m[1]}`;
+  m = path.match(/^\/sellers\/rfq\/(\d+)$/);
+  if (m) return `/seller/rfqs/${m[1]}`;
+  m = path.match(/^\/sellers\/disputes\/(\d+)$/);
+  if (m) return `/seller/disputes/${m[1]}`;
+  m = path.match(/^\/sellers\/shipments\/(\d+)$/);
+  if (m) return `/seller/shipments/${m[1]}`;
+  if (/^\/sellers\/pos\/sales\/\d+$/.test(path)) return '/seller/pos-payments';
+
+  // Seller list pages
+  const sellerMap: Record<string, string> = {
+    '/sellers': '/seller',
+    '/sellers/dashboard': '/seller',
+    '/sellers/orders': '/seller/orders',
+    '/sellers/earnings': '/seller/earnings',
+    '/sellers/escrow': '/seller/escrow',
+    '/sellers/disputes': '/seller/disputes',
+    '/sellers/products': '/seller/products',
+    '/sellers/rfqs': '/seller/rfqs',
+    '/sellers/kyc': '/seller/verification',
+    '/sellers/pos': '/seller/pos',
+    '/sellers/pos/sales': '/seller/pos-payments',
+    '/sellers/shipments': '/seller/shipments',
+  };
+  if (sellerMap[path]) return sellerMap[path];
+
+  // Buyer/support pages
+  if (path === '/buyer/support' || /^\/admin-support\/tickets/.test(path)) {
+    return '/buyer/support';
+  }
+  if (path === '/account') return '/buyer';
+  if (path === '/') return '/';
+
+  return null;
+}
+
 function dayBucket(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -136,11 +201,8 @@ export default function NotificationsScreen() {
         );
       }
     }
-    if (item.link_url) {
-      let route = item.link_url.startsWith('/') ? item.link_url : `/${item.link_url}`;
-      route = route.replace(/\/$/, '');
-      route = route.replace(/^\/orders\/(\d+)$/, '/buyer/orders/$1');
-      route = route.replace(/^\/orders\/(\d+)\/track$/, '/buyer/tracking?order_id=$1');
+    const route = mapNotificationRoute(item.link_url);
+    if (route) {
       try {
         router.push(route as any);
       } catch {
