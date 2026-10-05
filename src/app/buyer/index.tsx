@@ -664,7 +664,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Recently viewed
   recentCard: {
-    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginBottom: 10,
+    backgroundColor: c.surface, borderRadius: 14, padding: 12, marginTop: 14, marginBottom: 10,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
   recentHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
