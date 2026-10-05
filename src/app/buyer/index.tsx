@@ -274,14 +274,21 @@ export default function BuyerDashboardScreen() {
             style={({ pressed }) => [styles.switchCta, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/seller' as any)}
           >
-            <View style={styles.switchCtaIcon}>
-              <MaterialCommunityIcons name="store" size={22} color={Brand.primary} />
-            </View>
-            <View style={styles.switchCtaInfo}>
-              <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
-              <Text style={styles.switchCtaSub}>Manage your store and products</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
+            <LinearGradient
+              colors={['#F59E0B', '#EA580C']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.switchCtaGrad}
+            >
+              <View style={styles.switchCtaIcon}>
+                <MaterialCommunityIcons name="store" size={22} color="#FFFFFF" />
+              </View>
+              <View style={styles.switchCtaInfo}>
+                <Text style={styles.switchCtaTitle}>Switch to Seller Dashboard</Text>
+                <Text style={styles.switchCtaSub}>Manage your store and products</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#FFFFFF" />
+            </LinearGradient>
           </Pressable>
         )}
 
@@ -587,18 +594,19 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   sellerCtaTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
   sellerCtaSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
 
-  // Switch to seller
+  // Switch to seller — orange gradient (matches the seller brand accent)
   switchCta: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: c.surface, marginTop: 12,
-    padding: 8, borderRadius: 16,
-    borderWidth: 1, borderColor: c.border,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+    marginTop: 12, borderRadius: 16, overflow: 'hidden',
+    elevation: 3, shadowColor: '#EA580C', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
-  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Brand.primary + '12', justifyContent: 'center', alignItems: 'center' },
+  switchCtaGrad: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    padding: 8, borderRadius: 16,
+  },
+  switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
-  switchCtaTitle: { fontSize: 15, fontWeight: '700', color: c.text },
-  switchCtaSub: { fontSize: 13, color: c.textTertiary },
+  switchCtaTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
+  switchCtaSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
 
   // ── Super Admin section ──────────────────────────────────────────
   adminSection: { marginTop: 16, gap: 8 },
