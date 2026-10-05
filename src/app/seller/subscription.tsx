@@ -32,6 +32,7 @@ export default function SellerSubscriptionScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   useScreenshotPrevention(true);
   const [plans, setPlans] = useState<SellerPlan[]>([]);
+  const [regionLabel, setRegionLabel] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +50,7 @@ export default function SellerSubscriptionScreen() {
         getSubscription().catch(() => null),
       ]);
       setPlans(plansRes.plans || []);
+      setRegionLabel(plansRes.region_label || null);
       setSubscription(subRes);
     } catch (e: any) {
       setError(e?.message || 'Failed to load subscription data');
@@ -203,6 +205,14 @@ export default function SellerSubscriptionScreen() {
             </View>
           </View>
 
+          {/* Regional pricing notice */}
+          {regionLabel ? (
+            <View style={styles.regionNotice}>
+              <MaterialCommunityIcons name="earth" size={16} color={Brand.primary} />
+              <Text style={styles.regionNoticeText}>Prices shown for your region: {regionLabel}</Text>
+            </View>
+          ) : null}
+
           {/* Plans grid */}
           {plans.map((plan) => {
             const isCurrent = plan.code === currentPlanCode;
@@ -222,10 +232,10 @@ export default function SellerSubscriptionScreen() {
                 </View>
 
                 <View style={styles.planPriceRow}>
-                  <Text style={styles.planPrice}>UGX {fmt(plan.monthly_price)}</Text>
+                  <Text style={styles.planPrice}>{plan.currency} {fmt(plan.monthly_price)}</Text>
                   <Text style={styles.planPeriod}>/month</Text>
                 </View>
-                <Text style={styles.planYearly}>UGX {fmt(plan.yearly_price)}/year</Text>
+                <Text style={styles.planYearly}>{plan.currency} {fmt(plan.yearly_price)}/year</Text>
 
                 <View style={styles.featuresList}>
                   <FeatureItem text={`${plan.product_limit || 'Unlimited'} products`} styles={styles} />
@@ -242,7 +252,7 @@ export default function SellerSubscriptionScreen() {
                   {plan.features?.b2b_tools ? <FeatureItem text="B2B tools" styles={styles} /> : null}
                   {plan.features?.api_access ? <FeatureItem text="API access" styles={styles} /> : null}
                   {plan.features?.custom_domain ? <FeatureItem text="Custom domain" styles={styles} /> : null}
-                  {Number(plan.advertising_credit) > 0 ? <FeatureItem text={`UGX ${fmt(plan.advertising_credit)} ad credit`} styles={styles} /> : null}
+                  {Number(plan.advertising_credit) > 0 ? <FeatureItem text={`${plan.currency} ${fmt(plan.advertising_credit)} ad credit`} styles={styles} /> : null}
                 </View>
 
                 <Pressable
@@ -271,7 +281,7 @@ export default function SellerSubscriptionScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Subscribe to {selectedPlan?.name}</Text>
-            <Text style={styles.modalPrice}>UGX {fmt(selectedPlan?.monthly_price)} / month</Text>
+            <Text style={styles.modalPrice}>{selectedPlan?.currency} {fmt(selectedPlan?.monthly_price)} / month</Text>
 
             <Text style={styles.modalLabel}>Payment Method</Text>
             <View style={styles.paymentMethods}>
@@ -352,6 +362,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: '#DCF5EC', borderRadius: 12, padding: 12, marginBottom: 12,
   },
   freeBannerText: { flex: 1, fontSize: 12, color: c.textSecondary },
+
+  regionNotice: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#EFF6FF', borderRadius: 10, padding: 10, marginBottom: 12,
+    borderWidth: 1, borderColor: '#BFDBFE',
+  },
+  regionNoticeText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#1D4ED8' },
 
   planCard: {
     backgroundColor: c.surface, borderRadius: 16, padding: 8, marginBottom: 12, borderWidth: 1, borderColor: c.border,

@@ -224,6 +224,13 @@ export interface EscrowResponse {
   trade_assurance: boolean;
 }
 
+export interface MembershipTierPrice {
+  yearly: string;
+  monthly: string;
+  currency: string;
+  name: string;
+}
+
 export interface MembershipInfo {
   tier: string;
   status: string;
@@ -236,6 +243,11 @@ export interface MembershipInfo {
   features_enabled: Record<string, boolean>;
   store_verification_status: string;
   store_trade_assurance: boolean;
+  /** Billing region ('africa'|'us'|'asia'|'other') + label. */
+  region?: string;
+  region_label?: string;
+  /** Regional prices per tier — use instead of hardcoded fees. */
+  tier_prices?: Record<string, MembershipTierPrice>;
 }
 
 export interface PendingStatus {

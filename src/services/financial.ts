@@ -134,6 +134,11 @@ export interface SellerPlan {
   monthly_price: string;
   yearly_price: string;
   currency: string;
+  /** Regional prices — monthly/yearly/currency are already resolved for the
+      requester's billing region; these are the unmodified base prices. */
+  base_monthly_price?: string;
+  base_yearly_price?: string;
+  base_currency?: string;
   product_limit: number | null;
   staff_limit: number | null;
   location_limit: number | null;
@@ -156,6 +161,9 @@ export interface SellerPlan {
 
 export interface PlansResponse {
   plans: SellerPlan[];
+  /** Billing region the prices were resolved for ('africa'|'us'|'asia'|'other'). */
+  region?: string;
+  region_label?: string;
 }
 
 export interface PlatformFeeInfo {

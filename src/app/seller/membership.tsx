@@ -1,14 +1,14 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -25,6 +25,8 @@ interface TierInfo {
   features: { label: string; included: boolean }[];
 }
 
+// Prices are filled from membership.tier_prices (regional); the `price`
+// strings below are only fallbacks if the API omits a tier.
 const TIERS: TierInfo[] = [
   {
     key: 'free',
@@ -72,6 +74,9 @@ const TIERS: TierInfo[] = [
     ],
   },
 ];
+
+const fmtPrice = (v: string | number | undefined | null) =>
+  Number(v || 0).toLocaleString();
 
 export default function SellerMembershipScreen() {
   const { colors } = useAppTheme();
@@ -169,10 +174,22 @@ export default function SellerMembershipScreen() {
               </View>
             </View>
 
+            {/* Regional pricing notice */}
+            {membership.region_label ? (
+              <View style={styles.regionNotice}>
+                <MaterialCommunityIcons name="earth" size={16} color="#1D4ED8" />
+                <Text style={styles.regionNoticeText}>Prices shown for your region: {membership.region_label}</Text>
+              </View>
+            ) : null}
+
             {/* Tier cards */}
             {TIERS.map((tier) => {
               const isCurrent = currentTier === tier.key;
               const isUpgrade = ['free', 'verified', 'gold'].indexOf(tier.key) > ['free', 'verified', 'gold'].indexOf(currentTier);
+              const apiPrice = membership.tier_prices?.[tier.key];
+              const priceText = apiPrice
+                ? `${apiPrice.currency} ${fmtPrice(apiPrice.yearly)}`
+                : tier.price;
               return (
                 <View
                   key={tier.key}
@@ -183,8 +200,8 @@ export default function SellerMembershipScreen() {
                       <MaterialCommunityIcons name={tier.icon as any} size={28} color={tier.color} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.tierName}>{tier.name}</Text>
-                      <Text style={styles.tierPrice}>{tier.price}<Text style={styles.tierPriceSub}>/year</Text></Text>
+                      <Text style={styles.tierName}>{apiPrice?.name || tier.name}</Text>
+                      <Text style={styles.tierPrice}>{priceText}<Text style={styles.tierPriceSub}>/year</Text></Text>
                     </View>
                     {isCurrent && (
                       <View style={[styles.currentBadge, { backgroundColor: tier.color }]}>
@@ -258,6 +275,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   currentIcon: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   currentTier: { fontSize: 18, fontWeight: '800', color: c.text },
   currentSub: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+
+  regionNotice: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#EFF6FF', borderRadius: 10, padding: 10, marginBottom: 14,
+    borderWidth: 1, borderColor: '#BFDBFE',
+  },
+  regionNoticeText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#1D4ED8' },
 
   // Tier card
   tierCard: {
