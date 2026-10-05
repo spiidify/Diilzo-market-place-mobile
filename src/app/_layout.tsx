@@ -21,6 +21,7 @@ import {
 } from '@/services/push';
 import { playSound, preloadSounds, Sounds } from '@/services/sound';
 import { router } from 'expo-router';
+export { AppErrorBoundary as ErrorBoundary } from '@/components/error-boundary';
 
 SplashScreen.preventAutoHideAsync();
 
