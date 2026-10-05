@@ -643,9 +643,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   // Faint orange tint for the POS card — separates in-store sales from marketplace
   posCard: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#FFEDD5',
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: '#FDBA74',
   },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   cardTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4 },
