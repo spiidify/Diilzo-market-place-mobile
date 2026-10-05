@@ -598,8 +598,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Seller CTA
   sellerCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: Brand.primary, marginTop: 12,
+    backgroundColor: Brand.primary,
     padding: 8, borderRadius: 16,
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
     elevation: 3, shadowColor: Brand.primary, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   sellerCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
@@ -609,12 +610,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Switch to seller — orange gradient (matches the seller brand accent)
   switchCta: {
-    marginTop: 12, borderRadius: 16, overflow: 'hidden',
+    borderRadius: 16, overflow: 'hidden',
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
     elevation: 3, shadowColor: '#EA580C', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   switchCtaGrad: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     padding: 8, borderRadius: 16,
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
   },
   switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
@@ -670,7 +673,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Referral card
   referralCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Brand.accent, borderRadius: 14, padding: 12, marginBottom: 10,
+    backgroundColor: Brand.accent, padding: 12,
+    borderTopLeftRadius: 14, borderTopRightRadius: 14,
+    borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
     elevation: 2, shadowColor: Brand.accent, shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   referralIcon: {
