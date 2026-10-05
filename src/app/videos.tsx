@@ -641,11 +641,13 @@ export default function VideosScreen() {
         if (controller.signal.aborted) return;
         if (reset) setSuggestion(data.suggestion || null);
         setSearchCount(data.count);
+        // Reels only play direct uploads — drop anything without a playable URL
+        const results = (data.results || []).filter((p) => Boolean(p.video_file_url));
         if (reset) {
-          setProducts(data.results || []);
+          setProducts(results);
           setPage(2);
         } else {
-          setProducts((prev) => [...prev, ...(data.results || [])]);
+          setProducts((prev) => [...prev, ...results]);
           setPage((prev) => prev + 1);
         }
         setHasMore(Boolean(data.has_next));
@@ -660,11 +662,12 @@ export default function VideosScreen() {
         if (controller.signal.aborted) return;
         if (reset) setSuggestion(null);
         setSearchCount(data.count);
+        const results = (data.results || []).filter((p) => Boolean(p.video_file_url));
         if (reset) {
-          setProducts(data.results || []);
+          setProducts(results);
           setPage(2);
         } else {
-          setProducts((prev) => [...prev, ...(data.results || [])]);
+          setProducts((prev) => [...prev, ...results]);
           setPage((prev) => prev + 1);
         }
         // Normalize: PaginatedResponse uses `next` (URL string), SearchResult uses `has_next` (bool)
