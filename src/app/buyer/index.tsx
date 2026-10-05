@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { CountryPicker } from '@/components/CountryPicker';
 import { GradientHeader } from '@/components/GradientHeader';
@@ -155,7 +156,7 @@ export default function BuyerDashboardScreen() {
 
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false} contentContainerStyle={styles.bodyContent}>
         {/* Profile hero — card with avatar */}
-        <View style={styles.profileCard}>
+        <Animated.View entering={FadeInDown.duration(400).springify().damping(16)} style={styles.profileCard}>
           <View style={styles.profileGradient}>
             <View style={styles.avatarRing}>
               <View style={styles.avatarWrap}>
@@ -196,11 +197,11 @@ export default function BuyerDashboardScreen() {
               </Pressable>
             )}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Order status shortcuts (Jumia/AliExpress-style) */}
         {stats && stats.total_orders > 0 && (
-          <View style={styles.statsCard}>
+          <Animated.View entering={FadeInDown.delay(60).duration(400).springify().damping(16)} style={styles.statsCard}>
             {statusShortcuts.map((s) => (
               <Pressable key={s.label} style={styles.statItem} onPress={() => router.push(s.route)}>
                 <View style={[styles.statIconWrap, { backgroundColor: s.color + '15' }]}>
@@ -214,10 +215,11 @@ export default function BuyerDashboardScreen() {
                 <Text style={styles.statLabel}>{s.label}</Text>
               </Pressable>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* Region / currency row */}
+        <Animated.View entering={FadeInDown.delay(120).duration(400).springify().damping(16)}>
         <Pressable
           style={({ pressed }) => [styles.regionRow, pressed && { backgroundColor: colors.surfaceAlt }]}
           onPress={() => setCountryPickerVisible(true)}
@@ -229,10 +231,11 @@ export default function BuyerDashboardScreen() {
           </Text>
           <MaterialCommunityIcons name="chevron-down" size={18} color={colors.textTertiary} />
         </Pressable>
+        </Animated.View>
 
         {/* Referral card */}
         {referral && (
-          <View style={styles.referralCard}>
+          <Animated.View entering={FadeInDown.delay(180).duration(400).springify().damping(16)} style={styles.referralCard}>
             <View style={styles.referralIcon}>
               <MaterialCommunityIcons name="gift-outline" size={22} color="#FFFFFF" />
             </View>
@@ -249,11 +252,12 @@ export default function BuyerDashboardScreen() {
             <Pressable onPress={shareReferral} hitSlop={8} style={[styles.referralBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
               <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
             </Pressable>
-          </View>
+          </Animated.View>
         )}
 
         {/* Become a seller CTA */}
         {!user?.has_store && (
+          <Animated.View entering={FadeInDown.delay(240).duration(400).springify().damping(16)}>
           <Pressable
             style={({ pressed }) => [styles.sellerCta, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/seller' as any)}
@@ -267,10 +271,12 @@ export default function BuyerDashboardScreen() {
             </View>
             <MaterialCommunityIcons name="chevron-right" size={22} color="#FFFFFF" />
           </Pressable>
+          </Animated.View>
         )}
 
         {/* Switch to seller dashboard */}
         {user?.has_store && (
+          <Animated.View entering={FadeInDown.delay(240).duration(400).springify().damping(16)}>
           <Pressable
             style={({ pressed }) => [styles.switchCta, pressed && { opacity: 0.85 }]}
             onPress={() => router.push('/seller' as any)}
@@ -291,11 +297,12 @@ export default function BuyerDashboardScreen() {
               <MaterialCommunityIcons name="chevron-right" size={20} color="#FFFFFF" />
             </LinearGradient>
           </Pressable>
+          </Animated.View>
         )}
 
         {/* Super Admin — all dashboards */}
         {user?.is_superuser && (
-          <View style={styles.adminSection}>
+          <Animated.View entering={FadeInDown.delay(300).duration(400).springify().damping(16)} style={styles.adminSection}>
             <Text style={styles.adminSectionTitle}>Admin Access</Text>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
@@ -362,12 +369,12 @@ export default function BuyerDashboardScreen() {
               </View>
               <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
-          </View>
+          </Animated.View>
         )}
 
         {/* Recently viewed strip */}
         {recent.length > 0 && (
-          <View style={styles.recentCard}>
+          <Animated.View entering={FadeInDown.delay(360).duration(400).springify().damping(16)} style={styles.recentCard}>
             <View style={styles.recentHeader}>
               <MaterialCommunityIcons name="history" size={18} color={colors.textSecondary} />
               <Text style={styles.recentTitle}>Recently Viewed</Text>
@@ -394,11 +401,11 @@ export default function BuyerDashboardScreen() {
                 );
               })}
             </ScrollView>
-          </View>
+          </Animated.View>
         )}
 
         {/* Menu items — grouped in a single card with dividers */}
-        <View style={styles.menuCard}>
+        <Animated.View entering={FadeInDown.delay(420).duration(400).springify().damping(16)} style={styles.menuCard}>
           {menuItems.map((item, index) => (
             <Pressable
               key={`buyer-menu-${index}`}
@@ -422,10 +429,10 @@ export default function BuyerDashboardScreen() {
               <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
             </Pressable>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Dark mode toggle */}
-        <View style={styles.themeSection}>
+        <Animated.View entering={FadeInDown.delay(480).duration(400).springify().damping(16)} style={styles.themeSection}>
           <View style={styles.themeHeader}>
             <MaterialCommunityIcons name="theme-light-dark" size={18} color={colors.text} />
             <Text style={styles.themeTitle}>Appearance</Text>
@@ -460,9 +467,10 @@ export default function BuyerDashboardScreen() {
               </Pressable>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Logout */}
+        <Animated.View entering={FadeInDown.delay(540).duration(400).springify().damping(16)}>
         <Pressable
           style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
           onPress={async () => {
@@ -473,6 +481,7 @@ export default function BuyerDashboardScreen() {
           <MaterialCommunityIcons name="logout" size={20} color={Brand.danger} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
+        </Animated.View>
       </ScrollView>
 
       <CountryPicker
