@@ -527,7 +527,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   // Profile card — hero
   profileCard: {
-    borderRadius: 18,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     overflow: 'hidden',
     elevation: 4,
     shadowColor: Brand.primary,
@@ -637,7 +640,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // Order status shortcuts
   statsCard: {
     flexDirection: 'row', justifyContent: 'space-between',
-    backgroundColor: c.surface, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 8, marginBottom: 10,
+    backgroundColor: c.surface, paddingVertical: 14, paddingHorizontal: 8, marginBottom: 10,
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
+    borderBottomLeftRadius: 14, borderBottomRightRadius: 14,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
   },
   statItem: { alignItems: 'center', flex: 1 },
