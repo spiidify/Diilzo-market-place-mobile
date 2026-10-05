@@ -18,7 +18,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { getMyStore, type SellerDashboard } from '@/services/seller';
+import { getMyStore, getPermissions, type SellerDashboard } from '@/services/seller';
 
 const STATUS_DOT_COLORS: Record<string, string> = {
   pending: '#F59E0B',
@@ -35,6 +35,8 @@ interface MenuItem {
   color: string;
   route: any;
   count?: number;
+  /** SellerStaffRole flag required to see this item (undefined = always). */
+  perm?: string;
 }
 
 interface MenuGroup {
@@ -46,6 +48,7 @@ export default function SellerDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [data, setData] = useState<SellerDashboard | null>(null);
+  const [perms, setPerms] = useState<Record<string, boolean> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +64,12 @@ export default function SellerDashboardScreen() {
       setData(result);
       if (result?.store?.status && result.store.status !== 'approved') {
         router.replace('/seller/pending' as any);
+      }
+      try {
+        const p = await getPermissions();
+        setPerms(p?.permissions || null);
+      } catch {
+        setPerms(null); // fail-open: server still enforces every endpoint
       }
     } catch (e: any) {
       const serverMsg = e?.response?.data?.error || e?.message || '';
@@ -90,53 +99,53 @@ export default function SellerDashboardScreen() {
     {
       title: 'Sales & Orders',
       items: [
-        { icon: 'clipboard-list-outline', label: 'Orders', color: '#16A34A', route: '/seller/orders', count: stats?.pending_orders },
-        { icon: 'account-group-outline', label: 'Customers', color: '#10B981', route: '/seller/customers' },
-        { icon: 'truck-fast', label: 'Shipments', color: '#3B82F6', route: '/seller/shipments' },
-        { icon: 'alert-circle-outline', label: 'Disputes', color: Brand.danger, route: '/seller/disputes' },
-        { icon: 'cash-refund', label: 'Refunds', color: '#F59E0B', route: '/seller/refunds' },
-        { icon: 'file-document-outline', label: 'RFQs', color: '#8B5CF6', route: '/seller/rfqs' },
+        { icon: 'clipboard-list-outline', label: 'Orders', color: '#16A34A', route: '/seller/orders', count: stats?.pending_orders, perm: 'can_view_orders' },
+        { icon: 'account-group-outline', label: 'Customers', color: '#10B981', route: '/seller/customers', perm: 'can_view_orders' },
+        { icon: 'truck-fast', label: 'Shipments', color: '#3B82F6', route: '/seller/shipments', perm: 'can_manage_shipping' },
+        { icon: 'alert-circle-outline', label: 'Disputes', color: Brand.danger, route: '/seller/disputes', perm: 'can_handle_disputes' },
+        { icon: 'cash-refund', label: 'Refunds', color: '#F59E0B', route: '/seller/refunds', perm: 'can_handle_disputes' },
+        { icon: 'file-document-outline', label: 'RFQs', color: '#8B5CF6', route: '/seller/rfqs', perm: 'can_create_orders' },
       ],
     },
     {
       title: 'Products & In-Store POS',
       items: [
-        { icon: 'package-variant-closed', label: 'Products', color: '#3B82F6', route: '/seller/products', count: stats?.total_products },
-        { icon: 'warehouse', label: 'Inventory', color: '#8B5CF6', route: '/seller/inventory' },
-        { icon: 'cash-register', label: 'Point of Sale (POS)', color: '#10B981', route: '/seller/pos' },
-        { icon: 'wallet-outline', label: 'POS Payments', color: '#7C3AED', route: '/seller/pos-payments' },
-        { icon: 'ticket-percent', label: 'Coupons', color: '#06B6D4', route: '/seller/coupons' },
-        { icon: 'truck-outline', label: 'Delivery', color: '#16A34A', route: '/seller/shipping' },
-        { icon: 'bullhorn-outline', label: 'Promotions', color: '#F59E0B', route: '/seller/promotions' },
+        { icon: 'package-variant-closed', label: 'Products', color: '#3B82F6', route: '/seller/products', count: stats?.total_products, perm: 'can_manage_products' },
+        { icon: 'warehouse', label: 'Inventory', color: '#8B5CF6', route: '/seller/inventory', perm: 'can_manage_inventory' },
+        { icon: 'cash-register', label: 'Point of Sale (POS)', color: '#10B981', route: '/seller/pos', perm: 'can_create_orders' },
+        { icon: 'wallet-outline', label: 'POS Payments', color: '#7C3AED', route: '/seller/pos-payments', perm: 'can_view_finances' },
+        { icon: 'ticket-percent', label: 'Coupons', color: '#06B6D4', route: '/seller/coupons', perm: 'can_manage_promotions' },
+        { icon: 'truck-outline', label: 'Delivery', color: '#16A34A', route: '/seller/shipping', perm: 'can_manage_shipping' },
+        { icon: 'bullhorn-outline', label: 'Promotions', color: '#F59E0B', route: '/seller/promotions', perm: 'can_manage_promotions' },
       ],
     },
     {
       title: 'Finance & Earnings',
       items: [
-        { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings' },
-        { icon: 'cash', label: 'Payouts', color: '#16A34A', route: '/seller/payouts' },
-        { icon: 'chart-pie', label: 'Finance', color: '#16A34A', route: '/seller/finance' },
-        { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics' },
-        { icon: 'lock-outline', label: 'Escrow', color: '#F59E0B', route: '/seller/escrow' },
-        { icon: 'receipt', label: 'Commissions', color: '#8B5CF6', route: '/seller/commissions' },
+        { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings', perm: 'can_view_finances' },
+        { icon: 'cash', label: 'Payouts', color: '#16A34A', route: '/seller/payouts', perm: 'can_view_finances' },
+        { icon: 'chart-pie', label: 'Finance', color: '#16A34A', route: '/seller/finance', perm: 'can_view_finances' },
+        { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics', perm: 'can_view_analytics' },
+        { icon: 'lock-outline', label: 'Escrow', color: '#F59E0B', route: '/seller/escrow', perm: 'can_view_finances' },
+        { icon: 'receipt', label: 'Commissions', color: '#8B5CF6', route: '/seller/commissions', perm: 'can_view_finances' },
       ],
     },
     {
       title: 'Store Management',
       items: [
-        { icon: 'account-group', label: 'Staff', color: '#3B82F6', route: '/seller/staff' },
-        { icon: 'shield-check-outline', label: 'Verification', color: colors.textSecondary, route: '/seller/verification' },
-        { icon: 'crown', label: 'Membership', color: '#F59E0B', route: '/seller/membership' },
+        { icon: 'account-group', label: 'Staff', color: '#3B82F6', route: '/seller/staff', perm: 'can_manage_staff' },
+        { icon: 'shield-check-outline', label: 'Verification', color: colors.textSecondary, route: '/seller/verification', perm: 'can_manage_store' },
+        { icon: 'crown', label: 'Membership', color: '#F59E0B', route: '/seller/membership', perm: 'can_manage_store' },
         { icon: 'chat-outline', label: 'Messages', color: '#EC4899', route: '/seller/messages', count: chatUnread },
-        { icon: 'store-settings-outline', label: 'Settings', color: colors.textSecondary, route: '/seller/settings' },
+        { icon: 'store-settings-outline', label: 'Settings', color: colors.textSecondary, route: '/seller/settings', perm: 'can_manage_store' },
         { icon: 'storefront', label: 'My Store', color: Brand.primary, route: store?.slug ? `/store/${store.slug}` : '/seller/settings' },
       ],
     },
     {
       title: 'Marketing & Tools',
       items: [
-        { icon: 'bullhorn-outline', label: 'Ad Wallet', color: '#F59E0B', route: '/seller/ad-wallet' },
-        { icon: 'credit-card-outline', label: 'Subscription', color: '#06B6D4', route: '/seller/subscription' },
+        { icon: 'bullhorn-outline', label: 'Ad Wallet', color: '#F59E0B', route: '/seller/ad-wallet', perm: 'can_view_finances' },
+        { icon: 'credit-card-outline', label: 'Subscription', color: '#06B6D4', route: '/seller/subscription', perm: 'can_manage_store' },
         { icon: 'store-cog', label: 'Merchant Studio', color: '#06B6D4', route: '/merchant-studio' },
         { icon: 'rocket-launch', label: 'AdPulse', color: '#EC4899', route: '/adpulse' },
       ],
@@ -364,7 +373,15 @@ export default function SellerDashboardScreen() {
         )}
 
         {/* ── Menu groups — compact rows ────────────────────────────── */}
-        {menuGroups.map((group, gi) => (
+        {menuGroups
+          .map((group) => ({
+            ...group,
+            items: group.items.filter(
+              (item) => !item.perm || !perms || perms[item.perm]
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
+          .map((group, gi) => (
           <View key={`group-${gi}`} style={styles.card}>
             <Text style={styles.groupTitle}>{group.title}</Text>
             {group.items.map((item, ii) => (

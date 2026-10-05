@@ -805,6 +805,7 @@ export interface SellerStaffRole {
   can_view_analytics: boolean;
   can_manage_shipping: boolean;
   can_manage_promotions: boolean;
+  can_manage_store: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -849,16 +850,20 @@ export async function createStaffRole(payload: {
   can_view_analytics?: boolean;
   can_manage_shipping?: boolean;
   can_manage_promotions?: boolean;
+  can_manage_store?: boolean;
 }): Promise<SellerStaffRole> {
   return apiRequest<SellerStaffRole>({ method: 'POST', url: `${SELLER_BASE}/staff_roles/`, data: payload });
 }
 
-export async function getPermissions(): Promise<{
-  permissions: string[];
+export interface SellerPermissions {
+  /** flag name -> granted, e.g. { can_view_orders: true } */
+  permissions: Record<string, boolean>;
   is_owner: boolean;
   is_staff: boolean;
-}> {
-  return apiRequest<{ permissions: string[]; is_owner: boolean; is_staff: boolean }>({
+}
+
+export async function getPermissions(): Promise<SellerPermissions> {
+  return apiRequest<SellerPermissions>({
     method: 'GET',
     url: `${SELLER_BASE}/permissions/`,
   });

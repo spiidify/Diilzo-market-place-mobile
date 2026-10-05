@@ -1,16 +1,18 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -18,15 +20,30 @@ import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
-  createStaffRole,
-  getStaff,
-  getStaffRoles,
-  inviteStaff,
-  removeStaff,
-  updateStaff,
-  type SellerStaffMember,
-  type SellerStaffRole,
+    createStaffRole,
+    getStaff,
+    getStaffRoles,
+    inviteStaff,
+    removeStaff,
+    updateStaff,
+    type SellerStaffMember,
+    type SellerStaffRole,
 } from '@/services/seller';
+
+const ROLE_PERMISSION_OPTIONS: { key: string; label: string }[] = [
+  { key: 'can_view_orders', label: 'View Orders' },
+  { key: 'can_create_orders', label: 'Create Orders (POS/RFQ)' },
+  { key: 'can_edit_orders', label: 'Edit / Accept Orders' },
+  { key: 'can_manage_products', label: 'Manage Products' },
+  { key: 'can_manage_inventory', label: 'Manage Inventory' },
+  { key: 'can_view_finances', label: 'View Finances & Payouts' },
+  { key: 'can_manage_staff', label: 'Manage Staff' },
+  { key: 'can_handle_disputes', label: 'Handle Disputes' },
+  { key: 'can_view_analytics', label: 'View Analytics' },
+  { key: 'can_manage_shipping', label: 'Manage Shipping' },
+  { key: 'can_manage_promotions', label: 'Manage Promotions' },
+  { key: 'can_manage_store', label: 'Store Settings & Verification' },
+];
 
 export default function SellerStaffScreen() {
   const { colors } = useAppTheme();
@@ -48,6 +65,7 @@ export default function SellerStaffScreen() {
   const [showRole, setShowRole] = useState(false);
   const [roleName, setRoleName] = useState('');
   const [roleType, setRoleType] = useState('custom');
+  const [rolePerms, setRolePerms] = useState<Record<string, boolean>>({});
   const [creatingRole, setCreatingRole] = useState(false);
 
   const load = useCallback(async () => {
@@ -121,10 +139,11 @@ export default function SellerStaffScreen() {
     }
     setCreatingRole(true);
     try {
-      await createStaffRole({ name: roleName.trim(), role_type: roleType });
+      await createStaffRole({ name: roleName.trim(), role_type: roleType, ...rolePerms });
       setShowRole(false);
       setRoleName('');
       setRoleType('custom');
+      setRolePerms({});
       Alert.alert('Success', 'Role created');
       await load();
     } catch (e: any) {
@@ -383,6 +402,21 @@ export default function SellerStaffScreen() {
               ))}
             </View>
 
+            <Text style={styles.formLabel}>Permissions</Text>
+            <ScrollView style={styles.permList} nestedScrollEnabled>
+              {ROLE_PERMISSION_OPTIONS.map((opt) => (
+                <View key={opt.key} style={styles.permRow}>
+                  <Text style={styles.permLabel}>{opt.label}</Text>
+                  <Switch
+                    value={!!rolePerms[opt.key]}
+                    onValueChange={(v) => setRolePerms((p) => ({ ...p, [opt.key]: v }))}
+                    trackColor={{ false: colors.border, true: Brand.primary }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+
             <Pressable
               style={({ pressed }) => [styles.submitBtn, (creatingRole || pressed) && { opacity: 0.85 }]}
               onPress={handleCreateRole}
@@ -461,6 +495,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  permList: { maxHeight: 220, marginBottom: 12 },
+  permRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
+  permLabel: { fontSize: 13, color: c.textSecondary, flex: 1, paddingRight: 8 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: c.text },
   formLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 6, marginTop: 12 },
