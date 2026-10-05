@@ -234,7 +234,7 @@ export default function SellerDashboardScreen() {
 
         {/* ── POS in-store sales (separate from marketplace earnings) ── */}
         {data?.pos_stats && (
-          <View style={styles.card}>
+          <View style={[styles.card, styles.posCard]}>
             <View style={styles.cardHead}>
               <Text style={styles.cardTitle}>Point of Sale (POS)</Text>
               <Pressable style={styles.cardLink} onPress={() => router.push('/seller/pos' as any)} hitSlop={8}>
@@ -640,6 +640,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface, marginHorizontal: 10, borderRadius: 14,
     paddingVertical: 10, paddingHorizontal: 12,
     elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, shadowOffset: { width: 0, height: 1 },
+  },
+  // Faint orange tint for the POS card — separates in-store sales from marketplace
+  posCard: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
   },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   cardTitle: { fontSize: 12, fontWeight: '800', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.4 },
