@@ -30,7 +30,7 @@ import { createReview, fetchProductReviews, trackProductView } from '@/services/
 import { createChatThread } from '@/services/chat';
 import { getWatchStatus, setWatch } from '@/services/orders';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
-import { fetchSponsoredProducts, trackClick as trackPromoClick } from '@/services/promotions';
+import { fetchSponsoredProducts, trackClick as trackPromoClick, trackImpression } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { CartItem, Product, ProductSpecification, Review } from '@/types';
@@ -113,7 +113,10 @@ export default function ProductDetailScreen() {
       fetchSponsoredProducts({ category: data.category?.slug, limit: 6 })
         .then((res) => {
           const filtered = (res.results || []).filter((p) => p.slug !== data.slug);
-          setSponsoredProducts(filtered.slice(0, 6));
+          const shown = filtered.slice(0, 6);
+          setSponsoredProducts(shown);
+          // Record an impression for each sponsored slot shown.
+          shown.forEach((p) => { if (p.id) trackImpression(p.id).catch(() => { }); });
         })
         .catch(() => { });
 

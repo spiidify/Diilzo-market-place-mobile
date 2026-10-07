@@ -33,6 +33,7 @@ export interface AdCampaign {
   remaining_budget: string;
   click_through_rate: number;
   status: string;
+  is_serving: boolean;
   starts_at: string | null;
   ends_at: string | null;
   created_at: string;
@@ -57,6 +58,18 @@ export interface CreateCampaignPayload {
   target_keywords?: string;
   daily_budget: number;
   bid_per_click?: number;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
+export interface UpdateCampaignPayload {
+  name?: string;
+  target_keywords?: string;
+  daily_budget?: number;
+  bid_per_click?: number;
+  status?: 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+  starts_at?: string | null;
+  ends_at?: string | null;
 }
 
 // ── AdminOps Central Endpoints ─────────────────────────────────────
@@ -89,6 +102,18 @@ export async function createAdCampaign(
   return apiRequest<AdCampaign>({
     method: 'POST',
     url: '/adpulse/campaigns/create/',
+    data: payload,
+  });
+}
+
+/** PATCH /adpulse/campaigns/<id>/status/ — update fields and/or pause/resume. */
+export async function updateAdCampaign(
+  id: number,
+  payload: UpdateCampaignPayload
+): Promise<AdCampaign> {
+  return apiRequest<AdCampaign>({
+    method: 'PATCH',
+    url: `/adpulse/campaigns/${id}/status/`,
     data: payload,
   });
 }

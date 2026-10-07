@@ -23,6 +23,7 @@ import {
   createAdCampaign,
   getAdCampaigns,
   getAdPulseAnalytics,
+  updateAdCampaign,
   type AdCampaign,
   type AdPulseAnalytics,
 } from '@/services/dashboardApi';
@@ -40,6 +41,9 @@ export default function AdPulseStudioScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [actingOn, setActingOn] = useState<number | null>(null);
 
   // ── Create form state ───────────────────────────────────────────
   const [formName, setFormName] = useState('');
@@ -47,6 +51,7 @@ export default function AdPulseStudioScreen() {
   const [formKeywords, setFormKeywords] = useState('');
   const [formDailyBudget, setFormDailyBudget] = useState('');
   const [formBidPerClick, setFormBidPerClick] = useState('50');
+  const [formEndDate, setFormEndDate] = useState(''); // YYYY-MM-DD, optional
 
   // ── Product picker + ad wallet ──────────────────────────────────
   const [products, setProducts] = useState<any[]>([]);
@@ -86,7 +91,7 @@ export default function AdPulseStudioScreen() {
   // the field is empty or still holds our own autofill value.
   const applyProduct = useCallback((p: { id: number; name: string } | null) => {
     setSelectedProduct(p);
-    if (!p) return;
+    if (!p || editingId) return;
     setFormName((prev) => {
       if (!prev || prev === autoFill.current.name) {
         const v = `Boost — ${p.name}`;
@@ -103,7 +108,7 @@ export default function AdPulseStudioScreen() {
       }
       return prev;
     });
-  }, []);
+  }, [editingId]);
 
   // Deep link: /adpulse?product=<id> from a "Boost" button — select the
   // product, auto-fill everything, and open the create modal once.
@@ -116,6 +121,43 @@ export default function AdPulseStudioScreen() {
       setShowCreateModal(true);
     }
   }, [params.product, products, applyProduct]);
+
+  const resetForm = useCallback(() => {
+    setFormName('');
+    setSelectedProduct(null);
+    autoFill.current = { name: '', keywords: '' };
+    setFormKeywords('');
+    setFormDailyBudget('');
+    setFormBidPerClick('50');
+    setFormEndDate('');
+    setEditingId(null);
+  }, []);
+
+  // Open the modal pre-filled for editing an existing campaign.
+  const openEdit = useCallback((c: AdCampaign) => {
+    setEditingId(c.id);
+    setFormName(c.name || '');
+    setSelectedProduct(c.target_product ? { id: c.target_product, name: c.target_product_name } : null);
+    setFormKeywords(c.target_keywords || '');
+    setFormDailyBudget(String(c.daily_budget || ''));
+    setFormBidPerClick(String(c.bid_per_click || '50'));
+    setFormEndDate(c.ends_at ? c.ends_at.slice(0, 10) : '');
+    setShowCreateModal(true);
+  }, []);
+
+  // Pause / resume a campaign from its card.
+  const toggleCampaign = useCallback(async (c: AdCampaign, to: 'PAUSED' | 'ACTIVE') => {
+    setActingOn(c.id);
+    try {
+      const updated = await updateAdCampaign(c.id, { status: to });
+      setCampaigns((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+      load();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || 'Could not update the campaign.');
+    } finally {
+      setActingOn(null);
+    }
+  }, [load]);
 
   const handleCreateCampaign = async () => {
     const name = formName.trim();
@@ -130,6 +172,13 @@ export default function AdPulseStudioScreen() {
       return;
     }
 
+    // Optional end date (YYYY-MM-DD) — validate before submitting.
+    const endDate = formEndDate.trim();
+    if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      Alert.alert('Validation', 'End date must be YYYY-MM-DD (e.g. 2026-08-01).');
+      return;
+    }
+
     setCreating(true);
     try {
       const payload: any = {
@@ -137,23 +186,28 @@ export default function AdPulseStudioScreen() {
         daily_budget: dailyBudget,
         bid_per_click: parseFloat(formBidPerClick) || 50,
       };
-      if (selectedProduct) {
+      if (selectedProduct && !editingId) {
         payload.target_product_id = selectedProduct.id;
       }
       if (formKeywords.trim()) {
         payload.target_keywords = formKeywords.trim();
       }
+      // End date → end-of-day ISO; blank clears it in edit mode.
+      if (endDate) {
+        payload.ends_at = new Date(`${endDate}T23:59:59`).toISOString();
+      } else if (editingId) {
+        payload.ends_at = null;
+      }
 
-      const newCampaign = await createAdCampaign(payload);
-      setCampaigns((prev) => [newCampaign, ...prev]);
+      const saved = editingId
+        ? await updateAdCampaign(editingId, payload)
+        : await createAdCampaign(payload);
+      setCampaigns((prev) =>
+        editingId ? prev.map((x) => (x.id === saved.id ? saved : x)) : [saved, ...prev]
+      );
       setShowCreateModal(false);
-      setFormName('');
-      setSelectedProduct(null);
-      autoFill.current = { name: '', keywords: '' };
-      setFormKeywords('');
-      setFormDailyBudget('');
-      setFormBidPerClick('50');
-      Alert.alert('Success', `Campaign "${newCampaign.name}" launched!`);
+      resetForm();
+      Alert.alert('Success', editingId ? `Campaign "${saved.name}" updated.` : `Campaign "${saved.name}" launched!`);
       load();
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
@@ -167,7 +221,7 @@ export default function AdPulseStudioScreen() {
           ]
         );
       } else {
-        Alert.alert('Error', detail || e?.message || 'Failed to create campaign');
+        Alert.alert('Error', detail || e?.message || 'Failed to save campaign');
       }
     } finally {
       setCreating(false);
@@ -203,6 +257,8 @@ export default function AdPulseStudioScreen() {
       ? Math.min(100, Math.round((Number(item.total_spend) / Number(item.daily_budget)) * 100))
       : 0;
 
+    const serving = item.status === 'ACTIVE' ? item.is_serving : null;
+
     return (
       <View style={styles.campaignCard}>
         <View style={styles.campaignHeader}>
@@ -214,6 +270,18 @@ export default function AdPulseStudioScreen() {
         <Text style={styles.campaignProduct}>
           {item.target_product_name || (item.target_product ? `Product #${item.target_product}` : 'Store-wide')}
         </Text>
+        {serving !== null && (
+          <View style={styles.servingRow}>
+            <MaterialCommunityIcons
+              name={serving ? 'check-circle' : 'alert-circle'}
+              size={12}
+              color={serving ? '#00b894' : '#e17055'}
+            />
+            <Text style={[styles.servingText, { color: serving ? '#00b894' : '#e17055' }]}>
+              {serving ? 'Serving now' : 'Not serving — check wallet balance'}
+            </Text>
+          </View>
+        )}
         <View style={styles.campaignMetrics}>
           <View style={styles.metricItem}>
             <Text style={styles.metricItemValue}>{Number(item.total_clicks).toLocaleString()}</Text>
@@ -237,7 +305,38 @@ export default function AdPulseStudioScreen() {
         </View>
         <Text style={styles.budgetText}>
           Budget: UGX {Number(item.daily_budget).toLocaleString()}/day · {budgetUsed}% used
+          {item.ends_at ? ` · ends ${item.ends_at.slice(0, 10)}` : ''}
         </Text>
+        {item.status !== 'COMPLETED' && (
+          <View style={styles.cardActions}>
+            <Pressable
+              style={styles.cardActionBtn}
+              onPress={() => openEdit(item)}
+              disabled={actingOn === item.id}
+            >
+              <MaterialCommunityIcons name="pencil" size={14} color={Brand.primary} />
+              <Text style={[styles.cardActionText, { color: Brand.primary }]}>Edit</Text>
+            </Pressable>
+            <Pressable
+              style={styles.cardActionBtn}
+              onPress={() => toggleCampaign(item, item.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE')}
+              disabled={actingOn === item.id}
+            >
+              {actingOn === item.id ? (
+                <ActivityIndicator size={12} color={Brand.primary} />
+              ) : (
+                <MaterialCommunityIcons
+                  name={item.status === 'ACTIVE' ? 'pause' : 'play'}
+                  size={14}
+                  color={item.status === 'ACTIVE' ? '#F59E0B' : '#00b894'}
+                />
+              )}
+              <Text style={[styles.cardActionText, { color: item.status === 'ACTIVE' ? '#F59E0B' : '#00b894' }]}>
+                {item.status === 'ACTIVE' ? 'Pause' : 'Resume'}
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   };
@@ -278,14 +377,26 @@ export default function AdPulseStudioScreen() {
         {/* ── Campaigns list ──────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Campaigns ({campaigns.length})</Text>
-          <Pressable style={styles.createBtn} onPress={() => setShowCreateModal(true)}>
+          <Pressable style={styles.createBtn} onPress={() => { resetForm(); setShowCreateModal(true); }}>
             <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
             <Text style={styles.createBtnText}>Create</Text>
           </Pressable>
         </View>
 
+        <View style={styles.filterChips}>
+          {[['', 'All'], ['ACTIVE', 'Active'], ['PAUSED', 'Paused'], ['COMPLETED', 'Completed']].map(([val, label]) => (
+            <Pressable
+              key={val}
+              style={[styles.filterChip, statusFilter === val && styles.filterChipActive]}
+              onPress={() => setStatusFilter(val)}
+            >
+              <Text style={[styles.filterChipText, statusFilter === val && styles.filterChipTextActive]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
         <FlatList
-          data={campaigns}
+          data={campaigns.filter((c) => !statusFilter || c.status === statusFilter)}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderCampaign}
           scrollEnabled={false}
@@ -299,13 +410,13 @@ export default function AdPulseStudioScreen() {
         />
       </ScrollView>
 
-      {/* ── Create Campaign Modal ────────────────────────────────── */}
-      <Modal visible={showCreateModal} animationType="slide" transparent onRequestClose={() => setShowCreateModal(false)}>
+      {/* ── Create / Edit Campaign Modal ─────────────────────────── */}
+      <Modal visible={showCreateModal} animationType="slide" transparent onRequestClose={() => { setShowCreateModal(false); resetForm(); }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create New Campaign</Text>
-              <Pressable onPress={() => setShowCreateModal(false)} hitSlop={12}>
+              <Text style={styles.modalTitle}>{editingId ? 'Edit Campaign' : 'Create New Campaign'}</Text>
+              <Pressable onPress={() => { setShowCreateModal(false); resetForm(); }} hitSlop={12}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
               </Pressable>
             </View>
@@ -323,7 +434,11 @@ export default function AdPulseStudioScreen() {
 
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Product to Boost</Text>
-              <Pressable style={styles.pickerField} onPress={() => setShowProductPicker(true)}>
+              <Pressable
+                style={[styles.pickerField, editingId !== null && { opacity: 0.55 }]}
+                onPress={() => !editingId && setShowProductPicker(true)}
+                disabled={editingId !== null}
+              >
                 <MaterialCommunityIcons name="package-variant" size={16} color={colors.textTertiary} />
                 <Text
                   style={[styles.pickerText, !selectedProduct && { color: colors.textTertiary }]}
@@ -333,6 +448,9 @@ export default function AdPulseStudioScreen() {
                 </Text>
                 <MaterialCommunityIcons name="chevron-down" size={16} color={colors.textTertiary} />
               </Pressable>
+              {editingId !== null && (
+                <Text style={styles.formHint}>Target product can't be changed on an existing campaign.</Text>
+              )}
             </View>
 
             <View style={styles.formGroup}>
@@ -371,6 +489,35 @@ export default function AdPulseStudioScreen() {
               </View>
             </View>
 
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>End Date (optional)</Text>
+              <TextInput
+                style={styles.formInput}
+                value={formEndDate}
+                onChangeText={setFormEndDate}
+                placeholder="YYYY-MM-DD — leave blank to run until paused"
+                placeholderTextColor={colors.textTertiary}
+                autoCapitalize="none"
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+
+            {/* Estimated reach: clicks/day at this bid + wallet runway */}
+            {(() => {
+              const budget = parseFloat(formDailyBudget) || 0;
+              const bid = parseFloat(formBidPerClick) || 0;
+              if (budget <= 0 || bid <= 0) return null;
+              const clicks = Math.floor(budget / bid);
+              const runway = walletBalance !== null && budget > 0
+                ? ` · wallet covers ~${Math.floor(walletBalance / budget)} day(s)`
+                : '';
+              return (
+                <Text style={styles.reachHint}>
+                  ≈ {clicks.toLocaleString()} click(s)/day at this bid{runway}
+                </Text>
+              );
+            })()}
+
             {walletBalance !== null && (
               <View style={styles.walletRow}>
                 <MaterialCommunityIcons name="wallet-outline" size={15} color={colors.textSecondary} />
@@ -392,8 +539,8 @@ export default function AdPulseStudioScreen() {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <MaterialCommunityIcons name="rocket-launch" size={18} color="#FFFFFF" />
-                  <Text style={styles.launchBtnText}>Launch Campaign</Text>
+                  <MaterialCommunityIcons name={editingId ? 'content-save' : 'rocket-launch'} size={18} color="#FFFFFF" />
+                  <Text style={styles.launchBtnText}>{editingId ? 'Save Changes' : 'Launch Campaign'}</Text>
                 </>
               )}
             </Pressable>
@@ -523,6 +670,33 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   budgetFill: { height: '100%', borderRadius: 3 },
   budgetText: { fontSize: 11, color: c.textSecondary, marginTop: 4 },
+
+  servingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: -4, marginBottom: 8 },
+  servingText: { fontSize: 11, fontWeight: '700' },
+
+  cardActions: {
+    flexDirection: 'row', gap: 8, marginTop: 10,
+    borderTopWidth: 1, borderTopColor: c.borderLight, paddingTop: 10,
+  },
+  cardActionBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderWidth: 1, borderColor: c.border, borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 7,
+  },
+  cardActionText: { fontSize: 12, fontWeight: '700' },
+
+  // ── Status filter chips ────────────────────────────────────────
+  filterChips: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 10 },
+  filterChip: {
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.border,
+  },
+  filterChipActive: { backgroundColor: Brand.primary + '18', borderColor: Brand.primary },
+  filterChipText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  filterChipTextActive: { color: Brand.primary },
+
+  formHint: { fontSize: 11, color: c.textTertiary, marginTop: 4 },
+  reachHint: { fontSize: 12, color: c.textSecondary, marginBottom: 8, marginTop: -6 },
 
   // ── Empty state ────────────────────────────────────────────────
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
