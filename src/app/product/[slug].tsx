@@ -9,7 +9,6 @@ import {
     Animated,
     FlatList,
     Image,
-    Linking,
     Modal,
     Pressable,
     ScrollView,
@@ -60,7 +59,6 @@ export default function ProductDetailScreen() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [showCallModal, setShowCallModal] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
   const [inCartItem, setInCartItem] = useState<CartItem | null>(null);
@@ -445,20 +443,6 @@ export default function ProductDetailScreen() {
   const handleSeeVideo = useCallback(() => {
     router.push('/videos' as any);
   }, [router]);
-
-  const handleConfirmCall = useCallback(async () => {
-    const phone = product?.store?.phone;
-    if (!phone) return;
-    const cleaned = phone.replace(/\s+/g, '');
-    const url = `tel:${cleaned}`;
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      }
-    } catch { }
-    setShowCallModal(false);
-  }, [product]);
 
   const handleSubmitReview = useCallback(async () => {
     if (!product) return;
@@ -1703,103 +1687,6 @@ export default function ProductDetailScreen() {
         </View>
       </Modal>
 
-      {/* ── Call Now themed modal ─────────────────────────────────── */}
-      <Modal visible={showCallModal} transparent animationType="fade" onRequestClose={() => setShowCallModal(false)}>
-        <Pressable style={styles.callOverlay} onPress={() => setShowCallModal(false)}>
-          <Pressable style={styles.callCard} onPress={(e) => e.stopPropagation()}>
-            {/* Gradient header with avatar */}
-            <LinearGradient
-              colors={[Brand.primaryDark, Brand.primary, Brand.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.callHeader}
-            >
-              <Pressable
-                style={styles.callCloseBtn}
-                onPress={() => setShowCallModal(false)}
-                hitSlop={8}
-              >
-                <MaterialCommunityIcons name="close" size={22} color="#FFFFFF" />
-              </Pressable>
-              <View style={styles.callAvatarWrap}>
-                <View style={styles.callAvatar}>
-                  <MaterialCommunityIcons name="phone" size={28} color="#FFFFFF" />
-                </View>
-                {/* Pulsing ring effect */}
-                <View style={styles.callAvatarRing} />
-              </View>
-            </LinearGradient>
-
-            {/* Body */}
-            <View style={styles.callBody}>
-              <Text style={styles.callTitle}>Call the Seller</Text>
-              {product?.store ? (
-                <Text style={styles.callStoreName}>{product.store.name}</Text>
-              ) : (
-                <Text style={styles.callStoreName}>Diilzo Marketplace</Text>
-              )}
-
-              {product?.store?.phone ? (
-                <>
-                  <View style={styles.callPhoneBox}>
-                    <MaterialCommunityIcons name="phone-outline" size={18} color={Brand.primary} />
-                    <Text style={styles.callPhoneText}>{product.store.phone}</Text>
-                  </View>
-                  <Text style={styles.callHint}>
-                    You're about to call this seller directly. Standard call rates may apply.
-                  </Text>
-
-                  {/* Action buttons */}
-                  <View style={styles.callBtnRow}>
-                    <Pressable
-                      style={styles.callCancelBtn}
-                      onPress={() => setShowCallModal(false)}
-                    >
-                      <Text style={styles.callCancelText}>Cancel</Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.callConfirmBtn}
-                      onPress={handleConfirmCall}
-                    >
-                      <MaterialCommunityIcons name="phone-in-talk" size={18} color="#FFFFFF" />
-                      <Text style={styles.callConfirmText}>Call Now</Text>
-                    </Pressable>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={styles.callNoPhoneBox}>
-                    <MaterialCommunityIcons name="phone-off" size={28} color={colors.textTertiary} />
-                    <Text style={styles.callNoPhoneText}>
-                      This seller hasn't provided a phone number.
-                    </Text>
-                  </View>
-                  <Pressable
-                    style={styles.callOkBtn}
-                    onPress={() => setShowCallModal(false)}
-                  >
-                    <Text style={styles.callOkText}>OK</Text>
-                  </Pressable>
-                </>
-              )}
-
-              {/* Chat alternative */}
-              {product?.store?.slug && (
-                <Pressable
-                  style={styles.callChatAlt}
-                  onPress={() => {
-                    setShowCallModal(false);
-                    handleChat();
-                  }}
-                >
-                  <MaterialCommunityIcons name="chat-outline" size={16} color={Brand.primary} />
-                  <Text style={styles.callChatAltText}>Or chat with seller instead</Text>
-                </Pressable>
-              )}
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }

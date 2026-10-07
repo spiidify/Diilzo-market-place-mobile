@@ -2,6 +2,7 @@
   "expo": {
     "name": "diilzo-mobile",
     "slug": "diilzo-mobile",
+    "description": "Diilzo — Local Stores. Global Markets. Shop trusted local sellers near you or source from manufacturers, wholesalers and suppliers worldwide.",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",

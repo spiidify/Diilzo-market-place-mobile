@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -90,6 +91,11 @@ export default function SellerCouponsScreen() {
     ]);
   };
 
+  const handleCopy = async (item: SellerCoupon) => {
+    await Clipboard.setStringAsync(item.code);
+    Alert.alert('Copied', `Coupon code "${item.code}" copied — share it with your customers.`);
+  };
+
   const renderItem = ({ item }: { item: SellerCoupon }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -115,10 +121,16 @@ export default function SellerCouponsScreen() {
           </View>
         )}
       </View>
-      <Pressable style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]} onPress={() => handleDelete(item)}>
-        <MaterialCommunityIcons name="trash-can-outline" size={16} color={Brand.danger} />
-        <Text style={styles.deleteText}>Delete</Text>
-      </Pressable>
+      <View style={styles.cardActions}>
+        <Pressable style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.7 }]} onPress={() => handleCopy(item)}>
+          <MaterialCommunityIcons name="content-copy" size={16} color={Brand.primary} />
+          <Text style={styles.copyText}>Copy</Text>
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]} onPress={() => handleDelete(item)}>
+          <MaterialCommunityIcons name="trash-can-outline" size={16} color={Brand.danger} />
+          <Text style={styles.deleteText}>Delete</Text>
+        </Pressable>
+      </View>
     </View>
   );
 
@@ -218,7 +230,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   metricCol: { flex: 1 },
   metricValue: { fontSize: 14, fontWeight: '700', color: c.text },
   metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
-  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(220,38,38,0.08)' },
+  cardActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  copyBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(50,199,0,0.08)' },
+  copyText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
+  deleteBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(220,38,38,0.08)' },
   deleteText: { fontSize: 13, fontWeight: '600', color: Brand.danger },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
   emptyText: { fontSize: 16, fontWeight: '700', color: c.textSecondary },

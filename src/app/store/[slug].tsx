@@ -8,6 +8,7 @@ import {
     Image,
     Pressable,
     RefreshControl,
+    Share,
     StyleSheet,
     Text,
     TextInput,
@@ -19,6 +20,7 @@ import { Brand } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { BASE_URL } from '@/services/api';
 import { fetchStoreBySlug, fetchStoreProducts, followStore, unfollowStore } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import type { PaginatedResponse, Product, StoreDetail } from '@/types';
@@ -134,6 +136,18 @@ export default function StoreDetailScreen() {
     }
   }, [store, isAuthenticated, router]);
 
+  const handleShare = useCallback(async () => {
+    if (!store?.slug) return;
+    try {
+      const siteUrl = BASE_URL.replace(/\/api\/v1\/?$/, '');
+      await Share.share({
+        message: `${store.name} on Diilzo — shop trusted local stores: ${siteUrl}/sellers/stores/${store.slug}/`,
+      });
+    } catch (e: any) {
+      console.error('Share error:', e?.message);
+    }
+  }, [store]);
+
   const onRefresh = useCallback(() => load(true), [load]);
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || refreshing) return;
@@ -208,6 +222,7 @@ export default function StoreDetailScreen() {
       <GradientHeader
         title={isSupplier ? 'Supplier' : 'Store'}
         rightIcon="share-variant-outline"
+        onRightPress={handleShare}
       />
 
       <FlatList
@@ -346,29 +361,15 @@ export default function StoreDetailScreen() {
                     </View>
                   </View>
 
-                  {store.phone ? (
-                    <View style={styles.infoItem}>
-                      <View style={styles.infoIconWrap}>
-                        <MaterialCommunityIcons name="phone" size={18} color={Brand.primary} />
-                      </View>
-                      <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Phone</Text>
-                        <Text style={styles.infoValue} numberOfLines={1}>{store.phone}</Text>
-                      </View>
+                  <View style={styles.infoItem}>
+                    <View style={styles.infoIconWrap}>
+                      <MaterialCommunityIcons name="message-text-outline" size={18} color={Brand.primary} />
                     </View>
-                  ) : null}
-
-                  {store.email ? (
-                    <View style={styles.infoItem}>
-                      <View style={styles.infoIconWrap}>
-                        <MaterialCommunityIcons name="email" size={18} color={Brand.primary} />
-                      </View>
-                      <View style={styles.infoContent}>
-                        <Text style={styles.infoLabel}>Email</Text>
-                        <Text style={styles.infoValue} numberOfLines={1}>{store.email}</Text>
-                      </View>
+                    <View style={styles.infoContent}>
+                      <Text style={styles.infoLabel}>Contact</Text>
+                      <Text style={styles.infoValue} numberOfLines={2}>Message via Diilzo — contact details stay private for your safety.</Text>
                     </View>
-                  ) : null}
+                  </View>
 
                   <View style={styles.infoItem}>
                     <View style={styles.infoIconWrap}>

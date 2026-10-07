@@ -242,8 +242,11 @@ export default function BuyerDashboardScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.referralTitle}>Invite Friends, Earn Rewards</Text>
               <Text style={styles.referralSub}>
-                Share code <Text style={styles.referralCode}>{referral.code}</Text>
-                {referral.referred_count > 0 ? ` — ${referral.referred_count} joined` : ''}
+                Earn UGX 5,000 store credit when a friend completes their first order.
+              </Text>
+              <Text style={styles.referralSub}>
+                Your code: <Text style={styles.referralCode}>{referral.code}</Text>
+                {referral.referred_count > 0 ? ` · ${referral.referred_count} joined` : ''}
               </Text>
             </View>
             <Pressable onPress={copyReferral} hitSlop={8} style={styles.referralBtn}>

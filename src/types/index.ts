@@ -34,7 +34,6 @@ export interface Store {
   country: string;
   country_code?: string;
   is_wholesaler: boolean;
-  phone?: string;
   tagline?: string;
   is_featured?: boolean;
   product_count?: number;
@@ -56,8 +55,6 @@ export interface Store {
 export interface StoreDetail extends Store {
   tagline: string;
   description: string;
-  phone: string;
-  email: string;
   is_featured: boolean;
   status: string;
   product_count: number;

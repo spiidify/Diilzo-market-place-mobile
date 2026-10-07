@@ -40,6 +40,11 @@ const TYPE_CONFIG: Record<string, {
   dispute: { icon: 'alert-circle-outline', color: '#EF4444', label: 'Dispute' },
   payout: { icon: 'wallet-outline', color: '#10B981', label: 'Payout' },
   rfq: { icon: 'file-document-outline', color: '#F59E0B', label: 'Quote' },
+  new_product: { icon: 'package-variant-closed', color: '#10B981', label: 'New Product' },
+  price_drop: { icon: 'tag-outline', color: '#F59E0B', label: 'Price Drop' },
+  restock: { icon: 'box', color: '#06B6D4', label: 'Restock' },
+  wallet: { icon: 'wallet-outline', color: '#10B981', label: 'Wallet' },
+  loyalty: { icon: 'medal-outline', color: '#8B5CF6', label: 'Loyalty' },
   system: { icon: 'information-outline', color: '#64748B', label: 'Info' },
   default: { icon: 'bell-outline', color: Brand.primary, label: 'Update' },
 };
@@ -59,7 +64,7 @@ const FILTERS = [
 type FilterKey = typeof FILTERS[number]['key'];
 
 const ORDER_TYPES = ['order', 'payment', 'shipping', 'dispute', 'payout', 'rfq', 'review'];
-const PROMO_TYPES = ['promo', 'system'];
+const PROMO_TYPES = ['promo', 'system', 'new_product', 'price_drop', 'restock'];
 const MESSAGE_TYPES = ['message', 'chat'];
 
 function matchesFilter(n: AppNotification, f: FilterKey): boolean {
