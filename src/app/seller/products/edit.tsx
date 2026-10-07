@@ -62,6 +62,14 @@ export default function EditProductScreen() {
   const [weight, setWeight] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('Uganda');
   const [isActive, setIsActive] = useState(true);
+  const [visibility, setVisibility] = useState<{
+    score?: number;
+    featured_source?: string | null;
+    is_best_seller?: boolean;
+    is_top_pick?: boolean;
+    is_top_rated?: boolean;
+    sales_count?: number;
+  } | null>(null);
 
   // Images
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
@@ -127,6 +135,14 @@ export default function EditProductScreen() {
       setWeight(product.weight || '');
       setCountryOfOrigin(product.country_of_origin || 'Uganda');
       setIsActive(product.is_active);
+      setVisibility({
+        score: typeof product.visibility_score === 'number' ? product.visibility_score : undefined,
+        featured_source: product.featured_source ?? null,
+        is_best_seller: !!product.is_best_seller,
+        is_top_pick: !!product.is_top_pick,
+        is_top_rated: !!product.is_top_rated,
+        sales_count: typeof product.sales_count === 'number' ? product.sales_count : undefined,
+      });
       setExistingVideoUrl(product.video_file_url || null);
       const imgs = ((product.images || []) as Array<{ id: number; image_url?: string; is_primary?: boolean }>)
         .filter((img) => img.image_url)
@@ -425,7 +441,13 @@ export default function EditProductScreen() {
                   onChangeText={setName}
                   placeholder="e.g. Organic Avocado"
                   placeholderTextColor={colors.textTertiary}
+                  maxLength={255}
                 />
+                <Text style={[styles.charCount, name.length >= 255 && { color: Brand.danger }]}>
+                  {name.trim().length < 20
+                    ? `Tip: include brand, model & key spec · ${name.length}/255`
+                    : `Great title · ${name.length}/255`}
+                </Text>
 
                 <Text style={styles.label}>Short Description</Text>
                 <TextInput
@@ -717,6 +739,40 @@ export default function EditProductScreen() {
                     thumbColor="#FFFFFF"
                   />
                 </View>
+
+                {visibility && typeof visibility.score === 'number' && (
+                  <View style={styles.vizWrap}>
+                    <View style={styles.vizScoreHead}>
+                      <Text style={styles.vizScoreLabel}>Visibility Score</Text>
+                      <Text style={styles.vizScoreValue}>{visibility.score}/100</Text>
+                    </View>
+                    <View style={styles.vizScoreTrack}>
+                      <View style={[styles.vizScoreFill, { width: `${Math.min(100, visibility.score)}%` }]} />
+                    </View>
+                    {(visibility.is_best_seller || visibility.is_top_pick || visibility.is_top_rated) && (
+                      <View style={styles.vizBadges}>
+                        {visibility.is_best_seller && (
+                          <View style={[styles.vizBadge, styles.vizBadgeBest]}>
+                            <MaterialCommunityIcons name="trophy" size={12} color="#B45309" />
+                            <Text style={styles.vizBadgeBestText}>Best Seller</Text>
+                          </View>
+                        )}
+                        {visibility.is_top_pick && (
+                          <View style={[styles.vizBadge, styles.vizBadgeChoice]}>
+                            <MaterialCommunityIcons name="check-decagram" size={12} color={Brand.success} />
+                            <Text style={styles.vizBadgeChoiceText}>Diilzo's Choice</Text>
+                          </View>
+                        )}
+                        {visibility.is_top_rated && (
+                          <View style={[styles.vizBadge, styles.vizBadgeRated]}>
+                            <MaterialCommunityIcons name="medal" size={12} color="#1D4ED8" />
+                            <Text style={styles.vizBadgeRatedText}>Top Rated</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
               </SectionCard>
 
               {error && (
@@ -1076,6 +1132,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   addBulletBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, marginBottom: 12 },
   addBulletText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   hintText: { fontSize: 11, color: c.textTertiary, marginTop: 4, marginBottom: 4 },
+  charCount: { fontSize: 11, color: c.textTertiary, textAlign: 'right', marginTop: 2, marginBottom: 8 },
 
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.half },
   halfCol: { flex: 1, gap: Spacing.one },
@@ -1136,6 +1193,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   switchInfo: { flex: 1, gap: 2 },
   switchLabel: { fontSize: 14, fontWeight: '600', color: c.text },
   switchSub: { fontSize: 12, color: c.textTertiary },
+
+  // ── Visibility score + earned badges ───────────────────────────
+  vizWrap: { marginTop: 14, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.borderLight },
+  vizScoreHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  vizScoreLabel: { fontSize: 13, fontWeight: '700', color: c.text },
+  vizScoreValue: { fontSize: 13, fontWeight: '800', color: Brand.primary },
+  vizScoreTrack: { height: 8, backgroundColor: c.border, borderRadius: 4, overflow: 'hidden' },
+  vizScoreFill: { height: '100%', backgroundColor: Brand.primary, borderRadius: 4 },
+  vizBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
+  vizBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  vizBadgeBest: { backgroundColor: 'rgba(180,83,9,0.12)' },
+  vizBadgeBestText: { fontSize: 11, color: '#B45309', fontWeight: '700' },
+  vizBadgeChoice: { backgroundColor: 'rgba(6,125,98,0.1)' },
+  vizBadgeChoiceText: { fontSize: 11, color: Brand.success, fontWeight: '600' },
+  vizBadgeRated: { backgroundColor: 'rgba(29,78,216,0.1)' },
+  vizBadgeRatedText: { fontSize: 11, color: '#1D4ED8', fontWeight: '600' },
 
   // ── Error ──────────────────────────────────────────────────────
   errorBox: {

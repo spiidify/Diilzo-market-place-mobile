@@ -418,7 +418,13 @@ export default function AddProductScreen() {
                   onChangeText={setName}
                   placeholder="e.g. Organic Avocado"
                   placeholderTextColor={colors.textTertiary}
+                  maxLength={255}
                 />
+                <Text style={[styles.charCount, name.length >= 255 && { color: Brand.danger }]}>
+                  {name.trim().length < 20
+                    ? `Tip: include brand, model & key spec · ${name.length}/255`
+                    : `Great title · ${name.length}/255`}
+                </Text>
 
                 <Text style={styles.label}>Short Description</Text>
                 <TextInput
