@@ -50,6 +50,8 @@ export default function EditProductScreen() {
   const [name, setName] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
+  const [bulletPoints, setBulletPoints] = useState<string[]>(['']);
+  const [searchKeywords, setSearchKeywords] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
   const [stock, setStock] = useState('');
@@ -110,6 +112,11 @@ export default function EditProductScreen() {
       setName(product.name || '');
       setShortDescription(product.short_description || '');
       setDescription(product.description || '');
+      const bullets = Array.isArray(product.bullet_points) && product.bullet_points.length
+        ? product.bullet_points
+        : [''];
+      setBulletPoints(bullets);
+      setSearchKeywords(product.search_keywords || '');
       setPrice(product.price || '');
       setSalePrice(product.sale_price || '');
       setStock(String(product.stock_quantity || 0));
@@ -235,6 +242,9 @@ export default function EditProductScreen() {
       formData.append('name', name.trim());
       formData.append('description', description.trim());
       formData.append('short_description', shortDescription.trim());
+      const bullets = bulletPoints.map((b) => b.trim()).filter(Boolean);
+      formData.append('bullet_points', JSON.stringify(bullets));
+      formData.append('search_keywords', searchKeywords.trim());
       formData.append('price', price.trim());
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
@@ -438,6 +448,41 @@ export default function EditProductScreen() {
                   numberOfLines={4}
                   textAlignVertical="top"
                 />
+
+                <Text style={styles.label}>Key Features (up to 5 bullets)</Text>
+                {bulletPoints.map((bp, idx) => (
+                  <View key={idx} style={styles.bulletRow}>
+                    <TextInput
+                      style={[styles.input, styles.bulletInput]}
+                      value={bp}
+                      onChangeText={(t) => setBulletPoints((prev) => prev.map((b, i) => (i === idx ? t : b)))}
+                      placeholder={`Bullet ${idx + 1} — e.g. 6.7-inch AMOLED display`}
+                      placeholderTextColor={colors.textTertiary}
+                      maxLength={200}
+                    />
+                    {bulletPoints.length > 1 && (
+                      <Pressable hitSlop={8} onPress={() => setBulletPoints((prev) => prev.filter((_, i) => i !== idx))}>
+                        <MaterialCommunityIcons name="close-circle" size={22} color={Brand.danger} />
+                      </Pressable>
+                    )}
+                  </View>
+                ))}
+                {bulletPoints.length < 5 && (
+                  <Pressable style={styles.addBulletBtn} onPress={() => setBulletPoints((prev) => [...prev, ''])}>
+                    <MaterialCommunityIcons name="plus-circle-outline" size={18} color={Brand.primary} />
+                    <Text style={styles.addBulletText}>Add bullet</Text>
+                  </Pressable>
+                )}
+
+                <Text style={styles.label}>Search Keywords (hidden)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={searchKeywords}
+                  onChangeText={setSearchKeywords}
+                  placeholder="e.g. samsung, galaxy, 5g phone, android"
+                  placeholderTextColor={colors.textTertiary}
+                />
+                <Text style={styles.hintText}>Comma-separated search terms, not shown to buyers.</Text>
               </SectionCard>
 
               {/* ── Pricing & Inventory ────────────────────────────── */}
@@ -1026,6 +1071,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surfaceAlt,
   },
   textArea: { minHeight: 90, textAlignVertical: 'top' },
+  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  bulletInput: { flex: 1 },
+  addBulletBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, marginBottom: 12 },
+  addBulletText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
+  hintText: { fontSize: 11, color: c.textTertiary, marginTop: 4, marginBottom: 4 },
 
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.half },
   halfCol: { flex: 1, gap: Spacing.one },

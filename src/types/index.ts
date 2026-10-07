@@ -158,6 +158,10 @@ export interface Product {
   slug: string;
   short_description: string;
   description: string;
+  /** Amazon-style "About this item" bullets. */
+  bullet_points?: string[];
+  /** Hidden comma-separated search keywords. */
+  search_keywords?: string;
   store: Store | null;
   category: Category | null;
   brand: Brand | null;

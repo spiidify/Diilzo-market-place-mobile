@@ -1023,6 +1023,17 @@ export default function ProductDetailScreen() {
           {/* ── Description (expandable) ───────────────────────────── */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Description</Text>
+            {!!product.bullet_points?.length && (
+              <View style={styles.aboutItem}>
+                <Text style={styles.aboutTitle}>About this item</Text>
+                {product.bullet_points.map((b, idx) => (
+                  <View key={idx} style={styles.featureRow}>
+                    <MaterialCommunityIcons name="circle-small" size={16} color={Brand.success} />
+                    <Text style={styles.featureText}>{b}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
             <Text style={styles.descText} numberOfLines={showFullDesc ? undefined : 6}>
               {product.description || product.short_description || 'Description coming soon.'}
             </Text>
@@ -1037,7 +1048,7 @@ export default function ProductDetailScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Key Features</Text>
             {[
-              product.short_description || product.name,
+              ...(product.bullet_points?.length ? product.bullet_points : [product.short_description || product.name]),
               `Sold by ${product.store?.name || 'Diilzo'}`,
               product.brand ? `Brand: ${product.brand.name}` : null,
               product.is_in_stock ? `${product.stock_quantity} in stock` : 'Out of stock',
@@ -2082,6 +2093,8 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
 
   // ── Description ─────────────────────────────────────────────────
   descText: { fontSize: 13, lineHeight: 20, color: c.textSecondary },
+  aboutItem: { paddingVertical: 10, marginBottom: 10 },
+  aboutTitle: { fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 8 },
 
   // ── Features ────────────────────────────────────────────────────
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
