@@ -187,6 +187,13 @@ export interface Product {
   is_on_sale: boolean;
   rating: string;
   review_count: number;
+  /** System-driven visibility signals (computed server-side). */
+  visibility_score?: number;
+  featured_source?: string | null;
+  is_top_rated?: boolean;
+  is_top_pick?: boolean;
+  sales_count?: number;
+  is_best_seller?: boolean;
   primary_image_url: string | null;
   images: ProductImage[];
   variants: ProductVariant[];

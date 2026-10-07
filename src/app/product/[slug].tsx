@@ -811,8 +811,14 @@ export default function ProductDetailScreen() {
               {product.category && (
                 <View style={styles.tag}><Text style={styles.tagText}>{product.category.name}</Text></View>
               )}
-              {product.is_featured && (
+              {product.is_best_seller && (
+                <View style={[styles.tag, styles.tagBestSeller]}><Text style={styles.tagBestSellerText}>Best Seller</Text></View>
+              )}
+              {(product.is_top_pick || product.is_featured) && (
                 <View style={[styles.tag, styles.tagChoice]}><Text style={styles.tagChoiceText}>✓ Choice</Text></View>
+              )}
+              {product.is_top_rated && (
+                <View style={[styles.tag, styles.tagTopRated]}><Text style={styles.tagTopRatedText}>Top Rated</Text></View>
               )}
             </View>
             </View>
@@ -2014,6 +2020,10 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   tagText: { fontSize: 11, color: c.textSecondary, fontWeight: '500' },
   tagChoice: { backgroundColor: 'rgba(6,125,98,0.1)' },
   tagChoiceText: { fontSize: 11, color: Brand.success, fontWeight: '600' },
+  tagBestSeller: { backgroundColor: 'rgba(180,83,9,0.12)' },
+  tagBestSellerText: { fontSize: 11, color: '#B45309', fontWeight: '700' },
+  tagTopRated: { backgroundColor: 'rgba(29,78,216,0.1)' },
+  tagTopRatedText: { fontSize: 11, color: '#1D4ED8', fontWeight: '600' },
 
   // ── Action chips (wishlist + chat) ──────────────────────────────
   actionsRow: {
