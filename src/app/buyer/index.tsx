@@ -322,19 +322,6 @@ export default function BuyerDashboardScreen() {
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/merchant-studio' as any)}
-            >
-              <View style={[styles.adminCtaIcon, { backgroundColor: '#06B6D4' }]}>
-                <MaterialCommunityIcons name="package-variant-closed" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.adminCtaInfo}>
-                <Text style={styles.adminCtaTitle}>Merchant Studio</Text>
-                <Text style={styles.adminCtaSub}>Inventory & order dispatch</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
               onPress={() => router.push('/adpulse' as any)}
             >
               <View style={[styles.adminCtaIcon, { backgroundColor: '#EC4899' }]}>

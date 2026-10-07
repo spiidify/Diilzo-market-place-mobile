@@ -146,7 +146,6 @@ export default function SellerDashboardScreen() {
       items: [
         { icon: 'bullhorn-outline', label: 'Ad Wallet', color: '#F59E0B', route: '/seller/ad-wallet', perm: 'can_view_finances' },
         { icon: 'credit-card-outline', label: 'Subscription', color: '#06B6D4', route: '/seller/subscription', perm: 'can_manage_store' },
-        { icon: 'store-cog', label: 'Merchant Studio', color: '#06B6D4', route: '/merchant-studio' },
         { icon: 'rocket-launch', label: 'AdPulse', color: '#EC4899', route: '/adpulse' },
       ],
     },

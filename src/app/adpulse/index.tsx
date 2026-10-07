@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
@@ -26,6 +27,7 @@ import {
 } from '@/services/dashboardApi';
 
 export default function AdPulseStudioScreen() {
+  const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
@@ -102,10 +104,14 @@ export default function AdPulseStudioScreen() {
       load();
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
-      if (e?.response?.data?.account_balance) {
+      if (e?.response?.data?.wallet_balance !== undefined) {
         Alert.alert(
-          'Insufficient Balance',
-          `Your account balance is ${e.response.data.account_balance} UGX but the daily budget is ${e.response.data.daily_budget} UGX.`
+          'Insufficient Ad Wallet Balance',
+          `Your ad wallet has ${e.response.data.wallet_balance} UGX but the daily budget is ${e.response.data.daily_budget} UGX. Top up your Ad Wallet to launch this campaign.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Top Up Wallet', onPress: () => router.push('/seller/ad-wallet' as any) },
+          ]
         );
       } else {
         Alert.alert('Error', detail || e?.message || 'Failed to create campaign');
