@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
@@ -25,6 +26,8 @@ import {
   type AdCampaign,
   type AdPulseAnalytics,
 } from '@/services/dashboardApi';
+import { getAdWallet } from '@/services/financial';
+import { getMyProducts } from '@/services/seller';
 
 export default function AdPulseStudioScreen() {
   const router = useRouter();
@@ -40,21 +43,35 @@ export default function AdPulseStudioScreen() {
 
   // ── Create form state ───────────────────────────────────────────
   const [formName, setFormName] = useState('');
-  const [formProductId, setFormProductId] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<{ id: number; name: string } | null>(null);
   const [formKeywords, setFormKeywords] = useState('');
   const [formDailyBudget, setFormDailyBudget] = useState('');
   const [formBidPerClick, setFormBidPerClick] = useState('50');
+
+  // ── Product picker + ad wallet ──────────────────────────────────
+  const [products, setProducts] = useState<any[]>([]);
+  const [showProductPicker, setShowProductPicker] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const params = useLocalSearchParams<{ product?: string }>();
+  const preselectDone = useRef(false);
+  // Tracks auto-filled values so we never overwrite seller edits.
+  const autoFill = useRef({ name: '', keywords: '' });
 
   const load = useCallback(async () => {
     try {
       setRefreshing(true);
       setError(null);
-      const [campData, anData] = await Promise.all([
+      const [campData, anData, prodData, walletData] = await Promise.all([
         getAdCampaigns().catch(() => [] as AdCampaign[]),
         getAdPulseAnalytics().catch(() => null),
+        getMyProducts({ page_size: 200 }).catch(() => [] as any[]),
+        getAdWallet().catch(() => null),
       ]);
       setCampaigns(campData);
       setAnalytics(anData);
+      setProducts(prodData);
+      const wb = walletData?.wallet_balance;
+      setWalletBalance(wb !== undefined && wb !== null ? parseFloat(String(wb)) : null);
     } catch (e: any) {
       setError(e?.response?.data?.detail || e?.message || 'Failed to load AdPulse data');
     } finally {
@@ -64,6 +81,41 @@ export default function AdPulseStudioScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Fill campaign name/keywords from the chosen product — only when
+  // the field is empty or still holds our own autofill value.
+  const applyProduct = useCallback((p: { id: number; name: string } | null) => {
+    setSelectedProduct(p);
+    if (!p) return;
+    setFormName((prev) => {
+      if (!prev || prev === autoFill.current.name) {
+        const v = `Boost — ${p.name}`;
+        autoFill.current.name = v;
+        return v;
+      }
+      return prev;
+    });
+    setFormKeywords((prev) => {
+      if (!prev || prev === autoFill.current.keywords) {
+        const v = (p.name || '').split(/\s+/).slice(0, 5).join(' ');
+        autoFill.current.keywords = v;
+        return v;
+      }
+      return prev;
+    });
+  }, []);
+
+  // Deep link: /adpulse?product=<id> from a "Boost" button — select the
+  // product, auto-fill everything, and open the create modal once.
+  useEffect(() => {
+    if (preselectDone.current || !params.product || products.length === 0) return;
+    const p = products.find((x) => String(x.id) === String(params.product));
+    if (p) {
+      preselectDone.current = true;
+      applyProduct({ id: p.id, name: p.name });
+      setShowCreateModal(true);
+    }
+  }, [params.product, products, applyProduct]);
 
   const handleCreateCampaign = async () => {
     const name = formName.trim();
@@ -85,8 +137,8 @@ export default function AdPulseStudioScreen() {
         daily_budget: dailyBudget,
         bid_per_click: parseFloat(formBidPerClick) || 50,
       };
-      if (formProductId.trim()) {
-        payload.target_product_id = parseInt(formProductId, 10);
+      if (selectedProduct) {
+        payload.target_product_id = selectedProduct.id;
       }
       if (formKeywords.trim()) {
         payload.target_keywords = formKeywords.trim();
@@ -96,7 +148,8 @@ export default function AdPulseStudioScreen() {
       setCampaigns((prev) => [newCampaign, ...prev]);
       setShowCreateModal(false);
       setFormName('');
-      setFormProductId('');
+      setSelectedProduct(null);
+      autoFill.current = { name: '', keywords: '' };
       setFormKeywords('');
       setFormDailyBudget('');
       setFormBidPerClick('50');
@@ -268,28 +321,29 @@ export default function AdPulseStudioScreen() {
               />
             </View>
 
-            <View style={styles.formRow}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Target Product ID</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={formProductId}
-                  onChangeText={setFormProductId}
-                  placeholder="optional"
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Keywords</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={formKeywords}
-                  onChangeText={setFormKeywords}
-                  placeholder="e.g. audio, tech"
-                  placeholderTextColor={colors.textTertiary}
-                />
-              </View>
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Product to Boost</Text>
+              <Pressable style={styles.pickerField} onPress={() => setShowProductPicker(true)}>
+                <MaterialCommunityIcons name="package-variant" size={16} color={colors.textTertiary} />
+                <Text
+                  style={[styles.pickerText, !selectedProduct && { color: colors.textTertiary }]}
+                  numberOfLines={1}
+                >
+                  {selectedProduct ? selectedProduct.name : 'Store-wide boost (all products)'}
+                </Text>
+                <MaterialCommunityIcons name="chevron-down" size={16} color={colors.textTertiary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Keywords</Text>
+              <TextInput
+                style={styles.formInput}
+                value={formKeywords}
+                onChangeText={setFormKeywords}
+                placeholder="e.g. audio, tech"
+                placeholderTextColor={colors.textTertiary}
+              />
             </View>
 
             <View style={styles.formRow}>
@@ -317,6 +371,18 @@ export default function AdPulseStudioScreen() {
               </View>
             </View>
 
+            {walletBalance !== null && (
+              <View style={styles.walletRow}>
+                <MaterialCommunityIcons name="wallet-outline" size={15} color={colors.textSecondary} />
+                <Text style={styles.walletText}>
+                  Ad Wallet: UGX {walletBalance.toLocaleString()}
+                </Text>
+                {(parseFloat(formDailyBudget) || 0) > walletBalance && (
+                  <Text style={styles.walletWarn}>Top up needed</Text>
+                )}
+              </View>
+            )}
+
             <Pressable
               style={({ pressed }) => [styles.launchBtn, (creating || pressed) && { opacity: 0.85 }]}
               onPress={handleCreateCampaign}
@@ -331,6 +397,60 @@ export default function AdPulseStudioScreen() {
                 </>
               )}
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Product Picker Modal ─────────────────────────────────── */}
+      <Modal visible={showProductPicker} animationType="slide" transparent onRequestClose={() => setShowProductPicker(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Choose a Product</Text>
+              <Pressable onPress={() => setShowProductPicker(false)} hitSlop={12}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.textTertiary} />
+              </Pressable>
+            </View>
+            <FlatList
+              data={products}
+              keyExtractor={(item) => String(item.id)}
+              ListHeaderComponent={
+                <Pressable
+                  style={styles.pickerItem}
+                  onPress={() => { applyProduct(null); setShowProductPicker(false); }}
+                >
+                  <View style={styles.pickerThumb}>
+                    <MaterialCommunityIcons name="storefront-outline" size={18} color={Brand.primary} />
+                  </View>
+                  <Text style={styles.pickerItemText} numberOfLines={1}>Store-wide boost (all products)</Text>
+                  {!selectedProduct && <MaterialCommunityIcons name="check" size={18} color={Brand.primary} />}
+                </Pressable>
+              }
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.pickerItem}
+                  onPress={() => { applyProduct({ id: item.id, name: item.name }); setShowProductPicker(false); }}
+                >
+                  {(item.primary_image_url || item.primary_image) ? (
+                    <Image source={{ uri: item.primary_image_url || item.primary_image }} style={styles.pickerThumbImg} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.pickerThumb}>
+                      <MaterialCommunityIcons name="package-variant" size={18} color={colors.textTertiary} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pickerItemText} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.pickerItemSub}>UGX {Number(item.final_price || item.price).toLocaleString()}</Text>
+                  </View>
+                  {selectedProduct?.id === item.id && <MaterialCommunityIcons name="check" size={18} color={Brand.primary} />}
+                </Pressable>
+              )}
+              ListEmptyComponent={
+                <View style={styles.pickerEmpty}>
+                  <Text style={styles.pickerItemSub}>No products yet — boost store-wide instead.</Text>
+                </View>
+              }
+            />
           </View>
         </View>
       </Modal>
@@ -432,6 +552,35 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1.5, borderColor: c.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: c.text,
   },
+
+  // ── Product picker ───────────────────────────────────────────
+  pickerField: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderWidth: 1.5, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  pickerText: { flex: 1, fontSize: 14, color: c.text, fontWeight: '600' },
+  pickerItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: c.borderLight,
+  },
+  pickerItemText: { flex: 1, fontSize: 14, fontWeight: '600', color: c.text },
+  pickerItemSub: { fontSize: 12, color: c.textTertiary, marginTop: 1 },
+  pickerThumb: {
+    width: 36, height: 36, borderRadius: 8, backgroundColor: c.surfaceAlt,
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+  },
+  pickerThumbImg: { width: 36, height: 36, borderRadius: 8 },
+  pickerEmpty: { alignItems: 'center', paddingVertical: 32 },
+
+  // ── Wallet balance row ───────────────────────────────────────
+  walletRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: c.surfaceAlt, borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 8, marginBottom: 4,
+  },
+  walletText: { flex: 1, fontSize: 12, fontWeight: '600', color: c.textSecondary },
+  walletWarn: { fontSize: 11, fontWeight: '800', color: Brand.danger },
 
   launchBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

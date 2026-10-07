@@ -285,6 +285,13 @@ export default function SellerProductsScreen() {
           </Pressable>
           <Pressable
             style={styles.iconBtn}
+            onPress={() => router.push(`/adpulse?product=${item.id}` as any)}
+            hitSlop={4}
+          >
+            <MaterialCommunityIcons name="rocket-launch-outline" size={17} color="#EC4899" />
+          </Pressable>
+          <Pressable
+            style={styles.iconBtn}
             onPress={() => handleDelete(item)}
             disabled={deleting === item.id}
             hitSlop={4}
