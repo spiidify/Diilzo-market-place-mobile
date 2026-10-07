@@ -15,7 +15,7 @@ export interface ProductListParams {
   in_stock?: 'true' | 'false';
   flash_sale?: 'true' | 'false';
   followed?: 'true' | 'false';
-  ordering?: string;       // price, -price, -created_at, rating
+  ordering?: string;       // price_low, price_high, rating, newest, best_selling
   min_price?: string;
   max_price?: string;
   /** Cloudinary image optimization dimensions (physical pixels) */

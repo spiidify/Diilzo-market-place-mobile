@@ -69,6 +69,14 @@ import type {
   Store,
 } from '@/types';
 
+// Compact counts for card meta: 1234 -> '1.2K', 2500000 -> '2.5M'
+function compactNum(n: number): string {
+  if (!n || n <= 0) return '';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+}
+
 // ── Memoized product card for FlatList performance ──────────────────
 const ProductCard = memo(function ProductCard({
   item,
@@ -141,6 +149,9 @@ const ProductCard = memo(function ProductCard({
         <View style={styles.ratingRow}>
           {renderStarsStatic(item.rating, styles)}
           <Text style={styles.reviewCount}>{item.review_count}</Text>
+          {(item.sales_count || 0) > 0 && (
+            <Text style={styles.soldText}>· {compactNum(item.sales_count!)} sold</Text>
+          )}
         </View>
         <View style={styles.priceRow}>
           <View style={styles.priceLeft}>
@@ -173,6 +184,15 @@ const ProductCard = memo(function ProductCard({
             )}
           </View>
         </View>
+        {(item.is_wholesale || (item.min_order_quantity || 1) > 1) && (
+          <View style={styles.metaRow}>
+            <View style={styles.moqBadge}>
+              <Text style={styles.moqBadgeText}>
+                {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
+              </Text>
+            </View>
+          </View>
+        )}
         {/* ── Action buttons: different for supplier vs local seller ── */}
         {isSupplier ? (
           <View style={styles.cardActions}>
@@ -666,6 +686,9 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
             {item.is_on_sale && (
               <Text style={styles.carouselOrigPrice}>{item.display_currency || item.currency} {Number(item.display_original_price || item.price).toLocaleString()}</Text>
             )}
+            {(item.sales_count || 0) > 0 && (
+              <Text style={styles.carouselSold}>{compactNum(item.sales_count!)} sold</Text>
+            )}
           </Pressable>
         ))}
       </ScrollView>
@@ -935,6 +958,8 @@ export default function ProductFeedScreen() {
   const [tileA, setTileA] = useState<Slide[]>([]);
   const [tileB, setTileB] = useState<Slide[]>([]);
   const [becauseYouViewed, setBecauseYouViewed] = useState<Product[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
+  const [budgetFinds, setBudgetFinds] = useState<Product[]>([]);
 
   // ── Country selection (Jumia-style per-country storefront) ──────
   const { country, countryIso2 } = useCountry();
@@ -1028,6 +1053,7 @@ export default function ProductFeedScreen() {
       const [
         dealsRes, featRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
+        bestRes, budgetRes,
       ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
@@ -1039,6 +1065,8 @@ export default function ProductFeedScreen() {
         fetchSlides('tile_a' as SlidePosition, slideSize).catch((e) => { console.error('[Home] tileA error:', e?.message); return [] as Slide[]; }),
         fetchSlides('tile_b' as SlidePosition, slideSize).catch((e) => { console.error('[Home] tileB error:', e?.message); return [] as Slide[]; }),
         fetchBecauseYouViewed(productCardSize).catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
+        fetchProducts({ ordering: 'best_selling', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] bestsellers error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ ordering: 'price_low', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] budget error:', e?.message); return { results: [] as Product[], next: null }; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
@@ -1056,6 +1084,8 @@ export default function ProductFeedScreen() {
       setTileA(tileAData);
       setTileB(tileBData);
       setBecauseYouViewed(becauseData.slice(0, 10));
+      setBestSellers(bestRes.results.slice(0, 12));
+      setBudgetFinds(budgetRes.results.slice(0, 12));
 
       // Load recently viewed from local storage as a fallback
       try {
@@ -1372,6 +1402,9 @@ export default function ProductFeedScreen() {
       {/* ── Dual promo banner tiles ──────────────────────────────── */}
       <DualBannerTiles tileA={tileA} tileB={tileB} onPress={handleSlidePress} />
 
+      {/* ── Best Sellers (ranked by real units sold) ─────────────── */}
+      <ProductCarouselSection icon="trophy-outline" title="Best Sellers" data={bestSellers} onPress={handleProductPress} />
+
       {/* ── Because You Viewed ───────────────────────────────────── */}
       <ProductCarouselSection icon="lightbulb-on-outline" title="Because You Viewed" data={becauseYouViewed} onPress={handleProductPress} />
 
@@ -1383,6 +1416,9 @@ export default function ProductFeedScreen() {
 
       {/* ── Supplier banner ──────────────────────────────────────── */}
       <SupplierBanner onPress={handleSuppliersPress} />
+
+      {/* ── Budget Finds (lowest-priced in-stock picks) ──────────── */}
+      <ProductCarouselSection icon="tag-heart-outline" title="Budget Finds" data={budgetFinds} onPress={handleProductPress} />
 
       {/* ── Top Brands ───────────────────────────────────────────── */}
       <TopBrandsSection brands={topBrands} onPressBrand={handleBrandPress} />
@@ -1398,7 +1434,7 @@ export default function ProductFeedScreen() {
       ) : null}
     </View>
   ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
-    deals, recommended, becauseYouViewed, recentlyViewed,
+    deals, recommended, becauseYouViewed, recentlyViewed, bestSellers, budgetFinds,
     vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
     handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory,
     country, countryIso2, countryPickerVisible, onRefresh]);
@@ -2117,6 +2153,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: Spacing.two,
     paddingBottom: Spacing.two,
   },
+  carouselSold: {
+    fontSize: 10,
+    color: c.textTertiary,
+    paddingHorizontal: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
 
   // ── All Products header ─────────────────────────────────────────
   allProductsHeader: {
@@ -2419,6 +2461,28 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 11,
     color: Brand.link,
     fontWeight: '500',
+  },
+  soldText: {
+    fontSize: 11,
+    color: c.textTertiary,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.one,
+    marginTop: 4,
+  },
+  moqBadge: {
+    backgroundColor: '#FFF1E8',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  moqBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Brand.primary,
   },
   priceRow: {
     flexDirection: 'row',
