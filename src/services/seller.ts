@@ -1391,3 +1391,118 @@ export async function saveSellerWarehouse(payload: {
 export async function deleteSellerWarehouse(id: number): Promise<{ detail: string }> {
   return apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/warehouses/`, params: { id } });
 }
+
+// ── Expenses & Money Stocking ────────────────────────────────────
+
+export interface POSExpense {
+  id: number;
+  category: string;
+  category_label: string;
+  description: string;
+  amount: string;
+  currency: string;
+  expense_date: string;
+  payment_method: string;
+  paid_to: string;
+  staff_member: number | null;
+  staff_name: string | null;
+  receipt_url: string | null;
+  recorded_by: string | null;
+}
+
+export interface ExpensesResponse {
+  summary: { all_time: string; today: string; month: string };
+  categories: { value: string; label: string }[];
+  payment_methods: { value: string; label: string }[];
+  results: POSExpense[];
+}
+
+export interface ExpenseFilters {
+  category?: string;
+  q?: string;
+  from?: string;
+  to?: string;
+  staff?: number;
+  limit?: number;
+}
+
+export interface ExpensePayload {
+  category: string;
+  description: string;
+  amount: number | string;
+  currency?: string;
+  expense_date?: string;
+  payment_method?: string;
+  paid_to?: string;
+  staff_member?: number | null;
+}
+
+/** GET /pos/expenses/ — list expenses with filters + totals summary */
+export async function getExpenses(filters: ExpenseFilters = {}): Promise<ExpensesResponse> {
+  return apiRequest<ExpensesResponse>({ method: 'GET', url: '/pos/expenses/', params: filters });
+}
+
+/** POST /pos/expenses/ — record a new expense */
+export async function createExpense(payload: ExpensePayload): Promise<POSExpense> {
+  return apiRequest<POSExpense>({ method: 'POST', url: '/pos/expenses/', data: payload });
+}
+
+/** PATCH /pos/expenses/<id>/ — update an expense */
+export async function updateExpense(id: number, payload: Partial<ExpensePayload>): Promise<POSExpense> {
+  return apiRequest<POSExpense>({ method: 'PATCH', url: `/pos/expenses/${id}/`, data: payload });
+}
+
+/** DELETE /pos/expenses/<id>/ — delete an expense */
+export async function deleteExpense(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `/pos/expenses/${id}/` });
+}
+
+export interface MoneyEntry {
+  id: number;
+  kind: 'stock' | 'draw';
+  source: string;
+  source_label: string;
+  amount: string;
+  currency: string;
+  note: string;
+  entry_date: string;
+  recorded_by: string | null;
+}
+
+export interface MoneyEntriesResponse {
+  summary: { stocked: string; drawn: string; net: string };
+  stock_sources: { value: string; label: string }[];
+  draw_reasons: { value: string; label: string }[];
+  results: MoneyEntry[];
+}
+
+export interface MoneyEntryPayload {
+  kind: 'stock' | 'draw';
+  source: string;
+  amount: number | string;
+  currency?: string;
+  note?: string;
+  entry_date?: string;
+}
+
+/** GET /pos/money/ — money stocking entries (cash stocked in / taken out) */
+export async function getMoneyEntries(
+  filters: { kind?: 'stock' | 'draw'; from?: string; to?: string; limit?: number } = {},
+): Promise<MoneyEntriesResponse> {
+  return apiRequest<MoneyEntriesResponse>({ method: 'GET', url: '/pos/money/', params: filters });
+}
+
+/** POST /pos/money/ — record money stocked in or taken out */
+export async function createMoneyEntry(payload: MoneyEntryPayload): Promise<{ id: number }> {
+  return apiRequest<{ id: number }>({ method: 'POST', url: '/pos/money/', data: payload });
+}
+
+/** PATCH /pos/money/<id>/ — update a money entry */
+export async function updateMoneyEntry(id: number, payload: Partial<MoneyEntryPayload>): Promise<{ id: number }> {
+  return apiRequest<{ id: number }>({ method: 'PATCH', url: `/pos/money/${id}/`, data: payload });
+}
+
+/** DELETE /pos/money/<id>/ — delete a money entry */
+export async function deleteMoneyEntry(id: number): Promise<void> {
+  await apiRequest({ method: 'DELETE', url: `/pos/money/${id}/` });
+}

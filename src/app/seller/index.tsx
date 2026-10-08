@@ -125,6 +125,7 @@ export default function SellerDashboardScreen() {
         { icon: 'wallet-outline', label: 'Earnings', color: '#8B5CF6', route: '/seller/earnings', perm: 'can_view_finances' },
         { icon: 'cash', label: 'Payouts', color: '#16A34A', route: '/seller/payouts', perm: 'can_view_finances' },
         { icon: 'chart-pie', label: 'Finance', color: '#16A34A', route: '/seller/finance', perm: 'can_view_finances' },
+        { icon: 'receipt', label: 'Expenses & Cash', color: '#F59E0B', route: '/seller/expenses', perm: 'can_view_finances' },
         { icon: 'chart-line', label: 'Analytics', color: Brand.rating, route: '/seller/analytics', perm: 'can_view_analytics' },
         { icon: 'lock-outline', label: 'Escrow', color: '#F59E0B', route: '/seller/escrow', perm: 'can_view_finances' },
         { icon: 'receipt', label: 'Commissions', color: '#8B5CF6', route: '/seller/commissions', perm: 'can_view_finances' },
