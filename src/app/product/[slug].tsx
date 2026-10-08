@@ -750,6 +750,24 @@ export default function ProductDetailScreen() {
               </View>
             )}
 
+            {/* Condition chip — always shown (Brand New / Refurbished / Used) */}
+            <View style={[
+              styles.condChip,
+              product.condition === 'used' ? styles.condUsed
+                : product.condition === 'refurbished' ? styles.condRefurb
+                : styles.condNew,
+            ]}>
+              <MaterialCommunityIcons name="certificate-outline" size={12} color={
+                product.condition === 'used' ? '#555' : product.condition === 'refurbished' ? '#B45309' : '#1B7A00'
+              } />
+              <Text style={[
+                styles.condChipText,
+                product.condition === 'used' ? { color: '#555' } : product.condition === 'refurbished' ? { color: '#B45309' } : { color: '#1B7A00' },
+              ]}>
+                {product.condition === 'used' ? 'Used' : product.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
+              </Text>
+            </View>
+
             {/* Price — prominent, Alibaba-style (updates with variant) */}
             <View style={styles.priceBlock}>
               {product.is_on_sale && !selectedVariant && (
@@ -2482,6 +2500,20 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     fontSize: 10,
     fontWeight: '800',
   },
+  condChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  condNew: { backgroundColor: '#E8F7E0' },
+  condRefurb: { backgroundColor: '#FEF3DC' },
+  condUsed: { backgroundColor: '#F0F0F0' },
+  condChipText: { fontSize: 11, fontWeight: '700' },
 
   // ── Expandable description ─────────────────────────────────────
   seeMoreText: {

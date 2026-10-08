@@ -184,13 +184,22 @@ const ProductCard = memo(function ProductCard({
             )}
           </View>
         </View>
-        {(item.is_wholesale || (item.min_order_quantity || 1) > 1) && (
+        {(item.is_wholesale || (item.min_order_quantity || 1) > 1 || (item.condition && item.condition !== 'new')) && (
           <View style={styles.metaRow}>
-            <View style={styles.moqBadge}>
-              <Text style={styles.moqBadgeText}>
-                {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
-              </Text>
-            </View>
+            {item.condition && item.condition !== 'new' && (
+              <View style={[styles.moqBadge, styles.condBadge]}>
+                <Text style={[styles.moqBadgeText, styles.condBadgeText]}>
+                  {item.condition === 'used' ? 'Used' : 'Refurbished'}
+                </Text>
+              </View>
+            )}
+            {(item.is_wholesale || (item.min_order_quantity || 1) > 1) && (
+              <View style={styles.moqBadge}>
+                <Text style={styles.moqBadgeText}>
+                  {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         {/* ── Action buttons: different for supplier vs local seller ── */}
@@ -2484,6 +2493,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: Brand.primary,
   },
+  condBadge: { backgroundColor: '#F0F0F0' },
+  condBadgeText: { color: '#555' },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',

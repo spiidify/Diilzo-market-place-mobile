@@ -57,6 +57,7 @@ export default function AddProductScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
+  const [condition, setCondition] = useState<'new' | 'refurbished' | 'used'>('new');
   const [weight, setWeight] = useState('');
   const [length, setLength] = useState('');
   const [width, setWidth] = useState('');
@@ -240,6 +241,7 @@ export default function AddProductScreen() {
       formData.append('category', String(categoryId));
       if (brandId) formData.append('brand', String(brandId));
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
+      formData.append('condition', condition);
       if (weight.trim()) formData.append('weight', weight.trim());
       if (length.trim()) formData.append('length', length.trim());
       if (width.trim()) formData.append('width', width.trim());
@@ -551,6 +553,19 @@ export default function AddProductScreen() {
                   placeholder="Optional (EAN/UPC)"
                   placeholderTextColor={colors.textTertiary}
                 />
+
+                <Text style={styles.label}>Condition</Text>
+                <View style={styles.condRow}>
+                  {([['new', 'Brand New'], ['refurbished', 'Refurbished'], ['used', 'Used']] as const).map(([val, label]) => (
+                    <Pressable
+                      key={val}
+                      style={[styles.condChip, condition === val && styles.condChipActive]}
+                      onPress={() => setCondition(val)}
+                    >
+                      <Text style={[styles.condChipText, condition === val && styles.condChipTextActive]}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
               </SectionCard>
 
               {/* ── Category & Brand ───────────────────────────────── */}
@@ -1177,6 +1192,19 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   textArea: { minHeight: 90, textAlignVertical: 'top' },
   textAreaSmall: { minHeight: 60, textAlignVertical: 'top' },
   charCount: { fontSize: 11, color: c.textTertiary, textAlign: 'right', marginTop: 2 },
+  condRow: { flexDirection: 'row', gap: 8 },
+  condChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surfaceAlt,
+  },
+  condChipActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '14' },
+  condChipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  condChipTextActive: { color: Brand.primary },
   bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   bulletInput: { flex: 1 },
   addBulletBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, marginBottom: 12 },

@@ -181,6 +181,8 @@ export interface Product {
   sku: string | null;
   min_order_quantity: number;
   is_wholesale: boolean;
+  /** Item condition: 'new' | 'refurbished' | 'used' (Jiji/Alibaba-style). */
+  condition?: 'new' | 'refurbished' | 'used';
   is_active: boolean;
   is_featured: boolean;
   is_new_arrival: boolean;

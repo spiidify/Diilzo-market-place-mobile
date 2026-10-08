@@ -59,6 +59,7 @@ export default function EditProductScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
+  const [condition, setCondition] = useState<'new' | 'refurbished' | 'used'>('new');
   const [weight, setWeight] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('Uganda');
   const [isActive, setIsActive] = useState(true);
@@ -132,6 +133,7 @@ export default function EditProductScreen() {
       setCategoryId(product.category?.id ?? null);
       setBrandId(product.brand?.id ?? null);
       setMinOrderQty(String(product.min_order_quantity || 1));
+      setCondition(product.condition === 'refurbished' || product.condition === 'used' ? product.condition : 'new');
       setWeight(product.weight || '');
       setCountryOfOrigin(product.country_of_origin || 'Uganda');
       setIsActive(product.is_active);
@@ -268,6 +270,7 @@ export default function EditProductScreen() {
       if (categoryId) formData.append('category', String(categoryId));
       if (brandId) formData.append('brand', String(brandId));
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
+      formData.append('condition', condition);
       if (weight.trim()) formData.append('weight', weight.trim());
       formData.append('country_of_origin', countryOfOrigin.trim() || 'Uganda');
       formData.append('is_active', publish ? 'true' : 'false');
@@ -564,6 +567,19 @@ export default function EditProductScreen() {
                       autoCapitalize="characters"
                     />
                   </View>
+                </View>
+
+                <Text style={styles.label}>Condition</Text>
+                <View style={styles.condRow}>
+                  {([['new', 'Brand New'], ['refurbished', 'Refurbished'], ['used', 'Used']] as const).map(([val, label]) => (
+                    <Pressable
+                      key={val}
+                      style={[styles.condChip, condition === val && styles.condChipActive]}
+                      onPress={() => setCondition(val)}
+                    >
+                      <Text style={[styles.condChipText, condition === val && styles.condChipTextActive]}>{label}</Text>
+                    </Pressable>
+                  ))}
                 </View>
               </SectionCard>
 
@@ -1133,6 +1149,19 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   addBulletText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   hintText: { fontSize: 11, color: c.textTertiary, marginTop: 4, marginBottom: 4 },
   charCount: { fontSize: 11, color: c.textTertiary, textAlign: 'right', marginTop: 2, marginBottom: 8 },
+  condRow: { flexDirection: 'row', gap: 8 },
+  condChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surfaceAlt,
+  },
+  condChipActive: { borderColor: Brand.primary, backgroundColor: Brand.primary + '14' },
+  condChipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  condChipTextActive: { color: Brand.primary },
 
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.half },
   halfCol: { flex: 1, gap: Spacing.one },
