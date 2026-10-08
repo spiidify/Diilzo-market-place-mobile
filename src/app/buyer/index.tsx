@@ -233,31 +233,6 @@ export default function BuyerDashboardScreen() {
         </Pressable>
         </Animated.View>
 
-        {/* Referral card */}
-        {referral && (
-          <Animated.View entering={FadeInDown.delay(180).duration(400).springify().damping(16)} style={styles.referralCard}>
-            <View style={styles.referralIcon}>
-              <MaterialCommunityIcons name="gift-outline" size={22} color="#FFFFFF" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.referralTitle}>Invite Friends, Earn Rewards</Text>
-              <Text style={styles.referralSub}>
-                Earn UGX 5,000 store credit when a friend completes their first order.
-              </Text>
-              <Text style={styles.referralSub}>
-                Your code: <Text style={styles.referralCode}>{referral.code}</Text>
-                {referral.referred_count > 0 ? ` · ${referral.referred_count} joined` : ''}
-              </Text>
-            </View>
-            <Pressable onPress={copyReferral} hitSlop={8} style={styles.referralBtn}>
-              <MaterialCommunityIcons name="content-copy" size={16} color="#FFFFFF" />
-            </Pressable>
-            <Pressable onPress={shareReferral} hitSlop={8} style={[styles.referralBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-              <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
-            </Pressable>
-          </Animated.View>
-        )}
-
         {/* Become a seller CTA */}
         {!user?.has_store && (
           <Animated.View entering={FadeInDown.delay(240).duration(400).springify().damping(16)}>
@@ -421,8 +396,33 @@ export default function BuyerDashboardScreen() {
           ))}
         </Animated.View>
 
+        {/* Referral card */}
+        {referral && (
+          <Animated.View entering={FadeInDown.delay(460).duration(400).springify().damping(16)} style={styles.referralCard}>
+            <View style={styles.referralIcon}>
+              <MaterialCommunityIcons name="gift-outline" size={22} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.referralTitle}>Invite Friends, Earn Rewards</Text>
+              <Text style={styles.referralSub}>
+                Earn UGX 5,000 store credit when a friend completes their first order.
+              </Text>
+              <Text style={styles.referralSub}>
+                Your code: <Text style={styles.referralCode}>{referral.code}</Text>
+                {referral.referred_count > 0 ? ` · ${referral.referred_count} joined` : ''}
+              </Text>
+            </View>
+            <Pressable onPress={copyReferral} hitSlop={8} style={styles.referralBtn}>
+              <MaterialCommunityIcons name="content-copy" size={16} color="#FFFFFF" />
+            </Pressable>
+            <Pressable onPress={shareReferral} hitSlop={8} style={[styles.referralBtn, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
+              <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+            </Pressable>
+          </Animated.View>
+        )}
+
         {/* Dark mode toggle */}
-        <Animated.View entering={FadeInDown.delay(480).duration(400).springify().damping(16)} style={styles.themeSection}>
+        <Animated.View entering={FadeInDown.delay(500).duration(400).springify().damping(16)} style={styles.themeSection}>
           <View style={styles.themeHeader}>
             <MaterialCommunityIcons name="theme-light-dark" size={18} color={colors.text} />
             <Text style={styles.themeTitle}>Appearance</Text>
@@ -657,11 +657,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   regionValue: { fontWeight: '700', color: c.text },
   regionCurrency: { fontWeight: '700', color: Brand.primary },
 
-  // Referral card — standalone rounded card
+  // Referral card — standalone rounded card, between menu links and Appearance
   referralCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Brand.accent, padding: 12,
-    borderRadius: 14, marginBottom: 12,
+    borderRadius: 14, marginTop: 14,
     elevation: 2, shadowColor: Brand.accent, shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   referralIcon: {
