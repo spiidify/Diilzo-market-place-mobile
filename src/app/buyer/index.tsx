@@ -585,12 +585,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   editProfileBtnText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
 
-  // Seller CTA
+  // Seller CTA — standalone card, separated from the referral card
   sellerCta: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Brand.primary,
-    padding: 8, borderRadius: 16,
-    borderTopLeftRadius: 0, borderTopRightRadius: 0,
+    padding: 8, borderRadius: 16, marginBottom: 10,
     elevation: 3, shadowColor: Brand.primary, shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   sellerCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
@@ -598,16 +597,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   sellerCtaTitle: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
   sellerCtaSub: { fontSize: 13, color: 'rgba(255,255,255,0.85)' },
 
-  // Switch to seller — orange gradient (matches the seller brand accent)
+  // Switch to seller — orange gradient, standalone card (matches the seller brand accent)
   switchCta: {
-    borderRadius: 16, overflow: 'hidden',
-    borderTopLeftRadius: 0, borderTopRightRadius: 0,
+    borderRadius: 16, overflow: 'hidden', marginBottom: 10,
     elevation: 3, shadowColor: '#EA580C', shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   switchCtaGrad: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     padding: 8, borderRadius: 16,
-    borderTopLeftRadius: 0, borderTopRightRadius: 0,
   },
   switchCtaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   switchCtaInfo: { flex: 1, gap: 2 },
@@ -660,12 +657,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   regionValue: { fontWeight: '700', color: c.text },
   regionCurrency: { fontWeight: '700', color: Brand.primary },
 
-  // Referral card
+  // Referral card — standalone rounded card
   referralCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: Brand.accent, padding: 12,
-    borderTopLeftRadius: 14, borderTopRightRadius: 14,
-    borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
+    borderRadius: 14, marginBottom: 12,
     elevation: 2, shadowColor: Brand.accent, shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
   },
   referralIcon: {
