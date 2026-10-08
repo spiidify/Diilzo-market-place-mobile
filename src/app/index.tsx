@@ -2340,7 +2340,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   brandLogoFallback: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#DCF5EC',
+    backgroundColor: '#EDE9FE',
     justifyContent: 'center',
     alignItems: 'center',
   },

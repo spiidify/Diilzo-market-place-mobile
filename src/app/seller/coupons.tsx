@@ -231,7 +231,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   metricValue: { fontSize: 14, fontWeight: '700', color: c.text },
   metricLabel: { fontSize: 10, color: c.textTertiary, marginTop: 2 },
   cardActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  copyBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(50,199,0,0.08)' },
+  copyBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(124, 58, 237,0.08)' },
   copyText: { fontSize: 13, fontWeight: '600', color: Brand.primary },
   deleteBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(220,38,38,0.08)' },
   deleteText: { fontSize: 13, fontWeight: '600', color: Brand.danger },

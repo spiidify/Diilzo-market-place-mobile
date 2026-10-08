@@ -51,7 +51,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#32C700",
+          "backgroundColor": "#7C3AED",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -83,7 +83,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/splash-icon.png",
-          "color": "#32C700"
+          "color": "#7C3AED"
         }
       ],
       "expo-video",

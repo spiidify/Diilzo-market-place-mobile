@@ -40,7 +40,7 @@ export default function AdminSlidesScreen() {
     title: '',
     headline: '',
     subheadline: '',
-    background_color: '#32C700',
+    background_color: '#7C3AED',
     cta_text: '',
     cta_link: '',
     is_active: true,
@@ -66,7 +66,7 @@ export default function AdminSlidesScreen() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: '', headline: '', subheadline: '', background_color: '#32C700', cta_text: '', cta_link: '', is_active: true, sort_order: 0, position: 'home_top' });
+    setForm({ title: '', headline: '', subheadline: '', background_color: '#7C3AED', cta_text: '', cta_link: '', is_active: true, sort_order: 0, position: 'home_top' });
     setModalVisible(true);
   };
 
@@ -203,7 +203,7 @@ export default function AdminSlidesScreen() {
                 <Text style={styles.fieldLabel}>Subheadline</Text>
                 <TextInput style={styles.input} value={form.subheadline} onChangeText={(v) => setForm({ ...form, subheadline: v })} placeholder="Subheadline" placeholderTextColor={colors.textTertiary} />
                 <Text style={styles.fieldLabel}>Background Color</Text>
-                <TextInput style={styles.input} value={form.background_color} onChangeText={(v) => setForm({ ...form, background_color: v })} placeholder="#32C700" placeholderTextColor={colors.textTertiary} />
+                <TextInput style={styles.input} value={form.background_color} onChangeText={(v) => setForm({ ...form, background_color: v })} placeholder="#7C3AED" placeholderTextColor={colors.textTertiary} />
                 <Text style={styles.fieldLabel}>CTA Text</Text>
                 <TextInput style={styles.input} value={form.cta_text} onChangeText={(v) => setForm({ ...form, cta_text: v })} placeholder="Shop Now" placeholderTextColor={colors.textTertiary} />
                 <Text style={styles.fieldLabel}>CTA Link</Text>

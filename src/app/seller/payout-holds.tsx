@@ -151,7 +151,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#DCF5EC', borderRadius: 12, padding: 12, marginBottom: 12,
+    backgroundColor: '#EDE9FE', borderRadius: 12, padding: 12, marginBottom: 12,
   },
   infoText: { flex: 1, fontSize: 12, color: c.textSecondary },
 

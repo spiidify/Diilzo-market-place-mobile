@@ -198,7 +198,7 @@ export default function SellerAdWalletScreen() {
                 ].map((m) => (
                   <Pressable
                     key={m.code}
-                    style={[styles.methodBtn, topUpMethod === m.code && { borderColor: Brand.primary, backgroundColor: '#DCF5EC' }]}
+                    style={[styles.methodBtn, topUpMethod === m.code && { borderColor: Brand.primary, backgroundColor: '#EDE9FE' }]}
                     onPress={() => setTopUpMethod(m.code)}
                   >
                     <Text style={styles.methodText}>{m.label}</Text>

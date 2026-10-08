@@ -292,7 +292,7 @@ export default function SellerSubscriptionScreen() {
               ].map((m) => (
                 <Pressable
                   key={m.code}
-                  style={[styles.paymentMethod, paymentMethod === m.code && { borderColor: Brand.primary, backgroundColor: '#DCF5EC' }]}
+                  style={[styles.paymentMethod, paymentMethod === m.code && { borderColor: Brand.primary, backgroundColor: '#EDE9FE' }]}
                   onPress={() => setPaymentMethod(m.code)}
                 >
                   <Text style={styles.paymentMethodText}>{m.label}</Text>
@@ -349,7 +349,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   currentPlanBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#DCF5EC', borderRadius: 14, padding: 14, marginBottom: 12,
+    backgroundColor: '#EDE9FE', borderRadius: 14, padding: 14, marginBottom: 12,
   },
   currentPlanInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   currentPlanTitle: { fontSize: 15, fontWeight: '700', color: c.text },
@@ -359,7 +359,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   freeBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#DCF5EC', borderRadius: 12, padding: 12, marginBottom: 12,
+    backgroundColor: '#EDE9FE', borderRadius: 12, padding: 12, marginBottom: 12,
   },
   freeBannerText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
@@ -378,7 +378,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   planName: { fontSize: 18, fontWeight: '800', color: c.text, flex: 1 },
   popularBadge: { backgroundColor: Brand.primary, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   popularText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-  freeBadge: { backgroundColor: '#DCF5EC', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  freeBadge: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   freeText: { fontSize: 10, fontWeight: '700', color: Brand.success },
 
   planPriceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },

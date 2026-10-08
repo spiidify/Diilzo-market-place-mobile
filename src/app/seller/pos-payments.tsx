@@ -143,7 +143,7 @@ export default function POSPaymentMethodsScreen() {
                     </View>
                     <View style={styles.gwState}>
                         {g.is_enabled ? (
-                            <View style={[styles.statePill, { backgroundColor: '#DCF5EC' }]}>
+                            <View style={[styles.statePill, { backgroundColor: '#EDE9FE' }]}>
                                 <Text style={[styles.statePillText, { color: '#16A34A' }]}>LIVE</Text>
                             </View>
                         ) : g.has_credentials ? (
