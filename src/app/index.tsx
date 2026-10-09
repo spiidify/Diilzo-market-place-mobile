@@ -324,8 +324,8 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
       >
         {slides.map((slide) => {
           const isDarkButton = slide.button_style === 'dark';
-          const buttonBg = isDarkButton ? '#111111' : '#FFFFFF';
-          const buttonColor = isDarkButton ? '#FFFFFF' : Brand.primary;
+          const buttonBg = isDarkButton ? '#111111' : Brand.primary;
+          const buttonColor = '#FFFFFF';
           return (
             <Pressable
               key={`slide-${slide.id}`}
@@ -1937,7 +1937,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'stretch',
     paddingVertical: 8,
     paddingHorizontal: 14,
-    backgroundColor: Brand.primary,
+    backgroundColor: c.surface,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
     minHeight: 52,
   },
   slideTextCol: {
@@ -1950,14 +1952,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   slideHeadline: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: c.text,
     textAlign: 'left',
     marginBottom: 2,
   },
   slideSubheadline: {
     fontSize: 12,
-    color: '#FFFFFF',
-    opacity: 0.9,
+    color: c.textSecondary,
     textAlign: 'left',
   },
   slideButton: {
