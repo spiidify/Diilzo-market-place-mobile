@@ -359,7 +359,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
                   <Image
                     source={{ uri: slide.display_image }}
                     style={styles.slideImage}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   />
                 ) : (
                   <LinearGradient
