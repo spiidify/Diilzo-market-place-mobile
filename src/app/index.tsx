@@ -5,20 +5,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  Easing,
-  FlatList,
-  Image,
-  Linking,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Easing,
+    FlatList,
+    Image,
+    Linking,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -47,26 +47,26 @@ import { useImageDimensions } from '@/hooks/useImageDimensions';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { addToCart } from '@/services/cart';
 import {
-  claimCoupon,
-  fetchBecauseYouViewed,
-  fetchCategories,
-  fetchClaimableCoupons,
-  fetchFlashSaleProducts,
-  fetchRecentlyViewed,
-  fetchSlides,
-  fetchTopBrands,
-  fetchTopStores
+    claimCoupon,
+    fetchBecauseYouViewed,
+    fetchCategories,
+    fetchClaimableCoupons,
+    fetchFlashSaleProducts,
+    fetchRecentlyViewed,
+    fetchSlides,
+    fetchTopBrands,
+    fetchTopStores
 } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
 import { fetchProducts } from '@/services/products';
 import type {
-  Brand as BrandType,
-  Category,
-  ClaimableCoupon,
-  Product,
-  Slide,
-  SlidePosition,
-  Store,
+    Brand as BrandType,
+    Category,
+    ClaimableCoupon,
+    Product,
+    Slide,
+    SlidePosition,
+    Store,
 } from '@/types';
 
 // Compact counts for card meta: 1234 -> '1.2K', 2500000 -> '2.5M'
@@ -329,7 +329,7 @@ const HomeCarousel = memo(function HomeCarousel({ slides }: { slides: Slide[] })
           return (
             <Pressable
               key={`slide-${slide.id}`}
-              style={[styles.slideCard, { width: slideWidth, height: slideWidth / 4 + 52 }, slide.background_color ? { backgroundColor: slide.background_color } : null]}
+              style={[styles.slideCard, { width: slideWidth, height: slideWidth / 3.2 + 52 }, slide.background_color ? { backgroundColor: slide.background_color } : null]}
               onPress={() => {
                 // Priority: category > brand > cta_link / link_url
                 if (slide.category_slug) {
