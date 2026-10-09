@@ -969,6 +969,7 @@ export default function ProductFeedScreen() {
   const [becauseYouViewed, setBecauseYouViewed] = useState<Product[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [budgetFinds, setBudgetFinds] = useState<Product[]>([]);
+  const [newSellers, setNewSellers] = useState<Product[]>([]);
 
   // ── Country selection (Jumia-style per-country storefront) ──────
   const { country, countryIso2 } = useCountry();
@@ -1062,7 +1063,7 @@ export default function ProductFeedScreen() {
       const [
         dealsRes, featRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
-        bestRes, budgetRes,
+        bestRes, budgetRes, newSellerRes,
       ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
@@ -1076,6 +1077,7 @@ export default function ProductFeedScreen() {
         fetchBecauseYouViewed(productCardSize).catch((e) => { console.error('[Home] because error:', e?.message); return [] as Product[]; }),
         fetchProducts({ ordering: 'best_selling', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] bestsellers error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ ordering: 'price_low', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] budget error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchProducts({ new_sellers: 'true', in_stock: 'true', ordering: 'newest', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] newSellers error:', e?.message); return { results: [] as Product[], next: null }; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
@@ -1095,6 +1097,7 @@ export default function ProductFeedScreen() {
       setBecauseYouViewed(becauseData.slice(0, 10));
       setBestSellers(bestRes.results.slice(0, 12));
       setBudgetFinds(budgetRes.results.slice(0, 12));
+      setNewSellers(newSellerRes.results.slice(0, 12));
 
       // Load recently viewed from local storage as a fallback
       try {
@@ -1429,6 +1432,9 @@ export default function ProductFeedScreen() {
       {/* ── Budget Finds (lowest-priced in-stock picks) ──────────── */}
       <ProductCarouselSection icon="tag-heart-outline" title="Budget Finds" data={budgetFinds} onPress={handleProductPress} />
 
+      {/* ── Fresh from New Sellers (young stores get exposure) ──── */}
+      <ProductCarouselSection icon="sprout-outline" title="Fresh from New Sellers" data={newSellers} onPress={handleProductPress} />
+
       {/* ── Top Brands ───────────────────────────────────────────── */}
       <TopBrandsSection brands={topBrands} onPressBrand={handleBrandPress} />
 
@@ -1443,7 +1449,7 @@ export default function ProductFeedScreen() {
       ) : null}
     </View>
   ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
-    deals, recommended, becauseYouViewed, recentlyViewed, bestSellers, budgetFinds,
+    deals, recommended, becauseYouViewed, recentlyViewed, bestSellers, budgetFinds, newSellers,
     vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
     handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory,
     country, countryIso2, countryPickerVisible, onRefresh]);

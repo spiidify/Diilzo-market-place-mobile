@@ -15,6 +15,7 @@ export interface ProductListParams {
   in_stock?: 'true' | 'false';
   flash_sale?: 'true' | 'false';
   followed?: 'true' | 'false';
+  new_sellers?: 'true' | 'false';
   ordering?: string;       // price_low, price_high, rating, newest, best_selling
   min_price?: string;
   max_price?: string;
