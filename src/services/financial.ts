@@ -424,18 +424,56 @@ export async function getSubscription(): Promise<SubscriptionSummary> {
   });
 }
 
-/** POST /financial/seller/subscription/ — subscribe/upgrade to a plan */
+export interface SubscribeResponse {
+  id: number;
+  plan: string;
+  amount: string;
+  currency: string;
+  // 'completed' = plan already active; 'pending' = approve the prompt on
+  // the payer phone / complete the hosted checkout; 'failed' = see reason.
+  status: string;
+  payment_provider: string;
+  failure_reason: string | null;
+  redirect_url: string | null;
+  period_start: string;
+  period_end: string;
+}
+
+/** POST /financial/seller/subscription/ — subscribe/upgrade to a plan.
+ *  Paid plans go through a real gateway charge; the response status tells
+ *  the caller whether the plan activated or is awaiting payment. */
 export async function subscribeToPlan(data: {
   plan_code: string;
   billing_period?: string;
   payment_method?: string;
+  payer_phone?: string;
   transaction_reference?: string;
   auto_renew?: boolean;
-}): Promise<any> {
-  return apiRequest<any>({
+}): Promise<SubscribeResponse> {
+  return apiRequest<SubscribeResponse>({
     method: 'POST',
     url: `${FINANCIAL_BASE}/seller/subscription/`,
     data,
+  });
+}
+
+export interface SubscriptionPaymentStatus {
+  id: number;
+  status: string;
+  plan: string;
+  plan_code: string;
+  amount: string;
+  currency: string;
+  failure_reason: string | null;
+}
+
+/** GET /financial/seller/subscription/payments/<id>/status/ — poll a
+ *  pending plan payment; the backend re-checks the gateway and activates
+ *  the plan once the charge confirms. */
+export async function getSubscriptionPaymentStatus(txId: number): Promise<SubscriptionPaymentStatus> {
+  return apiRequest<SubscriptionPaymentStatus>({
+    method: 'GET',
+    url: `${FINANCIAL_BASE}/seller/subscription/payments/${txId}/status/`,
   });
 }
 

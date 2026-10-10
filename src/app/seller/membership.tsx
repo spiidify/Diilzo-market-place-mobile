@@ -3,17 +3,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
+    Modal,
     Pressable,
     RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
-    View,
+    TextInput,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
+import { getSubscriptionPaymentStatus } from '@/services/financial';
 import { getMembership, upgradeMembership, type MembershipInfo } from '@/services/seller';
 
 interface TierInfo {
@@ -85,8 +89,14 @@ export default function SellerMembershipScreen() {
   const [membership, setMembership] = useState<MembershipInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<TierInfo | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState('mtn_momo');
+  const [payerPhone, setPayerPhone] = useState('');
+  const [pendingPayment, setPendingPayment] = useState<{
+    txId: number; tierName: string; amount: string; currency: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -104,29 +114,83 @@ export default function SellerMembershipScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleUpgrade = (tier: string) => {
-    Alert.alert(
-      'Confirm Upgrade',
-      `Upgrade to ${tier.charAt(0).toUpperCase() + tier.slice(1)} tier? This will change your annual membership.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Upgrade',
-          onPress: async () => {
-            setUpgrading(tier);
-            try {
-              await upgradeMembership(tier);
-              Alert.alert('Success', `Upgraded to ${tier} tier!`);
-              load();
-            } catch (e: any) {
-              Alert.alert('Error', e?.response?.data?.error || 'Failed to upgrade');
-            } finally {
-              setUpgrading(null);
-            }
-          },
-        },
-      ],
-    );
+  const pollPayment = useCallback(async (txId: number, tierName: string) => {
+    // Gateway settles asynchronously — poll until the backend confirms the
+    // charge and activates the tier (max ~2 min).
+    try {
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 4000));
+        try {
+          const s = await getSubscriptionPaymentStatus(txId);
+          if (s.status === 'completed') {
+            setPendingPayment(null);
+            await load();
+            Alert.alert('Payment Confirmed', `${tierName} is now active.`);
+            return;
+          }
+          if (s.status === 'failed') {
+            setPendingPayment(null);
+            Alert.alert('Payment Failed', s.failure_reason || 'The charge was declined. Try again.');
+            return;
+          }
+        } catch { /* keep polling on transient errors */ }
+      }
+      setPendingPayment(null);
+      Alert.alert('Still Processing', 'Payment is taking longer than expected — pull to refresh to check again.');
+    } catch { /* noop */ }
+  }, [load]);
+
+  const handleUpgrade = (tier: TierInfo) => {
+    if (tier.key === 'free') {
+      Alert.alert(
+        'Switch to Free',
+        'Downgrade to the free tier? It applies at the end of your current period where a paid membership exists.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Switch', style: 'destructive', onPress: () => runUpgrade(tier) },
+        ],
+      );
+      return;
+    }
+    setSelectedTier(tier);
+  };
+
+  const runUpgrade = async (tier: TierInfo) => {
+    const isMomo = ['mtn_momo', 'airtel_money'].includes(paymentMethod);
+    if (tier.key !== 'free' && isMomo && payerPhone.trim().replace(/\D/g, '').length < 9) {
+      Alert.alert('Phone Required', 'Enter the mobile money number to charge.');
+      return;
+    }
+    setUpgrading(true);
+    try {
+      const res = await upgradeMembership({
+        tier: tier.key,
+        payment_method: paymentMethod,
+        payer_phone: payerPhone.trim(),
+      });
+      setSelectedTier(null);
+      if (res.status === 'completed') {
+        await load();
+        Alert.alert('Success', res.message || `${tier.name} is now active.`);
+      } else if (res.status === 'failed') {
+        Alert.alert('Payment Failed', res.failure_reason || res.message || 'The charge could not be initiated.');
+      } else {
+        if (res.redirect_url) {
+          Linking.openURL(res.redirect_url).catch(() => {});
+        }
+        if (res.id) {
+          setPendingPayment({
+            txId: res.id, tierName: res.tier,
+            amount: res.amount || '', currency: res.currency || '',
+          });
+          pollPayment(res.id, res.tier);
+        }
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to process the request');
+    } finally {
+      setUpgrading(false);
+    }
   };
 
   const currentTier = membership?.tier || 'free';
@@ -173,6 +237,21 @@ export default function SellerMembershipScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Pending payment — waiting for the charge to confirm */}
+            {pendingPayment ? (
+              <View style={styles.pendingBanner}>
+                <ActivityIndicator size="small" color="#9A3412" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pendingTitle}>
+                    Awaiting payment — {pendingPayment.tierName}
+                  </Text>
+                  <Text style={styles.pendingSub}>
+                    {pendingPayment.currency} {fmtPrice(pendingPayment.amount)} · approve the prompt on your phone
+                  </Text>
+                </View>
+              </View>
+            ) : null}
 
             {/* Regional pricing notice */}
             {membership.region_label ? (
@@ -232,14 +311,14 @@ export default function SellerMembershipScreen() {
                         { backgroundColor: isUpgrade ? tier.color : c_border(colors) },
                         pressed && { opacity: 0.85 },
                       ]}
-                      onPress={() => handleUpgrade(tier.key)}
-                      disabled={upgrading === tier.key}
+                      onPress={() => handleUpgrade(tier)}
+                      disabled={upgrading}
                     >
-                      {upgrading === tier.key ? (
+                      {upgrading && selectedTier?.key === tier.key ? (
                         <ActivityIndicator size="small" color={isUpgrade ? '#FFFFFF' : colors.text} />
                       ) : (
                         <Text style={[styles.tierBtnText, { color: isUpgrade ? '#FFFFFF' : colors.text }]}>
-                          {isUpgrade ? `Upgrade to ${tier.name}` : `Downgrade to ${tier.name}`}
+                          {tier.key === 'free' ? 'Switch to Free' : isUpgrade ? `Pay & Upgrade to ${tier.name}` : `Pay & Switch to ${tier.name}`}
                         </Text>
                       )}
                     </Pressable>
@@ -252,6 +331,67 @@ export default function SellerMembershipScreen() {
           </ScrollView>
         ) : null}
       </View>
+
+      {/* Payment modal */}
+      <Modal visible={!!selectedTier} transparent animationType="slide" onRequestClose={() => setSelectedTier(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedTier?.name} Membership</Text>
+            <Text style={styles.modalPrice}>
+              {(() => {
+                const apiPrice = membership?.tier_prices?.[selectedTier?.key || ''];
+                return apiPrice
+                  ? `${apiPrice.currency} ${fmtPrice(apiPrice.yearly)} / year`
+                  : `${selectedTier?.price || ''} / year`;
+              })()}
+            </Text>
+
+            <Text style={styles.modalLabel}>Payment Method</Text>
+            <View style={styles.paymentMethods}>
+              {[
+                { code: 'mtn_momo', label: 'MTN MoMo' },
+                { code: 'airtel_money', label: 'Airtel Money' },
+                { code: 'paypal', label: 'PayPal' },
+              ].map((m) => (
+                <Pressable
+                  key={m.code}
+                  style={[styles.paymentMethod, paymentMethod === m.code && { borderColor: Brand.primary, backgroundColor: '#EDE9FE' }]}
+                  onPress={() => setPaymentMethod(m.code)}
+                >
+                  <Text style={styles.paymentMethodText}>{m.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {['mtn_momo', 'airtel_money'].includes(paymentMethod) ? (
+              <>
+                <Text style={styles.modalLabel}>Mobile Money Number</Text>
+                <TextInput
+                  style={styles.phoneInput}
+                  placeholder="e.g. 2567XXXXXXXX"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="phone-pad"
+                  value={payerPhone}
+                  onChangeText={setPayerPhone}
+                />
+              </>
+            ) : null}
+
+            <View style={styles.modalActions}>
+              <Pressable style={styles.modalCancelBtn} onPress={() => setSelectedTier(null)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.modalConfirmBtn}
+                onPress={() => selectedTier && runUpgrade(selectedTier)}
+                disabled={upgrading}
+              >
+                <Text style={styles.modalConfirmText}>{upgrading ? 'Processing…' : 'Pay & Activate'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -307,4 +447,44 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 14, borderRadius: 12, alignItems: 'center',
   },
   tierBtnText: { fontSize: 15, fontWeight: '800' },
+
+  pendingBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFF7ED', borderRadius: 12, padding: 12, marginBottom: 14,
+    borderWidth: 1, borderColor: '#FED7AA',
+  },
+  pendingTitle: { fontSize: 13, fontWeight: '700', color: '#9A3412' },
+  pendingSub: { fontSize: 11.5, color: '#9A3412', marginTop: 2 },
+
+  // Payment modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: {
+    backgroundColor: c.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: c.text, textAlign: 'center' },
+  modalPrice: { fontSize: 15, fontWeight: '600', color: c.textSecondary, textAlign: 'center', marginTop: 6 },
+  modalLabel: { fontSize: 12, fontWeight: '700', color: c.textSecondary, marginTop: 18, marginBottom: 8, textTransform: 'uppercase' },
+  paymentMethods: { flexDirection: 'row', gap: 8 },
+  paymentMethod: {
+    flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1,
+    borderColor: c.borderLight, alignItems: 'center',
+  },
+  paymentMethodText: { fontSize: 13, fontWeight: '700', color: c.text },
+  phoneInput: {
+    borderWidth: 1, borderColor: c.borderLight, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
+    color: c.text, backgroundColor: c.surface,
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 22 },
+  modalCancelBtn: {
+    flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: c.borderLight,
+  },
+  modalCancelText: { fontSize: 14, fontWeight: '700', color: c.textSecondary },
+  modalConfirmBtn: {
+    flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center',
+    backgroundColor: Brand.primary,
+  },
+  modalConfirmText: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
 });

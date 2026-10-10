@@ -2,15 +2,17 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -18,12 +20,13 @@ import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
-    cancelSubscription,
-    getSellerPlans,
-    getSubscription,
-    subscribeToPlan,
-    type SellerPlan,
-    type SubscriptionSummary,
+  cancelSubscription,
+  getSellerPlans,
+  getSubscription,
+  getSubscriptionPaymentStatus,
+  subscribeToPlan,
+  type SellerPlan,
+  type SubscriptionSummary
 } from '@/services/financial';
 
 export default function SellerSubscriptionScreen() {
@@ -40,6 +43,11 @@ export default function SellerSubscriptionScreen() {
   const [subscribing, setSubscribing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SellerPlan | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('mtn_momo');
+  const [payerPhone, setPayerPhone] = useState('');
+  const [pendingPayment, setPendingPayment] = useState<{
+    txId: number; planName: string; amount: string; currency: string;
+  } | null>(null);
+  const [polling, setPolling] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -64,20 +72,72 @@ export default function SellerSubscriptionScreen() {
 
   const fmt = (v: string | number | undefined | null) => Number(v || 0).toLocaleString();
 
+  const pollPayment = useCallback(async (txId: number, planName: string) => {
+    // MoMo/hosted gateways settle asynchronously — poll until the backend
+    // confirms the charge and activates the plan (max ~2 min).
+    setPolling(true);
+    try {
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 4000));
+        try {
+          const s = await getSubscriptionPaymentStatus(txId);
+          if (s.status === 'completed') {
+            setPendingPayment(null);
+            await load();
+            Alert.alert('Payment Confirmed', `${planName} is now active.`);
+            return;
+          }
+          if (s.status === 'failed') {
+            setPendingPayment(null);
+            Alert.alert('Payment Failed', s.failure_reason || 'The charge was declined. Try again.');
+            return;
+          }
+        } catch { /* keep polling on transient errors */ }
+      }
+      setPendingPayment(null);
+      Alert.alert('Still Processing', 'Payment is taking longer than expected — pull to refresh to check again.');
+    } finally {
+      setPolling(false);
+    }
+  }, [load]);
+
   const handleSubscribe = async () => {
     if (!selectedPlan) return;
+    const isMomo = ['mtn_momo', 'airtel_money'].includes(paymentMethod);
+    const isB2B = selectedPlan.plan_type === 'b2b';
+    const needsPhone = isMomo && !selectedPlan.is_free;
+    if (needsPhone && payerPhone.trim().replace(/\D/g, '').length < 9) {
+      Alert.alert('Phone Required', 'Enter the mobile money number to charge.');
+      return;
+    }
     try {
       setSubscribing(true);
-      const ref = `SUB-${Date.now()}`;
-      await subscribeToPlan({
+      const res = await subscribeToPlan({
         plan_code: selectedPlan.code,
-        billing_period: 'monthly',
+        billing_period: isB2B ? 'yearly' : 'monthly',
         payment_method: paymentMethod,
-        transaction_reference: ref,
+        payer_phone: payerPhone.trim(),
+        transaction_reference: `SUB-${Date.now()}`,
       });
       setSelectedPlan(null);
-      Alert.alert('Success', `Subscribed to ${selectedPlan.name}`);
-      await load();
+
+      if (res.status === 'completed') {
+        await load();
+        Alert.alert('Success', `${selectedPlan.name} is now active.`);
+      } else if (res.status === 'failed') {
+        Alert.alert('Payment Failed', res.failure_reason || 'The charge could not be initiated.');
+      } else {
+        // Pending — hosted checkout (PayPal/card) gets a redirect URL;
+        // mobile money just needs the phone prompt approved.
+        if (res.redirect_url) {
+          Linking.openURL(res.redirect_url).catch(() => {});
+        }
+        setPendingPayment({
+          txId: res.id, planName: selectedPlan.name,
+          amount: res.amount, currency: res.currency,
+        });
+        pollPayment(res.id, selectedPlan.name);
+      }
     } catch (e: any) {
       Alert.alert('Subscription Failed', e?.message || 'Please try again');
     } finally {
@@ -145,6 +205,21 @@ export default function SellerSubscriptionScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} colors={[Brand.primary]} tintColor={Brand.primary} />}
       >
         <View style={styles.body}>
+          {/* Pending payment — waiting for the charge to confirm */}
+          {pendingPayment ? (
+            <View style={styles.pendingBanner}>
+              <ActivityIndicator size="small" color={Brand.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pendingTitle}>
+                  Awaiting payment — {pendingPayment.planName}
+                </Text>
+                <Text style={styles.pendingSub}>
+                  {pendingPayment.currency} {fmt(pendingPayment.amount)} · approve the prompt on your phone{polling ? '' : ' — checking…'}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {/* Current plan banner */}
           {subscription?.current_plan ? (
             <View style={styles.currentPlanBanner}>
@@ -231,11 +306,20 @@ export default function SellerSubscriptionScreen() {
                   ) : null}
                 </View>
 
-                <View style={styles.planPriceRow}>
-                  <Text style={styles.planPrice}>{plan.currency} {fmt(plan.monthly_price)}</Text>
-                  <Text style={styles.planPeriod}>/month</Text>
-                </View>
-                <Text style={styles.planYearly}>{plan.currency} {fmt(plan.yearly_price)}/year</Text>
+                {plan.plan_type === 'b2b' ? (
+                  <View style={styles.planPriceRow}>
+                    <Text style={styles.planPrice}>{plan.currency} {fmt(plan.yearly_price)}</Text>
+                    <Text style={styles.planPeriod}>/year</Text>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.planPriceRow}>
+                      <Text style={styles.planPrice}>{plan.currency} {fmt(plan.monthly_price)}</Text>
+                      <Text style={styles.planPeriod}>/month</Text>
+                    </View>
+                    <Text style={styles.planYearly}>{plan.currency} {fmt(plan.yearly_price)}/year</Text>
+                  </>
+                )}
 
                 <View style={styles.featuresList}>
                   <FeatureItem text={`${plan.product_limit || 'Unlimited'} products`} styles={styles} />
@@ -261,7 +345,7 @@ export default function SellerSubscriptionScreen() {
                   onPress={() => setSelectedPlan(plan)}
                 >
                   <Text style={styles.subscribeBtnText}>
-                    {isCurrent ? 'Current Plan' : plan.is_free ? 'Switch to Free' : 'Subscribe'}
+                    {isCurrent ? 'Current Plan' : plan.is_free ? 'Switch to Free' : 'Pay & Activate'}
                   </Text>
                 </Pressable>
               </View>
@@ -281,14 +365,22 @@ export default function SellerSubscriptionScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Subscribe to {selectedPlan?.name}</Text>
-            <Text style={styles.modalPrice}>{selectedPlan?.currency} {fmt(selectedPlan?.monthly_price)} / month</Text>
+            {selectedPlan?.is_free ? (
+              <Text style={styles.modalPrice}>Free</Text>
+            ) : selectedPlan?.plan_type === 'b2b' ? (
+              <Text style={styles.modalPrice}>{selectedPlan?.currency} {fmt(selectedPlan?.yearly_price)} / year</Text>
+            ) : (
+              <Text style={styles.modalPrice}>{selectedPlan?.currency} {fmt(selectedPlan?.monthly_price)} / month</Text>
+            )}
 
-            <Text style={styles.modalLabel}>Payment Method</Text>
+            {!selectedPlan?.is_free ? (
+              <>
+                <Text style={styles.modalLabel}>Payment Method</Text>
             <View style={styles.paymentMethods}>
               {[
                 { code: 'mtn_momo', label: 'MTN MoMo' },
                 { code: 'airtel_money', label: 'Airtel Money' },
-                { code: 'card', label: 'Card' },
+                { code: 'paypal', label: 'PayPal' },
               ].map((m) => (
                 <Pressable
                   key={m.code}
@@ -299,6 +391,22 @@ export default function SellerSubscriptionScreen() {
                 </Pressable>
               ))}
             </View>
+
+            {['mtn_momo', 'airtel_money'].includes(paymentMethod) ? (
+              <>
+                <Text style={styles.modalLabel}>Mobile Money Number</Text>
+                <TextInput
+                  style={styles.phoneInput}
+                  placeholder="e.g. 2567XXXXXXXX"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="phone-pad"
+                  value={payerPhone}
+                  onChangeText={setPayerPhone}
+                />
+              </>
+            ) : null}
+              </>
+            ) : null}
 
             <View style={styles.modalActions}>
               <Pressable style={styles.modalCancelBtn} onPress={() => setSelectedPlan(null)}>
@@ -362,6 +470,20 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: '#EDE9FE', borderRadius: 12, padding: 12, marginBottom: 12,
   },
   freeBannerText: { flex: 1, fontSize: 12, color: c.textSecondary },
+
+  pendingBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#FFF7ED', borderRadius: 12, padding: 12, marginBottom: 12,
+    borderWidth: 1, borderColor: '#FED7AA',
+  },
+  pendingTitle: { fontSize: 13, fontWeight: '700', color: '#9A3412' },
+  pendingSub: { fontSize: 11.5, color: '#9A3412', marginTop: 2 },
+
+  phoneInput: {
+    borderWidth: 1, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14,
+    color: c.text, backgroundColor: c.surface, marginBottom: 4,
+  },
 
   regionNotice: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

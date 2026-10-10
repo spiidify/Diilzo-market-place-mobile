@@ -1170,12 +1170,32 @@ export async function getMembership(): Promise<MembershipInfo> {
   return apiRequest<MembershipInfo>({ method: 'GET', url: `${SELLER_BASE}/membership/` });
 }
 
-/** POST /seller/membership/ — upgrade supplier membership tier */
-export async function upgradeMembership(tier: string): Promise<any> {
-  return apiRequest<any>({
+export interface MembershipPaymentResponse {
+  ok: boolean;
+  id?: number;
+  tier: string;
+  // 'completed' = tier already active; 'pending' = approve the momo prompt /
+  // complete hosted checkout; 'failed' = see failure_reason.
+  status: string;
+  amount?: string;
+  currency?: string;
+  failure_reason?: string | null;
+  redirect_url?: string | null;
+  message: string;
+}
+
+/** POST /seller/membership/ — change supplier membership tier.
+ *  Paid tiers go through a real gateway charge; the tier applies only
+ *  after the payment confirms (poll via getSubscriptionPaymentStatus). */
+export async function upgradeMembership(data: {
+  tier: string;
+  payment_method?: string;
+  payer_phone?: string;
+}): Promise<MembershipPaymentResponse> {
+  return apiRequest<MembershipPaymentResponse>({
     method: 'POST',
     url: `${SELLER_BASE}/membership/`,
-    data: { tier },
+    data,
   });
 }
 
