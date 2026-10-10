@@ -146,7 +146,7 @@ export default function CategoriesScreen() {
           {active && <View style={styles.activeBar} />}
           <View style={[styles.parentCircle, isTablet && styles.tabletParentCircle, active && styles.parentCircleActive]}>
             {item.display_image ? (
-              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="contain" />
+              <Image source={{ uri: item.display_image }} style={styles.parentCircleImg} resizeMode="cover" />
             ) : (
               <View style={styles.parentCircleFallback}>
                 <MaterialCommunityIcons name="tag" size={18} color="#FFFFFF" />
@@ -267,7 +267,7 @@ export default function CategoriesScreen() {
                       <Image
                         source={{ uri: selectedCategory.display_image }}
                         style={styles.heroBg}
-                        resizeMode="contain"
+                        resizeMode="cover"
                       />
                     ) : (
                       <View style={[styles.heroBg, styles.heroBgFallback]} />
@@ -305,7 +305,7 @@ export default function CategoriesScreen() {
                               <Image
                                 source={{ uri: child.display_image }}
                                 style={styles.subCardImg}
-                                resizeMode="contain"
+                                resizeMode="cover"
                               />
                             ) : (
                               <View style={styles.subCardFallback}>
