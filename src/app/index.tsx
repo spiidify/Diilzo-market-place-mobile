@@ -234,7 +234,7 @@ const ProductCard = memo(function ProductCard({
                 handleQuickAdd();
               }}
             >
-              <MaterialCommunityIcons name={quickAdded ? 'check' : 'cart-plus'} size={14} color={Brand.primary} />
+              <MaterialCommunityIcons name={quickAdded ? 'check' : 'cart-plus'} size={14} color="#FFFFFF" />
               <Text style={styles.viewBtnText} numberOfLines={1} maxFontSizeMultiplier={1.2}>{quickAdded ? 'Added' : 'Add to Cart'}</Text>
             </Pressable>
             <Pressable
@@ -2627,19 +2627,22 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   viewBtn: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#0E9F6E',
     borderRadius: 8,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    borderWidth: 1.5,
-    borderColor: Brand.primary,
+    shadowColor: '#0E9F6E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  viewBtnPressed: { backgroundColor: c.surfaceAlt, transform: [{ scale: 0.96 }] },
+  viewBtnPressed: { backgroundColor: '#0B8560', transform: [{ scale: 0.96 }] },
   viewBtnText: {
-    color: Brand.primary,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
   },
