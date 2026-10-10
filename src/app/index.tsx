@@ -834,7 +834,7 @@ const TopStoresSection = memo(function TopStoresSection({
           >
             <View style={styles.storeLogoWrap}>
               {s.logo_url ? (
-                <Image source={{ uri: s.logo_url }} style={styles.storeLogo} resizeMode="contain" />
+                <Image source={{ uri: s.logo_url }} style={styles.storeLogo} resizeMode="cover" />
               ) : (
                 <View style={styles.storeLogoFallback}>
                   <MaterialCommunityIcons name={s.is_wholesaler ? 'factory' : 'store'} size={24} color="#FFFFFF" />
