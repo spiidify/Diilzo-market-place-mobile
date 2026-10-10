@@ -30,7 +30,7 @@ import { createReview, fetchProductReviews, trackProductView } from '@/services/
 import { createChatThread } from '@/services/chat';
 import { getWatchStatus, setWatch } from '@/services/orders';
 import { fetchProductBySlug, fetchProducts } from '@/services/products';
-import { fetchSponsoredProducts, trackClick as trackPromoClick, trackImpression } from '@/services/promotions';
+import { fetchSponsoredProducts, trackImpression, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
 import type { CartItem, Product, ProductSpecification, Review } from '@/types';
@@ -764,7 +764,7 @@ export default function ProductDetailScreen() {
                 styles.condChipText,
                 product.condition === 'used' ? { color: '#555' } : product.condition === 'refurbished' ? { color: '#B45309' } : { color: '#1B7A00' },
               ]}>
-                {product.condition === 'used' ? 'Used' : product.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
+                Condition: {product.condition === 'used' ? 'Used' : product.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
               </Text>
             </View>
 
@@ -1547,9 +1547,9 @@ export default function ProductDetailScreen() {
             disabled={addingToCart || buyingNow}
           >
             {addingToCart ? (
-              <ActivityIndicator size="small" color={Brand.primary} />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <MaterialCommunityIcons name={inCartItem ? 'cart-check' : 'cart-plus'} size={20} color={Brand.primary} />
+              <MaterialCommunityIcons name={inCartItem ? 'cart-check' : 'cart-plus'} size={20} color="#FFFFFF" />
             )}
             <Text style={styles.cartBtnText}>{inCartItem ? 'View Cart' : 'Add to Cart'}</Text>
           </Pressable>
@@ -2245,13 +2245,11 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#0E9F6E',
     borderRadius: 8,
     paddingVertical: 12,
-    borderWidth: 1.5,
-    borderColor: Brand.primary,
   },
-  cartBtnText: { fontSize: 13, fontWeight: '700', color: Brand.primary },
+  cartBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   callBtn: {
     flex: 1,
     flexDirection: 'row',
