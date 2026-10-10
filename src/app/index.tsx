@@ -843,10 +843,6 @@ const TopStoresSection = memo(function TopStoresSection({
             </View>
             <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
             <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
-            <View style={styles.storeMetaRow}>
-              <MaterialCommunityIcons name="package-variant-closed" size={11} color={colors.textSecondary} />
-              <Text style={styles.storeMetaText}>{s.product_count || 0} products</Text>
-            </View>
             {s.is_wholesaler && (
               <View style={styles.storeWholesaleBadge}>
                 <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
@@ -2305,8 +2301,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   storeLogoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   storeName: { fontSize: 13, fontWeight: '700', color: c.text, textAlign: 'center' },
   storeLocation: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
-  storeMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  storeMetaText: { fontSize: 11, color: c.textSecondary },
   storeWholesaleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
