@@ -152,6 +152,14 @@ const ProductCard = memo(function ProductCard({
           {(item.sales_count || 0) > 0 && (
             <Text style={styles.soldText}>· {compactNum(item.sales_count!)} sold</Text>
           )}
+          <Text style={styles.conditionLine} numberOfLines={1}>
+            · Condition: <Text style={[
+              styles.conditionValue,
+              (item.condition === 'used' || item.condition === 'refurbished') && styles.conditionValueUsed,
+            ]}>
+              {item.condition === 'used' ? 'Used' : item.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
+            </Text>
+          </Text>
         </View>
         <View style={styles.priceRow}>
           <View style={styles.priceLeft}>
@@ -184,22 +192,13 @@ const ProductCard = memo(function ProductCard({
             )}
           </View>
         </View>
-        {(item.is_wholesale || (item.min_order_quantity || 1) > 1 || (item.condition && item.condition !== 'new')) && (
+        {(item.is_wholesale || (item.min_order_quantity || 1) > 1) && (
           <View style={styles.metaRow}>
-            {item.condition && item.condition !== 'new' && (
-              <View style={[styles.moqBadge, styles.condBadge]}>
-                <Text style={[styles.moqBadgeText, styles.condBadgeText]}>
-                  {item.condition === 'used' ? 'Used' : 'Refurbished'}
-                </Text>
-              </View>
-            )}
-            {(item.is_wholesale || (item.min_order_quantity || 1) > 1) && (
-              <View style={styles.moqBadge}>
-                <Text style={styles.moqBadgeText}>
-                  {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
-                </Text>
-              </View>
-            )}
+            <View style={styles.moqBadge}>
+              <Text style={styles.moqBadgeText}>
+                {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
+              </Text>
+            </View>
           </View>
         )}
         {/* ── Action buttons: different for supplier vs local seller ── */}
@@ -2498,6 +2497,17 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 11,
     color: c.textTertiary,
   },
+  conditionLine: {
+    fontSize: 11,
+    color: c.textTertiary,
+    flexShrink: 1,
+  },
+  conditionValue: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0E9F6E',
+  },
+  conditionValueUsed: { color: '#B45309' },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
