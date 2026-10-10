@@ -843,12 +843,28 @@ const TopStoresSection = memo(function TopStoresSection({
             </View>
             <Text style={styles.storeName} numberOfLines={1}>{s.name}</Text>
             <Text style={styles.storeLocation} numberOfLines={1}>{s.city}, {s.country}</Text>
-            {s.is_wholesaler && (
-              <View style={styles.storeWholesaleBadge}>
-                <MaterialCommunityIcons name="shield-check" size={10} color="#FFFFFF" />
-                <Text style={styles.storeWholesaleText}>Supplier</Text>
-              </View>
-            )}
+            {(() => {
+              const typeLabels: Record<string, string> = {
+                manufacturer: 'Manufacturer',
+                wholesaler: 'Wholesaler',
+                distributor: 'Distributor',
+                trading_company: 'Trading Co.',
+                retailer: 'Retailer',
+                individual: 'Seller',
+              };
+              const label = typeLabels[s.business_type || ''] || 'Seller';
+              const isSupplier = ['manufacturer', 'wholesaler', 'distributor', 'trading_company'].includes(s.business_type || '');
+              return (
+                <View style={[styles.storeTypeBadge, !isSupplier && styles.storeTypeBadgeLocal]}>
+                  <MaterialCommunityIcons
+                    name={isSupplier ? 'factory' : 'store'}
+                    size={10}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.storeWholesaleText}>{label}</Text>
+                </View>
+              );
+            })()}
           </Pressable>
         ))}
       </ScrollView>
@@ -2301,7 +2317,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   storeLogoFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   storeName: { fontSize: 13, fontWeight: '700', color: c.text, textAlign: 'center' },
   storeLocation: { fontSize: 11, color: c.textSecondary, textAlign: 'center' },
-  storeWholesaleBadge: {
+  storeTypeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
@@ -2311,6 +2327,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
     marginTop: 2,
   },
+  storeTypeBadgeLocal: { backgroundColor: '#0E9F6E' },
   storeWholesaleText: { fontSize: 9, fontWeight: '700', color: '#FFFFFF' },
 
   // ── Top Brands section ──────────────────────────────────────────
