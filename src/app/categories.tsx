@@ -51,8 +51,8 @@ export default function CategoriesScreen() {
   // Subcategory card width — responsive to actual screen width
   const leftPanelWidth = isTablet ? 160 : LEFT_PANEL_WIDTH;
   const categoryContentWidth = contentWidth - leftPanelWidth;
-  const subGridPadding = 20;
-  const subGridGap = 10;
+  const subGridPadding = 16;
+  const subGridGap = 6;
   const subColumns = categoryContentWidth >= 900 ? 5 : categoryContentWidth >= 650 ? 4 : 3;
   const productGridColumns = categoryContentWidth >= 850 ? 4 : categoryContentWidth >= 560 ? 3 : 2;
   const subCardWidth = Math.floor(
@@ -261,35 +261,6 @@ export default function CategoriesScreen() {
             >
               {selectedCategory && (
                 <>
-                  {/* Category hero banner */}
-                  <View style={[styles.heroBanner, isTablet && styles.tabletHeroBanner]}>
-                    {selectedCategory.display_image ? (
-                      <Image
-                        source={{ uri: selectedCategory.display_image }}
-                        style={styles.heroBg}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={[styles.heroBg, styles.heroBgFallback]} />
-                    )}
-                    <View style={styles.heroOverlay} />
-                    <View style={styles.heroContent}>
-                      <Text style={styles.heroTitle}>{selectedCategory.name}</Text>
-                      <Text style={styles.heroCount}>
-                        {(selectedCategory.children || []).length} subcategories
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Browse all button — pill style */}
-                  <Pressable
-                    style={({ pressed }) => [styles.browseAllPill, pressed && { opacity: 0.88 }]}
-                    onPress={() => handleCategoryPress(selectedCategory)}
-                  >
-                    <MaterialCommunityIcons name="view-grid" size={18} color="#FFFFFF" />
-                    <Text style={styles.browseAllText}>Browse all {selectedCategory.name}</Text>
-                    <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
-                  </Pressable>
 
                   {/* Subcategories — modern card grid */}
                   {selectedCategory.children && selectedCategory.children.length > 0 ? (
@@ -506,95 +477,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   rightContent: { paddingBottom: 24 },
 
-  // ── Hero banner ───────────────────────────────────────────────
-  heroBanner: {
-    height: 110,
-    marginHorizontal: 10,
-    marginTop: 10,
-    borderRadius: 14,
-    position: 'relative',
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-  },
-  tabletHeroBanner: { height: 180, marginHorizontal: 24 },
-  heroBg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
-  },
-  heroBgFallback: {
-    backgroundColor: Brand.primary,
-  },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  heroContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 14,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  heroCount: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 2,
-    fontWeight: '600',
-  },
-
-  // ── Browse all pill button ─────────────────────────────────────
-  browseAllPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 10,
-    marginTop: 10,
-    marginBottom: 14,
-    backgroundColor: Brand.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: Brand.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  browseAllText: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14,
-    flex: 1,
-    textAlign: 'center',
-  },
-
   // ── Subcategory list — 3 per row ───────────────────────────────
   subGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 10,
-    gap: 10,
+    paddingHorizontal: 8,
+    gap: 6,
   },
   subCard: {
     backgroundColor: c.surface,
