@@ -2129,8 +2129,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   tabGrid: {
     padding: Spacing.one,
     backgroundColor: c.surfaceAlt,
-    marginHorizontal: Spacing.two,
-    borderRadius: 12,
+    marginHorizontal: 0,
+    borderRadius: 0,
   },
   tabRow: { flexDirection: 'row', gap: Spacing.one, marginBottom: Spacing.one },
   carouselCard: {
