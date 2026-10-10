@@ -2571,9 +2571,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontWeight: '800',
   },
   quickAddBtn: {
-    width: 26,
     height: 26,
-    borderRadius: 13,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     backgroundColor: Brand.primary + '14',
     borderWidth: 1,
     borderColor: Brand.primary,
