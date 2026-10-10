@@ -2130,7 +2130,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     padding: Spacing.one,
     backgroundColor: c.surfaceAlt,
     marginHorizontal: 0,
-    borderRadius: 0,
   },
   tabRow: { flexDirection: 'row', gap: Spacing.one, marginBottom: Spacing.one },
   carouselCard: {
