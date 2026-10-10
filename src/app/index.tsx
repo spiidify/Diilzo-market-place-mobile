@@ -213,7 +213,7 @@ const ProductCard = memo(function ProductCard({
               }}
             >
               <MaterialCommunityIcons name="chat-outline" size={14} color={Brand.primary} />
-              <Text style={styles.inquiryBtnText}>Chat Now</Text>
+              <Text style={styles.inquiryBtnText} numberOfLines={1} maxFontSizeMultiplier={1.2}>Chat Now</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.addToCartBtn, pressed && styles.addToCartPressed]}
@@ -223,7 +223,7 @@ const ProductCard = memo(function ProductCard({
               }}
             >
               <MaterialCommunityIcons name="shopping" size={14} color="#FFFFFF" />
-              <Text style={styles.addToCartText}>BUY Now</Text>
+              <Text style={styles.addToCartText} numberOfLines={1} maxFontSizeMultiplier={1.2}>BUY Now</Text>
             </Pressable>
           </View>
         ) : (
@@ -236,7 +236,7 @@ const ProductCard = memo(function ProductCard({
               }}
             >
               <MaterialCommunityIcons name={quickAdded ? 'check' : 'cart-plus'} size={14} color={Brand.primary} />
-              <Text style={styles.viewBtnText}>{quickAdded ? 'Added' : 'Add to Cart'}</Text>
+              <Text style={styles.viewBtnText} numberOfLines={1} maxFontSizeMultiplier={1.2}>{quickAdded ? 'Added' : 'Add to Cart'}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.addToCartBtn, pressed && styles.addToCartPressed]}
@@ -246,7 +246,7 @@ const ProductCard = memo(function ProductCard({
               }}
             >
               <MaterialCommunityIcons name="shopping" size={14} color="#FFFFFF" />
-              <Text style={styles.addToCartText}>BUY Now</Text>
+              <Text style={styles.addToCartText} numberOfLines={1} maxFontSizeMultiplier={1.2}>BUY Now</Text>
             </Pressable>
           </View>
         )}
