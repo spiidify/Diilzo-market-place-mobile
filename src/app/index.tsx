@@ -708,11 +708,13 @@ const ProductCarouselSection = memo(function ProductCarouselSection({
 // ── Tabbed product section — switches between product sets in a 2-col grid ──
 const ProductTabsSection = memo(function ProductTabsSection({
   tabs,
+  defaultKey,
   onPress,
   onChat,
   onQuickAdd,
 }: {
   tabs: { key: string; icon: string; title: string; data: Product[]; endsAt?: string | null }[];
+  defaultKey?: string;
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
   onQuickAdd?: (product: Product) => Promise<boolean>;
@@ -720,7 +722,9 @@ const ProductTabsSection = memo(function ProductTabsSection({
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const visibleTabs = tabs.filter((t) => t.data && t.data.length > 0);
-  const [activeKey, setActiveKey] = useState<string>(visibleTabs[0]?.key ?? '');
+  const [activeKey, setActiveKey] = useState<string>(
+    visibleTabs.some((t) => t.key === defaultKey) ? defaultKey! : (visibleTabs[0]?.key ?? '')
+  );
   const active = visibleTabs.find((t) => t.key === activeKey) ?? visibleTabs[0];
   const cd = useCountdown(active?.endsAt ?? null);
   if (visibleTabs.length === 0 || !active) return null;
@@ -1403,6 +1407,7 @@ export default function ProductFeedScreen() {
           { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
           { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
         ]}
+        defaultKey="recommended"
         onPress={handleProductPress}
         onChat={handleChat}
         onQuickAdd={handleQuickAdd}
