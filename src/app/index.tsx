@@ -905,7 +905,6 @@ const TopBrandsSection = memo(function TopBrandsSection({
               )}
             </View>
             <Text style={styles.brandName} numberOfLines={1}>{b.name}</Text>
-            <Text style={styles.brandCount}>{b.product_count} products</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -2366,11 +2365,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontWeight: '700',
     color: c.text,
     textAlign: 'center',
-  },
-  brandCount: {
-    fontSize: 10,
-    color: c.textTertiary,
-    marginTop: 1,
   },
 
   // ── Supplier banner ─────────────────────────────────────────────
