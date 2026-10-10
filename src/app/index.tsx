@@ -2573,7 +2573,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   addToCartBtn: {
     flex: 1,
     backgroundColor: Brand.primary,
-    borderRadius: 20,
+    borderRadius: 8,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2612,7 +2612,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   viewBtn: {
     flex: 1,
     backgroundColor: 'transparent',
-    borderRadius: 20,
+    borderRadius: 8,
     paddingVertical: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
