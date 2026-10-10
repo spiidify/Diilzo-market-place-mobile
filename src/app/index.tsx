@@ -1403,9 +1403,9 @@ export default function ProductFeedScreen() {
       {/* ── Tabbed product shelf: Today's Deals / New Arrivals / Recommended ── */}
       <ProductTabsSection
         tabs={[
+          { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
           { key: 'flash', icon: 'flash', title: 'Flash Sale', data: flashSale, endsAt: flashEndsAt },
           { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
-          { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
         ]}
         defaultKey="recommended"
         onPress={handleProductPress}
