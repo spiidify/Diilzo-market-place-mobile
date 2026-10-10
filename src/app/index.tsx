@@ -152,15 +152,15 @@ const ProductCard = memo(function ProductCard({
           {(item.sales_count || 0) > 0 && (
             <Text style={styles.soldText}>· {compactNum(item.sales_count!)} sold</Text>
           )}
-          <Text style={styles.conditionLine} numberOfLines={1}>
-            · Condition: <Text style={[
-              styles.conditionValue,
-              (item.condition === 'used' || item.condition === 'refurbished') && styles.conditionValueUsed,
-            ]}>
-              {item.condition === 'used' ? 'Used' : item.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
-            </Text>
-          </Text>
         </View>
+        <Text style={styles.conditionLine} numberOfLines={1}>
+          Condition: <Text style={[
+            styles.conditionValue,
+            (item.condition === 'used' || item.condition === 'refurbished') && styles.conditionValueUsed,
+          ]}>
+            {item.condition === 'used' ? 'Used' : item.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
+          </Text>
+        </Text>
         <View style={styles.priceRow}>
           <View style={styles.priceLeft}>
             <Text style={styles.currency}>{item.display_currency || item.currency}</Text>
@@ -2501,6 +2501,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 11,
     color: c.textTertiary,
     flexShrink: 1,
+    marginTop: 2,
   },
   conditionValue: {
     fontSize: 11,
