@@ -2126,7 +2126,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   tabBtnText: { fontSize: 11, fontWeight: '700', color: Brand.accent, flexShrink: 1 },
   tabBtnTextActive: { color: '#FFFFFF' },
-  tabGrid: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.two },
+  tabGrid: {
+    paddingHorizontal: Spacing.two, paddingBottom: Spacing.two, paddingTop: Spacing.two,
+    backgroundColor: c.surfaceAlt,
+    marginHorizontal: Spacing.two,
+    borderRadius: 12,
+  },
   tabRow: { flexDirection: 'row', gap: Spacing.two, marginBottom: Spacing.two },
   carouselCard: {
     width: 150,
@@ -2406,6 +2411,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     borderRadius: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: c.borderLight,
     elevation: 3,
     shadowColor: '#000000',
     shadowOpacity: 0.1,
