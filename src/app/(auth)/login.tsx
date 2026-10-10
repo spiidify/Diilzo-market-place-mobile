@@ -2,16 +2,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
 
 import { GradientHeader } from '@/components/GradientHeader';
@@ -20,26 +20,22 @@ import { Brand } from '@/constants/theme';
 import { TwoFactorRequiredError, useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
-  authenticateWithBiometrics,
-  enableBiometric,
-  getBiometricCredentials,
-  getBiometricType,
-  isBiometricAvailable,
-  isBiometricEnabled,
+    authenticateWithBiometrics,
+    enableBiometric,
+    getBiometricCredentials,
+    getBiometricType,
+    isBiometricAvailable,
+    isBiometricEnabled,
 } from '@/services/biometric';
 import { getSafeErrorMessage } from '@/utils/errors';
 import { isValidEmail, sanitizeEmail, sanitizeString } from '@/utils/validation';
-
-type LoginMode = 'email' | 'phone';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { login, loginWithEmailOrPhone } = useAuth();
-  const [loginMode, setLoginMode] = useState<LoginMode>('email');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,37 +82,31 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    // Validate inputs
-    if (loginMode === 'email') {
-      if (!email || !password) {
-        setError('Please enter your email and password.');
-        return;
-      }
-      if (!isValidEmail(email)) {
-        setError('Please enter a valid email address.');
-        return;
-      }
-    } else {
-      if (!phone || !password) {
-        setError('Please enter your phone number and password.');
-        return;
-      }
-      if (phone.replace(/[^0-9]/g, '').length < 7) {
-        setError('Please enter a valid phone number.');
-        return;
-      }
+    // Validate inputs — one field accepts email or phone
+    if (!identifier || !password) {
+      setError('Please enter your email or phone number and password.');
+      return;
+    }
+    const looksLikeEmail = identifier.includes('@');
+    if (looksLikeEmail && !isValidEmail(identifier)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!looksLikeEmail && identifier.replace(/[^0-9]/g, '').length < 7) {
+      setError('Please enter a valid email or phone number.');
+      return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const identifier = loginMode === 'email'
-        ? sanitizeEmail(email)
-        : sanitizeString(phone, 20);
+      const cleanIdentifier = looksLikeEmail
+        ? sanitizeEmail(identifier)
+        : sanitizeString(identifier, 20);
       const cleanPassword = sanitizeString(password, 128);
 
       try {
-        await loginWithEmailOrPhone(identifier, cleanPassword);
+        await loginWithEmailOrPhone(cleanIdentifier, cleanPassword);
       } catch (e: any) {
         if (e instanceof TwoFactorRequiredError) {
           // Navigate to 2FA verification screen
@@ -140,7 +130,7 @@ export default function LoginScreen() {
               text: 'Enable',
               onPress: async () => {
                 try {
-                  await enableBiometric(sanitizeEmail(email), cleanPassword);
+                  await enableBiometric(cleanIdentifier, cleanPassword);
                   setBioEnabled(true);
                 } catch {
                   // Non-critical — just skip enabling
@@ -180,65 +170,20 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Email / Phone tab toggle */}
-            <View style={styles.tabRow}>
-              <Pressable
-                style={[styles.tab, loginMode === 'email' && styles.tabActive]}
-                onPress={() => { setLoginMode('email'); setError(null); }}
-              >
-                <MaterialCommunityIcons
-                  name="email-outline"
-                  size={16}
-                  color={loginMode === 'email' ? '#FFFFFF' : colors.textTertiary}
-                />
-                <Text style={[styles.tabText, loginMode === 'email' && styles.tabTextActive]}>Email</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.tab, loginMode === 'phone' && styles.tabActive]}
-                onPress={() => { setLoginMode('phone'); setError(null); }}
-              >
-                <MaterialCommunityIcons
-                  name="phone-outline"
-                  size={16}
-                  color={loginMode === 'phone' ? '#FFFFFF' : colors.textTertiary}
-                />
-                <Text style={[styles.tabText, loginMode === 'phone' && styles.tabTextActive]}>Phone</Text>
-              </Pressable>
+            {/* Email or phone — single field, auto-detected */}
+            <View style={styles.inputWrap}>
+              <MaterialCommunityIcons name="account-outline" size={20} color={colors.textTertiary} />
+              <TextInput
+                style={styles.input}
+                value={identifier}
+                onChangeText={setIdentifier}
+                placeholder="Email or phone number"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
             </View>
-
-            {/* Email input (email mode) */}
-            {loginMode === 'email' && (
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="email-outline" size={20} color={colors.textTertiary} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            )}
-
-            {/* Phone input (phone mode) */}
-            {loginMode === 'phone' && (
-              <View style={styles.inputWrap}>
-                <MaterialCommunityIcons name="phone-outline" size={20} color={colors.textTertiary} />
-                <TextInput
-                  style={styles.input}
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="+256 700 000 000"
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="phone-pad"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            )}
 
             {/* Password input */}
             <View style={styles.inputWrap}>
@@ -370,36 +315,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   errorText: {
     color: Brand.danger,
     fontSize: 13,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: c.surfaceAlt,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  tabActive: {
-    backgroundColor: Brand.primary,
-    borderColor: Brand.primary,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: c.textSecondary,
-  },
-  tabTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
   },
   inputWrap: {
     flexDirection: 'row',
