@@ -47,7 +47,18 @@ export interface FinancialDashboard {
   eligible_for_payout: string;
   min_payout_amount: string;
   can_request_payout: boolean;
+  // Effective default rate (rules + plan discount applied). The raw store
+  // fallback and per-category rates are exposed separately.
   commission_rate: string;
+  base_commission_rate?: string;
+  plan_discount?: string;
+  commission_by_category?: Array<{ name: string; rate: string }>;
+  commission_rules?: Array<{
+    name: string;
+    percentage: string;
+    fixed_fee: string;
+    scope: string;
+  }>;
   commission_transactions_30d: number;
   recent_ledger: Array<{
     type: string;

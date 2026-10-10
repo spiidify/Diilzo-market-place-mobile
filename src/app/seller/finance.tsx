@@ -2,13 +2,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 
 import { ModernHeader } from '@/components/ModernHeader';
@@ -16,8 +16,8 @@ import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
-  getFinancialDashboard,
-  type FinancialDashboard,
+    getFinancialDashboard,
+    type FinancialDashboard,
 } from '@/services/financial';
 
 export default function SellerFinanceDashboardScreen() {
@@ -131,7 +131,7 @@ export default function SellerFinanceDashboardScreen() {
               <Text style={[styles.balanceValue, { color: colors.text, fontSize: 16 }]}>UGX {fmt(data?.total_paid_out)}</Text>
             </View>
             <View style={[styles.balanceCard, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }]}>
-              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Commission Rate</Text>
+              <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Effective Rate</Text>
               <Text style={[styles.balanceValue, { color: colors.text, fontSize: 16 }]}>{data?.commission_rate || '0'}%</Text>
             </View>
           </View>
@@ -249,7 +249,7 @@ export default function SellerFinanceDashboardScreen() {
                   <MaterialCommunityIcons name="percent" size={20} color="#8B5CF6" />
                 </View>
                 <Text style={styles.commissionValue}>{data?.commission_rate || '0'}%</Text>
-                <Text style={styles.commissionLabel}>Current Rate</Text>
+                <Text style={styles.commissionLabel}>Effective Rate</Text>
               </View>
               <View style={styles.commissionMetric}>
                 <View style={[styles.commissionIcon, { backgroundColor: Brand.primary + '20' }]}>
@@ -266,6 +266,37 @@ export default function SellerFinanceDashboardScreen() {
                 <Text style={styles.commissionLabel}>Eligible</Text>
               </View>
             </View>
+
+            {/* Dynamic-rate detail — commission varies by category/rule,
+                so the headline rate alone isn't the whole story */}
+            {(() => {
+              const byCat = data?.commission_by_category || [];
+              const rules = data?.commission_rules || [];
+              const planDisc = Number(data?.plan_discount || 0);
+              const varies = byCat.some(c => Number(c.rate) !== Number(data?.commission_rate));
+              if (!varies && rules.length === 0 && planDisc === 0) return null;
+              return (
+                <View style={{ marginTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, paddingTop: 10 }}>
+                  {planDisc > 0 && (
+                    <Text style={[styles.rateDetailLine, { color: Brand.success }]}>
+                      Plan discount: −{planDisc}% applied to every rate below
+                    </Text>
+                  )}
+                  {byCat.map(c => (
+                    <View key={c.name} style={styles.rateRow}>
+                      <Text style={[styles.rateRowLabel, { color: colors.textSecondary }]}>{c.name}</Text>
+                      <Text style={[styles.rateRowValue, { color: colors.text }]}>{Number(c.rate).toFixed(1)}%</Text>
+                    </View>
+                  ))}
+                  {rules.map(r => (
+                    <View key={r.name} style={styles.rateRow}>
+                      <Text style={[styles.rateRowLabel, { color: '#8B5CF6' }]}>Rule: {r.name} ({r.scope})</Text>
+                      <Text style={[styles.rateRowValue, { color: '#8B5CF6' }]}>{Number(r.percentage).toFixed(1)}%{Number(r.fixed_fee) > 0 ? ` +${fmt(r.fixed_fee)}` : ''}</Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </View>
 
           {/* Active holds alert */}
@@ -364,6 +395,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   commissionIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   commissionValue: { fontSize: 14, fontWeight: '800', color: c.text },
   commissionLabel: { fontSize: 10, color: c.textTertiary, fontWeight: '600' },
+
+  rateDetailLine: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
+  rateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  rateRowLabel: { fontSize: 12, flex: 1, marginRight: 8 },
+  rateRowValue: { fontSize: 12, fontWeight: '700' },
 
   holdsAlert: {
     flexDirection: 'row', alignItems: 'center', gap: 10,

@@ -143,7 +143,13 @@ export default function SellerEarningsScreen() {
                   <View style={styles.heroSubRow}>
                     <MaterialCommunityIcons name="percent" size={12} color="rgba(255,255,255,0.85)" />
                     <Text style={styles.heroSubText}>
-                      Commission rate {data?.commission_rate || '0'}%
+                      Effective rate {data?.commission_rate || '0'}%
+                      {(data?.commission_by_category || []).some(
+                        c => Number(c.rate) !== Number(data?.commission_rate)
+                      )
+                        ? ` — varies by category (${data!.commission_by_category!
+                            .slice(0, 3).map(c => `${c.name} ${Number(c.rate).toFixed(0)}%`).join(', ')}${data!.commission_by_category!.length > 3 ? '…' : ''})`
+                        : ''}
                     </Text>
                   </View>
                   <View style={styles.heroPayoutRow}>

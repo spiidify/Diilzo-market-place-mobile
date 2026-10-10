@@ -194,7 +194,12 @@ export default function SellerOrderDetailScreen() {
             <Text style={styles.earnValue}>UGX {Number(detail.subtotal).toLocaleString()}</Text>
           </View>
           <View style={styles.earnRow}>
-            <Text style={styles.earnLabel}>Commission</Text>
+            <Text style={styles.earnLabel}>
+              Commission
+              {detail.commission_percentage != null
+                ? ` (${Number(detail.commission_percentage).toFixed(1)}%${detail.commission_rule_name ? ` — ${detail.commission_rule_name}` : ''})`
+                : ''}
+            </Text>
             <Text style={[styles.earnValue, { color: Brand.danger }]}>-UGX {Number(detail.commission_amount).toLocaleString()}</Text>
           </View>
           <View style={[styles.earnRow, styles.earnTotalRow]}>

@@ -95,6 +95,10 @@ export interface SellerOrderDetail {
   status: string;
   subtotal: string;
   commission_amount: string;
+  // Rate actually charged on this order (historical, from the recorded
+  // commission transaction) — null when no transaction exists yet.
+  commission_percentage?: string | null;
+  commission_rule_name?: string | null;
   seller_amount: string;
   created_at: string;
   accepted_at: string | null;
@@ -121,7 +125,18 @@ export interface SellerOrderItem {
 export interface SellerEarnings {
   available_balance: string;
   pending_balance: string;
+  // Effective default rate (rules + plan discount applied). The raw store
+  // fallback and per-category rates are exposed separately.
   commission_rate: string;
+  base_commission_rate?: string;
+  plan_discount?: string;
+  commission_by_category?: Array<{ name: string; rate: string }>;
+  commission_rules?: Array<{
+    name: string;
+    percentage: string;
+    fixed_fee: string;
+    scope: string;
+  }>;
   total_earned?: string;
   total_payouts?: string;
   commission_to_diilzo?: string;
