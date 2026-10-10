@@ -477,7 +477,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: c.background,
   },
-  rightContent: { paddingBottom: 24 },
+  rightContent: { paddingTop: 10, paddingBottom: 24 },
 
   // ── Subcategory list — 3 per row ───────────────────────────────
   subGrid: {
