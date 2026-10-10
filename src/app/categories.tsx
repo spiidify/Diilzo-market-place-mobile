@@ -74,6 +74,8 @@ export default function CategoriesScreen() {
     try {
       setLoadError(null);
       const cats = await fetchCategories(categorySize);
+      // Most-stocked categories float to the top of the parent rail
+      cats.sort((a, b) => (b.product_count || 0) - (a.product_count || 0));
       setCategories(cats);
       if (cats.length > 0 && !selectedSlugRef.current) {
         selectedSlugRef.current = cats[0].slug;
