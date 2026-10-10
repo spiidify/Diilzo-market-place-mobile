@@ -735,40 +735,41 @@ export default function ProductDetailScreen() {
             {/* ── Title + price section (compact, Alibaba-style) ─────── */}
             <View style={[styles.titleSection, isWideTablet && styles.tabletTitleSection]}>
 
-            {/* Local / International badge */}
-            {(isLocalSeller || isInternationalSeller) && (
-              <View style={[styles.locBadgeRow, isLocalSeller ? styles.locBadgeLocal : styles.locBadgeIntl]}>
-                <MaterialCommunityIcons
-                  name={isLocalSeller ? 'map-marker-radius' : 'earth'}
-                  size={12}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.locBadgeText}>
-                  {isLocalSeller ? 'LOCAL SELLER' : 'INTERNATIONAL SELLER'}
-                  {product.store?.city ? ` · ${product.store.city}` : ''}
+            {/* Badges — local/intl + condition share one row */}
+            <View style={styles.badgesRow}>
+              {(isLocalSeller || isInternationalSeller) && (
+                <View style={[styles.locBadgeRow, isLocalSeller ? styles.locBadgeLocal : styles.locBadgeIntl]}>
+                  <MaterialCommunityIcons
+                    name={isLocalSeller ? 'map-marker-radius' : 'earth'}
+                    size={12}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.locBadgeText}>
+                    {isLocalSeller ? 'LOCAL SELLER' : 'INTERNATIONAL SELLER'}
+                    {product.store?.city ? ` · ${product.store.city}` : ''}
+                  </Text>
+                </View>
+              )}
+              <View style={[
+                styles.condChip,
+                product.condition === 'used' ? styles.condUsed
+                  : product.condition === 'refurbished' ? styles.condRefurb
+                  : styles.condNew,
+              ]}>
+                <MaterialCommunityIcons name="certificate-outline" size={12} color={
+                  product.condition === 'used' ? '#555' : product.condition === 'refurbished' ? '#B45309' : '#1B7A00'
+                } />
+                <Text style={[
+                  styles.condChipText,
+                  product.condition === 'used' ? { color: '#555' } : product.condition === 'refurbished' ? { color: '#B45309' } : { color: '#1B7A00' },
+                ]}>
+                  Condition: {product.condition === 'used' ? 'Used' : product.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
                 </Text>
               </View>
-            )}
-
-            {/* Condition chip — always shown (Brand New / Refurbished / Used) */}
-            <View style={[
-              styles.condChip,
-              product.condition === 'used' ? styles.condUsed
-                : product.condition === 'refurbished' ? styles.condRefurb
-                : styles.condNew,
-            ]}>
-              <MaterialCommunityIcons name="certificate-outline" size={12} color={
-                product.condition === 'used' ? '#555' : product.condition === 'refurbished' ? '#B45309' : '#1B7A00'
-              } />
-              <Text style={[
-                styles.condChipText,
-                product.condition === 'used' ? { color: '#555' } : product.condition === 'refurbished' ? { color: '#B45309' } : { color: '#1B7A00' },
-              ]}>
-                Condition: {product.condition === 'used' ? 'Used' : product.condition === 'refurbished' ? 'Refurbished' : 'Brand New'}
-              </Text>
             </View>
 
-            {/* Price — prominent, Alibaba-style (updates with variant) */}
+            {/* Price + rating/stock share a row — fills the dead space right of the price */}
+            <View style={styles.priceMetaRow}>
             <View style={styles.priceBlock}>
               {product.is_on_sale && !selectedVariant && (
                 <Text style={styles.oldPrice}>
@@ -796,10 +797,7 @@ export default function ProductDetailScreen() {
               )}
             </View>
 
-            {/* Product name */}
-            <Text style={styles.productName}>{product.name}</Text>
-
-            {/* Rating + stock in one row */}
+            {/* Rating + stock — sits right of the price */}
             <View style={styles.metaLine}>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -823,6 +821,10 @@ export default function ProductDetailScreen() {
                 {effectiveInStock ? (isLowStock ? `Only ${effectiveStock} left` : 'In Stock') : 'Out of Stock'}
               </Text>
             </View>
+            </View>
+
+            {/* Product name */}
+            <Text style={styles.productName}>{product.name}</Text>
 
             {/* Brand / category / SKU tags */}
             <View style={styles.tagsRow}>
@@ -2477,6 +2479,19 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
 
   // ── Local / International badge ────────────────────────────────
+  badgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  priceMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   locBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2485,7 +2500,6 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     paddingVertical: 5,
     borderRadius: 6,
     alignSelf: 'flex-start',
-    marginBottom: 8,
   },
   locBadgeLocal: {
     backgroundColor: Brand.primary,
@@ -2506,7 +2520,6 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     paddingVertical: 4,
     borderRadius: 6,
     alignSelf: 'flex-start',
-    marginBottom: 8,
   },
   condNew: { backgroundColor: '#E8F7E0' },
   condRefurb: { backgroundColor: '#FEF3DC' },
