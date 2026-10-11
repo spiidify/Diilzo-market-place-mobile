@@ -59,6 +59,7 @@ import {
     fetchTopStores
 } from '@/services/catalog';
 import { createChatThread } from '@/services/chat';
+import { flagEmoji } from '@/services/country';
 import { fetchProducts } from '@/services/products';
 import type {
     Brand as BrandType,
@@ -145,6 +146,7 @@ const ProductCard = memo(function ProductCard({
             ) : (
               <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.textTertiary} />
             )}
+            {!!item.store.country_code && <Text style={styles.cardStoreFlag}>{flagEmoji(item.store.country_code)}</Text>}
             <Text style={styles.cardStoreName} numberOfLines={1}>{item.store.name}</Text>
           </View>
         )}
@@ -2499,6 +2501,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     height: 14,
     borderRadius: 7,
     backgroundColor: c.borderLight,
+  },
+  cardStoreFlag: {
+    fontSize: 9.5,
+    marginRight: 2,
   },
   cardStoreName: {
     flex: 1,

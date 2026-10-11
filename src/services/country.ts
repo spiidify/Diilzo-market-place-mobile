@@ -32,3 +32,15 @@ export async function setCountryIso2(iso2: string): Promise<void> {
     // ignore — in-memory value still applies for this session
   }
 }
+
+/**
+ * Convert an ISO 3166-1 alpha-2 code to its flag emoji (regional
+ * indicator symbols). Returns '' for missing/invalid codes.
+ */
+export function flagEmoji(iso2?: string | null): string {
+  if (!iso2 || iso2.length !== 2) return '';
+  const code = iso2.toUpperCase();
+  return String.fromCodePoint(
+    ...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)
+  );
+}
