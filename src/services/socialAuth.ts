@@ -36,11 +36,22 @@ export function isGoogleConfigured(): boolean {
   return !!GOOGLE_CLIENT_ID;
 }
 
+// In Expo Go the default redirect is an exp:// custom-scheme URL that
+// Google can't redirect a browser to (shows a 400/404 error page). Route
+// through Expo's auth proxy instead — this https URL must be added to the
+// Google client's Authorized redirect URIs.
+const PROXY_REDIRECT_URI = 'https://auth.expo.io/@dayankennedy/diilzo-mobile';
+
 // Always call the hook (Rules of Hooks). When clientId is empty the
 // request is unusable, but the hook count stays stable.
 export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: GOOGLE_CLIENT_ID,
+    // Implicit token flow: on native the SDK defaults to code flow, but a
+    // web OAuth client can't exchange a code without the client secret.
+    // Token flow returns an access_token the backend verifies directly.
+    responseType: 'token',
+    redirectUri: PROXY_REDIRECT_URI,
     scopes: ['openid', 'profile', 'email'],
   });
   return { request, response, promptAsync, configured: isGoogleConfigured() };
