@@ -7,7 +7,7 @@ type DiilzoLogoProps = {
 };
 
 const WHITE_LOGO = require('@/assets/logos/DIILZO-LOGO-WHITE.png');
-const COLOR_LOGO = require('@/assets/logos/DIILZO-LOGO-COLOR.png');
+const COLOR_LOGO = require('@/assets/logos/DIILZO-LOGO-purple.png');
 
 /** Reusable Diilzo logo — renders the actual logo image file with
  *  optional "Marketplace" subtitle below the wordmark. */
