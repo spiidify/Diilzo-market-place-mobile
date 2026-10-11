@@ -145,6 +145,7 @@ export default function SellerDashboardScreen() {
     {
       title: 'Marketing & Tools',
       items: [
+        { icon: 'flash', label: 'Flash Deals', color: '#EF4444', route: '/seller/flash-deals', perm: 'can_manage_products' },
         { icon: 'bullhorn-outline', label: 'Ad Wallet', color: '#F59E0B', route: '/seller/ad-wallet', perm: 'can_view_finances' },
         { icon: 'credit-card-outline', label: 'Subscription', color: '#06B6D4', route: '/seller/subscription', perm: 'can_manage_store' },
         { icon: 'rocket-launch', label: 'AdPulse', color: '#EC4899', route: '/adpulse' },

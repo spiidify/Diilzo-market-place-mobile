@@ -1541,3 +1541,81 @@ export async function updateMoneyEntry(id: number, payload: Partial<MoneyEntryPa
 export async function deleteMoneyEntry(id: number): Promise<void> {
   await apiRequest({ method: 'DELETE', url: `/pos/money/${id}/` });
 }
+
+// ── Flash Deals ────────────────────────────────────────────────────
+// Seller opt-in flash sales: auto-approved, go live at start time.
+// The deal price lives on the deal — the product's real price is
+// never touched, so expiry needs no restore.
+
+export interface SellerFlashDeal {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_slug: string;
+  product_image: string;
+  deal_price: string;
+  regular_price: string;
+  currency: string;
+  discount_pct: number;
+  deal_stock: number;
+  claimed_qty: number;
+  claimed_pct: number;
+  remaining: number;
+  seller_net_per_unit: string;
+  starts_at: string;
+  ends_at: string;
+  status: string;
+  state_label: 'live' | 'scheduled' | 'sold_out' | 'ended' | 'paused' | 'pulled' | 'cancelled';
+  is_featured: boolean;
+  campaign: { id: number; name: string } | null;
+}
+
+export interface SellerDealProduct {
+  id: number;
+  name: string;
+  price: string;
+  currency: string;
+  stock: number;
+  min_deal_price: string;
+}
+
+export interface SellerFlashCampaign {
+  id: number;
+  name: string;
+  starts_at: string;
+  ends_at: string;
+  state: 'scheduled' | 'live' | 'ended' | 'disabled';
+}
+
+export interface FlashDealsPayload {
+  deals: SellerFlashDeal[];
+  eligible_products: SellerDealProduct[];
+  campaigns: SellerFlashCampaign[];
+  min_discount_pct: number;
+}
+
+export async function getFlashDeals(): Promise<FlashDealsPayload> {
+  return apiRequest<FlashDealsPayload>({ method: 'GET', url: `${SELLER_BASE}/flash-deals/` });
+}
+
+export async function createFlashDeal(payload: {
+  product_id: number;
+  deal_price: number;
+  deal_stock: number;
+  starts_at?: string;
+  ends_at: string;
+  campaign_id?: number;
+}): Promise<SellerFlashDeal> {
+  return apiRequest<SellerFlashDeal>({ method: 'POST', url: `${SELLER_BASE}/flash-deals/`, data: payload });
+}
+
+export async function flashDealAction(
+  dealId: number,
+  action: 'pause' | 'resume' | 'withdraw',
+): Promise<SellerFlashDeal> {
+  return apiRequest<SellerFlashDeal>({
+    method: 'POST',
+    url: `${SELLER_BASE}/${dealId}/flash-deal-action/`,
+    data: { action },
+  });
+}

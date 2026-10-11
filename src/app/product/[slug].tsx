@@ -566,7 +566,11 @@ export default function ProductDetailScreen() {
   const dispCurrency = product.display_currency || product.currency;
   const dispFinalPrice = Number(product.display_price || product.final_price);
   const dispOriginalPrice = Number(product.display_original_price || product.price);
-  const savings = product.is_on_sale ? dispOriginalPrice - dispFinalPrice : 0;
+  // Flash deal counts as a discount for price display — final_price is
+  // already the deal price server-side.
+  const onFlashDeal = !!product.flash_deal && !selectedVariant;
+  const hasDiscount = (product.is_on_sale || !!product.flash_deal) && !selectedVariant;
+  const savings = hasDiscount ? dispOriginalPrice - dispFinalPrice : 0;
   const isLowStock = effectiveInStock && effectiveStock > 0 && effectiveStock <= 5;
   const storeCountry = product.store?.country || '';
   const isLocalSeller = storeCountry.toLowerCase() === 'uganda';
@@ -771,29 +775,45 @@ export default function ProductDetailScreen() {
             {/* Price + rating/stock share a row — fills the dead space right of the price */}
             <View style={styles.priceMetaRow}>
             <View style={styles.priceBlock}>
-              {product.is_on_sale && !selectedVariant && (
+              {hasDiscount && (
                 <Text style={styles.oldPrice}>
                   {dispCurrency} {dispOriginalPrice.toLocaleString()}
                 </Text>
               )}
               <View style={styles.priceMainRow}>
                 <Text style={styles.priceCurrency}>{selectedVariant ? product.currency : dispCurrency}</Text>
-                <Text style={[styles.priceAmount, product.is_on_sale && !selectedVariant && { color: Brand.danger }]}>
+                <Text style={[styles.priceAmount, hasDiscount && { color: Brand.danger }]}>
                   {(selectedVariant ? effectivePrice : dispFinalPrice).toLocaleString()}
                 </Text>
-                {product.is_on_sale && !selectedVariant && product.discount_percentage > 0 && (
+                {hasDiscount && product.discount_percentage > 0 && (
                   <View style={styles.discountTag}>
                     <Text style={styles.discountTagText}>-{Math.round(product.discount_percentage)}%</Text>
                   </View>
                 )}
               </View>
-              {product.is_on_sale && !selectedVariant && savings > 0 && (
+              {hasDiscount && savings > 0 && (
                 <Text style={styles.saveLine}>
                   Save {dispCurrency} {savings.toLocaleString()}
                 </Text>
               )}
               {selectedVariant && (
                 <Text style={styles.variantPriceNote}>Variant price</Text>
+              )}
+              {onFlashDeal && (
+                <View style={styles.dealBanner}>
+                  <View style={styles.dealBannerRow}>
+                    <MaterialCommunityIcons name="flash" size={13} color="#B91C1C" />
+                    <Text style={styles.dealBannerText}>
+                      {product.flash_deal!.campaign || 'Flash Deal'} · ends {new Date(product.flash_deal!.ends_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <View style={styles.dealBarTrack}>
+                    <View style={[styles.dealBarFill, { width: `${Math.min(product.flash_deal!.claimed_pct, 100)}%` }]} />
+                  </View>
+                  <Text style={styles.dealBarText}>
+                    {product.flash_deal!.claimed_pct}% claimed — {product.flash_deal!.remaining} left
+                  </Text>
+                </View>
               )}
             </View>
 
@@ -2026,6 +2046,24 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
   discountTagText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   saveLine: { fontSize: 12, color: Brand.danger, fontWeight: '600' },
+
+  dealBanner: {
+    marginTop: 8,
+    backgroundColor: '#FFF1F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  dealBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  dealBannerText: { fontSize: 11.5, fontWeight: '700', color: '#B91C1C', flex: 1 },
+  dealBarTrack: {
+    height: 5, borderRadius: 3, backgroundColor: '#FDE8E8',
+    overflow: 'hidden', marginTop: 6,
+  },
+  dealBarFill: { height: '100%', backgroundColor: '#EF4444', borderRadius: 3 },
+  dealBarText: { fontSize: 10.5, fontWeight: '600', color: '#B91C1C', marginTop: 3 },
 
   productName: { fontSize: 16, fontWeight: '600', color: c.text, lineHeight: 22 },
 

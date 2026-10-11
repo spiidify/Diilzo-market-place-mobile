@@ -226,9 +226,25 @@ export interface Product {
   promotion_type?: string | null;
   promotion_id?: number | null;
   flash_sale_ends_at?: string | null;
+  /** Live flash deal on this product (null when none). final_price is already the deal price. */
+  flash_deal?: FlashDealInfo | null;
   delivery_info?: DeliveryInfo;
   created_at: string;
   updated_at: string;
+}
+
+export interface FlashDealInfo {
+  id: number;
+  deal_price: string;
+  starts_at: string;
+  ends_at: string;
+  deal_stock: number;
+  claimed_qty: number;
+  remaining: number;
+  claimed_pct: number;
+  discount_pct: number;
+  is_featured: boolean;
+  campaign?: string | null;
 }
 
 export interface DeliveryInfo {

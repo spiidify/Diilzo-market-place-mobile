@@ -120,7 +120,7 @@ const ProductCard = memo(function ProductCard({
             <MaterialCommunityIcons name="image-outline" size={40} color={colors.textTertiary} />
           </View>
         )}
-        {item.is_on_sale && (
+        {(item.is_on_sale || item.flash_deal) && (
           <View style={styles.saleBadge}>
             <Text style={styles.saleBadgeText}>{item.discount_percentage}% OFF</Text>
           </View>
@@ -199,6 +199,14 @@ const ProductCard = memo(function ProductCard({
                 {item.is_wholesale ? `Wholesale${(item.min_order_quantity || 1) > 1 ? ` · min ${item.min_order_quantity}` : ''}` : `Min. order: ${item.min_order_quantity}`}
               </Text>
             </View>
+          </View>
+        )}
+        {item.flash_deal && (
+          <View style={styles.dealBarWrap}>
+            <View style={styles.dealBarTrack}>
+              <View style={[styles.dealBarFill, { width: `${Math.min(item.flash_deal.claimed_pct, 100)}%` }]} />
+            </View>
+            <Text style={styles.dealBarText}>{item.flash_deal.claimed_pct}% claimed</Text>
           </View>
         )}
         {/* ── Action buttons: different for supplier vs local seller ── */}
@@ -2526,6 +2534,24 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: Brand.primary,
+  },
+  dealBarWrap: { marginTop: 4 },
+  dealBarTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FDE8E8',
+    overflow: 'hidden',
+  },
+  dealBarFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: '#EF4444',
+  },
+  dealBarText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#DC2626',
+    marginTop: 2,
   },
   condBadge: { backgroundColor: '#F0F0F0' },
   condBadgeText: { color: '#555' },
