@@ -4,6 +4,7 @@ import type {
     Brand,
     Category,
     ClaimableCoupon,
+    DealsHubResponse,
     PaginatedResponse,
     Product,
     RFQPayload,
@@ -306,6 +307,11 @@ export async function fetchFlashSaleProducts(
     url: '/products/',
     params: { flash_sale: 'true', page, ...imageSize },
   });
+}
+
+/** GET /api/v1/deals/ — Today's Deals hub: live campaigns + deal of the day + all live deals. */
+export async function fetchDealsHub(): Promise<DealsHubResponse> {
+  return apiRequest<DealsHubResponse>({ method: 'GET', url: '/deals/' });
 }
 
 /** GET /api/v1/coupons/claimable/ — claimable vouchers for the home banner. */

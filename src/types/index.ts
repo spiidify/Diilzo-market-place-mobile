@@ -247,6 +247,26 @@ export interface FlashDealInfo {
   campaign?: string | null;
 }
 
+export interface DealCampaign {
+  id: number;
+  name: string;
+  slug: string;
+  tagline: string;
+  theme_color: string;
+  banner_url: string | null;
+  starts_at: string;
+  ends_at: string;
+  state: 'scheduled' | 'live' | 'ended' | 'disabled';
+}
+
+/** GET /api/v1/deals/ — Today's Deals hub payload. */
+export interface DealsHubResponse {
+  campaigns: DealCampaign[];
+  deal_of_day: Product | null;
+  deals: Product[];
+  live_count: number;
+}
+
 export interface DeliveryInfo {
   free_threshold: string;
   free_threshold_fmt: string;

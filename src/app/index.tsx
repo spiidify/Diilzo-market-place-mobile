@@ -51,6 +51,7 @@ import {
     fetchBecauseYouViewed,
     fetchCategories,
     fetchClaimableCoupons,
+    fetchDealsHub,
     fetchFlashSaleProducts,
     fetchRecentlyViewed,
     fetchSlides,
@@ -63,6 +64,7 @@ import type {
     Brand as BrandType,
     Category,
     ClaimableCoupon,
+    DealCampaign,
     Product,
     Slide,
     SlidePosition,
@@ -720,13 +722,14 @@ const ProductTabsSection = memo(function ProductTabsSection({
   onChat,
   onQuickAdd,
 }: {
-  tabs: { key: string; icon: string; title: string; data: Product[]; endsAt?: string | null }[];
+  tabs: { key: string; icon: string; title: string; data: Product[]; endsAt?: string | null; campaign?: DealCampaign | null }[];
   defaultKey?: string;
   onPress: (slug: string) => void;
   onChat: (product: Product) => void;
   onQuickAdd?: (product: Product) => Promise<boolean>;
 }) {
   const { colors } = useAppTheme();
+  const router = useRouter();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const visibleTabs = tabs.filter((t) => t.data && t.data.length > 0);
   const [activeKey, setActiveKey] = useState<string>(
@@ -745,14 +748,27 @@ const ProductTabsSection = memo(function ProductTabsSection({
     <View style={styles.section}>
       {active.endsAt && cd ? (
         <LinearGradient
-          colors={['#F97316', '#EF4444']}
+          colors={active.campaign?.theme_color ? [active.campaign.theme_color, active.campaign.theme_color] : ['#F97316', '#EF4444']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.tabFlashBanner}
         >
           <View style={styles.flashTitleRow}>
             <MaterialCommunityIcons name="flash" size={20} color="#FFFFFF" />
-            <Text style={styles.flashTitle}>Flash Sale</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.flashTitle}>{active.campaign?.name || 'Flash Sale'}</Text>
+              {!!active.campaign?.tagline && (
+                <Text style={styles.flashTagline} numberOfLines={1}>{active.campaign.tagline}</Text>
+              )}
+            </View>
+            <Pressable
+              onPress={() => router.push('/deals' as any)}
+              hitSlop={8}
+              style={({ pressed }) => [styles.flashSeeAll, pressed && { opacity: 0.8 }]}
+            >
+              <Text style={styles.flashSeeAllText}>See all</Text>
+              <MaterialCommunityIcons name="chevron-right" size={14} color="#FFFFFF" />
+            </Pressable>
           </View>
           <View style={styles.countdownRow}>
             <Text style={styles.countdownLabel}>Ends in</Text>
@@ -985,6 +1001,7 @@ export default function ProductFeedScreen() {
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [flashSale, setFlashSale] = useState<Product[]>([]);
   const [flashEndsAt, setFlashEndsAt] = useState<string | null>(null);
+  const [flashCampaign, setFlashCampaign] = useState<DealCampaign | null>(null);
   const [vouchers, setVouchers] = useState<ClaimableCoupon[]>([]);
   const [tileA, setTileA] = useState<Slide[]>([]);
   const [tileB, setTileB] = useState<Slide[]>([]);
@@ -1085,7 +1102,7 @@ export default function ProductFeedScreen() {
       const [
         dealsRes, featRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
-        bestRes, budgetRes, newSellerRes,
+        bestRes, budgetRes, newSellerRes, dealsHub,
       ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
@@ -1100,6 +1117,7 @@ export default function ProductFeedScreen() {
         fetchProducts({ ordering: 'best_selling', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] bestsellers error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ ordering: 'price_low', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] budget error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ new_sellers: 'true', in_stock: 'true', ordering: 'newest', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] newSellers error:', e?.message); return { results: [] as Product[], next: null }; }),
+        fetchDealsHub().catch((e) => { console.error('[Home] dealsHub error:', e?.message); return null; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
       setRecommended(featRes.results.slice(0, 10));
@@ -1113,6 +1131,7 @@ export default function ProductFeedScreen() {
         .filter((v): v is string => !!v)
         .sort()[0] || null;
       setFlashEndsAt(ends);
+      setFlashCampaign(dealsHub?.campaigns?.find((c) => c.state === 'live') ?? null);
       setVouchers(voucherData.slice(0, 4));
       setTileA(tileAData);
       setTileB(tileBData);
@@ -1422,7 +1441,7 @@ export default function ProductFeedScreen() {
       <ProductTabsSection
         tabs={[
           { key: 'recommended', icon: 'thumb-up-outline', title: 'Recommended', data: recommended },
-          { key: 'flash', icon: 'flash', title: 'Flash Sale', data: flashSale, endsAt: flashEndsAt },
+          { key: 'flash', icon: 'flash', title: 'Flash Sale', data: flashSale, endsAt: flashEndsAt, campaign: flashCampaign },
           { key: 'deals', icon: 'fire', title: "Today's Deals", data: deals },
         ]}
         defaultKey="recommended"
@@ -1471,7 +1490,7 @@ export default function ProductFeedScreen() {
         </View>
       ) : null}
     </View>
-  ), [slides, flashSale, flashEndsAt, handleProductPress, categories, handleCategoryPress,
+  ), [slides, flashSale, flashEndsAt, flashCampaign, handleProductPress, categories, handleCategoryPress,
     deals, recommended, becauseYouViewed, recentlyViewed, bestSellers, budgetFinds, newSellers,
     vouchers, tileA, tileB, handleSlidePress, topStores, handleStorePress,
     handleSuppliersPress, topBrands, handleBrandPress, handleSearchPress, activeCategory,
@@ -2756,6 +2775,13 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   flashTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   flashTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
+  flashTagline: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '600', marginTop: 1 },
+  flashSeeAll: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 999,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  flashSeeAllText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   countdownLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '600', marginRight: 4 },
   countdownBox: {
