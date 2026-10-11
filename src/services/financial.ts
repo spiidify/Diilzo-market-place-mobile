@@ -502,16 +502,45 @@ export async function getAdWallet(): Promise<AdWalletResponse> {
   });
 }
 
-/** POST /financial/seller/ad-wallet/top-up/ — top up ad wallet */
+export interface AdPaymentInitResponse {
+  id: number;
+  amount: string;
+  status: 'pending' | 'completed' | 'failed';
+  transaction_reference: string;
+  message?: string;
+  redirect_url?: string | null;
+}
+
+export interface AdPaymentStatus {
+  id: number;
+  status: 'pending' | 'completed' | 'failed';
+  transaction_type: string;
+  failure_reason: string;
+  wallet_balance: string;
+  promotion_status?: string | null;
+}
+
+/** POST /financial/seller/ad-wallet/top-up/ — initiate a real gateway top-up.
+ *  Returns a pending AdTransaction — poll getAdPaymentStatus() to settle. */
 export async function topUpAdWallet(data: {
   amount: string;
-  payment_reference: string;
   payment_method?: string;
-}): Promise<any> {
-  return apiRequest<any>({
+  payer_phone?: string;
+  payment_reference?: string;
+}): Promise<AdPaymentInitResponse> {
+  return apiRequest<AdPaymentInitResponse>({
     method: 'POST',
     url: `${FINANCIAL_BASE}/seller/ad-wallet/top-up/`,
     data,
+  });
+}
+
+/** GET /financial/seller/ad-wallet/payments/<id>/status/ — poll a pending ad
+ *  payment; the backend re-checks the gateway and settles on confirmation. */
+export async function getAdPaymentStatus(txId: number): Promise<AdPaymentStatus> {
+  return apiRequest<AdPaymentStatus>({
+    method: 'GET',
+    url: `${FINANCIAL_BASE}/seller/ad-wallet/payments/${txId}/status/`,
   });
 }
 

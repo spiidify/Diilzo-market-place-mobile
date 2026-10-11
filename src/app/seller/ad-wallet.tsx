@@ -17,6 +17,7 @@ import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { useScreenshotPrevention } from '@/hooks/useScreenshotPrevention';
 import {
+  getAdPaymentStatus,
   getAdTransactions,
   getAdWallet,
   topUpAdWallet,
@@ -35,7 +36,9 @@ export default function SellerAdWalletScreen() {
   const [error, setError] = useState<string | null>(null);
   const [topUpAmount, setTopUpAmount] = useState('');
   const [topUpMethod, setTopUpMethod] = useState('mtn_momo');
+  const [topUpPhone, setTopUpPhone] = useState('');
   const [toppingUp, setToppingUp] = useState(false);
+  const [pendingTx, setPendingTx] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -59,25 +62,56 @@ export default function SellerAdWalletScreen() {
 
   const fmt = (v: string | number | undefined | null) => Number(v || 0).toLocaleString();
 
+  const pollPayment = useCallback(async (txId: number, attempt = 0) => {
+    if (attempt > 20) {
+      setPendingTx(null);
+      Alert.alert('Still Pending', 'Payment is taking longer than expected — check back shortly.');
+      return;
+    }
+    try {
+      const res = await getAdPaymentStatus(txId);
+      if (res.status === 'completed') {
+        setPendingTx(null);
+        setTopUpAmount('');
+        Alert.alert('Payment Confirmed', `Wallet balance: UGX ${fmt(res.wallet_balance)}`);
+        await load();
+      } else if (res.status === 'failed') {
+        setPendingTx(null);
+        Alert.alert('Payment Failed', res.failure_reason || 'The charge was declined or cancelled.');
+      } else {
+        setTimeout(() => pollPayment(txId, attempt + 1), 4000);
+      }
+    } catch {
+      setTimeout(() => pollPayment(txId, attempt + 1), 5000);
+    }
+  }, [load]);
+
   const handleTopUp = async () => {
     const amount = Number(topUpAmount);
     if (!amount || amount < 5000) {
       Alert.alert('Invalid Amount', 'Minimum top-up is UGX 5,000');
       return;
     }
+    if ((topUpMethod === 'mtn_momo' || topUpMethod === 'airtel_money') && !topUpPhone.trim()) {
+      Alert.alert('Phone Required', 'Enter the mobile money number to charge.');
+      return;
+    }
     try {
       setToppingUp(true);
-      const ref = `ADTOP-${Date.now()}`;
-      await topUpAdWallet({
+      const res = await topUpAdWallet({
         amount: topUpAmount,
-        payment_reference: ref,
         payment_method: topUpMethod,
+        payer_phone: topUpPhone.trim(),
       });
-      setTopUpAmount('');
-      Alert.alert('Success', `Topped up UGX ${fmt(amount)}`);
-      await load();
+      if (res.redirect_url) {
+        Alert.alert('Complete Payment', 'Finish the payment in your browser, then return here.');
+        // Linking would pull in a browser dependency — the status poll
+        // below still settles the tx once payment completes.
+      }
+      setPendingTx(res.id);
+      pollPayment(res.id);
     } catch (e: any) {
-      Alert.alert('Top-up Failed', e?.message || 'Please try again');
+      Alert.alert('Top-up Failed', e?.response?.data?.error || e?.message || 'Please try again');
     } finally {
       setToppingUp(false);
     }
@@ -194,7 +228,7 @@ export default function SellerAdWalletScreen() {
                 {[
                   { code: 'mtn_momo', label: 'MTN MoMo' },
                   { code: 'airtel_money', label: 'Airtel' },
-                  { code: 'card', label: 'Card' },
+                  { code: 'stripe', label: 'Card' },
                 ].map((m) => (
                   <Pressable
                     key={m.code}
@@ -205,12 +239,27 @@ export default function SellerAdWalletScreen() {
                   </Pressable>
                 ))}
               </View>
+              {(topUpMethod === 'mtn_momo' || topUpMethod === 'airtel_money') && (
+                <TextInput
+                  style={styles.topUpInput}
+                  placeholder="MoMo number e.g. 2567XXXXXXXX"
+                  keyboardType="phone-pad"
+                  value={topUpPhone}
+                  onChangeText={setTopUpPhone}
+                />
+              )}
+              {pendingTx ? (
+                <View style={styles.pendingBanner}>
+                  <ActivityIndicator size="small" color={Brand.primary} />
+                  <Text style={styles.pendingText}>Approve the payment prompt on your phone…</Text>
+                </View>
+              ) : null}
               <Pressable
-                style={[styles.topUpBtn, toppingUp && { opacity: 0.6 }]}
+                style={[styles.topUpBtn, (toppingUp || pendingTx !== null) && { opacity: 0.6 }]}
                 onPress={handleTopUp}
-                disabled={toppingUp || !topUpAmount}
+                disabled={toppingUp || pendingTx !== null || !topUpAmount}
               >
-                <Text style={styles.topUpBtnText}>{toppingUp ? 'Processing...' : 'Top Up'}</Text>
+                <Text style={styles.topUpBtnText}>{toppingUp ? 'Sending request…' : 'Top Up'}</Text>
               </Pressable>
             </View>
 
@@ -263,6 +312,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   methodText: { fontSize: 12, fontWeight: '600', color: c.text },
   topUpBtn: { backgroundColor: Brand.primary, borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   topUpBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  pendingBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center',
+    backgroundColor: '#EDE9FE', borderRadius: 10, paddingVertical: 10, marginBottom: 10,
+  },
+  pendingText: { fontSize: 12, fontWeight: '600', color: Brand.primary },
 
   sectionTitle: { fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 10, marginTop: 4 },
 
