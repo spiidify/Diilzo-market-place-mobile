@@ -1576,6 +1576,7 @@ export interface SellerDealProduct {
   price: string;
   currency: string;
   stock: number;
+  image_url: string;
   min_deal_price: string;
 }
 

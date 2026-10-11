@@ -263,6 +263,13 @@ export default function SellerFlashDealsScreen() {
                   style={[styles.pickRow, product?.id === p.id && styles.pickRowOn]}
                   onPress={() => setProduct(p)}
                 >
+                  {p.image_url ? (
+                    <Image source={{ uri: p.image_url }} style={styles.pickThumb} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.pickThumb, styles.thumbEmpty]}>
+                      <MaterialCommunityIcons name="image-outline" size={16} color={colors.textTertiary} />
+                    </View>
+                  )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.pickName} numberOfLines={1}>{p.name}</Text>
                     <Text style={styles.pickSub}>{p.currency} {Number(p.price).toLocaleString()} · stock {p.stock}</Text>
@@ -422,6 +429,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border, marginBottom: 6,
   },
   pickRowOn: { borderColor: Brand.primary, backgroundColor: Brand.primary + '0D' },
+  pickThumb: { width: 36, height: 36, borderRadius: 8, backgroundColor: colors.surfaceAlt },
   pickName: { fontSize: 13, fontWeight: '600', color: colors.text },
   pickSub: { fontSize: 11, color: colors.textTertiary, marginTop: 1 },
   row2: { flexDirection: 'row', gap: 10 },
