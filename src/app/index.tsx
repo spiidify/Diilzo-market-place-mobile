@@ -146,9 +146,11 @@ const ProductCard = memo(function ProductCard({
             ) : (
               <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.textTertiary} />
             )}
-            {!!item.store.country_code && <Text style={styles.cardStoreFlag}>{flagEmoji(item.store.country_code)}</Text>}
             <Text style={styles.cardStoreName} numberOfLines={1}>{item.store.name}</Text>
           </View>
+        )}
+        {!!item.store?.country && (
+          <Text style={styles.cardCountry} numberOfLines={1}>{flagEmoji(item.store.country_code)} {item.store.country}</Text>
         )}
         <View style={styles.ratingRow}>
           {renderStarsStatic(item.rating, styles)}
@@ -2502,9 +2504,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 7,
     backgroundColor: c.borderLight,
   },
-  cardStoreFlag: {
+  cardCountry: {
     fontSize: 9.5,
-    marginRight: 2,
+    color: c.textTertiary,
+    marginTop: 1,
   },
   cardStoreName: {
     flex: 1,
