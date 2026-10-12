@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1120,6 +1121,18 @@ export default function ProductDetailScreen() {
               <MaterialCommunityIcons name="undo-variant" size={16} color={Brand.primary} />
               <Text style={styles.deliveryMiniText}>{product.delivery_info?.return_days || 7}-day returns</Text>
             </View>
+            {/* We accept — same real payment logos as the web product page */}
+            <View style={styles.payAcceptRow}>
+              <MaterialCommunityIcons name="shield-check" size={15} color={Brand.success} />
+              <Text style={styles.payAcceptLabel}>We accept</Text>
+              <View style={styles.payAcceptLogos}>
+                <ExpoImage source={require('../../../assets/payments/mtn-momo.png')} style={styles.payLogo} contentFit="contain" accessibilityLabel="MTN Mobile Money" />
+                <ExpoImage source={require('../../../assets/payments/airtel.svg')} style={styles.payLogo} contentFit="contain" accessibilityLabel="Airtel Money" />
+                <ExpoImage source={require('../../../assets/payments/paypal.svg')} style={styles.payLogo} contentFit="contain" accessibilityLabel="PayPal" />
+                <ExpoImage source={require('../../../assets/payments/visa.svg')} style={styles.payLogo} contentFit="contain" accessibilityLabel="Visa" />
+                <ExpoImage source={require('../../../assets/payments/mastercard.svg')} style={styles.payLogo} contentFit="contain" accessibilityLabel="Mastercard" />
+              </View>
+            </View>
           </View>
 
           {/* ── Description (expandable) ───────────────────────────── */}
@@ -2228,6 +2241,15 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   bulkSaveText: { fontSize: 12, fontWeight: '700', color: Brand.success, marginTop: 6 },
   deliveryMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   deliveryMiniText: { fontSize: 13, color: c.textSecondary },
+
+  // We-accept payment logos — real brand assets matching the web PDP
+  payAcceptRow: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6,
+    paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border,
+  },
+  payAcceptLabel: { fontSize: 12, fontWeight: '700', color: c.text },
+  payAcceptLogos: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, flexWrap: 'wrap' },
+  payLogo: { width: 34, height: 22, borderRadius: 3 },
 
   // ── Cards ───────────────────────────────────────────────────────
   card: {
