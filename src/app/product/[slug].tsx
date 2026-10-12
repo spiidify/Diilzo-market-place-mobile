@@ -861,7 +861,7 @@ export default function ProductDetailScreen() {
             </View>
           </View>
 
-          {/* ── Flash deal — full-width edge-to-edge strip ── */}
+          {/* ── Flash deal — section-width card, compact height ── */}
           {onFlashDeal && (
             <View style={styles.dealBanner}>
               <View style={styles.dealBannerRow}>
@@ -2080,8 +2080,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     backgroundColor: '#EF4444',
     borderRadius: 14,
     paddingHorizontal: 12,
-    paddingTop: 7,
-    paddingBottom: 6,
+    paddingVertical: 10,
     elevation: 1,
     shadowColor: '#000',
     shadowOpacity: 0.05,
