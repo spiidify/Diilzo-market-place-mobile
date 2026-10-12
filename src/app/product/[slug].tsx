@@ -2073,14 +2073,20 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   discountTagText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   saveLine: { fontSize: 12, color: Brand.danger, fontWeight: '600' },
 
-  // Edge-to-edge flash-deal strip — sits between the title card and the
-  // next section, full screen width, compact height.
+  // Flash-deal card — same width/radius as other sections, compact height.
   dealBanner: {
+    marginHorizontal: 8,
     marginTop: 8,
     backgroundColor: '#EF4444',
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingTop: 7,
     paddingBottom: 6,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   dealBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dealBannerText: { fontSize: 11.5, fontWeight: '700', color: '#FFFFFF', flex: 1 },
