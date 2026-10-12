@@ -879,6 +879,49 @@ export default function ProductDetailScreen() {
             </View>
           )}
 
+          {/* ── Bulk pricing tiers — mirrors the web "Buy more, save more" table ── */}
+          {!selectedVariant && product.wholesale_tiers && product.wholesale_tiers.length > 0 && (
+            <View style={styles.bulkCard}>
+              <View style={styles.bulkHeader}>
+                <MaterialCommunityIcons name="layers-outline" size={15} color={Brand.primary} />
+                <Text style={styles.bulkTitle}>Bulk Pricing — Buy more, save more</Text>
+              </View>
+              <View style={styles.bulkTableHead}>
+                <Text style={[styles.bulkCellHead, { flex: 1.2 }]}>Quantity</Text>
+                <Text style={[styles.bulkCellHead, { flex: 1 }]}>Unit price</Text>
+                <Text style={[styles.bulkCellHead, { width: 60, textAlign: 'right' }]}>You save</Text>
+              </View>
+              {/* Retail row */}
+              <View style={[styles.bulkRow, quantity < Math.min(...product.wholesale_tiers.map(t => t.min_quantity)) && styles.bulkRowActive]}>
+                <Text style={[styles.bulkCell, { flex: 1.2 }]}>1+ (Retail)</Text>
+                <Text style={[styles.bulkCell, { flex: 1 }]}>{dispCurrency} {baseUnitPrice.toLocaleString()}</Text>
+                <Text style={[styles.bulkCell, { width: 60, textAlign: 'right', color: colors.textTertiary }]}>—</Text>
+              </View>
+              {[...product.wholesale_tiers]
+                .sort((a, b) => a.min_quantity - b.min_quantity)
+                .map((tier) => {
+                  const active = quantity >= tier.min_quantity;
+                  const savePct = baseUnitPrice > 0
+                    ? Math.round((1 - Number(tier.price) / baseUnitPrice) * 100)
+                    : 0;
+                  return (
+                    <View key={tier.id} style={[styles.bulkRow, active && styles.bulkRowActive]}>
+                      <Text style={[styles.bulkCell, { flex: 1.2 }]}>{tier.min_quantity}+ units</Text>
+                      <Text style={[styles.bulkCell, styles.bulkCellPrice, { flex: 1 }]}>
+                        {dispCurrency} {Number(tier.price).toLocaleString()}
+                      </Text>
+                      <Text style={[styles.bulkCell, styles.bulkCellSave, { width: 60, textAlign: 'right' }]}>
+                        {savePct > 0 ? `${savePct}%` : '—'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              {product.min_order_quantity > 1 && (
+                <Text style={styles.moqHint}>Minimum order: {product.min_order_quantity} units</Text>
+              )}
+            </View>
+          )}
+
           {/* ── Variant selector — grouped option axes (Amazon-style) when
               the product has structured options, else a flat list ── */}
           {product.variants && product.variants.length > 0 && (
@@ -1078,22 +1121,6 @@ export default function ProductDetailScreen() {
               <Text style={styles.deliveryMiniText}>{product.delivery_info?.return_days || 7}-day returns</Text>
             </View>
           </View>
-
-          {/* ── Wholesale tiers (compact) ──────────────────────────── */}
-          {product.wholesale_tiers && product.wholesale_tiers.length > 0 && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Bulk Pricing</Text>
-              {product.wholesale_tiers.map((tier, idx) => (
-                <View key={idx} style={styles.tierRow}>
-                  <Text style={styles.tierQty}>{tier.min_quantity}+ units</Text>
-                  <Text style={styles.tierPrice}>{product.currency} {Number(tier.price).toLocaleString()}</Text>
-                </View>
-              ))}
-              {product.min_order_quantity > 1 && (
-                <Text style={styles.moqHint}>Min order: {product.min_order_quantity} units</Text>
-              )}
-            </View>
-          )}
 
           {/* ── Description (expandable) ───────────────────────────── */}
           <View style={styles.card}>
@@ -2095,6 +2122,37 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
   dealBarFill: { height: '100%', backgroundColor: '#FFFFFF', borderRadius: 2 },
   dealBarText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF' },
+
+  // Bulk pricing tiers — section-width card like the web table
+  bulkCard: {
+    backgroundColor: c.surface,
+    borderRadius: 14,
+    marginHorizontal: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  bulkHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  bulkTitle: { fontSize: 13.5, fontWeight: '700', color: c.text },
+  bulkTableHead: {
+    flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border, paddingBottom: 6, marginBottom: 2,
+  },
+  bulkCellHead: { fontSize: 10.5, fontWeight: '700', color: c.textTertiary, textTransform: 'uppercase', letterSpacing: 0.4 },
+  bulkRow: {
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 7,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderLight,
+    borderRadius: 6, paddingHorizontal: 4,
+  },
+  bulkRowActive: { backgroundColor: Brand.primary + '14' },
+  bulkCell: { fontSize: 12.5, color: c.text },
+  bulkCellPrice: { fontWeight: '700', color: Brand.danger },
+  bulkCellSave: { fontWeight: '700', color: Brand.success },
 
   productName: { fontSize: 16, fontWeight: '600', color: c.text, lineHeight: 22 },
 
