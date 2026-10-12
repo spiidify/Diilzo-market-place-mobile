@@ -120,6 +120,7 @@ export default function AppTabs() {
       />
       {/* Hidden top-level routes — each subdirectory has its own Stack layout */}
       <Tabs.Screen name="cart" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
+      <Tabs.Screen name="deals" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="checkout" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="search" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="product/[slug]" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
