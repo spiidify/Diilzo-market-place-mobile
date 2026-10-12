@@ -895,7 +895,7 @@ export default function ProductDetailScreen() {
               <View style={[styles.bulkRow, quantity < Math.min(...product.wholesale_tiers.map(t => t.min_quantity)) && styles.bulkRowActive]}>
                 <Text style={[styles.bulkCell, { flex: 1.2 }]}>1+ (Retail)</Text>
                 <Text style={[styles.bulkCell, { flex: 1 }]}>{dispCurrency} {baseUnitPrice.toLocaleString()}</Text>
-                <Text style={[styles.bulkCell, { width: 60, textAlign: 'right', color: colors.textTertiary }]}>—</Text>
+                <Text style={[styles.bulkCell, { width: 60, textAlign: 'right', color: colors.textTertiary }]}>0%</Text>
               </View>
               {[...product.wholesale_tiers]
                 .sort((a, b) => a.min_quantity - b.min_quantity)
@@ -910,8 +910,8 @@ export default function ProductDetailScreen() {
                       <Text style={[styles.bulkCell, styles.bulkCellPrice, { flex: 1 }]}>
                         {dispCurrency} {Number(tier.price).toLocaleString()}
                       </Text>
-                      <Text style={[styles.bulkCell, styles.bulkCellSave, { width: 60, textAlign: 'right' }]}>
-                        {savePct > 0 ? `${savePct}%` : '—'}
+                      <Text style={[styles.bulkCell, savePct > 0 ? styles.bulkCellSave : { color: colors.textTertiary }, { width: 60, textAlign: 'right' }]}>
+                        {savePct}%
                       </Text>
                     </View>
                   );
