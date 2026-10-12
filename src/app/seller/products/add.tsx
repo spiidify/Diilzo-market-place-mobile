@@ -205,7 +205,7 @@ export default function AddProductScreen() {
     setWholesaleTiers((t) => (t.length === 1 ? [{ min_quantity: '', price: '' }] : t.filter((_, i) => i !== idx)));
 
   // ── Submit ──────────────────────────────────────────────────────
-  const handleSubmit = async () => {
+  const handleSubmit = async (forceDraft = false) => {
     if (!name.trim()) {
       Alert.alert('Missing field', 'Please enter a product name');
       return;
@@ -220,8 +220,8 @@ export default function AddProductScreen() {
     }
 
     // An image is required to publish — without one, save as a draft instead.
-    let publish = isActive;
-    if (isActive && images.length === 0) {
+    let publish = isActive && !forceDraft;
+    if (isActive && !forceDraft && images.length === 0) {
       Alert.alert(
         'Image Required',
         'An image is required to publish this product. It will be saved as a Draft instead.',
@@ -382,6 +382,7 @@ export default function AddProductScreen() {
                 onToggle={() => toggleSection('images')}
                 styles={styles}
                 colors={colors}
+                done={images.length > 0}
               >
                 <Text style={styles.label}>Product Images (up to 8)</Text>
                 {images.length > 0 ? (
@@ -435,6 +436,7 @@ export default function AddProductScreen() {
                 onToggle={() => toggleSection('basic')}
                 styles={styles}
                 colors={colors}
+                done={name.trim().length > 0 && description.trim().length > 0}
               >
                 <Text style={styles.label}>Product Name *</Text>
                 <TextInput
@@ -517,6 +519,7 @@ export default function AddProductScreen() {
                 onToggle={() => toggleSection('pricing')}
                 styles={styles}
                 colors={colors}
+                done={price.trim().length > 0}
               >
                 <View style={styles.row}>
                   <View style={styles.halfCol}>
@@ -599,6 +602,7 @@ export default function AddProductScreen() {
                 onToggle={() => toggleSection('org')}
                 styles={styles}
                 colors={colors}
+                done={categoryId != null}
               >
                 <Text style={styles.label}>Category *</Text>
                 <Pressable
@@ -964,7 +968,7 @@ export default function AddProductScreen() {
               {/* ── Submit ─────────────────────────────────────────── */}
               <Pressable
                 style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }, submitting && { opacity: 0.6 }]}
-                onPress={handleSubmit}
+                onPress={() => handleSubmit(false)}
                 disabled={submitting}
               >
                 {submitting ? (
@@ -972,9 +976,17 @@ export default function AddProductScreen() {
                 ) : (
                   <>
                     <MaterialCommunityIcons name="check-circle" size={20} color="#FFFFFF" />
-                    <Text style={styles.submitText}>Create Product</Text>
+                    <Text style={styles.submitText}>Publish Product</Text>
                   </>
                 )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.draftBtn, pressed && { opacity: 0.7 }, submitting && { opacity: 0.6 }]}
+                onPress={() => handleSubmit(true)}
+                disabled={submitting}
+              >
+                <MaterialCommunityIcons name="content-save-outline" size={18} color={Brand.primary} />
+                <Text style={styles.draftBtnText}>Save as Draft</Text>
               </Pressable>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -1431,6 +1443,18 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: Spacing.four,
   },
   submitText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  draftBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two - 2,
+    borderWidth: 1.5,
+    borderColor: Brand.primary,
+    borderRadius: 14,
+    paddingVertical: Spacing.three + Spacing.half,
+    marginTop: Spacing.two,
+  },
+  draftBtnText: { fontSize: 15, fontWeight: '700', color: Brand.primary },
 
   // ── Modal ──────────────────────────────────────────────────────
   modalOverlay: {
@@ -1622,6 +1646,7 @@ function SectionCard({
   children,
   styles,
   colors,
+  done,
 }: {
   title: string;
   icon: string;
@@ -1630,6 +1655,7 @@ function SectionCard({
   children: ReactNode;
   styles: any;
   colors: ThemeColors;
+  done?: boolean;
 }) {
   return (
     <View style={styles.sectionCard}>
@@ -1642,6 +1668,9 @@ function SectionCard({
             <MaterialCommunityIcons name={icon as any} size={18} color={Brand.primary} />
           </View>
           <Text style={styles.sectionTitle}>{title}</Text>
+          {done ? (
+            <MaterialCommunityIcons name="check-circle" size={16} color={Brand.success} />
+          ) : null}
         </View>
         <MaterialCommunityIcons
           name={expanded ? 'chevron-up' : 'chevron-down'}

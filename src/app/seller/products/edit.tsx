@@ -56,6 +56,10 @@ export default function EditProductScreen() {
   const [salePrice, setSalePrice] = useState('');
   const [stock, setStock] = useState('');
   const [sku, setSku] = useState('');
+  const [barcode, setBarcode] = useState('');
+  const [length, setLength] = useState('');
+  const [width, setWidth] = useState('');
+  const [height, setHeight] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
@@ -132,6 +136,10 @@ export default function EditProductScreen() {
       setSalePrice(product.sale_price || '');
       setStock(String(product.stock_quantity || 0));
       setSku(product.sku || '');
+      setBarcode(product.barcode || '');
+      setLength(product.length ? String(product.length) : '');
+      setWidth(product.width ? String(product.width) : '');
+      setHeight(product.height ? String(product.height) : '');
       setCategoryId(product.category?.id ?? null);
       setBrandId(product.brand?.id ?? null);
       setMinOrderQty(String(product.min_order_quantity || 1));
@@ -252,7 +260,7 @@ export default function EditProductScreen() {
     setWholesaleTiers((t) => (t.length === 1 ? [{ min_quantity: '', price: '' }] : t.filter((_, i) => i !== idx)));
 
   // ── Submit ──────────────────────────────────────────────────────
-  const handleSubmit = async () => {
+  const handleSubmit = async (forceDraft = false) => {
     if (!name.trim()) {
       Alert.alert('Missing field', 'Please enter a product name');
       return;
@@ -264,8 +272,8 @@ export default function EditProductScreen() {
 
     // An image is required to publish — without one, save as a draft instead.
     const hasImages = existingImages.length + newImages.length > 0;
-    let publish = isActive;
-    if (isActive && !hasImages) {
+    let publish = isActive && !forceDraft;
+    if (isActive && !forceDraft && !hasImages) {
       Alert.alert(
         'Image Required',
         'An image is required to publish this product. It will be saved as a Draft instead.',
@@ -289,11 +297,15 @@ export default function EditProductScreen() {
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
       if (sku.trim()) formData.append('sku', sku.trim());
+      if (barcode.trim()) formData.append('barcode', barcode.trim());
       if (categoryId) formData.append('category', String(categoryId));
       if (brandId) formData.append('brand', String(brandId));
       formData.append('min_order_quantity', minOrderQty.trim() || '1');
       formData.append('condition', condition);
       if (weight.trim()) formData.append('weight', weight.trim());
+      if (length.trim()) formData.append('length', length.trim());
+      if (width.trim()) formData.append('width', width.trim());
+      if (height.trim()) formData.append('height', height.trim());
       formData.append('country_of_origin', countryOfOrigin.trim() || 'Uganda');
       formData.append('is_active', publish ? 'true' : 'false');
 
@@ -419,6 +431,7 @@ export default function EditProductScreen() {
                 onToggle={() => toggleSection('images')}
                 styles={styles}
                 colors={colors}
+                done={existingImages.length + newImages.length > 0}
               >
                 <Text style={styles.label}>Current + New Images (up to 8 total)</Text>
                 <View style={styles.imageGrid}>
@@ -476,6 +489,7 @@ export default function EditProductScreen() {
                 onToggle={() => toggleSection('basic')}
                 styles={styles}
                 colors={colors}
+                done={name.trim().length > 0 && description.trim().length > 0}
               >
                 <Text style={styles.label}>Product Name *</Text>
                 <TextInput
@@ -558,6 +572,7 @@ export default function EditProductScreen() {
                 onToggle={() => toggleSection('pricing')}
                 styles={styles}
                 colors={colors}
+                done={price.trim().length > 0}
               >
                 <View style={styles.row}>
                   <View style={styles.halfCol}>
@@ -609,6 +624,16 @@ export default function EditProductScreen() {
                   </View>
                 </View>
 
+                <Text style={styles.label}>Barcode</Text>
+                <TextInput
+                  style={styles.input}
+                  value={barcode}
+                  onChangeText={setBarcode}
+                  placeholder="Optional (EAN/UPC)"
+                  placeholderTextColor={colors.textTertiary}
+                  autoCapitalize="characters"
+                />
+
                 <Text style={styles.label}>Condition</Text>
                 <View style={styles.condRow}>
                   {([['new', 'Brand New'], ['refurbished', 'Refurbished'], ['used', 'Used']] as const).map(([val, label]) => (
@@ -631,6 +656,7 @@ export default function EditProductScreen() {
                 onToggle={() => toggleSection('org')}
                 styles={styles}
                 colors={colors}
+                done={categoryId != null}
               >
                 <Text style={styles.label}>Category</Text>
                 <Pressable
@@ -702,6 +728,40 @@ export default function EditProductScreen() {
                       value={weight}
                       onChangeText={setWeight}
                       placeholder="0.0"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.label}>Dimensions (cm) — L × W × H</Text>
+                <View style={styles.row}>
+                  <View style={styles.thirdCol}>
+                    <TextInput
+                      style={styles.input}
+                      value={length}
+                      onChangeText={setLength}
+                      placeholder="L"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                  <View style={styles.thirdCol}>
+                    <TextInput
+                      style={styles.input}
+                      value={width}
+                      onChangeText={setWidth}
+                      placeholder="W"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                  <View style={styles.thirdCol}>
+                    <TextInput
+                      style={styles.input}
+                      value={height}
+                      onChangeText={setHeight}
+                      placeholder="H"
                       placeholderTextColor={colors.textTertiary}
                       keyboardType="decimal-pad"
                     />
@@ -894,7 +954,7 @@ export default function EditProductScreen() {
               {/* ── Submit ─────────────────────────────────────────── */}
               <Pressable
                 style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }, submitting && { opacity: 0.6 }]}
-                onPress={handleSubmit}
+                onPress={() => handleSubmit(false)}
                 disabled={submitting}
               >
                 {submitting ? (
@@ -905,6 +965,14 @@ export default function EditProductScreen() {
                     <Text style={styles.submitText}>Save Changes</Text>
                   </>
                 )}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.draftBtn, pressed && { opacity: 0.7 }, submitting && { opacity: 0.6 }]}
+                onPress={() => handleSubmit(true)}
+                disabled={submitting}
+              >
+                <MaterialCommunityIcons name="content-save-outline" size={18} color={Brand.primary} />
+                <Text style={styles.draftBtnText}>Save as Draft</Text>
               </Pressable>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -1123,6 +1191,7 @@ function SectionCard({
   children,
   styles,
   colors,
+  done,
 }: {
   title: string;
   icon: string;
@@ -1131,6 +1200,7 @@ function SectionCard({
   children: ReactNode;
   styles: any;
   colors: ThemeColors;
+  done?: boolean;
 }) {
   return (
     <View style={styles.sectionCard}>
@@ -1143,6 +1213,9 @@ function SectionCard({
             <MaterialCommunityIcons name={icon as any} size={18} color={Brand.primary} />
           </View>
           <Text style={styles.sectionTitle}>{title}</Text>
+          {done ? (
+            <MaterialCommunityIcons name="check-circle" size={16} color={Brand.success} />
+          ) : null}
         </View>
         <MaterialCommunityIcons
           name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -1258,6 +1331,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.half },
   halfCol: { flex: 1, gap: Spacing.one },
+  thirdCol: { flex: 1, gap: Spacing.one },
   hint: { fontSize: 12.5, color: c.textTertiary, marginBottom: Spacing.one },
   tierRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, marginBottom: Spacing.one },
   tierRemoveBtn: { paddingVertical: 10, paddingHorizontal: 2 },
@@ -1365,6 +1439,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: Spacing.four,
   },
   submitText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  draftBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.two - 2, borderWidth: 1.5, borderColor: Brand.primary,
+    borderRadius: 14, paddingVertical: Spacing.three + Spacing.half, marginTop: Spacing.two,
+  },
+  draftBtnText: { fontSize: 15, fontWeight: '700', color: Brand.primary },
 
   // ── Modal ──────────────────────────────────────────────────────
   modalOverlay: {
