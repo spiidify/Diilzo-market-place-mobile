@@ -33,8 +33,8 @@ import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackImpression, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
-import { priceForQuantity, totalForQuantity } from '@/utils/pricing';
 import type { CartItem, Product, ProductSpecification, Review } from '@/types';
+import { priceForQuantity } from '@/utils/pricing';
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -809,22 +809,6 @@ export default function ProductDetailScreen() {
               {selectedVariant && (
                 <Text style={styles.variantPriceNote}>Variant price</Text>
               )}
-              {onFlashDeal && (
-                <View style={styles.dealBanner}>
-                  <View style={styles.dealBannerRow}>
-                    <MaterialCommunityIcons name="flash" size={13} color="#B91C1C" />
-                    <Text style={styles.dealBannerText}>
-                      {product.flash_deal!.campaign || 'Flash Deal'} · ends {new Date(product.flash_deal!.ends_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                  <View style={styles.dealBarTrack}>
-                    <View style={[styles.dealBarFill, { width: `${Math.min(product.flash_deal!.claimed_pct, 100)}%` }]} />
-                  </View>
-                  <Text style={styles.dealBarText}>
-                    {product.flash_deal!.claimed_pct}% claimed — {product.flash_deal!.remaining} left
-                  </Text>
-                </View>
-              )}
             </View>
 
             {/* Rating + stock — sits right of the price */}
@@ -876,6 +860,24 @@ export default function ProductDetailScreen() {
             </View>
             </View>
           </View>
+
+          {/* ── Flash deal — full-width edge-to-edge strip ── */}
+          {onFlashDeal && (
+            <View style={styles.dealBanner}>
+              <View style={styles.dealBannerRow}>
+                <MaterialCommunityIcons name="flash" size={13} color="#FFFFFF" />
+                <Text style={styles.dealBannerText} numberOfLines={1}>
+                  {product.flash_deal!.campaign || 'Flash Deal'} · ends {new Date(product.flash_deal!.ends_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                <Text style={styles.dealBarText}>
+                  {product.flash_deal!.claimed_pct}% claimed · {product.flash_deal!.remaining} left
+                </Text>
+              </View>
+              <View style={styles.dealBarTrack}>
+                <View style={[styles.dealBarFill, { width: `${Math.min(product.flash_deal!.claimed_pct, 100)}%` }]} />
+              </View>
+            </View>
+          )}
 
           {/* ── Variant selector — grouped option axes (Amazon-style) when
               the product has structured options, else a flat list ── */}
@@ -2071,23 +2073,23 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   discountTagText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   saveLine: { fontSize: 12, color: Brand.danger, fontWeight: '600' },
 
+  // Edge-to-edge flash-deal strip — sits between the title card and the
+  // next section, full screen width, compact height.
   dealBanner: {
     marginTop: 8,
-    backgroundColor: '#FFF1F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 12,
+    paddingTop: 7,
+    paddingBottom: 6,
   },
   dealBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dealBannerText: { fontSize: 11.5, fontWeight: '700', color: '#B91C1C', flex: 1 },
+  dealBannerText: { fontSize: 11.5, fontWeight: '700', color: '#FFFFFF', flex: 1 },
   dealBarTrack: {
-    height: 5, borderRadius: 3, backgroundColor: '#FDE8E8',
-    overflow: 'hidden', marginTop: 6,
+    height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.35)',
+    overflow: 'hidden', marginTop: 5,
   },
-  dealBarFill: { height: '100%', backgroundColor: '#EF4444', borderRadius: 3 },
-  dealBarText: { fontSize: 10.5, fontWeight: '600', color: '#B91C1C', marginTop: 3 },
+  dealBarFill: { height: '100%', backgroundColor: '#FFFFFF', borderRadius: 2 },
+  dealBarText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF' },
 
   productName: { fontSize: 16, fontWeight: '600', color: c.text, lineHeight: 22 },
 
