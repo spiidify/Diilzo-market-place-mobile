@@ -2125,17 +2125,14 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
 
   // Bulk pricing tiers — section-width card like the web table
   bulkCard: {
-    backgroundColor: c.surface,
+    backgroundColor: '#F0F6FF',
     borderRadius: 14,
     marginHorizontal: 8,
     marginTop: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
   bulkHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   bulkTitle: { fontSize: 13.5, fontWeight: '700', color: c.text },
@@ -2149,7 +2146,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.borderLight,
     borderRadius: 6, paddingHorizontal: 4,
   },
-  bulkRowActive: { backgroundColor: Brand.primary + '14' },
+  bulkRowActive: { backgroundColor: '#3B82F61F' },
   bulkCell: { fontSize: 12.5, color: c.text },
   bulkCellPrice: { fontWeight: '700', color: Brand.danger },
   bulkCellSave: { fontWeight: '700', color: Brand.success },
@@ -2258,7 +2255,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   tierPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary },
   moqHint: {
     fontSize: 12, color: '#1D4ED8', fontWeight: '600', marginTop: 8,
-    backgroundColor: '#EFF6FF', borderRadius: 6,
+    backgroundColor: '#DBEAFE', borderRadius: 6,
     paddingHorizontal: 10, paddingVertical: 7, overflow: 'hidden',
   },
 
