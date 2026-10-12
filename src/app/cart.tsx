@@ -75,14 +75,22 @@ export default function CartScreen() {
   const handleQtyChange = async (item: CartItem, delta: number) => {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
+    const moq = item.product?.min_order_quantity || 1;
+    if (newQty < moq) {
+      Alert.alert('Minimum order', `Minimum order quantity is ${moq} units.`);
+      return;
+    }
 
     playSound(Sounds.TAP);
     const oldItem = { ...item };
     const oldTotalItems = cart?.total_items || 0;
+    // Optimistic: keep the current unit price, then let the server's
+    // response replace it with the tier-corrected price.
+    const unitPrice = Number(item.unit_price || (Number(item.total_price) / (item.quantity || 1)));
     updateLocalCart((prev) => {
       const items = prev.items.map((i) =>
         i.id === item.id
-          ? { ...i, quantity: newQty, total_price: String(Number(i.total_price) / i.quantity * newQty) }
+          ? { ...i, quantity: newQty, total_price: String(unitPrice * newQty) }
           : i
       );
       const totals = recalcTotals(items);
@@ -92,7 +100,18 @@ export default function CartScreen() {
 
     setUpdating(item.id);
     try {
-      await updateCartItem(item.id, newQty);
+      const updated = await updateCartItem(item.id, newQty);
+      // Replace with the server's authoritative item — unit_price is
+      // recomputed by price_for_quantity() so tiered savings apply.
+      updateLocalCart((prev) => {
+        const items = prev.items.map((i) =>
+          i.id === item.id
+            ? { ...i, quantity: updated.quantity, unit_price: String(updated.unit_price), total_price: String(updated.total_price) }
+            : i
+        );
+        const totals = recalcTotals(items);
+        return { ...prev, items, total_items: totals.total_items, total_price: totals.total_price };
+      });
     } catch {
       updateLocalCart((prev) => {
         const items = prev.items.map((i) => (i.id === item.id ? oldItem : i));
@@ -258,7 +277,11 @@ export default function CartScreen() {
 
   const currency = cart.items[0]?.product.currency || 'UGX';
 
-  const renderItem = ({ item }: { item: CartItem }) => (
+  const renderItem = ({ item }: { item: CartItem }) => {
+    const unitPrice = Number(item.unit_price) || 0;
+    const baseUnit = Number(item.product?.final_price ?? item.product?.price ?? 0);
+    const tierSavings = baseUnit > unitPrice ? (baseUnit - unitPrice) * item.quantity : 0;
+    return (
     <View style={styles.card}>
       <View style={styles.cardBody}>
         <Pressable onPress={() => router.push(`/product/${item.product.slug}`)}>
@@ -291,8 +314,18 @@ export default function CartScreen() {
 
           <View style={styles.itemBottom}>
             <View style={styles.priceCol}>
-              <Text style={styles.currencyText}>{currency}</Text>
-              <Text style={styles.itemPrice}>{Number(item.total_price).toLocaleString()}</Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.currencyText}>{currency}</Text>
+                <Text style={styles.itemPrice}>{Number(item.total_price).toLocaleString()}</Text>
+              </View>
+              <Text style={styles.unitPriceText}>
+                {currency} {unitPrice.toLocaleString()} / unit × {item.quantity}
+              </Text>
+              {tierSavings > 0 && (
+                <Text style={styles.saveText}>
+                  Bulk save {currency} {tierSavings.toLocaleString()}
+                </Text>
+              )}
             </View>
             <View style={styles.stepper}>
               <Pressable
@@ -326,6 +359,7 @@ export default function CartScreen() {
       </Pressable>
     </View>
   );
+  };
 
   const cartList = (
     <FlatList
@@ -488,9 +522,12 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  priceCol: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  priceCol: { flexDirection: 'column', alignItems: 'flex-start', gap: 2 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
   currencyText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
   itemPrice: { fontSize: 17, fontWeight: '800', color: c.text },
+  unitPriceText: { fontSize: 11, color: c.textTertiary },
+  saveText: { fontSize: 11, fontWeight: '700', color: Brand.success },
 
   stepper: {
     flexDirection: 'row',

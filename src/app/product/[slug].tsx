@@ -233,6 +233,9 @@ export default function ProductDetailScreen() {
     ? effectivePrice
     : priceForQuantity(quantity, Number(product?.final_price ?? 0), product?.wholesale_tiers);
   const liveTotalPrice = liveUnitPrice * quantity;
+  // Wholesale tier savings — shown when a volume tier undercuts the base price.
+  const baseUnitPrice = Number(product?.final_price ?? 0);
+  const tierSavingsPerUnit = !selectedVariant && baseUnitPrice > liveUnitPrice ? baseUnitPrice - liveUnitPrice : 0;
   const effectiveStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0);
   const effectiveInStock = selectedVariant ? selectedVariant.is_in_stock : (product?.is_in_stock ?? false);
   const effectiveSku = selectedVariant?.sku || product?.sku || '';
@@ -1028,6 +1031,11 @@ export default function ProductDetailScreen() {
                 Total: {product.currency} {liveTotalPrice.toLocaleString()}
               </Text>
             </View>
+            {tierSavingsPerUnit > 0 && (
+              <Text style={styles.bulkSaveText}>
+                Bulk save {product.currency} {tierSavingsPerUnit.toLocaleString()} per unit
+              </Text>
+            )}
             {/* Delivery info from store data */}
             {product.store?.supports_local_delivery && isLocalSeller && (
               <View style={styles.deliveryMiniRow}>
@@ -2155,6 +2163,7 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
   unitTotalText: { fontSize: 13, color: c.textSecondary },
   unitTotalStrong: { fontWeight: '700', color: c.text },
+  bulkSaveText: { fontSize: 12, fontWeight: '700', color: Brand.success, marginTop: 6 },
   deliveryMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   deliveryMiniText: { fontSize: 13, color: c.textSecondary },
 
