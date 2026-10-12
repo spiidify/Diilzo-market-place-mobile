@@ -31,7 +31,7 @@ import {
     fetchPickupStations,
     type PickUpStation,
 } from '@/services/logistics';
-import { calculateShipping, type ShippingQuote } from '@/services/orders';
+import { calculateShipping, fetchShippingCarriers, type ShippingCarrier, type ShippingQuote } from '@/services/orders';
 import {
     checkPaymentStatus,
     fetchPaymentMethods,
@@ -153,6 +153,8 @@ export default function CheckoutScreen() {
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingEstimate, setShippingEstimate] = useState<{ method_name: string; estimated_days: number } | null>(null);
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+  const [carriers, setCarriers] = useState<ShippingCarrier[]>([]);
+  const [selectedCarrierId, setSelectedCarrierId] = useState<number | null>(null);
 
   // Fetch addresses and (re)select the default — keeps the current
   // selection if it still exists, otherwise falls back to is_default.
@@ -291,6 +293,40 @@ export default function CheckoutScreen() {
     }
   }, [fulfillmentMethod, pickupStations.length, pickupLoading]);
 
+  // Carrier list (DHL, FedEx, G4S…) — fetched once; the picker shows
+  // the scope matching the quote (intl couriers vs local couriers).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchShippingCarriers();
+        if (!cancelled) setCarriers(list);
+      } catch { /* picker simply won't render without carriers */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const isInternational = shippingQuote?.is_international
+    ?? shippingQuote?.parts?.some((p) => p.kind === 'freight')
+    ?? false;
+  const visibleCarriers = carriers.filter((c) =>
+    isInternational ? c.supports_international : c.supports_domestic,
+  );
+
+  // Auto-select the platform default within the active carrier group
+  // whenever the scope (or list) changes.
+  useEffect(() => {
+    if (visibleCarriers.length === 0) {
+      setSelectedCarrierId(null);
+      return;
+    }
+    if (!visibleCarriers.some((c) => c.id === selectedCarrierId)) {
+      const dflt = visibleCarriers.find((c) => c.is_default) || visibleCarriers[0];
+      setSelectedCarrierId(dflt.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carriers, isInternational]);
+
   const loadPickupStations = useCallback(async () => {
     setPickupLoading(true);
     setPickupError(null);
@@ -405,6 +441,7 @@ export default function CheckoutScreen() {
           coupon_code: discount > 0 && couponCode.trim() ? couponCode.trim() : undefined,
           fulfillment_method: fulfillmentMethod,
           pickup_station_id: fulfillmentMethod === 'pickup_station' ? selectedStationId ?? undefined : undefined,
+          shipping_carrier_id: selectedCarrierId ?? undefined,
         },
       });
 
@@ -876,6 +913,44 @@ export default function CheckoutScreen() {
                 )}
               </View>
             )}
+
+            {/* Carrier picker — intl couriers for cross-border, local couriers for domestic */}
+            {visibleCarriers.length > 0 && (
+              <View style={styles.carrierSection}>
+                <Text style={styles.carrierLabel}>Shipping Carrier</Text>
+                <Text style={styles.carrierHint}>
+                  {isInternational
+                    ? 'Ships internationally — choose your cross-border courier.'
+                    : 'Choose the courier for your delivery.'}
+                </Text>
+                <View style={styles.carrierRow}>
+                  {visibleCarriers.map((carrier) => {
+                    const selected = carrier.id === selectedCarrierId;
+                    return (
+                      <Pressable
+                        key={`carrier-${carrier.id}`}
+                        style={({ pressed }) => [
+                          styles.carrierCard,
+                          selected && styles.carrierCardSelected,
+                          pressed && { opacity: 0.85 },
+                        ]}
+                        onPress={() => setSelectedCarrierId(carrier.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name={isInternational ? 'airplane-takeoff' : 'truck'}
+                          size={15}
+                          color={selected ? Brand.primary : colors.textTertiary}
+                        />
+                        <Text
+                          style={[styles.carrierName, selected && styles.carrierNameSelected]}
+                          numberOfLines={1}
+                        >{carrier.name}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
           </View>
 
           {/* ── Section 3: Payment Method ──────────────────────── */}
@@ -1339,6 +1414,29 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   fulfillmentPillText: { fontSize: 13, fontWeight: '700', color: c.textTertiary },
   fulfillmentPillTextActive: { color: '#FFFFFF' },
+
+  // ── Carrier picker ─────────────────────────────────────────
+  carrierSection: { marginTop: Spacing.two + 2 },
+  carrierLabel: { fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 2 },
+  carrierHint: { fontSize: 11, color: c.textTertiary, marginBottom: Spacing.one + 2 },
+  carrierRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one + 2 },
+  carrierCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: RADIUS_SM,
+    borderWidth: 1.5,
+    borderColor: c.borderLight,
+    backgroundColor: c.surface,
+  },
+  carrierCardSelected: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '14',
+  },
+  carrierName: { fontSize: 12, fontWeight: '600', color: c.textTertiary, maxWidth: 130 },
+  carrierNameSelected: { color: Brand.primary },
 
   // ── Pickup section ─────────────────────────────────────────
   pickupSection: { marginTop: Spacing.two + 2 },

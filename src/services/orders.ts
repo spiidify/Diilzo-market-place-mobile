@@ -25,6 +25,7 @@ export async function createOrder(params: {
   notes?: string;
   fulfillment_method?: 'home_delivery' | 'pickup_station';
   pickup_station_id?: number;
+  shipping_carrier_id?: number;
 }): Promise<Order> {
   return apiRequest<Order>({ method: 'POST', url: '/orders/create/', data: params });
 }
@@ -204,7 +205,28 @@ export interface ShippingQuote {
   last_mile_fee: string;
   total_shipping_fee: string;
   mode: string;
+  is_international?: boolean;
   parts: ShippingFeePart[];
+}
+
+// ── Shipping Carriers ─────────────────────────────────────────────
+
+export interface ShippingCarrier {
+  id: number;
+  name: string;
+  code: string;
+  supports_domestic: boolean;
+  supports_international: boolean;
+  is_default: boolean;
+}
+
+/** GET /api/v1/shipping/carriers/ — active courier list */
+export async function fetchShippingCarriers(): Promise<ShippingCarrier[]> {
+  const res = await apiRequest<{ carriers: ShippingCarrier[] }>({
+    method: 'GET',
+    url: '/shipping/carriers/',
+  });
+  return res.carriers;
 }
 
 /** POST /api/v1/shipping/calculate/ — dual-engine shipping estimate */
