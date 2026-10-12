@@ -75,11 +75,6 @@ export default function CartScreen() {
   const handleQtyChange = async (item: CartItem, delta: number) => {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
-    const moq = item.product?.min_order_quantity || 1;
-    if (newQty < moq) {
-      Alert.alert('Minimum order', `Minimum order quantity is ${moq} units.`);
-      return;
-    }
 
     playSound(Sounds.TAP);
     const oldItem = { ...item };

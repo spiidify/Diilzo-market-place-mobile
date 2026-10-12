@@ -89,7 +89,7 @@ export default function ProductDetailScreen() {
       setError(null);
       const data = await fetchProductBySlug(slug);
       setProduct(data);
-      setQuantity(data.min_order_quantity || 1);
+      setQuantity(1);
       fetchProductReviews(slug).then(setReviews).catch(() => { });
       trackProductView(slug).catch(() => { });
       if (data.id) trackPromoClick(data.id).catch(() => { });
@@ -1009,7 +1009,7 @@ export default function ProductDetailScreen() {
               <View style={styles.qtyControls}>
                 <Pressable
                   style={styles.qtyBtn}
-                  onPress={() => setQuantity((q) => Math.max(product.min_order_quantity || 1, q - 1))}
+                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
                 >
                   <MaterialCommunityIcons name="minus" size={16} color={colors.textSecondary} />
                 </Pressable>
