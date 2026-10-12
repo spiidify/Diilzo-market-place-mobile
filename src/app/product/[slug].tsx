@@ -2256,7 +2256,11 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
   tierQty: { fontSize: 13, color: c.textSecondary },
   tierPrice: { fontSize: 13, fontWeight: '700', color: Brand.primary },
-  moqHint: { fontSize: 12, color: c.textTertiary, marginTop: 4 },
+  moqHint: {
+    fontSize: 12, color: '#1D4ED8', fontWeight: '600', marginTop: 8,
+    backgroundColor: '#EFF6FF', borderRadius: 6,
+    paddingHorizontal: 10, paddingVertical: 7, overflow: 'hidden',
+  },
 
   // ── Description ─────────────────────────────────────────────────
   descText: { fontSize: 13, lineHeight: 20, color: c.textSecondary },
