@@ -23,7 +23,7 @@ import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { apiRequest } from '@/services/api';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
-import { getProductDetail, updateProduct } from '@/services/seller';
+import { createWholesaleTier, deleteWholesaleTier, getProductDetail, getWholesaleTiers, updateProduct } from '@/services/seller';
 import type { Brand as BrandType, Category } from '@/types';
 
 interface PickedImage {
@@ -59,6 +59,8 @@ export default function EditProductScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
+  const [numericId, setNumericId] = useState<number | null>(null);
+  const [wholesaleTiers, setWholesaleTiers] = useState<{ id?: number; min_quantity: string; price: string }[]>([{ min_quantity: '', price: '' }]);
   const [condition, setCondition] = useState<'new' | 'refurbished' | 'used'>('new');
   const [weight, setWeight] = useState('');
   const [countryOfOrigin, setCountryOfOrigin] = useState('Uganda');
@@ -133,6 +135,19 @@ export default function EditProductScreen() {
       setCategoryId(product.category?.id ?? null);
       setBrandId(product.brand?.id ?? null);
       setMinOrderQty(String(product.min_order_quantity || 1));
+      setNumericId(typeof product.id === 'number' ? product.id : null);
+      if (typeof product.id === 'number') {
+        try {
+          const tiers = await getWholesaleTiers(product.id);
+          setWholesaleTiers(
+            tiers.length
+              ? tiers.map((t) => ({ id: t.id, min_quantity: String(t.min_quantity), price: String(t.price) }))
+              : [{ min_quantity: '', price: '' }],
+          );
+        } catch {
+          setWholesaleTiers([{ min_quantity: '', price: '' }]);
+        }
+      }
       setCondition(product.condition === 'refurbished' || product.condition === 'used' ? product.condition : 'new');
       setWeight(product.weight || '');
       setCountryOfOrigin(product.country_of_origin || 'Uganda');
@@ -229,6 +244,13 @@ export default function EditProductScreen() {
     setExpandedSection((prev) => (prev === key ? null : key));
   };
 
+  // ── Wholesale tier editor helpers ──────────────────────────────
+  const addTier = () => setWholesaleTiers((t) => [...t, { min_quantity: '', price: '' }]);
+  const updateTier = (idx: number, key: 'min_quantity' | 'price', value: string) =>
+    setWholesaleTiers((t) => t.map((row, i) => (i === idx ? { ...row, [key]: value } : row)));
+  const removeTier = (idx: number) =>
+    setWholesaleTiers((t) => (t.length === 1 ? [{ min_quantity: '', price: '' }] : t.filter((_, i) => i !== idx)));
+
   // ── Submit ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -308,6 +330,24 @@ export default function EditProductScreen() {
           data: formData,
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+      }
+
+      // Reconcile wholesale tiers: remove existing, then recreate the
+      // edited rows (no per-tier update endpoint — delete + create).
+      const tierProductId = numericId ?? (productId ? Number(productId) : null);
+      if (tierProductId) {
+        for (const t of wholesaleTiers) {
+          if (t.id) {
+            try { await deleteWholesaleTier(tierProductId, t.id); } catch { /* already gone */ }
+          }
+        }
+        for (const t of wholesaleTiers) {
+          const qty = parseInt(t.min_quantity, 10);
+          const pr = parseFloat(t.price);
+          if (qty > 1 && pr > 0) {
+            try { await createWholesaleTier(tierProductId, { min_quantity: qty, price: pr }); } catch { /* non-critical */ }
+          }
+        }
       }
 
       Alert.alert('Success', 'Product updated successfully', [
@@ -676,6 +716,59 @@ export default function EditProductScreen() {
                   placeholder="Uganda"
                   placeholderTextColor={colors.textTertiary}
                 />
+              </SectionCard>
+
+              {/* ── Wholesale Pricing (bulk tiers) ─────────────────── */}
+              <SectionCard
+                title="Wholesale Pricing"
+                icon="layers-triple-outline"
+                expanded={expandedSection === 'wholesale'}
+                onToggle={() => toggleSection('wholesale')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.hint}>
+                  Volume price breaks — buyers get the lower unit price when they order the minimum quantity. Min order qty is set above.
+                </Text>
+
+                {wholesaleTiers.map((tier, idx) => (
+                  <View key={idx} style={styles.tierRow}>
+                    <View style={styles.halfCol}>
+                      <Text style={styles.label}>Min Qty</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={tier.min_quantity}
+                        onChangeText={(v) => updateTier(idx, 'min_quantity', v)}
+                        placeholder="200"
+                        placeholderTextColor={colors.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={styles.halfCol}>
+                      <Text style={styles.label}>Unit Price</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={tier.price}
+                        onChangeText={(v) => updateTier(idx, 'price', v)}
+                        placeholder="160000"
+                        placeholderTextColor={colors.textTertiary}
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <Pressable
+                      style={styles.tierRemoveBtn}
+                      onPress={() => removeTier(idx)}
+                      hitSlop={8}
+                    >
+                      <MaterialCommunityIcons name="close-circle" size={20} color={Brand.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+
+                <Pressable style={styles.addTierBtn} onPress={addTier}>
+                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Brand.primary} />
+                  <Text style={styles.addTierText}>Add Price Tier</Text>
+                </Pressable>
               </SectionCard>
 
               {/* ── Video ──────────────────────────────────────────── */}
@@ -1165,6 +1258,15 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
 
   row: { flexDirection: 'row', gap: Spacing.two + Spacing.half },
   halfCol: { flex: 1, gap: Spacing.one },
+  hint: { fontSize: 12.5, color: c.textTertiary, marginBottom: Spacing.one },
+  tierRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, marginBottom: Spacing.one },
+  tierRemoveBtn: { paddingVertical: 10, paddingHorizontal: 2 },
+  addTierBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.two - 2, paddingVertical: Spacing.two + Spacing.half,
+    borderWidth: 1.5, borderColor: Brand.primary, borderStyle: 'dashed', borderRadius: 12,
+  },
+  addTierText: { fontSize: 14, color: Brand.primary, fontWeight: '600' },
 
   dropdown: {
     flexDirection: 'row',

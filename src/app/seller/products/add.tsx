@@ -22,7 +22,7 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
-import { createProduct, createProductVariant, getMyStore } from '@/services/seller';
+import { createProduct, createProductVariant, createWholesaleTier, getMyStore } from '@/services/seller';
 import type { Brand as BrandType, Category } from '@/types';
 
 interface PickedImage {
@@ -57,6 +57,7 @@ export default function AddProductScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brandId, setBrandId] = useState<number | null>(null);
   const [minOrderQty, setMinOrderQty] = useState('1');
+  const [wholesaleTiers, setWholesaleTiers] = useState<{ min_quantity: string; price: string }[]>([{ min_quantity: '', price: '' }]);
   const [condition, setCondition] = useState<'new' | 'refurbished' | 'used'>('new');
   const [weight, setWeight] = useState('');
   const [length, setLength] = useState('');
@@ -196,6 +197,13 @@ export default function AddProductScreen() {
     setExpandedSection((prev) => (prev === key ? null : key));
   };
 
+  // ── Wholesale tier editor helpers ──────────────────────────────
+  const addTier = () => setWholesaleTiers((t) => [...t, { min_quantity: '', price: '' }]);
+  const updateTier = (idx: number, key: 'min_quantity' | 'price', value: string) =>
+    setWholesaleTiers((t) => t.map((row, i) => (i === idx ? { ...row, [key]: value } : row)));
+  const removeTier = (idx: number) =>
+    setWholesaleTiers((t) => (t.length === 1 ? [{ min_quantity: '', price: '' }] : t.filter((_, i) => i !== idx)));
+
   // ── Submit ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -266,6 +274,21 @@ export default function AddProductScreen() {
 
       const result: any = await createProduct(formData);
       const productId = result?.id || result?.product?.id;
+
+      // Create wholesale price tiers after the product exists
+      if (productId) {
+        for (const t of wholesaleTiers) {
+          const qty = parseInt(t.min_quantity, 10);
+          const pr = parseFloat(t.price);
+          if (qty > 1 && pr > 0) {
+            try {
+              await createWholesaleTier(productId, { min_quantity: qty, price: pr });
+            } catch {
+              // Non-critical — product was created; tier failed
+            }
+          }
+        }
+      }
 
       // Create variants after product is created
       if (productId && variants.length > 0) {
@@ -793,6 +816,59 @@ export default function AddProductScreen() {
                 />
               </SectionCard>
 
+              {/* ── Wholesale Pricing (bulk tiers) ─────────────────── */}
+              <SectionCard
+                title="Wholesale Pricing"
+                icon="layers-triple-outline"
+                expanded={expandedSection === 'wholesale'}
+                onToggle={() => toggleSection('wholesale')}
+                styles={styles}
+                colors={colors}
+              >
+                <Text style={styles.hint}>
+                  Add volume price breaks — buyers get the lower unit price when they order the minimum quantity. Min order qty is set under Shipping &amp; Dimensions.
+                </Text>
+
+                {wholesaleTiers.map((tier, idx) => (
+                  <View key={idx} style={styles.tierRow}>
+                    <View style={styles.halfCol}>
+                      <Text style={styles.label}>Min Qty</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={tier.min_quantity}
+                        onChangeText={(v) => updateTier(idx, 'min_quantity', v)}
+                        placeholder="200"
+                        placeholderTextColor={colors.textTertiary}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                    <View style={styles.halfCol}>
+                      <Text style={styles.label}>Unit Price</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={tier.price}
+                        onChangeText={(v) => updateTier(idx, 'price', v)}
+                        placeholder="160000"
+                        placeholderTextColor={colors.textTertiary}
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <Pressable
+                      style={styles.tierRemoveBtn}
+                      onPress={() => removeTier(idx)}
+                      hitSlop={8}
+                    >
+                      <MaterialCommunityIcons name="close-circle" size={20} color={Brand.danger} />
+                    </Pressable>
+                  </View>
+                ))}
+
+                <Pressable style={styles.addVariantBtn} onPress={addTier}>
+                  <MaterialCommunityIcons name="plus-circle-outline" size={20} color={Brand.primary} />
+                  <Text style={styles.addVariantText}>Add Price Tier</Text>
+                </Pressable>
+              </SectionCard>
+
               {/* ── SEO ───────────────────────────────────────────── */}
               <SectionCard
                 title="SEO & Visibility"
@@ -1263,6 +1339,9 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 12,
   },
   addVariantText: { fontSize: 14, color: Brand.primary, fontWeight: '600' },
+  hint: { fontSize: 12.5, color: c.textTertiary, marginBottom: Spacing.one },
+  tierRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two, marginBottom: Spacing.one },
+  tierRemoveBtn: { paddingVertical: 10, paddingHorizontal: 2 },
 
   // ── Buttons ────────────────────────────────────────────────────
   btnPrimary: {

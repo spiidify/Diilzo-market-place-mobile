@@ -33,6 +33,7 @@ import { fetchProductBySlug, fetchProducts } from '@/services/products';
 import { fetchSponsoredProducts, trackImpression, trackClick as trackPromoClick } from '@/services/promotions';
 import { playSound, Sounds } from '@/services/sound';
 import { addToWishlist, checkWishlist, removeFromWishlist } from '@/services/wishlist';
+import { priceForQuantity, totalForQuantity } from '@/utils/pricing';
 import type { CartItem, Product, ProductSpecification, Review } from '@/types';
 
 export default function ProductDetailScreen() {
@@ -226,6 +227,12 @@ export default function ProductDetailScreen() {
   const effectivePrice = selectedVariant
     ? Number(selectedVariant.effective_price ?? selectedVariant.price ?? product?.final_price ?? 0)
     : Number(product?.final_price ?? 0);
+  // Live tier-aware pricing — mirrors backend price_for_quantity. Variant
+  // selections use the variant price; base products apply wholesale tiers.
+  const liveUnitPrice = selectedVariant
+    ? effectivePrice
+    : priceForQuantity(quantity, Number(product?.final_price ?? 0), product?.wholesale_tiers);
+  const liveTotalPrice = liveUnitPrice * quantity;
   const effectiveStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stock_quantity ?? 0);
   const effectiveInStock = selectedVariant ? selectedVariant.is_in_stock : (product?.is_in_stock ?? false);
   const effectiveSku = selectedVariant?.sku || product?.sku || '';
@@ -1011,6 +1018,15 @@ export default function ProductDetailScreen() {
                   <MaterialCommunityIcons name="plus" size={16} color={colors.textSecondary} />
                 </Pressable>
               </View>
+            </View>
+            {/* Live unit + total price — recalculates with quantity & tiers */}
+            <View style={styles.unitTotalRow}>
+              <Text style={styles.unitTotalText}>
+                Unit: {product.currency} {liveUnitPrice.toLocaleString()}
+              </Text>
+              <Text style={[styles.unitTotalText, styles.unitTotalStrong]}>
+                Total: {product.currency} {liveTotalPrice.toLocaleString()}
+              </Text>
             </View>
             {/* Delivery info from store data */}
             {product.store?.supports_local_delivery && isLocalSeller && (
@@ -2133,6 +2149,12 @@ const createStyles = (c: ThemeColors, galleryWidth: number) => StyleSheet.create
   },
   qtyBtn: { width: 28, height: 28, justifyContent: 'center', alignItems: 'center' },
   qtyValue: { fontSize: 16, fontWeight: '700', color: c.text, minWidth: 20, textAlign: 'center' },
+  unitTotalRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: 8, borderTopWidth: 1, borderTopColor: c.border,
+  },
+  unitTotalText: { fontSize: 13, color: c.textSecondary },
+  unitTotalStrong: { fontWeight: '700', color: c.text },
   deliveryMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   deliveryMiniText: { fontSize: 13, color: c.textSecondary },
 
