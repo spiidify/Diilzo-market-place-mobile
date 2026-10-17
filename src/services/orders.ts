@@ -109,6 +109,9 @@ export interface EscrowHoldItem {
   days_until_auto_release: number | null;
   tracking_number: string;
   shipping_documents?: string[];
+  /** 'cash' = cash on delivery (funds collected at hand-over). */
+  payment_method?: string;
+  payment_status?: string;
   /** Names of stores fulfilling this escrowed order. */
   stores?: string[];
   held_at: string;

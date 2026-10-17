@@ -164,8 +164,15 @@ export default function SellerEscrowScreen() {
             <Text style={[styles.orderNumber, split && { color: Brand.primary }]}>#{item.order_number}</Text>
             {split ? <MaterialCommunityIcons name="chevron-right" size={16} color={Brand.primary} /> : null}
           </Pressable>
-          <View style={[styles.badge, { backgroundColor: color + '20' }]}>
-            <Text style={[styles.badgeText, { color }]}>{STATUS_LABELS[item.status] || item.status}</Text>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            {item.payment_method === 'cash' && (
+              <View style={[styles.badge, { backgroundColor: '#F59E0B20' }]}>
+                <Text style={[styles.badgeText, { color: '#B45309' }]}>COD</Text>
+              </View>
+            )}
+            <View style={[styles.badge, { backgroundColor: color + '20' }]}>
+              <Text style={[styles.badgeText, { color }]}>{STATUS_LABELS[item.status] || item.status}</Text>
+            </View>
           </View>
         </View>
 
@@ -261,7 +268,11 @@ export default function SellerEscrowScreen() {
             color={item.buyer_confirmed_receipt ? Brand.primary : Brand.rating}
           />
           <Text style={[styles.confirmText, { color: item.buyer_confirmed_receipt ? Brand.primary : Brand.rating }]}>
-            {item.buyer_confirmed_receipt ? 'Buyer confirmed receipt' : 'Awaiting buyer confirmation'}
+            {item.buyer_confirmed_receipt
+              ? 'Buyer confirmed receipt'
+              : item.payment_method === 'cash' && item.payment_status !== 'paid'
+                ? 'Collect cash on delivery'
+                : 'Awaiting buyer confirmation'}
           </Text>
           {(item.status === 'held' || item.status === 'disputed') && (
             <Pressable style={styles.proofBtn} onPress={() => openProofModal(item)}>

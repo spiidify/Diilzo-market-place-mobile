@@ -166,6 +166,16 @@ export default function BuyerEscrowScreen() {
 
           <View style={styles.divider} />
 
+          {item.payment_method === 'cash' && (
+            <View style={styles.metaRow}>
+              <MaterialCommunityIcons name="cash" size={14} color="#B45309" />
+              <Text style={[styles.metaText, { color: '#B45309', fontWeight: '700' }]}>
+                {item.payment_status !== 'paid'
+                  ? 'Cash on Delivery — pay when your items arrive'
+                  : 'Cash on Delivery — collected'}
+              </Text>
+            </View>
+          )}
           {(item.stores?.length ?? 0) > 0 && (
             <View style={styles.metaRow}>
               <MaterialCommunityIcons name="storefront-outline" size={14} color={colors.textTertiary} />

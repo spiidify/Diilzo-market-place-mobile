@@ -244,6 +244,9 @@ export interface EscrowHold {
   released_at: string | null;
   tracking_number: string;
   shipping_documents?: string[];
+  /** 'cash' = cash on delivery (funds collected at hand-over). */
+  payment_method?: string;
+  payment_status?: string;
   /** This store's share of the hold — net escrow, commission reserved, fees. */
   store_split?: EscrowStoreSplit | null;
   events?: Array<{
