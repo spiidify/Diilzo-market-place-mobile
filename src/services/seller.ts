@@ -120,6 +120,9 @@ export interface SellerOrderItem {
   quantity: number;
   unit_price: string;
   total_price: string;
+  /** Per-item commission snapshot — null on orders placed before per-item tracking. */
+  commission_rate?: string | null;
+  commission_amount?: string | null;
 }
 
 export interface SellerEarnings {
@@ -213,8 +216,19 @@ export interface SellerShipmentDetail {
   created_at: string;
 }
 
+export interface EscrowStoreSplit {
+  suborder_id: number;
+  subtotal: string;
+  commission_amount: string;
+  seller_fees: string;
+  seller_amount: string;
+  status: string;
+  settled_at: string | null;
+}
+
 export interface EscrowHold {
   id: number;
+  order_id: number;
   order_number: string;
   buyer_email: string;
   amount_held: string;
@@ -229,12 +243,27 @@ export interface EscrowHold {
   held_at: string;
   released_at: string | null;
   tracking_number: string;
+  shipping_documents?: string[];
+  /** This store's share of the hold — net escrow, commission reserved, fees. */
+  store_split?: EscrowStoreSplit | null;
+  events?: Array<{
+    action: string;
+    amount: string | null;
+    notes: string;
+    created_at: string;
+  }>;
 }
 
 export interface EscrowResponse {
   escrows: EscrowHold[];
+  /** Store's net seller share currently held in escrow. */
   total_held: string;
+  /** Diilzo commission reserved on held escrows. */
+  commission_held?: string;
+  /** Net seller share released to wallet. */
   total_released: string;
+  disputed_count?: number;
+  held_count?: number;
   total_count: number;
   trade_assurance: boolean;
 }
@@ -1159,8 +1188,33 @@ export async function deleteWholesaleTier(productId: number, tierId: number): Pr
 // ── Escrow & Trade Assurance ────────────────────────────────────────
 
 /** GET /seller/escrow/ — escrow holds for the seller's store */
-export async function getEscrow(): Promise<EscrowResponse> {
-  return apiRequest<EscrowResponse>({ method: 'GET', url: `${SELLER_BASE}/escrow/` });
+export async function getEscrow(statusFilter?: string): Promise<EscrowResponse> {
+  return apiRequest<EscrowResponse>({
+    method: 'GET',
+    url: `${SELLER_BASE}/escrow/`,
+    params: statusFilter ? { status: statusFilter } : undefined,
+  });
+}
+
+/** POST /seller/escrow/ {action: 'toggle_trade_assurance'} — flip the store's Trade Assurance badge. */
+export async function toggleTradeAssurance(): Promise<{ trade_assurance: boolean }> {
+  return apiRequest({
+    method: 'POST',
+    url: `${SELLER_BASE}/escrow/`,
+    data: { action: 'toggle_trade_assurance' },
+  });
+}
+
+/** POST /seller/escrow/ {action: 'update_proof'} — attach tracking + delivery proof URL to a hold. */
+export async function updateEscrowProof(
+  escrowId: number,
+  params: { tracking_number?: string; document_url?: string },
+): Promise<{ id: number; tracking_number: string; shipping_documents: string[] }> {
+  return apiRequest({
+    method: 'POST',
+    url: `${SELLER_BASE}/escrow/`,
+    data: { action: 'update_proof', escrow_id: escrowId, ...params },
+  });
 }
 
 // ── Membership (B2B Supplier) ──────────────────────────────────────

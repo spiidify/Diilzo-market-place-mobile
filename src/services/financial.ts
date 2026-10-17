@@ -52,6 +52,9 @@ export interface FinancialDashboard {
   commission_rate: string;
   base_commission_rate?: string;
   plan_discount?: string;
+  /** Commission discount unlocked by the store's 30-day GMV volume tier. */
+  volume_discount?: string;
+  volume_tier?: VolumeTierInfo | null;
   commission_by_category?: Array<{ name: string; rate: string }>;
   commission_rules?: Array<{
     name: string;
@@ -82,6 +85,58 @@ export interface FinancialDashboard {
     payment_method: string;
     cashier: string;
     sale_date: string;
+  }>;
+}
+
+export interface VolumeTier {
+  name: string;
+  min_monthly_gmv: string;
+  discount_percentage: string;
+}
+
+export interface VolumeTierInfo {
+  gmv_30d: string;
+  discount: string;
+  current_tier: VolumeTier | null;
+  next_tier: VolumeTier | null;
+  remaining_to_next: string;
+  progress_pct: number;
+}
+
+export interface StatementSummary {
+  order_count: number;
+  gross_sales: string;
+  gross_commission: string;
+  reversed_commission: string;
+  net_commission: string;
+  platform_fees: string;
+  subscription_fees: string;
+  ad_spend: string;
+  total_diilzo_charges: string;
+  seller_net_earnings: string;
+  payouts_total: string;
+  payouts_count: number;
+}
+
+export interface SellerStatement {
+  statement_number: string;
+  store_name: string;
+  period: string;
+  period_label: string;
+  currency: string;
+  month_options: Array<{ value: string; label: string }>;
+  summary: StatementSummary;
+  transactions: Array<{
+    id: number;
+    date: string;
+    order_number: string;
+    gross_amount: string;
+    commission_percentage: string;
+    commission_amount: string;
+    seller_amount: string;
+    status: string;
+    is_reversal: boolean;
+    rule_name: string;
   }>;
 }
 
@@ -405,6 +460,15 @@ export async function getCommissionHistory(): Promise<CommissionHistoryResponse>
   return apiRequest<CommissionHistoryResponse>({
     method: 'GET',
     url: `${FINANCIAL_BASE}/seller/commissions/`,
+  });
+}
+
+/** GET /financial/seller/statement/?month=YYYY-MM — monthly commission & fee statement */
+export async function getSellerStatement(month?: string): Promise<SellerStatement> {
+  return apiRequest<SellerStatement>({
+    method: 'GET',
+    url: `${FINANCIAL_BASE}/seller/statement/`,
+    params: month ? { month } : undefined,
   });
 }
 

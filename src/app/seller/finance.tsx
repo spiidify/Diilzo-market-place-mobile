@@ -78,6 +78,7 @@ export default function SellerFinanceDashboardScreen() {
 
   const quickActions = [
     { icon: 'receipt', label: 'Commissions', color: '#8B5CF6', route: '/seller/commissions' as any },
+    { icon: 'file-document-outline', label: 'Statement', color: '#0EA5E9', route: '/seller/statement' as any },
     { icon: 'lock-clock', label: 'Holds', color: Brand.rating, route: '/seller/payout-holds' as any },
     { icon: 'bullhorn-outline', label: 'Ad Wallet', color: '#F59E0B', route: '/seller/ad-wallet' as any },
     { icon: 'credit-card-outline', label: 'Subscription', color: '#06B6D4', route: '/seller/subscription' as any },
@@ -282,6 +283,11 @@ export default function SellerFinanceDashboardScreen() {
                       Plan discount: −{planDisc}% applied to every rate below
                     </Text>
                   )}
+                  {Number(data?.volume_discount || 0) > 0 && (
+                    <Text style={[styles.rateDetailLine, { color: '#0EA5E9' }]}>
+                      Volume tier discount: −{Number(data?.volume_discount).toFixed(2)}% applied
+                    </Text>
+                  )}
                   {byCat.map(c => (
                     <View key={c.name} style={styles.rateRow}>
                       <Text style={[styles.rateRowLabel, { color: colors.textSecondary }]}>{c.name}</Text>
@@ -298,6 +304,42 @@ export default function SellerFinanceDashboardScreen() {
               );
             })()}
           </View>
+
+          {/* Monthly volume tier — 30-day GMV unlocks commission discounts */}
+          {data?.volume_tier ? (() => {
+            const vt = data.volume_tier;
+            const pct = Math.max(0, Math.min(100, vt.progress_pct || 0));
+            return (
+              <View style={styles.sectionCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <MaterialCommunityIcons name="trophy-outline" size={20} color="#0EA5E9" />
+                  <Text style={styles.sectionTitle}>Volume Commission Tier</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                    30-day GMV: <Text style={{ fontWeight: '800', color: colors.text }}>UGX {fmt(vt.gmv_30d)}</Text>
+                  </Text>
+                  {vt.current_tier && (
+                    <View style={{ backgroundColor: '#0EA5E920', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#0EA5E9' }}>
+                        {vt.current_tier.name} · −{Number(vt.current_tier.discount_percentage).toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden', marginBottom: 6 }}>
+                  <View style={{ height: '100%', width: `${pct}%`, backgroundColor: '#0EA5E9', borderRadius: 4 }} />
+                </View>
+                <Text style={{ fontSize: 11, color: colors.textTertiary }}>
+                  {vt.next_tier
+                    ? `Sell UGX ${fmt(vt.remaining_to_next)} more this month to unlock ${vt.next_tier.name} (−${Number(vt.next_tier.discount_percentage).toFixed(1)}% commission)`
+                    : vt.current_tier
+                      ? 'Highest volume tier unlocked — maximum commission discount active'
+                      : 'No volume tier yet — sell more this month to earn a commission discount'}
+                </Text>
+              </View>
+            );
+          })() : null}
 
           {/* Active holds alert */}
           {data?.active_holds && data.active_holds > 0 ? (

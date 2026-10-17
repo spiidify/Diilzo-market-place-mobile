@@ -180,6 +180,11 @@ export default function SellerOrderDetailScreen() {
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName} numberOfLines={2}>{item.product_name}</Text>
                 <Text style={styles.itemQty}>{item.quantity} x UGX {Number(item.unit_price).toLocaleString()}</Text>
+                {item.commission_amount != null && Number(item.commission_amount) > 0 && (
+                  <Text style={styles.itemComm}>
+                    Comm{item.commission_rate != null ? ` (${Number(item.commission_rate).toFixed(1)}%)` : ''}: −UGX {Number(item.commission_amount).toLocaleString()}
+                  </Text>
+                )}
               </View>
               <Text style={styles.itemTotal}>UGX {Number(item.total_price).toLocaleString()}</Text>
             </View>
@@ -311,6 +316,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   itemInfo: { flex: 1, gap: 2 },
   itemName: { fontSize: 14, fontWeight: '600', color: c.text },
   itemQty: { fontSize: 12, color: c.textTertiary },
+  itemComm: { fontSize: 11, color: Brand.danger, fontWeight: '600' },
   itemTotal: { fontSize: 14, fontWeight: '700', color: c.text },
 
   earnRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },

@@ -108,6 +108,9 @@ export interface EscrowHoldItem {
   buyer_confirmed_receipt: boolean;
   days_until_auto_release: number | null;
   tracking_number: string;
+  shipping_documents?: string[];
+  /** Names of stores fulfilling this escrowed order. */
+  stores?: string[];
   held_at: string;
   released_at: string | null;
   auto_release_date: string | null;
