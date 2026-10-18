@@ -396,8 +396,9 @@ export async function updateProduct(productId: number, formData: FormData): Prom
 }
 
 /** DELETE /seller/<id>/product_detail/ — delete a product */
-export async function deleteProduct(productId: number): Promise<void> {
-  await apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${productId}/product_detail/` });
+/** DELETE /seller/<id>/product_detail/?mode=draft|permanent — ordered products are always drafted */
+export async function deleteProduct(productId: number, mode: 'draft' | 'permanent' = 'draft'): Promise<{ deleted: boolean; draft: boolean }> {
+  return apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/${productId}/product_detail/`, params: { mode } });
 }
 
 /** DELETE /seller/<id>/delete_product_image/ — delete a product image */

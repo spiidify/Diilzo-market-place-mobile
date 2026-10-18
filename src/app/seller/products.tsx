@@ -180,27 +180,30 @@ export default function SellerProductsScreen() {
     + (brandId ? 1 : 0)
     + (search ? 1 : 0);
 
+  const runDelete = async (item: any, mode: 'draft' | 'permanent') => {
+    setDeleting(item.id);
+    try {
+      const res = await deleteProduct(item.id, mode);
+      if (res?.deleted) {
+        setProducts((prev) => prev.filter((p) => p.id !== item.id));
+      } else {
+        setProducts((prev) => prev.map((p) => (p.id === item.id ? { ...p, is_active: false } : p)));
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.error || 'Failed to remove product');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const handleDelete = (item: any) => {
     Alert.alert(
-      'Delete Product',
-      `Are you sure you want to delete "${item.name}"? This cannot be undone.`,
+      'Remove Product',
+      `Remove "${item.name}" from your store? Keep it as a draft, or delete it permanently (only for products never ordered).`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeleting(item.id);
-            try {
-              await deleteProduct(item.id);
-              setProducts((prev) => prev.filter((p) => p.id !== item.id));
-            } catch (e: any) {
-              Alert.alert('Error', e?.response?.data?.error || 'Failed to delete product');
-            } finally {
-              setDeleting(null);
-            }
-          },
-        },
+        { text: 'Keep as Draft', onPress: () => runDelete(item, 'draft') },
+        { text: 'Delete Permanently', style: 'destructive', onPress: () => runDelete(item, 'permanent') },
       ],
     );
   };
