@@ -673,7 +673,7 @@ export default function CheckoutScreen() {
           contentContainerStyle={[styles.bodyContent, isTablet && styles.tabletBodyContent, tabletSplit && styles.tabletBodyContentSplit]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={tabletSplit ? styles.tabletMainColumn : undefined}>
+          <View style={tabletSplit ? styles.tabletMainColumn : styles.mainColumn}>
           {/* ── Section 1: Delivery Address + Notes ─────────────── */}
           <View style={[styles.card, styles.cardTintAddress]}>
             <View style={styles.cardHeader}>
@@ -1348,6 +1348,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   // ── Body ────────────────────────────────────────────────────
   body: { flex: 1 },
   bodyContent: { padding: Spacing.two + 2, paddingBottom: 120, gap: Spacing.two + 2 },
+  mainColumn: { gap: Spacing.two + 2 },
   tabletBodyContent: { width: '100%', maxWidth: 1120, alignSelf: 'center', padding: 24, paddingBottom: 120 },
   tabletBodyContentSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
   tabletMainColumn: { flex: 1, minWidth: 0, gap: 16 },
