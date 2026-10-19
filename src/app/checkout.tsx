@@ -125,6 +125,7 @@ export default function CheckoutScreen() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [appCountry, setAppCountry] = useState<string>('UG');
   const [selectedMethod, setSelectedMethod] = useState<string>('mtn_momo');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [orderNote, setOrderNote] = useState<string>('');
@@ -198,6 +199,8 @@ export default function CheckoutScreen() {
       try {
         const methods = await fetchPaymentMethods();
         setPaymentMethods(methods);
+        const { getCountryIso2 } = await import('@/services/country');
+        setAppCountry(await getCountryIso2());
         if (methods.length > 0 && !methods.find((m) => m.method === selectedMethodRef.current)) {
           setSelectedMethod(methods[0].method);
         }
@@ -448,18 +451,28 @@ export default function CheckoutScreen() {
       try {
         const initResult = await initiatePayment({
           order_id: order.id,
-          method: selectedMethod,
+          method: selectedMethod === 'cod' ? 'cash' : selectedMethod,
           phone: opt?.requiresPhone ? phoneNumber.trim() : undefined,
           return_url: Linking.createURL('/checkout'),
         });
 
-        if ((selectedMethod === 'paypal' || selectedMethod === 'stripe') && initResult.redirect_url) {
-          Linking.openURL(initResult.redirect_url);
-          Alert.alert(
-            selectedMethod === 'paypal' ? 'PayPal' : 'Card Payment',
-            `Complete your ${selectedMethod === 'paypal' ? 'PayPal' : 'card'} payment in the browser. We will verify your payment status.`,
-            [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
-          );
+        if (selectedMethod === 'paypal' || selectedMethod === 'stripe') {
+          if (initResult.redirect_url) {
+            Linking.openURL(initResult.redirect_url);
+            Alert.alert(
+              selectedMethod === 'paypal' ? 'PayPal' : 'Card Payment',
+              `Complete your ${selectedMethod === 'paypal' ? 'PayPal' : 'card'} payment in the browser. We will verify your payment status.`,
+              [{ text: 'OK', onPress: () => pollPaymentStatus(order.id, initResult.payment_id) }]
+            );
+          } else {
+            await clearCart();
+            setGlobalCartCount(0);
+            Alert.alert(
+              'Order Placed',
+              `Your order #${order.order_number || order.id} was placed, but ${selectedMethod === 'paypal' ? 'PayPal' : 'card'} checkout could not be opened. You can complete payment from your orders page.`,
+              [{ text: 'View Order', onPress: () => router.replace(`/buyer/orders/${order.id}` as any) }]
+            );
+          }
         } else if (opt?.requiresPhone) {
           Alert.alert(
             'Payment Sent',
@@ -547,8 +560,10 @@ export default function CheckoutScreen() {
   // Region-aware payment options — PayPal/Stripe are international-only.
   const deliveryCountry = addresses.find((a) => a.id === selectedAddressId)?.country;
   const visiblePaymentOptions = useMemo(
-    () => PAYMENT_OPTIONS.filter((opt) => !opt.intlOnly || isIntlCountry(deliveryCountry)),
-    [deliveryCountry]
+    () => PAYMENT_OPTIONS.filter(
+      (opt) => !opt.intlOnly || isIntlCountry(deliveryCountry) || isIntlCountry(appCountry)
+    ),
+    [deliveryCountry, appCountry]
   );
 
   // If the selected method becomes hidden by region, fall back to MoMo.
@@ -966,7 +981,8 @@ export default function CheckoutScreen() {
               {visiblePaymentOptions.map((opt) => {
                 const selected = opt.method === selectedMethod;
                 const isAvailable =
-                  paymentMethods.length === 0 || paymentMethods.some((m) => m.method === opt.method);
+                  paymentMethods.length === 0 ||
+                  paymentMethods.some((m) => m.method === opt.method || (opt.method === 'cod' && m.method === 'cash'));
                 if (!isAvailable) return null;
                 return (
                   <Pressable
