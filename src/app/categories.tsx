@@ -587,7 +587,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   productImageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
     position: 'relative',
   },
   productImage: {

@@ -2243,7 +2243,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   carouselImageWrap: {
     width: '100%',
     height: 150,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
     position: 'relative',
   },
   carouselImage: { width: '100%', height: '100%' },
@@ -2514,7 +2514,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   imageWrap: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
     position: 'relative',
   },
   image: { width: '100%', height: '100%' },
@@ -2522,7 +2522,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
   },
   saleBadge: {
     position: 'absolute',

@@ -109,7 +109,7 @@ const SponsoredProductCard = memo(function SponsoredProductCard({
         {item.primary_image_url ? (
           <Image source={{ uri: item.primary_image_url }} style={styles.sponsoredImg} resizeMode="contain" />
         ) : (
-          <View style={[styles.sponsoredImg, { backgroundColor: colors.surfaceAlt }]}>
+          <View style={[styles.sponsoredImg, { backgroundColor: '#FFFFFF' }]}>
             <MaterialCommunityIcons name="image-off-outline" size={28} color={colors.textTertiary} />
           </View>
         )}
@@ -1638,7 +1638,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   cardPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
   imageWrap: {
     position: 'relative',
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
     aspectRatio: 1,
   },
   image: { width: '100%', height: '100%' },
@@ -1851,7 +1851,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 120,
-    backgroundColor: c.surfaceAlt,
+    backgroundColor: '#FFFFFF',
   },
   sponsoredImg: { width: '100%', height: '100%' },
   sponsoredBadge: {
