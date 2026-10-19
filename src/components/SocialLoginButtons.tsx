@@ -13,7 +13,8 @@ import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View }
 
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { appleLogin, useGoogleAuth } from '@/services/socialAuth';
+import { appleSignIn, isAppleAuthAvailable, useGoogleAuth } from '@/services/socialAuth';
+import { useEffect } from 'react';
 
 export function SocialLoginButtons() {
   const router = useRouter();
@@ -21,6 +22,13 @@ export function SocialLoginButtons() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [loading, setLoading] = useState(false);
+  // The native module isn't bundled in Expo Go — only show the button
+  // when the platform + module actually support it (dev build / iOS).
+  const [appleReady, setAppleReady] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    isAppleAuthAvailable().then(setAppleReady).catch(() => {});
+  }, []);
 
   const googleAuth = useGoogleAuth();
 
@@ -54,13 +62,7 @@ export function SocialLoginButtons() {
   const handleApple = async () => {
     try {
       setLoading(true);
-      const AppleAuth = await import('expo-apple-authentication');
-      const cred = await AppleAuth.signInAsync({
-        requestedScopes: [
-          AppleAuth.AppleAuthenticationScope.FULL_NAME,
-          AppleAuth.AppleAuthenticationScope.EMAIL,
-        ],
-      });
+      const cred = await appleSignIn();
       if (!cred.identityToken) {
         Alert.alert('Error', 'No identity token received from Apple.');
         return;
@@ -101,7 +103,7 @@ export function SocialLoginButtons() {
           )}
         </Pressable>
 
-        {Platform.OS === 'ios' && (
+        {appleReady && (
           <Pressable
             style={[styles.socialBtn, styles.socialBtnDark, loading && styles.socialBtnDisabled]}
             onPress={handleApple}

@@ -37,22 +37,55 @@ export function isGoogleConfigured(): boolean {
 }
 
 // ── Apple Sign In (iOS) ────────────────────────────────────────────
-// Native sheet via expo-apple-authentication. Apple only returns the
-// user's name/email on the FIRST authorization — we forward the one-time
-// fullName fields so the backend can store them on account creation.
-export async function appleLogin(): Promise<LoginResponse> {
-  const AppleAuth = await import('expo-apple-authentication');
-  const cred = await AppleAuth.signInAsync({
+// expo-apple-authentication is NOT bundled in Expo Go — a top-level
+// import would crash the whole app there. Lazy require() keeps the JS
+// module eval behind a try/catch so everything degrades gracefully.
+type AppleModule = typeof import('expo-apple-authentication');
+type AppleCredential = import('expo-apple-authentication').AppleAuthenticationCredential;
+
+let _appleMod: AppleModule | null | undefined;
+function getAppleAuth(): AppleModule | null {
+  if (_appleMod === undefined) {
+    try {
+      _appleMod = require('expo-apple-authentication');
+    } catch {
+      _appleMod = null;
+    }
+  }
+  return _appleMod ?? null;
+}
+
+/** Whether the native Apple module is present (dev build) AND iOS supports it. */
+export async function isAppleAuthAvailable(): Promise<boolean> {
+  const mod = getAppleAuth();
+  if (!mod) return false;
+  try {
+    return await mod.isAvailableAsync();
+  } catch {
+    return false;
+  }
+}
+
+/** Opens the native Apple sheet and returns the raw credential. */
+export async function appleSignIn(): Promise<AppleCredential> {
+  const mod = getAppleAuth();
+  if (!mod) throw new Error('Sign in with Apple requires a development build.');
+  const cred = await mod.signInAsync({
     requestedScopes: [
-      AppleAuth.AppleAuthenticationScope.FULL_NAME,
-      AppleAuth.AppleAuthenticationScope.EMAIL,
+      mod.AppleAuthenticationScope.FULL_NAME,
+      mod.AppleAuthenticationScope.EMAIL,
     ],
   });
   if (!cred.identityToken) {
     throw new Error('Apple did not return an identity token');
   }
+  return cred;
+}
+
+export async function appleLogin(): Promise<LoginResponse> {
+  const cred = await appleSignIn();
   return socialLogin('apple', {
-    id_token: cred.identityToken,
+    id_token: cred.identityToken!,
     first_name: cred.fullName?.givenName ?? undefined,
     last_name: cred.fullName?.familyName ?? undefined,
   });
