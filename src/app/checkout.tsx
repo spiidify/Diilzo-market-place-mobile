@@ -42,13 +42,6 @@ import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
 
 
-const EAST_AFRICA = new Set(['uganda', 'ug', 'kenya', 'ke', 'tanzania', 'tz', 'rwanda', 'rw']);
-
-function isIntlCountry(country?: string | null): boolean {
-  const c = (country || '').trim().toLowerCase();
-  return c !== '' && !EAST_AFRICA.has(c);
-}
-
 const PAYMENT_OPTIONS: {
   method: string;
   label: string;
@@ -123,7 +116,7 @@ export default function CheckoutScreen() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [appCountry, setAppCountry] = useState<string>('UG');
+
 
   const [selectedMethod, setSelectedMethod] = useState<string>('mtn_momo');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -198,8 +191,7 @@ export default function CheckoutScreen() {
       try {
         const methods = await fetchPaymentMethods();
         setPaymentMethods(methods);
-        const { getCountryIso2 } = await import('@/services/country');
-        setAppCountry(await getCountryIso2());
+
 
         if (methods.length > 0 && !methods.find((m) => m.method === selectedMethodRef.current)) {
           setSelectedMethod(methods[0].method);
@@ -557,15 +549,8 @@ export default function CheckoutScreen() {
   const currency = cart?.items[0]?.product.currency || 'UGX';
   const itemCount = cart?.items.reduce((s, i) => s + i.quantity, 0) || 0;
 
-  // Geo-aware gateways (web parity): PayPal/Stripe show when the
-  // delivery country or the app's selected country is international.
-  const deliveryCountry = addresses.find((a) => a.id === selectedAddressId)?.country;
-  const visiblePaymentOptions = useMemo(
-    () => PAYMENT_OPTIONS.filter(
-      (opt) => !opt.intlOnly || isIntlCountry(deliveryCountry) || isIntlCountry(appCountry)
-    ),
-    [deliveryCountry, appCountry]
-  );
+  // All configured gateways are shown — same as the web checkout.
+  const visiblePaymentOptions = PAYMENT_OPTIONS;
 
   // If the selected method becomes hidden by region, fall back to MoMo.
   useEffect(() => {
@@ -983,8 +968,8 @@ export default function CheckoutScreen() {
                 const selected = opt.method === selectedMethod;
                 const isAvailable =
                   paymentMethods.length === 0 ||
-                  paymentMethods.some((m) => m.method === opt.method || (opt.method === 'cod' && m.method === 'cash'));
-                if (!isAvailable) return null;
+                  paymentMethods.some((m) => m.method === opt.method || (opt.method === 'cod' && m.method === 'cash')) ||
+                  opt.intlOnly;
                 return (
                   <Pressable
                     key={`pm-${opt.method}`}
