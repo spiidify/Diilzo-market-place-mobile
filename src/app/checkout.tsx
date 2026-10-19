@@ -42,6 +42,13 @@ import { playSound, Sounds } from '@/services/sound';
 import type { Address, Cart as CartType } from '@/types';
 
 
+const EAST_AFRICA = new Set(['uganda', 'ug', 'kenya', 'ke', 'tanzania', 'tz', 'rwanda', 'rw']);
+
+function isIntlCountry(country?: string | null): boolean {
+  const c = (country || '').trim().toLowerCase();
+  return c !== '' && !EAST_AFRICA.has(c);
+}
+
 const PAYMENT_OPTIONS: {
   method: string;
   label: string;
@@ -50,6 +57,7 @@ const PAYMENT_OPTIONS: {
   requiresPhone: boolean;
   color: string;
   bgColor: string;
+  intlOnly?: boolean;
 }[] = [
     {
       method: 'mtn_momo',
@@ -69,8 +77,26 @@ const PAYMENT_OPTIONS: {
       color: '#E40000',
       bgColor: '#E4000012',
     },
-    // PayPal/Stripe hidden on mobile — momo + COD are the supported
-    // rails (native Stripe PaymentSheet can re-enable card later).
+    {
+      method: 'paypal',
+      label: 'PayPal',
+      subtitle: 'Secure online payment',
+      icon: 'credit-card-outline',
+      requiresPhone: false,
+      color: '#003087',
+      bgColor: '#00308712',
+      intlOnly: true,
+    },
+    {
+      method: 'stripe',
+      label: 'Credit / Debit Card',
+      subtitle: 'Visa, Mastercard, Apple Pay',
+      icon: 'credit-card-chip-outline',
+      requiresPhone: false,
+      color: '#635BFF',
+      bgColor: '#635BFF12',
+      intlOnly: true,
+    },
     {
       method: 'cod',
       label: 'Cash on Delivery',
@@ -97,6 +123,7 @@ export default function CheckoutScreen() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [appCountry, setAppCountry] = useState<string>('UG');
 
   const [selectedMethod, setSelectedMethod] = useState<string>('mtn_momo');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
@@ -171,6 +198,8 @@ export default function CheckoutScreen() {
       try {
         const methods = await fetchPaymentMethods();
         setPaymentMethods(methods);
+        const { getCountryIso2 } = await import('@/services/country');
+        setAppCountry(await getCountryIso2());
 
         if (methods.length > 0 && !methods.find((m) => m.method === selectedMethodRef.current)) {
           setSelectedMethod(methods[0].method);
@@ -528,7 +557,15 @@ export default function CheckoutScreen() {
   const currency = cart?.items[0]?.product.currency || 'UGX';
   const itemCount = cart?.items.reduce((s, i) => s + i.quantity, 0) || 0;
 
-  const visiblePaymentOptions = PAYMENT_OPTIONS;
+  // Geo-aware gateways (web parity): PayPal/Stripe show when the
+  // delivery country or the app's selected country is international.
+  const deliveryCountry = addresses.find((a) => a.id === selectedAddressId)?.country;
+  const visiblePaymentOptions = useMemo(
+    () => PAYMENT_OPTIONS.filter(
+      (opt) => !opt.intlOnly || isIntlCountry(deliveryCountry) || isIntlCountry(appCountry)
+    ),
+    [deliveryCountry, appCountry]
+  );
 
   // If the selected method becomes hidden by region, fall back to MoMo.
   useEffect(() => {
