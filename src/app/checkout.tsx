@@ -567,6 +567,16 @@ export default function CheckoutScreen() {
     [deliveryCountry, appCountry]
   );
 
+  // Web parity — MTN + Airtel collapse into one "Mobile Money" card;
+  // picking it reveals the provider pills + phone field below.
+  const momoOpts = visiblePaymentOptions.filter((o) => o.requiresPhone);
+  const otherOpts = visiblePaymentOptions.filter((o) => !o.requiresPhone);
+  const isMomoSelected = momoOpts.some((o) => o.method === selectedMethod);
+  const momoSubtitle =
+    momoOpts.length > 1
+      ? `${momoOpts[0].label.split(' ')[0]} or ${momoOpts[1].label.split(' ')[0]} — approve on your phone`
+      : `${momoOpts[0]?.label || ''} — approve on your phone`;
+
   // If the selected method becomes hidden by region, fall back to MoMo.
   useEffect(() => {
     if (selectedMethod && !visiblePaymentOptions.some((o) => o.method === selectedMethod)) {
@@ -979,7 +989,28 @@ export default function CheckoutScreen() {
             </View>
 
             <View style={styles.paymentList}>
-              {visiblePaymentOptions.map((opt) => {
+              {momoOpts.length > 0 && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.paymentCard,
+                    isMomoSelected && styles.paymentCardSelected,
+                    pressed && { opacity: 0.85 },
+                  ]}
+                  onPress={() => setSelectedMethod(momoOpts[0].method)}
+                >
+                  <View style={[styles.paymentIcon, { backgroundColor: Brand.primary + '12' }]}>
+                    <MaterialCommunityIcons name="cellphone" size={16} color={Brand.primary} />
+                  </View>
+                  <View style={styles.paymentInfo}>
+                    <Text style={styles.paymentLabel} numberOfLines={1}>Mobile Money</Text>
+                    <Text style={styles.paymentSub} numberOfLines={2}>{momoSubtitle}</Text>
+                  </View>
+                  <View style={[styles.radio, isMomoSelected && styles.radioSelected]}>
+                    {isMomoSelected && <View style={styles.radioDot} />}
+                  </View>
+                </Pressable>
+              )}
+              {otherOpts.map((opt) => {
                 const selected = opt.method === selectedMethod;
                 const isAvailable =
                   paymentMethods.length === 0 ||
@@ -1009,6 +1040,26 @@ export default function CheckoutScreen() {
                 );
               })}
             </View>
+
+            {isMomoSelected && momoOpts.length > 1 && (
+              <View style={styles.providerRow}>
+                {momoOpts.map((opt) => {
+                  const active = opt.method === selectedMethod;
+                  return (
+                    <Pressable
+                      key={`prov-${opt.method}`}
+                      style={[styles.providerPill, active && styles.providerPillActive]}
+                      onPress={() => setSelectedMethod(opt.method)}
+                    >
+                      <MaterialCommunityIcons name={opt.icon} size={14} color={opt.color} />
+                      <Text style={[styles.providerPillText, active && styles.providerPillTextActive]}>
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
 
             {selectedOpt?.requiresPhone && (
               <View style={styles.phoneSection}>
@@ -1598,6 +1649,28 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   paymentInfo: { flex: 1, gap: 1, minWidth: 0 },
   paymentLabel: { fontSize: 12, fontWeight: '700', color: c.text },
   paymentSub: { fontSize: 10, color: c.textTertiary },
+  providerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: Spacing.two,
+  },
+  providerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: c.borderLight,
+    backgroundColor: c.surfaceAlt,
+  },
+  providerPillActive: {
+    borderColor: Brand.primary,
+    backgroundColor: Brand.primary + '0F',
+  },
+  providerPillText: { fontSize: 12, fontWeight: '700', color: c.textSecondary },
+  providerPillTextActive: { color: Brand.primary },
 
   // Phone input
   phoneSection: { marginTop: Spacing.two },
