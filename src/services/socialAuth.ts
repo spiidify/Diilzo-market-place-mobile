@@ -95,7 +95,7 @@ export async function appleLogin(): Promise<LoginResponse> {
 // Google can't redirect a browser to (shows a 400/404 error page). Route
 // through Expo's auth proxy instead — this https URL must be added to the
 // Google client's Authorized redirect URIs.
-const PROXY_REDIRECT_URI = 'https://auth.expo.io/@dayankennedy/diilzo-mobile';
+const PROXY_REDIRECT_URI = 'https://auth.expo.io/@spiidify-2026/diilzo-mobile';
 
 // Always call the hook (Rules of Hooks). When clientId is empty the
 // request is unusable, but the hook count stays stable.
