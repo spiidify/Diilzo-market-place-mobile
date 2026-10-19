@@ -38,7 +38,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   loginWithEmailOrPhone: (emailOrPhone: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName: string, phone?: string, referralCode?: string) => Promise<void>;
-  socialLogin: (provider: SocialProvider, payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string }) => Promise<void>;
+  socialLogin: (provider: SocialProvider, payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string; first_name?: string; last_name?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const socialLogin = useCallback(async (
     provider: SocialProvider,
-    payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string }
+    payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string; first_name?: string; last_name?: string }
   ) => {
     await apiSocialLogin(provider, payload);
     const user = await getProfile(avatarSize);

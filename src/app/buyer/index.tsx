@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBadges } from '@/context/BadgeContext';
 import { useCountry } from '@/context/CountryContext';
 import { useAppTheme, type ThemeMode } from '@/context/ThemeContext';
+import { apiRequest } from '@/services/api';
 import { fetchRecentlyViewed } from '@/services/catalog';
 import { fetchLoyalty, fetchMyReferral, fetchOrderStats, type LoyaltyInfo, type OrderStats } from '@/services/orders';
 import type { Product } from '@/types';
@@ -472,6 +473,36 @@ export default function BuyerDashboardScreen() {
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
         </Animated.View>
+
+        {/* Delete Account — Apple Guideline 5.1.1 */}
+        <Pressable
+          style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.85 }]}
+          onPress={() => {
+            Alert.alert(
+              'Delete Account?',
+              'This permanently deletes your account and personal data. Order history is kept by sellers for records but is no longer linked to you. This cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Forever',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await apiRequest({ method: 'DELETE', url: '/auth/delete-account/' });
+                      await logout();
+                      router.replace('/');
+                    } catch (e: any) {
+                      Alert.alert('Deletion Failed', e?.message || 'Please try again or contact support.');
+                    }
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <MaterialCommunityIcons name="delete-outline" size={18} color={colors.textTertiary} />
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </Pressable>
       </ScrollView>
 
       <CountryPicker
@@ -721,6 +752,16 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, borderColor: Brand.danger + '25',
   },
   logoutText: { color: Brand.danger, fontSize: 15, fontWeight: '700' },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 30,
+    paddingVertical: 8,
+  },
+  deleteText: { color: c.textTertiary, fontSize: 12, fontWeight: '600' },
 
   // Theme section
   themeSection: {

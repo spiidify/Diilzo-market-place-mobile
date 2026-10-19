@@ -12,7 +12,7 @@ import { apiRequest, setTokens } from './api';
 // ── Client ID (from env) ───────────────────────────────────────────
 const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
 
-export type SocialProvider = 'google';
+export type SocialProvider = 'google' | 'apple';
 
 // ── Backend token exchange ────────────────────────────────────────
 /**
@@ -21,7 +21,7 @@ export type SocialProvider = 'google';
  */
 export async function socialLogin(
   provider: SocialProvider,
-  payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string }
+  payload: { access_token?: string; id_token?: string; code?: string; redirect_uri?: string; first_name?: string; last_name?: string }
 ): Promise<LoginResponse> {
   const data = await apiRequest<LoginResponse>({
     method: 'POST',
@@ -34,6 +34,28 @@ export async function socialLogin(
 
 export function isGoogleConfigured(): boolean {
   return !!GOOGLE_CLIENT_ID;
+}
+
+// ── Apple Sign In (iOS) ────────────────────────────────────────────
+// Native sheet via expo-apple-authentication. Apple only returns the
+// user's name/email on the FIRST authorization — we forward the one-time
+// fullName fields so the backend can store them on account creation.
+export async function appleLogin(): Promise<LoginResponse> {
+  const AppleAuth = await import('expo-apple-authentication');
+  const cred = await AppleAuth.signInAsync({
+    requestedScopes: [
+      AppleAuth.AppleAuthenticationScope.FULL_NAME,
+      AppleAuth.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+  if (!cred.identityToken) {
+    throw new Error('Apple did not return an identity token');
+  }
+  return socialLogin('apple', {
+    id_token: cred.identityToken,
+    first_name: cred.fullName?.givenName ?? undefined,
+    last_name: cred.fullName?.familyName ?? undefined,
+  });
 }
 
 // In Expo Go the default redirect is an exp:// custom-scheme URL that

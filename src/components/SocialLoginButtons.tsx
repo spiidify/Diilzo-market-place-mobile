@@ -9,11 +9,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
-import { useGoogleAuth } from '@/services/socialAuth';
+import { appleLogin, useGoogleAuth } from '@/services/socialAuth';
 
 export function SocialLoginButtons() {
   const router = useRouter();
@@ -51,6 +51,35 @@ export function SocialLoginButtons() {
     }
   };
 
+  const handleApple = async () => {
+    try {
+      setLoading(true);
+      const AppleAuth = await import('expo-apple-authentication');
+      const cred = await AppleAuth.signInAsync({
+        requestedScopes: [
+          AppleAuth.AppleAuthenticationScope.FULL_NAME,
+          AppleAuth.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!cred.identityToken) {
+        Alert.alert('Error', 'No identity token received from Apple.');
+        return;
+      }
+      await socialLogin('apple', {
+        id_token: cred.identityToken,
+        first_name: cred.fullName?.givenName ?? undefined,
+        last_name: cred.fullName?.familyName ?? undefined,
+      });
+      router.replace('/');
+    } catch (e: any) {
+      if (e?.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert('Apple Sign-In Failed', e?.message || 'Something went wrong.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.dividerRow}>
@@ -71,6 +100,20 @@ export function SocialLoginButtons() {
             <MaterialCommunityIcons name="google" size={22} color={colors.text} />
           )}
         </Pressable>
+
+        {Platform.OS === 'ios' && (
+          <Pressable
+            style={[styles.socialBtn, styles.socialBtnDark, loading && styles.socialBtnDisabled]}
+            onPress={handleApple}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <MaterialCommunityIcons name="apple" size={24} color="#FFFFFF" />
+            )}
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -110,6 +153,10 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  socialBtnDark: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
   },
   socialBtnDisabled: {
     opacity: 0.5,
