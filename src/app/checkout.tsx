@@ -978,15 +978,17 @@ export default function CheckoutScreen() {
                     ]}
                     onPress={() => setSelectedMethod(opt.method)}
                   >
-                    <View style={[styles.paymentIcon, { backgroundColor: opt.bgColor }]}>
-                      <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
+                    <View style={styles.paymentTopRow}>
+                      <View style={[styles.paymentIcon, { backgroundColor: opt.bgColor }]}>
+                        <MaterialCommunityIcons name={opt.icon} size={20} color={opt.color} />
+                      </View>
+                      <View style={[styles.radio, selected && styles.radioSelected]}>
+                        {selected && <View style={styles.radioDot} />}
+                      </View>
                     </View>
                     <View style={styles.paymentInfo}>
-                      <Text style={styles.paymentLabel}>{opt.label}</Text>
-                      <Text style={styles.paymentSub}>{opt.subtitle}</Text>
-                    </View>
-                    <View style={[styles.radio, selected && styles.radioSelected]}>
-                      {selected && <View style={styles.radioDot} />}
+                      <Text style={styles.paymentLabel} numberOfLines={1}>{opt.label}</Text>
+                      <Text style={styles.paymentSub} numberOfLines={2}>{opt.subtitle}</Text>
                     </View>
                   </Pressable>
                 );
@@ -1553,17 +1555,21 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   stationDetailText: { flex: 1, fontSize: 12, color: c.textSecondary },
 
   // ── Payment ────────────────────────────────────────────────
-  paymentList: { gap: Spacing.one + 2 },
+  paymentList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.one + 2 },
   paymentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two + 2,
+    width: '48.5%',
+    gap: Spacing.two,
     backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
     borderColor: c.borderLight,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two + 2,
+    padding: Spacing.two,
     borderRadius: RADIUS_SM,
+  },
+  paymentTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    alignSelf: 'stretch',
   },
   paymentCardSelected: {
     borderColor: Brand.primary,
@@ -1571,14 +1577,14 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 2,
   },
   paymentIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: RADIUS_SM,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  paymentInfo: { flex: 1, gap: 1 },
-  paymentLabel: { fontSize: 14, fontWeight: '700', color: c.text },
+  paymentInfo: { gap: 1 },
+  paymentLabel: { fontSize: 12.5, fontWeight: '700', color: c.text },
   paymentSub: { fontSize: 11, color: c.textTertiary },
 
   // Phone input
