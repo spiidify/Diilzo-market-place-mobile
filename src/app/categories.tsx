@@ -109,7 +109,7 @@ export default function CategoriesScreen() {
       return;
     }
     setProductsLoading(true);
-    fetchProducts({ category: selectedSlug, page: 1, ...productCardSize })
+    fetchProducts({ category: selectedSlug, page: 1, seed: `c${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`, ...productCardSize })
       .then((data) => {
         // Paid placements first — TOP ads lead, sponsored follow (web parity).
         const promoted = [...(data.pinned || []), ...(data.sponsored || [])];

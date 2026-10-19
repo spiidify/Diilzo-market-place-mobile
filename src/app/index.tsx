@@ -1003,6 +1003,9 @@ export default function ProductFeedScreen() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  // Blended-feed seed — new on each reset (YouTube-style fresh mix),
+  // stable across loadMore pages so pagination stays consistent.
+  const feedSeedRef = useRef('m0');
 
   // Section data
   const [deals, setDeals] = useState<Product[]>([]);
@@ -1195,7 +1198,11 @@ export default function ProductFeedScreen() {
         setLoadingMore(true);
       }
       setError(null);
-      const params: Record<string, any> = { page: targetPage, ...productCardSize };
+      // Fresh seed per refresh → the blended feed reshuffles like YouTube.
+      if (reset) {
+        feedSeedRef.current = `m${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
+      }
+      const params: Record<string, any> = { page: targetPage, seed: feedSeedRef.current, ...productCardSize };
       if (activeCategory) params.category = activeCategory;
       const data = await fetchProducts(params);
       setProducts((prev) => {

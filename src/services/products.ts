@@ -19,6 +19,9 @@ export interface ProductListParams {
   ordering?: string;       // price_low, price_high, rating, newest, best_selling
   min_price?: string;
   max_price?: string;
+  /** Blended-feed seed — pins the recommendation order across pages.
+   * Pass a fresh value on each refresh for YouTube-style new mixes. */
+  seed?: string | number;
   /** Cloudinary image optimization dimensions (physical pixels) */
   width?: number;
   height?: number;
