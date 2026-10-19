@@ -1114,12 +1114,15 @@ export default function ProductFeedScreen() {
   const loadAllSections = useCallback(async () => {
     try {
       const [
-        dealsRes, featRes, stores, slideData, brandsData,
+        dealsRes, recRes, stores, slideData, brandsData,
         flashRes, voucherData, tileAData, tileBData, becauseData,
-        bestRes, budgetRes, newSellerRes, dealsHub,
+        bestRes, budgetRes, newSellerRes, dealsHub, spRes,
       ] = await Promise.all([
         fetchProducts({ on_sale: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] deals error:', e?.message); return { results: [] as Product[], next: null }; }),
-        fetchProducts({ featured: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] feat error:', e?.message); return { results: [] as Product[], next: null }; }),
+        // Recommended rail → the same blended feed the web uses (sold
+        // weight + purchase/search/view interest + discovery jitter,
+        // per-store capped). Fresh seed each load → different mix.
+        fetchProducts({ page: 1, seed: `rec${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`, ...productCardSize }).catch((e) => { console.error('[Home] rec error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchTopStores(storeLogoSize).catch((e) => { console.error('[Home] stores error:', e?.message); return [] as Store[]; }),
         fetchSlides(undefined, slideSize).catch((e) => { console.error('[Home] slides error:', e?.message); return [] as Slide[]; }),
         fetchTopBrands(brandSize).catch((e) => { console.error('[Home] brands error:', e?.message); return [] as BrandType[]; }),
@@ -1132,9 +1135,17 @@ export default function ProductFeedScreen() {
         fetchProducts({ ordering: 'price_low', in_stock: 'true', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] budget error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchProducts({ new_sellers: 'true', in_stock: 'true', ordering: 'newest', page: 1, ...productCardSize }).catch((e) => { console.error('[Home] newSellers error:', e?.message); return { results: [] as Product[], next: null }; }),
         fetchDealsHub().catch((e) => { console.error('[Home] dealsHub error:', e?.message); return null; }),
+        fetchSponsoredProducts({ limit: 3 }).catch((e) => { console.error('[Home] sponsored error:', e?.message); return { results: [] as Product[] }; }),
       ]);
       setDeals(dealsRes.results.slice(0, 10));
-      setRecommended(featRes.results.slice(0, 10));
+      // Recommended rail: sponsored leads (paid placement), then the
+      // blended personalized feed — deduped so nothing shows twice.
+      const spItems = (spRes.results || []).map((p) => ({ ...p, is_sponsored: true }));
+      const spIds = new Set(spItems.map((p) => p.id));
+      setRecommended([
+        ...spItems,
+        ...(recRes.results || []).filter((p) => !spIds.has(p.id)),
+      ].slice(0, 12));
       setTopStores(stores.slice(0, 10));
       setSlides(slideData);
       setTopBrands(brandsData);
