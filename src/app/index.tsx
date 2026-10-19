@@ -61,6 +61,7 @@ import {
 import { createChatThread } from '@/services/chat';
 import { flagEmoji } from '@/services/country';
 import { fetchProducts } from '@/services/products';
+import { fetchSponsoredProducts } from '@/services/promotions';
 import type {
     Brand as BrandType,
     Category,
@@ -132,6 +133,12 @@ const ProductCard = memo(function ProductCard({
           <View style={styles.supplierBadge}>
             <MaterialCommunityIcons name="factory" size={9} color="#FFFFFF" />
             <Text style={styles.supplierBadgeText}>Supplier</Text>
+          </View>
+        )}
+        {item.is_sponsored && (
+          <View style={styles.sponsoredBadge}>
+            <MaterialCommunityIcons name="bullhorn-outline" size={9} color="#FFFFFF" />
+            <Text style={styles.sponsoredBadgeText}>Sponsored</Text>
           </View>
         )}
       </View>
@@ -1192,13 +1199,44 @@ export default function ProductFeedScreen() {
       if (activeCategory) params.category = activeCategory;
       const data = await fetchProducts(params);
       setProducts((prev) => {
-        if (reset) return data.results;
+        if (reset) {
+          // Paid placements on page 1 — mirrors the web list page:
+          // TOP ads lead, sponsored cards interleave at slots 0/2/8/15.
+          // The API only injects them when a search/category is set, so
+          // the global sponsored feed is fetched separately below.
+          const merged = [...data.results];
+          const slots = [0, 2, 8, 15];
+          (data.sponsored || []).forEach((sp, i) => {
+            merged.splice(Math.min(slots[i] ?? merged.length, merged.length), 0, sp);
+          });
+          return [...(data.pinned || []), ...merged];
+        }
         // Defensive dedup: drop items already present to avoid duplicate
         // keys when loadMore fires before page state has advanced.
         const existingIds = new Set(prev.map((p) => p.id));
         const fresh = data.results.filter((p) => !existingIds.has(p.id));
         return [...prev, ...fresh];
       });
+      // Web parity: the storefront list injects sponsored cards even with
+      // no search/category — the API leaves `sponsored` empty then, so
+      // fetch the global CPC feed and splice into the same slots.
+      if (reset && (data.sponsored || []).length === 0) {
+        fetchSponsoredProducts({ category: activeCategory || undefined, limit: 4 })
+          .then((sp) => {
+            const items = (sp.results || []).filter((p) => p && p.id);
+            if (!items.length) return;
+            setProducts((prev) => {
+              const have = new Set(prev.map((p) => p.id));
+              const merged = [...prev];
+              const slots = [0, 2, 8, 15];
+              items.filter((p) => !have.has(p.id)).forEach((p, i) => {
+                merged.splice(Math.min(slots[i] ?? merged.length, merged.length), 0, p);
+              });
+              return merged;
+            });
+          })
+          .catch(() => {});
+      }
       setHasMore(data.next !== null);
       // Always advance page — for reset, targetPage is 1 so next is 2.
       // Previously guarded by `if (!reset)`, which left page at 1 after
@@ -2713,6 +2751,23 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 4,
   },
   supplierBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  sponsoredBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  sponsoredBadgeText: {
     color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '700',

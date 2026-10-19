@@ -110,7 +110,12 @@ export default function CategoriesScreen() {
     }
     setProductsLoading(true);
     fetchProducts({ category: selectedSlug, page: 1, ...productCardSize })
-      .then((data) => setCategoryProducts(data.results || []))
+      .then((data) => {
+        // Paid placements first — TOP ads lead, sponsored follow (web parity).
+        const promoted = [...(data.pinned || []), ...(data.sponsored || [])];
+        const seen = new Set(promoted.map((p) => p.id));
+        setCategoryProducts([...promoted, ...(data.results || []).filter((p) => !seen.has(p.id))]);
+      })
       .catch((e) => {
         console.error('[Categories] products error:', e?.message);
         setCategoryProducts([]);
@@ -336,6 +341,11 @@ export default function CategoriesScreen() {
                               {item.is_on_sale && (
                                 <View style={styles.productSaleBadge}>
                                   <Text style={styles.productSaleBadgeText}>{item.discount_percentage}% OFF</Text>
+                                </View>
+                              )}
+                              {item.is_sponsored && (
+                                <View style={styles.productSponsoredBadge}>
+                                  <Text style={styles.productSponsoredBadgeText}>Sponsored</Text>
                                 </View>
                               )}
                             </View>
@@ -602,6 +612,20 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   productSaleBadgeText: {
     color: '#FFFFFF',
     fontSize: 9,
+    fontWeight: '700',
+  },
+  productSponsoredBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  productSponsoredBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
     fontWeight: '700',
   },
   productCardBody: {
