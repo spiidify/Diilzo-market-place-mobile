@@ -675,7 +675,7 @@ export default function CheckoutScreen() {
         >
           <View style={tabletSplit ? styles.tabletMainColumn : undefined}>
           {/* ── Section 1: Delivery Address + Notes ─────────────── */}
-          <View style={styles.card}>
+          <View style={[styles.card, styles.cardTintAddress]}>
             <View style={styles.cardHeader}>
               <View style={styles.stepPill}>
                 <Text style={styles.stepPillText}>1</Text>
@@ -755,7 +755,7 @@ export default function CheckoutScreen() {
           </View>
 
           {/* ── Section 2: Delivery Method + Pickup Station ─────── */}
-          <View style={styles.card}>
+          <View style={[styles.card, styles.cardTintDelivery]}>
             <View style={styles.cardHeader}>
               <View style={styles.stepPill}>
                 <Text style={styles.stepPillText}>2</Text>
@@ -980,7 +980,7 @@ export default function CheckoutScreen() {
           </View>
 
           {/* ── Section 3: Payment Method ──────────────────────── */}
-          <View style={styles.card}>
+          <View style={[styles.card, styles.cardTintPayment]}>
             <View style={styles.cardHeader}>
               <View style={styles.stepPill}>
                 <Text style={styles.stepPillText}>3</Text>
@@ -1081,7 +1081,7 @@ export default function CheckoutScreen() {
           </View>
 
           {/* ── Section 4: Order Summary ─────────────────────── */}
-          <View style={[styles.card, tabletSplit && styles.tabletSummaryCard]}>
+          <View style={[styles.card, styles.cardTintSummary, tabletSplit && styles.tabletSummaryCard]}>
             <View style={styles.cardHeader}>
               <View style={styles.stepPill}>
                 <Text style={styles.stepPillText}>4</Text>
@@ -1361,6 +1361,11 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.borderLight,
   },
+  // Faint hue per section so the steps read as distinct blocks
+  cardTintAddress: { backgroundColor: '#3B82F608', borderColor: '#3B82F61F' },
+  cardTintDelivery: { backgroundColor: '#8B5CF608', borderColor: '#8B5CF61F' },
+  cardTintPayment: { backgroundColor: '#10B98108', borderColor: '#10B9811F' },
+  cardTintSummary: { backgroundColor: '#F59E0B08', borderColor: '#F59E0B1F' },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
