@@ -237,39 +237,25 @@ export default function CheckoutScreen() {
       return;
     }
     const selectedAddr = addresses.find((a) => a.id === selectedAddressId);
-    if (fulfillmentMethod === 'pickup_station') {
-      // Pickup-station delivery is still priced by the engine (cheaper tier)
-      setShippingCost(0);
-      setShippingEstimate(null);
-      setShippingQuote(null);
-      if (selectedAddr) {
-        (async () => {
-          try {
-            const result = await calculateShipping({
-              items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
-              address: { city: selectedAddr.city, country: selectedAddr.country, region: selectedAddr.state },
-              delivery_type: 'PICKUP_STATION',
-            });
-            if (!cancelled && result.available) {
-              setShippingQuote(result);
-            }
-          } catch { /* keep pickup at 0 until station confirmed server-side */ }
-        })();
-      }
-      return;
-    }
-    if (!selectedAddr) {
-      setShippingCost(DEFAULT_SHIPPING_FEE);
-      setShippingQuote(null);
-      return;
-    }
+    const selectedStation = pickupStations.find((s) => s.id === selectedStationId);
+    const addrPayload = fulfillmentMethod === 'pickup_station'
+      ? {
+          city: selectedStation?.city || selectedAddr?.city || '',
+          country: selectedAddr?.country || 'Uganda',
+          region: selectedStation?.region || selectedAddr?.state || '',
+        }
+      : {
+          city: selectedAddr?.city || '',
+          country: selectedAddr?.country || 'Uganda',
+          region: selectedAddr?.state || '',
+        };
     (async () => {
       setShippingLoading(true);
       try {
         const result = await calculateShipping({
           items: cart.items.map((item) => ({ product_id: item.product.id, quantity: item.quantity })),
-          address: { city: selectedAddr.city, country: selectedAddr.country, region: selectedAddr.state },
-          delivery_type: 'HOME_DELIVERY',
+          address: addrPayload,
+          delivery_type: fulfillmentMethod === 'pickup_station' ? 'PICKUP_STATION' : 'HOME_DELIVERY',
         });
         if (!cancelled && result.available) {
           setShippingCost(Number(result.total_shipping_fee || result.shipping_cost));
@@ -287,7 +273,7 @@ export default function CheckoutScreen() {
       }
     })();
     return () => { cancelled = true; };
-  }, [cart, selectedAddressId, fulfillmentMethod, addresses]);
+  }, [cart, selectedAddressId, selectedStationId, fulfillmentMethod, addresses, pickupStations]);
 
   // Fetch pickup stations when user switches to pickup fulfillment
   useEffect(() => {
@@ -360,7 +346,7 @@ export default function CheckoutScreen() {
   };
 
   const subtotal = cart ? Number(cart.total_price) : 0;
-  const shipping = fulfillmentMethod === 'pickup_station' ? 0 : shippingCost;
+  const shipping = shippingCost;
   const tax = 0; // Tax is calculated server-side during order creation
   const total = Math.max(0, subtotal + shipping + tax - discount);
 
@@ -1139,7 +1125,7 @@ export default function CheckoutScreen() {
                   <ActivityIndicator size="small" color={Brand.primary} />
                 ) : (
                   <Text style={styles.costValue}>
-                    {shipping === 0 && fulfillmentMethod === 'pickup_station' ? 'Free (Pickup)' : `${currency} ${shipping.toLocaleString()}`}
+                    {currency} {shipping.toLocaleString()}
                   </Text>
                 )}
               </View>

@@ -268,13 +268,18 @@ export interface DealsHubResponse {
 }
 
 export interface DeliveryInfo {
+  calculated_at_checkout?: boolean;
   free_threshold: string;
   free_threshold_fmt: string;
-  flat_cost: string;
-  flat_cost_fmt: string;
+  flat_cost?: string;
+  flat_cost_fmt?: string;
   return_days: number;
   country: string;
+  origin_country?: string;
+  origin_city?: string;
+  is_cross_border?: boolean;
   est_days: number;
+  est_days_label?: string;
   currency: string;
   store_supports: {
     local_delivery: boolean;

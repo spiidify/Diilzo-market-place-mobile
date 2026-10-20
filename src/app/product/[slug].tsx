@@ -1107,19 +1107,20 @@ export default function ProductDetailScreen() {
               <MaterialCommunityIcons name="truck-fast" size={16} color={Brand.success} />
               <Text style={styles.deliveryMiniText}>
                 {product.delivery_info?.free_threshold && Number(product.delivery_info.free_threshold) > 0
-                  ? `Free delivery over ${product.delivery_info.free_threshold_fmt} ${product.delivery_info.currency}`
-                  : `Delivery from ${product.delivery_info?.flat_cost_fmt || '5,000'} ${product.delivery_info?.currency || 'UGX'}`}
+                  ? `Free delivery over ${product.delivery_info.free_threshold_fmt} ${product.delivery_info.currency} · Calculated at checkout`
+                  : 'Shipping calculated at checkout (by address & weight)'}
               </Text>
             </View>
             <View style={styles.deliveryMiniRow}>
               <MaterialCommunityIcons name="map-marker-radius" size={16} color={colors.textSecondary} />
               <Text style={styles.deliveryMiniText}>
-                Deliver to {product.delivery_info?.country || 'Uganda'} · Est. {product.delivery_info?.est_days || 3} day{((product.delivery_info?.est_days || 3)) === 1 ? '' : 's'}
+                Ships from {product.delivery_info?.origin_city ? `${product.delivery_info.origin_city}, ` : ''}
+                {product.delivery_info?.origin_country || product.store?.country || 'Uganda'} → {product.delivery_info?.country || 'Uganda'} · Est. {product.delivery_info?.est_days_label || product.delivery_info?.est_days || 3} business days
               </Text>
             </View>
             <View style={styles.deliveryMiniRow}>
               <MaterialCommunityIcons name="undo-variant" size={16} color={Brand.primary} />
-              <Text style={styles.deliveryMiniText}>{product.delivery_info?.return_days || 7}-day returns</Text>
+              <Text style={styles.deliveryMiniText}>{product.delivery_info?.return_days || 7}-day returns · Trade Assurance</Text>
             </View>
             {/* We accept — same real payment logos as the web product page */}
             <View style={styles.payAcceptRow}>
@@ -1213,17 +1214,15 @@ export default function ProductDetailScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Shipping & Returns</Text>
             <View style={styles.shipRow}>
-              <MaterialCommunityIcons name="truck-fast" size={18} color={Brand.success} />
+              <MaterialCommunityIcons name="calculator-variant-outline" size={18} color={Brand.success} />
               <Text style={styles.shipText}>
-                Fast delivery in {product.delivery_info?.est_days || 3} business day{((product.delivery_info?.est_days || 3)) === 1 ? '' : 's'}
+                Shipping fee calculated at checkout (based on address, weight & method)
               </Text>
             </View>
             <View style={styles.shipRow}>
-              <MaterialCommunityIcons name="currency-usd" size={18} color={Brand.success} />
+              <MaterialCommunityIcons name="truck-fast" size={18} color={Brand.success} />
               <Text style={styles.shipText}>
-                {product.delivery_info?.free_threshold && Number(product.delivery_info.free_threshold) > 0
-                  ? `Free shipping over ${product.delivery_info.free_threshold_fmt} ${product.delivery_info.currency}`
-                  : `Flat shipping: ${product.delivery_info?.flat_cost_fmt || '5,000'} ${product.delivery_info?.currency || 'UGX'}`}
+                Est. {product.delivery_info?.est_days_label || product.delivery_info?.est_days || 3} business days · Home Delivery & Pickup Station
               </Text>
             </View>
             <View style={styles.shipRow}>
@@ -1232,7 +1231,7 @@ export default function ProductDetailScreen() {
             </View>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="shield-check" size={18} color={Brand.link} />
-              <Text style={styles.shipText}>Buyer protection guaranteed</Text>
+              <Text style={styles.shipText}>Diilzo Trade Assurance & Buyer Protection</Text>
             </View>
             <View style={styles.shipRow}>
               <MaterialCommunityIcons name="credit-card" size={18} color={colors.textSecondary} />
