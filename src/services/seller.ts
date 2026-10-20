@@ -48,8 +48,37 @@ export interface SellerProfileCompletion {
   missing_fields: string[];
 }
 
+export interface SellerCategoryCommission {
+  rate: number;
+  base_rate?: number;
+  fixed_fee?: number;
+  rule: string;
+}
+
+export interface SellerFeeRule {
+  name: string;
+  calculation_type: 'fixed' | 'percentage' | 'percentage_with_cap';
+  percentage: number;
+  fixed_amount: number;
+  max_amount: number;
+}
+
+export interface SellerCommissionRatesMap {
+  default_rate: number;
+  default_rule?: string;
+  initial_rate?: number;
+  initial_rule?: string;
+  plan_discount?: number;
+  volume_discount?: number;
+  seller_fee_pct?: number;
+  seller_fees?: SellerFeeRule[];
+  by_category: Record<string, number>;
+  by_category_detail?: Record<string, SellerCategoryCommission>;
+}
+
 export interface SellerDashboard {
   store: any;
+  commission_rates?: SellerCommissionRatesMap;
   stats: SellerStats;
   recent_orders?: SellerRecentOrder[];
   low_stock_products?: SellerLowStockProduct[];
@@ -220,6 +249,8 @@ export interface EscrowStoreSplit {
   suborder_id: number;
   subtotal: string;
   commission_amount: string;
+  commission_pct?: string;
+  commission_rule?: string;
   seller_fees: string;
   seller_amount: string;
   status: string;

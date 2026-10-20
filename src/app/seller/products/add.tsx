@@ -22,7 +22,7 @@ import { ModernHeader } from '@/components/ModernHeader';
 import { Brand, Spacing } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import { fetchBrands, fetchCategories } from '@/services/catalog';
-import { createProduct, createProductVariant, createWholesaleTier, getMyStore } from '@/services/seller';
+import { createProduct, createProductVariant, createWholesaleTier, getMyStore, type SellerCommissionRatesMap } from '@/services/seller';
 import type { Brand as BrandType, Category } from '@/types';
 
 interface PickedImage {
@@ -85,6 +85,7 @@ export default function AddProductScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<BrandType[]>([]);
   const [storeSlug, setStoreSlug] = useState<string | null>(null);
+  const [commRates, setCommRates] = useState<SellerCommissionRatesMap | null>(null);
 
   // ── UI state ────────────────────────────────────────────────────
   const [loadingMeta, setLoadingMeta] = useState(true);
@@ -106,6 +107,7 @@ export default function AddProductScreen() {
       setCategories(cats);
       setBrands(brs);
       setStoreSlug(dashboard?.store?.slug ?? null);
+      if (dashboard?.commission_rates) setCommRates(dashboard.commission_rates);
     } catch (e: any) {
       setError(e?.message || 'Failed to load form data');
     } finally {
@@ -545,6 +547,64 @@ export default function AddProductScreen() {
                     />
                   </View>
                 </View>
+
+                {/* Live Commission & Net Earning Breakdown (category-aware, separate from service fees) */}
+                {(() => {
+                  const rawP = Number(price) || 0;
+                  const rawS = Number(salePrice) || 0;
+                  const effPrice = rawS > 0 && rawS < rawP ? rawS : rawP;
+                  const catDetail = categoryId != null ? commRates?.by_category_detail?.[String(categoryId)] : undefined;
+                  const commRate = catDetail
+                    ? Number(catDetail.rate)
+                    : (categoryId && commRates?.by_category?.[String(categoryId)] != null
+                      ? Number(commRates.by_category[String(categoryId)])
+                      : Number(commRates?.default_rate ?? 10));
+                  const commRule = catDetail?.rule || commRates?.default_rule || 'Store Rate';
+                  const fixedFee = Number(catDetail?.fixed_fee || 0);
+                  const commAmt = effPrice > 0 ? Math.round((effPrice * commRate) / 100 + fixedFee) : 0;
+                  const sellerFees = commRates?.seller_fees || [];
+                  let feeAmt = 0;
+                  if (effPrice > 0 && sellerFees.length > 0) {
+                    for (const f of sellerFees) {
+                      if (f.calculation_type === 'fixed') feeAmt += Number(f.fixed_amount || 0);
+                      else if (f.calculation_type === 'percentage') feeAmt += (effPrice * Number(f.percentage || 0)) / 100;
+                      else if (f.calculation_type === 'percentage_with_cap') {
+                        let a = (effPrice * Number(f.percentage || 0)) / 100;
+                        const cap = Number(f.max_amount || 0);
+                        if (cap > 0 && a > cap) a = cap;
+                        feeAmt += a;
+                      }
+                    }
+                    feeAmt = Math.round(feeAmt);
+                  }
+                  const netAmt = Math.max(0, Math.round(effPrice) - commAmt - feeAmt);
+                  return (
+                    <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, marginBottom: 12, gap: 4 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>Selling price</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>UGX {Math.round(effPrice).toLocaleString()}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                          Diilzo commission ({commRate.toFixed(2)}% · {commRule})
+                        </Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.danger }}>−UGX {commAmt.toLocaleString()}</Text>
+                      </View>
+                      {feeAmt > 0 && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                          <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                            Service fee ({Number(commRates?.seller_fee_pct || 0).toFixed(2)}%)
+                          </Text>
+                          <Text style={{ fontSize: 12, fontWeight: '700', color: Brand.danger }}>−UGX {feeAmt.toLocaleString()}</Text>
+                        </View>
+                      )}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 4, marginTop: 2 }}>
+                        <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.text }}>Your net earning / unit</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: Brand.success }}>UGX {netAmt.toLocaleString()}</Text>
+                      </View>
+                    </View>
+                  );
+                })()}
 
                 <View style={styles.row}>
                   <View style={styles.halfCol}>

@@ -189,12 +189,14 @@ export default function SellerEscrowScreen() {
               <Text style={styles.splitValue}>{item.currency} {fmt(split.subtotal)}</Text>
             </View>
             <View style={styles.splitRow}>
-              <Text style={styles.splitLabel}>Diilzo commission</Text>
+              <Text style={styles.splitLabel}>
+                Diilzo commission{split.commission_pct ? ` (${Number(split.commission_pct).toFixed(2)}%${split.commission_rule ? ` · ${split.commission_rule}` : ''})` : ''}
+              </Text>
               <Text style={[styles.splitValue, { color: Brand.danger }]}>−{item.currency} {fmt(split.commission_amount)}</Text>
             </View>
             {Number(split.seller_fees) > 0 ? (
               <View style={styles.splitRow}>
-                <Text style={styles.splitLabel}>Platform fees</Text>
+                <Text style={styles.splitLabel}>Service fee</Text>
                 <Text style={[styles.splitValue, { color: Brand.danger }]}>−{item.currency} {fmt(split.seller_fees)}</Text>
               </View>
             ) : null}
