@@ -461,6 +461,16 @@ export default function SellerInventoryScreen() {
           <Text style={styles.rowValue} numberOfLines={1}>
             Value <Text style={styles.rowValueFigure}>UGX {Math.round(item.stock_value || 0).toLocaleString()}</Text>
             {' '}· {item.available_quantity} avail
+            {item.cost_price != null && item.cost_price > 0 ? (() => {
+              const sell = Number(item.final_price || item.price) || 0;
+              const uProfit = Math.round(sell - Number(item.cost_price));
+              const margin = sell > 0 ? Math.round((uProfit / sell) * 100) : 0;
+              return (
+                <Text style={{ color: uProfit >= 0 ? '#16a34a' : '#dc2626', fontWeight: '700' }}>
+                  {' '}· {uProfit >= 0 ? '+' : ''}{uProfit.toLocaleString()}/u ({margin}%)
+                </Text>
+              );
+            })() : null}
           </Text>
         </View>
         <View style={styles.rowActions}>

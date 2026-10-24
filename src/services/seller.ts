@@ -1299,6 +1299,7 @@ export async function getPendingStatus(): Promise<PendingStatus> {
 
 export interface POSDashboardData {
   today_sales_total: string;
+  today_profit?: string;
   today_sales_count: number;
   month_sales_total: string;
   today_expenses: string;
@@ -1309,6 +1310,7 @@ export interface POSDashboardData {
 
 export interface POSSaleItemPayload {
   product_id?: number;
+  variant_id?: number | null;
   name: string;
   quantity: number;
   unit_price: number;
@@ -1330,6 +1332,7 @@ export interface POSSalePayload {
 
 export interface POSSaleDetailItem {
   product_id: number | null;
+  variant_id?: number | null;
   name: string;
   quantity: number;
   unit_price: number;
@@ -1358,6 +1361,7 @@ export interface POSSaleRecord {
   customer_name: string;
   customer_phone?: string;
   total: string;
+  gross_profit?: string;
   payment_method: string;
   sale_date: string;
   items_count: number;
@@ -1372,7 +1376,15 @@ export interface POSSaleRecord {
 export interface POSSalesSummary {
   count: number;
   total: string;
+  profit?: string;
   avg: string;
+}
+
+export interface POSCustomerRecord {
+  name: string;
+  phone: string;
+  sales: number;
+  total_spent?: string;
 }
 
 export interface POSSalesFilters {
@@ -1430,6 +1442,11 @@ export async function cancelPOSSale(saleId: number, reason = ''): Promise<{ ok: 
 /** GET /pos/sales/?id=<pk> — full sale detail for refilling the cart (edit) */
 export async function getPOSSale(id: number): Promise<POSSaleDetail> {
   return apiRequest<POSSaleDetail>({ method: 'GET', url: '/pos/sales/', params: { id } });
+}
+
+/** GET /pos/customers/ — distinct POS customers for quick selection */
+export async function getPOSCustomers(): Promise<{ customers: POSCustomerRecord[] }> {
+  return apiRequest<{ customers: POSCustomerRecord[] }>({ method: 'GET', url: '/pos/customers/' });
 }
 
 /** GET /pos/registers/ — list store registers */

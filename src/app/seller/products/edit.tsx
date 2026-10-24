@@ -56,6 +56,7 @@ export default function EditProductScreen() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [reorderPoint, setReorderPoint] = useState('5');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
   const [length, setLength] = useState('');
@@ -143,6 +144,7 @@ export default function EditProductScreen() {
       setSalePrice(product.sale_price || '');
       setCostPrice(product.cost_price != null ? String(product.cost_price) : '');
       setStock(String(product.stock_quantity || 0));
+      setReorderPoint(String(product.reorder_point ?? 5));
       setSku(product.sku || '');
       setBarcode(product.barcode || '');
       setLength(product.length ? String(product.length) : '');
@@ -305,6 +307,7 @@ export default function EditProductScreen() {
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
       if (costPrice.trim()) formData.append('cost_price', costPrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
+      formData.append('reorder_point', reorderPoint.trim() || '5');
       if (sku.trim()) formData.append('sku', sku.trim());
       if (barcode.trim()) formData.append('barcode', barcode.trim());
       if (categoryId) formData.append('category', String(categoryId));
@@ -706,6 +709,20 @@ export default function EditProductScreen() {
                       keyboardType="numeric"
                     />
                   </View>
+                  <View style={styles.halfCol}>
+                    <Text style={styles.label}>Low-Stock Alert</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={reorderPoint}
+                      onChangeText={setReorderPoint}
+                      placeholder="5"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
                   <View style={styles.halfCol}>
                     <Text style={styles.label}>SKU</Text>
                     <TextInput

@@ -30,10 +30,12 @@ import {
   checkPOSPaymentStatus,
   createPOSSale,
   getMyProducts,
+  getPOSCustomers,
   getPOSDashboard,
   getPOSPaymentGateways,
   getPOSSale,
   getPOSSales,
+  type POSCustomerRecord,
   type POSDashboardData,
   type POSSaleDetailItem,
   type POSSalePayload,
@@ -97,6 +99,7 @@ function buildCalendarCells(year: number, month: number): (string | null)[] {
 
 interface CartItem {
   id: number;
+  variantId?: number | null;
   name: string;
   basePrice: number;   // catalog price — discount/markup derived from edits
   price: number;       // effective unit price (editable)
@@ -104,6 +107,15 @@ interface CartItem {
   stock: number;
   image?: string;
   quantity: number;
+}
+
+interface HeldOrder {
+  items: CartItem[];
+  customerName: string;
+  customerPhone: string;
+  discount: string;
+  total: number;
+  time: string;
 }
 
 export default function SellerPOSScreen() {
@@ -148,6 +160,13 @@ export default function SellerPOSScreen() {
   const [submittingSale, setSubmittingSale] = useState(false);
   // Enabled seller payment gateways (mtn_momo/airtel_money/stripe/paypal)
   const [posGateways, setPosGateways] = useState<string[]>([]);
+  // Past POS customers for quick 1-tap prefill
+  const [posCustomers, setPosCustomers] = useState<POSCustomerRecord[]>([]);
+  // Variant picker modal when a product has variants
+  const [variantPickerProduct, setVariantPickerProduct] = useState<any | null>(null);
+  // Held / Parked orders
+  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
+  const [showHeldModal, setShowHeldModal] = useState(false);
 
   // Keyboard handling inside the review sheet — KeyboardAvoidingView can't
   // be used inside a Modal (mis-measures, collapses children), so we pad the
@@ -297,6 +316,9 @@ export default function SellerPOSScreen() {
       getPOSPaymentGateways()
         .then((g) => setPosGateways(g.results.filter((x) => x.is_enabled).map((x) => x.gateway)))
         .catch(() => {});
+      getPOSCustomers()
+        .then((c) => setPosCustomers(c.customers || []))
+        .catch(() => {});
     } finally {
       setRefreshing(false);
     }
@@ -363,27 +385,30 @@ export default function SellerPOSScreen() {
 
   const cartQtyById = useMemo(() => {
     const map = new Map<number, number>();
-    cart.forEach((i) => map.set(i.id, i.quantity));
+    cart.forEach((i) => map.set(i.id, (map.get(i.id) || 0) + i.quantity));
     return map;
   }, [cart]);
 
-  // Cart actions
-  const addToCart = (product: any) => {
-    const pPrice = Number(product.final_price || product.price || 0);
-    const pStock = Number(product.stock_quantity || 0);
+  // Cart actions (supports variants)
+  const addLineToCart = (product: any, variant?: { id: number; name: string; price: number; stock: number }) => {
+    const pPrice = variant ? Number(variant.price || 0) : Number(product.final_price || product.price || 0);
+    const pStock = variant ? Number(variant.stock || 0) : Number(product.stock_quantity || 0);
+    const vId = variant ? variant.id : null;
+    const itemName = variant ? `${product.name} (${variant.name})` : product.name;
 
     setCart((prev) => {
-      const idx = prev.findIndex((i) => i.id === product.id);
+      const idx = prev.findIndex((i) => i.id === product.id && (i.variantId ?? null) === vId);
       if (idx !== -1) {
         const next = [...prev];
-        next[idx].quantity += 1;
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
       return [
         ...prev,
         {
           id: product.id,
-          name: product.name,
+          variantId: vId,
+          name: itemName,
           basePrice: pPrice,
           price: pPrice,
           priceText: String(pPrice),
@@ -395,11 +420,50 @@ export default function SellerPOSScreen() {
     });
   };
 
-  const updateQuantity = (id: number, delta: number) => {
+  const addToCart = (product: any) => {
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      setVariantPickerProduct(product);
+      return;
+    }
+    addLineToCart(product);
+  };
+
+  const holdCurrentOrder = () => {
+    if (cart.length === 0) return;
+    setHeldOrders((prev) => [
+      {
+        items: cart,
+        customerName: customerName || 'Walk-in Customer',
+        customerPhone: customerPhone || '',
+        discount,
+        total: grandTotal,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+      ...prev,
+    ]);
+    setCart([]);
+    setDiscount('0');
+    setAmountTendered('');
+    setShowCartModal(false);
+  };
+
+  const recallHeldOrder = (index: number) => {
+    const target = heldOrders[index];
+    if (!target) return;
+    setCart(target.items);
+    setCustomerName(target.customerName);
+    setCustomerPhone(target.customerPhone);
+    setDiscount(target.discount || '0');
+    setHeldOrders((prev) => prev.filter((_, i) => i !== index));
+    setShowHeldModal(false);
+    setShowCartModal(true);
+  };
+
+  const updateQuantity = (id: number, delta: number, variantId?: number | null) => {
     setCart((prev) => {
       return prev
         .map((item) => {
-          if (item.id === id) {
+          if (item.id === id && (item.variantId ?? null) === (variantId ?? null)) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -409,18 +473,20 @@ export default function SellerPOSScreen() {
     });
   };
 
-  const removeItem = (id: number) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id: number, variantId?: number | null) => {
+    setCart((prev) => prev.filter((i) => !(i.id === id && (i.variantId ?? null) === (variantId ?? null))));
   };
 
   // Editable unit price — digits only, comma-formatted; markups above
   // the catalog price are allowed (discount/markup derived automatically)
-  const updatePrice = (id: number, text: string) => {
+  const updatePrice = (id: number, text: string, variantId?: number | null) => {
     const digits = text.replace(/\D/g, '').slice(0, 12);
     const num = Math.max(0, parseInt(digits || '0', 10) || 0);
     setCart((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, priceText: digits, price: num } : item
+        item.id === id && (item.variantId ?? null) === (variantId ?? null)
+          ? { ...item, priceText: digits, price: num }
+          : item
       )
     );
   };
@@ -449,6 +515,7 @@ export default function SellerPOSScreen() {
           const netUnit = qty ? (it.unit_price * qty - it.discount) / qty : it.unit_price;
           return {
             id: it.product_id ?? -(idx + 1),
+            variantId: it.variant_id ?? null,
             name: it.name,
             basePrice: it.base_price,
             price: netUnit,
@@ -563,6 +630,7 @@ export default function SellerPOSScreen() {
           return {
             // negative ids are custom (non-catalog) lines from an edited sale
             product_id: i.id > 0 ? i.id : undefined,
+            variant_id: i.variantId ?? null,
             name: i.name,
             quantity: i.quantity,
             // discounted: keep catalog price + discount field;
@@ -689,11 +757,28 @@ export default function SellerPOSScreen() {
             UGX {Number(stats?.today_sales_total || 0).toLocaleString()}
           </Text>
         </Text>
+        {stats?.today_profit != null && (
+          <>
+            <View style={styles.statDivider} />
+            <Text style={[styles.statsText, { color: '#16a34a', fontWeight: '700' }]}>
+              Profit UGX {Number(stats.today_profit).toLocaleString()}
+            </Text>
+          </>
+        )}
         <View style={styles.statDivider} />
         <MaterialCommunityIcons name="receipt-text-outline" size={15} color={colors.textSecondary} />
         <Text style={styles.statsText}>
           <Text style={styles.statsValue}>{stats?.today_sales_count || 0}</Text> sales
         </Text>
+        {heldOrders.length > 0 && (
+          <Pressable
+            onPress={() => setShowHeldModal(true)}
+            style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}
+          >
+            <MaterialCommunityIcons name="pause-circle-outline" size={14} color="#D97706" />
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#B45309' }}>Held ({heldOrders.length})</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Main Content Area */}
@@ -935,6 +1020,16 @@ export default function SellerPOSScreen() {
               <View style={styles.histStatDivider} />
               <View style={styles.histStat}>
                 <View style={styles.histStatTop}>
+                  <MaterialCommunityIcons name="trending-up" size={13} color="#16a34a" />
+                  <Text style={styles.histStatLabel}>Est. Profit</Text>
+                </View>
+                <Text style={[styles.histStatNum, { color: '#16a34a' }]} numberOfLines={1} adjustsFontSizeToFit>
+                  UGX {Number(salesSummary.profit || 0).toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.histStatDivider} />
+              <View style={styles.histStat}>
+                <View style={styles.histStatTop}>
                   <MaterialCommunityIcons name="chart-line" size={13} color={colors.textTertiary} />
                   <Text style={styles.histStatLabel}>Avg Sale</Text>
                 </View>
@@ -981,6 +1076,11 @@ export default function SellerPOSScreen() {
                   </View>
                   <View style={styles.historyCardRight}>
                     <Text style={styles.historyTotal} numberOfLines={1}>UGX {Number(item.total).toLocaleString()}</Text>
+                    {!item.is_cancelled && item.gross_profit != null && Number(item.gross_profit) !== Number(item.total) && (
+                      <Text style={{ fontSize: 10.5, fontWeight: '700', color: Number(item.gross_profit) >= 0 ? '#16a34a' : '#dc2626' }} numberOfLines={1}>
+                        {Number(item.gross_profit) >= 0 ? '+' : ''}UGX {Math.round(Number(item.gross_profit)).toLocaleString()} profit
+                      </Text>
+                    )}
                     <View style={[styles.methodBadge, { backgroundColor: mColor + '18' }]}>
                       <Text style={[styles.methodBadgeText, { color: mColor }]} numberOfLines={1}>
                         {item.payment_method.replace(/_/g, ' ').toUpperCase()}
@@ -1220,6 +1320,9 @@ export default function SellerPOSScreen() {
                     </View>
                   )}
                 </View>
+                <Pressable onPress={holdCurrentOrder} hitSlop={12} style={styles.modalHeaderBtn}>
+                  <MaterialCommunityIcons name="pause-circle-outline" size={22} color="#FFFFFF" />
+                </Pressable>
                 <Pressable onPress={clearCart} hitSlop={12} style={styles.modalHeaderBtn}>
                   <MaterialCommunityIcons name="trash-can-outline" size={22} color="#FFFFFF" />
                 </Pressable>
@@ -1252,6 +1355,28 @@ export default function SellerPOSScreen() {
             {/* Customer Inputs */}
             <View style={styles.modalSection}>
               <Text style={styles.sectionTitle}>Customer Details</Text>
+              {posCustomers.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6 }}>
+                  {posCustomers.slice(0, 15).map((c, idx) => (
+                    <Pressable
+                      key={`${c.name}-${idx}`}
+                      onPress={() => {
+                        setCustomerName(c.name);
+                        if (c.phone) setCustomerPhone(c.phone);
+                      }}
+                      style={{
+                        paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14,
+                        borderWidth: 1, borderColor: customerName === c.name ? Brand.primary : colors.border,
+                        backgroundColor: customerName === c.name ? Brand.primary + '14' : colors.surface,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11.5, fontWeight: '600', color: customerName === c.name ? Brand.primary : colors.text }}>
+                        {c.name}{c.phone ? ` · ${c.phone}` : ''}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              )}
               <TextInput
                 style={styles.inputField}
                 placeholder="Customer Name (optional)"
@@ -1275,7 +1400,7 @@ export default function SellerPOSScreen() {
               {cart.map((item) => {
                 const lineSaving = (item.basePrice - item.price) * item.quantity;
                 return (
-                <View key={item.id} style={styles.cartRow}>
+                <View key={`${item.id}-${item.variantId ?? 'base'}`} style={styles.cartRow}>
                   {item.image ? (
                     <Image source={{ uri: item.image }} style={styles.cartThumb} />
                   ) : (
@@ -1293,7 +1418,7 @@ export default function SellerPOSScreen() {
                         style={styles.priceInput}
                         keyboardType="numeric"
                         value={withCommas(item.priceText)}
-                        onChangeText={(t) => updatePrice(item.id, t)}
+                        onChangeText={(t) => updatePrice(item.id, t, item.variantId)}
                       />
                       <Text style={styles.cartRowUnit}> each</Text>
                       {lineSaving !== 0 && (
@@ -1309,14 +1434,14 @@ export default function SellerPOSScreen() {
                   <View style={styles.qtyControls}>
                     <Pressable
                       style={styles.qtyBtn}
-                      onPress={() => updateQuantity(item.id, -1)}
+                      onPress={() => updateQuantity(item.id, -1, item.variantId)}
                     >
                       <Text style={styles.qtyBtnText}>-</Text>
                     </Pressable>
                     <Text style={styles.qtyValue}>{item.quantity}</Text>
                     <Pressable
                       style={styles.qtyBtn}
-                      onPress={() => updateQuantity(item.id, 1)}
+                      onPress={() => updateQuantity(item.id, 1, item.variantId)}
                     >
                       <Text style={styles.qtyBtnText}>+</Text>
                     </Pressable>
@@ -1324,7 +1449,7 @@ export default function SellerPOSScreen() {
                   <Text style={styles.cartRowTotal}>
                     UGX {(item.price * item.quantity).toLocaleString()}
                   </Text>
-                  <Pressable onPress={() => removeItem(item.id)} style={styles.removeBtn}>
+                  <Pressable onPress={() => removeItem(item.id, item.variantId)} style={styles.removeBtn}>
                     <MaterialCommunityIcons name="close" size={18} color={Brand.danger} />
                   </Pressable>
                 </View>
@@ -1580,6 +1705,108 @@ export default function SellerPOSScreen() {
             </Pressable>
           )}
         </View>
+      </Modal>
+
+      {/* Variant Picker Modal */}
+      <Modal
+        visible={!!variantPickerProduct}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVariantPickerProduct(null)}
+      >
+        <Pressable style={styles.rangeOverlay} onPress={() => setVariantPickerProduct(null)}>
+          <Pressable style={[styles.rangeSheet, { maxHeight: '70%' }]} onPress={() => {}}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, flex: 1 }} numberOfLines={1}>
+                {variantPickerProduct?.name} — Select Option
+              </Text>
+              <Pressable onPress={() => setVariantPickerProduct(null)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={20} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <ScrollView style={{ maxHeight: 340 }}>
+              {(variantPickerProduct?.variants || []).map((v: any) => (
+                <Pressable
+                  key={v.id}
+                  onPress={() => {
+                    addLineToCart(variantPickerProduct, v);
+                    setVariantPickerProduct(null);
+                  }}
+                  style={{
+                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                    paddingVertical: 12, paddingHorizontal: 12, borderRadius: 10,
+                    borderWidth: 1, borderColor: colors.border, marginBottom: 8,
+                    opacity: v.stock <= 0 ? 0.55 : 1,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{v.name || 'Default'}</Text>
+                    <Text style={{ fontSize: 11.5, color: colors.textSecondary }}>
+                      {v.sku ? `SKU ${v.sku} · ` : ''}{v.stock > 0 ? `${v.stock} in stock` : 'Out of stock'}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: Brand.primary }}>
+                    UGX {Number(v.price || 0).toLocaleString()}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Held / Parked Orders Modal */}
+      <Modal
+        visible={showHeldModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowHeldModal(false)}
+      >
+        <Pressable style={styles.rangeOverlay} onPress={() => setShowHeldModal(false)}>
+          <Pressable style={[styles.rangeSheet, { maxHeight: '70%' }]} onPress={() => {}}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>
+                Held Orders ({heldOrders.length})
+              </Text>
+              <Pressable onPress={() => setShowHeldModal(false)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={20} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <ScrollView style={{ maxHeight: 340 }}>
+              {heldOrders.map((h, idx) => (
+                <View
+                  key={idx}
+                  style={{
+                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                    paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10,
+                    borderWidth: 1, borderColor: colors.border, marginBottom: 8, gap: 10,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13.5, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                      {h.customerName} · UGX {h.total.toLocaleString()}
+                    </Text>
+                    <Text style={{ fontSize: 11.5, color: colors.textSecondary }}>
+                      {h.items.length} item{h.items.length === 1 ? '' : 's'} · {h.time}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => recallHeldOrder(idx)}
+                    style={{ backgroundColor: Brand.primary, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>Recall</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setHeldOrders((prev) => prev.filter((_, i) => i !== idx))}
+                    hitSlop={8}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Printable / View Receipt Modal */}

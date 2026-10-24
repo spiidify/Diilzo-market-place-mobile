@@ -53,6 +53,7 @@ export default function AddProductScreen() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [reorderPoint, setReorderPoint] = useState('5');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -248,6 +249,7 @@ export default function AddProductScreen() {
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
       if (costPrice.trim()) formData.append('cost_price', costPrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
+      formData.append('reorder_point', reorderPoint.trim() || '5');
       if (sku.trim()) formData.append('sku', sku.trim());
       if (barcode.trim()) formData.append('barcode', barcode.trim());
       formData.append('category', String(categoryId));
@@ -648,6 +650,20 @@ export default function AddProductScreen() {
                       keyboardType="numeric"
                     />
                   </View>
+                  <View style={styles.halfCol}>
+                    <Text style={styles.label}>Low-Stock Alert</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={reorderPoint}
+                      onChangeText={setReorderPoint}
+                      placeholder="5"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
                   <View style={styles.halfCol}>
                     <Text style={styles.label}>SKU</Text>
                     <TextInput
