@@ -1509,6 +1509,20 @@ export async function checkPOSPaymentStatus(
 
 // ── Warehouses (seller's own stock locations) ──────────────────────
 
+export interface SellerWarehouseItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  sku: string;
+  image: string;
+  price: number;
+  cost_price: number | null;
+  quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  stock_value: number;
+}
+
 export interface SellerWarehouse {
   id: number;
   name: string;
@@ -1520,6 +1534,10 @@ export interface SellerWarehouse {
   used_capacity: string;
   is_active: boolean;
   is_own: boolean;
+  product_count?: number;
+  total_units?: number;
+  stock_value?: number;
+  items?: SellerWarehouseItem[];
 }
 
 export async function getSellerWarehouses(): Promise<{

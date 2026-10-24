@@ -148,6 +148,7 @@ export default function SellerInventoryScreen() {
   // ── Warehouses tab state ──
   const [warehouses, setWarehouses] = useState<SellerWarehouse[]>([]);
   const [diilzoWarehouses, setDiilzoWarehouses] = useState<SellerWarehouse[]>([]);
+  const [expandedWhId, setExpandedWhId] = useState<number | null>(null);
   const [whLoading, setWhLoading] = useState(false);
   const [whLoaded, setWhLoaded] = useState(false);
   const [whSaving, setWhSaving] = useState(false);
@@ -918,31 +919,82 @@ export default function SellerInventoryScreen() {
             </View>
           ) : (
             <View style={styles.rcvCard}>
-              {warehouses.map((w) => (
-                <View key={w.id} style={styles.whRow}>
-                  <View style={[styles.gwDot, { backgroundColor: w.is_active ? '#8B5CF6' : colors.textTertiary }]} />
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.rowName} numberOfLines={1}>{w.name}</Text>
-                    <Text style={styles.rowMeta} numberOfLines={1}>
-                      {w.code} · {[w.city, w.country].filter(Boolean).join(', ') || 'No location'}
-                      {!w.is_active ? ' · inactive' : ''}
-                    </Text>
+              {warehouses.map((w) => {
+                const isExpanded = expandedWhId === w.id || (expandedWhId === null && warehouses.length === 1);
+                const whItems = w.items || [];
+                return (
+                  <View key={w.id} style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8, marginBottom: 8 }}>
+                    <Pressable
+                      style={styles.whRow}
+                      onPress={() => setExpandedWhId(isExpanded ? -1 : w.id)}
+                    >
+                      <View style={[styles.gwDot, { backgroundColor: w.is_active ? '#8B5CF6' : colors.textTertiary }]} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={styles.rowName} numberOfLines={1}>{w.name}</Text>
+                        <Text style={styles.rowMeta} numberOfLines={1}>
+                          {w.code} · {[w.city, w.country].filter(Boolean).join(', ') || 'No location'}
+                          {!w.is_active ? ' · inactive' : ''}
+                        </Text>
+                        <Text style={[styles.rowMeta, { color: Brand.primary, fontWeight: '700', marginTop: 2 }]} numberOfLines={1}>
+                          {w.product_count ?? whItems.length} products · {(w.total_units ?? 0).toLocaleString()} units · UGX {Math.round(w.stock_value ?? 0).toLocaleString()}
+                        </Text>
+                      </View>
+                      <MaterialCommunityIcons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <Pressable
+                        hitSlop={8}
+                        style={{ padding: 4 }}
+                        onPress={() => {
+                          setWhEditId(w.id); setWhName(w.name); setWhCity(w.city);
+                          setWhAddress(w.address); setWhCap(String(w.capacity_cubic_meters || ''));
+                        }}
+                      >
+                        <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.textSecondary} />
+                      </Pressable>
+                      <Pressable hitSlop={8} style={{ padding: 4 }} onPress={() => confirmDeleteWarehouse(w)}>
+                        <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
+                      </Pressable>
+                    </Pressable>
+                    {isExpanded && whItems.length > 0 && (
+                      <View style={{ marginTop: 6, paddingLeft: 10, gap: 6 }}>
+                        {whItems.map((it) => (
+                          <Pressable
+                            key={it.id}
+                            onPress={() => router.push(`/seller/products/edit?id=${it.product_id}` as any)}
+                            style={{
+                              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                              paddingVertical: 7, paddingHorizontal: 10, borderRadius: 8,
+                              backgroundColor: colors.background, gap: 8,
+                            }}
+                          >
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                {it.product_name}
+                              </Text>
+                              <Text style={{ fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
+                                {it.sku ? `SKU ${it.sku} · ` : ''}
+                                {it.cost_price != null ? `Cost UGX ${Math.round(it.cost_price).toLocaleString()} · ` : ''}
+                                Price UGX {Math.round(it.price).toLocaleString()}
+                              </Text>
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <Text style={{ fontSize: 12.5, fontWeight: '800', color: it.available_quantity > 0 ? Brand.primary : Brand.danger }}>
+                                {it.quantity} units ({it.available_quantity} avail)
+                              </Text>
+                              <Text style={{ fontSize: 10.5, color: colors.textSecondary }}>
+                                UGX {Math.round(it.stock_value || 0).toLocaleString()}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
                   </View>
-                  <Pressable
-                    hitSlop={8}
-                    style={{ padding: 4 }}
-                    onPress={() => {
-                      setWhEditId(w.id); setWhName(w.name); setWhCity(w.city);
-                      setWhAddress(w.address); setWhCap(String(w.capacity_cubic_meters || ''));
-                    }}
-                  >
-                    <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.textSecondary} />
-                  </Pressable>
-                  <Pressable hitSlop={8} style={{ padding: 4 }} onPress={() => confirmDeleteWarehouse(w)}>
-                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={Brand.danger} />
-                  </Pressable>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
 
