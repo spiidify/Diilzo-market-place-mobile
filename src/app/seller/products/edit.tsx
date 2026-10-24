@@ -54,6 +54,7 @@ export default function EditProductScreen() {
   const [searchKeywords, setSearchKeywords] = useState('');
   const [price, setPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -140,6 +141,7 @@ export default function EditProductScreen() {
       setSearchKeywords(product.search_keywords || '');
       setPrice(product.price || '');
       setSalePrice(product.sale_price || '');
+      setCostPrice(product.cost_price != null ? String(product.cost_price) : '');
       setStock(String(product.stock_quantity || 0));
       setSku(product.sku || '');
       setBarcode(product.barcode || '');
@@ -301,6 +303,7 @@ export default function EditProductScreen() {
       formData.append('search_keywords', searchKeywords.trim());
       formData.append('price', price.trim());
       if (salePrice.trim()) formData.append('sale_price', salePrice.trim());
+      if (costPrice.trim()) formData.append('cost_price', costPrice.trim());
       formData.append('stock_quantity', stock.trim() || '0');
       if (sku.trim()) formData.append('sku', sku.trim());
       if (barcode.trim()) formData.append('barcode', barcode.trim());
@@ -602,6 +605,34 @@ export default function EditProductScreen() {
                       placeholderTextColor={colors.textTertiary}
                       keyboardType="numeric"
                     />
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.halfCol}>
+                    <Text style={styles.label}>Cost Price (what you paid)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={costPrice}
+                      onChangeText={setCostPrice}
+                      placeholder="0"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={styles.halfCol}>
+                    <Text style={styles.label}>Est. Profit / unit</Text>
+                    <View style={[styles.input, { justifyContent: 'center' }]}>
+                      {(() => {
+                        const sell = Number(salePrice) > 0 && Number(salePrice) < Number(price) ? Number(salePrice) : Number(price);
+                        const profit = sell && Number(costPrice) ? Math.round(sell - Number(costPrice)) : null;
+                        return (
+                          <Text style={{ fontWeight: '700', color: profit == null ? colors.textTertiary : profit >= 0 ? '#16a34a' : '#dc2626' }}>
+                            {profit == null ? '—' : `${profit >= 0 ? '+' : ''}${profit.toLocaleString()}`}
+                          </Text>
+                        );
+                      })()}
+                    </View>
                   </View>
                 </View>
 

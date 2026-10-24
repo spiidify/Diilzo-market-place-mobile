@@ -1365,6 +1365,8 @@ export interface POSSaleRecord {
   cashier?: string;
   completed?: boolean;
   payment_status?: string;
+  is_cancelled?: boolean;
+  cancel_reason?: string;
 }
 
 export interface POSSalesSummary {
@@ -1414,6 +1416,15 @@ export async function getPOSSales(
 /** POST /pos/sales/ — create a new in-store POS sale (or update when sale_id is set) */
 export async function createPOSSale(payload: POSSalePayload): Promise<any> {
   return apiRequest<any>({ method: 'POST', url: '/pos/sales/', data: payload });
+}
+
+/** POST /pos/sales/<id>/cancel/ — cancel a sale; stock is restored server-side */
+export async function cancelPOSSale(saleId: number, reason = ''): Promise<{ ok: boolean; message: string }> {
+  return apiRequest<{ ok: boolean; message: string }>({
+    method: 'POST',
+    url: `/pos/sales/${saleId}/cancel/`,
+    data: { reason },
+  });
 }
 
 /** GET /pos/sales/?id=<pk> — full sale detail for refilling the cart (edit) */

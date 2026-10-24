@@ -26,6 +26,7 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
+  cancelPOSSale,
   checkPOSPaymentStatus,
   createPOSSale,
   getMyProducts,
@@ -473,6 +474,33 @@ export default function SellerPOSScreen() {
     } finally {
       setLoadingEditId(null);
     }
+  };
+
+  // Cancel a POS sale — restocks items server-side
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const confirmCancelSale = (sale: POSSaleRecord) => {
+    Alert.alert(
+      'Cancel Sale',
+      `Cancel ${sale.sale_number}?\nAll items will be restocked into inventory.`,
+      [
+        { text: 'Keep Sale', style: 'cancel' },
+        {
+          text: 'Cancel Sale', style: 'destructive',
+          onPress: async () => {
+            setCancellingId(sale.id);
+            try {
+              const res = await cancelPOSSale(sale.id);
+              Alert.alert('Sale Cancelled', res?.message || `${sale.sale_number} cancelled.`);
+              loadData();
+            } catch (err: any) {
+              Alert.alert('Cannot Cancel', err?.response?.data?.error || err?.message || 'Could not cancel this sale.');
+            } finally {
+              setCancellingId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Leaving edit mode also clears the refilled cart — it belongs to the sale
@@ -926,16 +954,18 @@ export default function SellerPOSScreen() {
               const mColor = METHOD_COLORS[item.payment_method] || colors.textSecondary;
               const mIcon = HISTORY_METHODS.find((m) => m.key === item.payment_method)?.icon || 'cash';
               return (
-                <View style={styles.historyCard}>
+                <View style={[styles.historyCard, item.is_cancelled && { opacity: 0.55 }]}>
                   <View style={[styles.histMethodIcon, { backgroundColor: mColor + '18' }]}>
                     <MaterialCommunityIcons name={mIcon as any} size={20} color={mColor} />
                   </View>
                   <View style={styles.historyCardBody}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Text style={styles.historySaleNum} numberOfLines={1}>{item.sale_number}</Text>
-                      {!item.completed && (
+                      {item.is_cancelled ? (
+                        <View style={[styles.histPendingTag, { backgroundColor: '#fee2e2' }]}><Text style={[styles.histPendingTagText, { color: '#dc2626' }]}>Cancelled</Text></View>
+                      ) : !item.completed ? (
                         <View style={styles.histPendingTag}><Text style={styles.histPendingTagText}>Pending</Text></View>
-                      )}
+                      ) : null}
                     </View>
                     <Text style={styles.historyCustomer} numberOfLines={1}>
                       {item.customer_name || 'Walk-in Customer'}
@@ -956,18 +986,34 @@ export default function SellerPOSScreen() {
                         {item.payment_method.replace(/_/g, ' ').toUpperCase()}
                       </Text>
                     </View>
-                    <Pressable
-                      onPress={() => startEditSale(item.id)}
-                      hitSlop={8}
-                      style={styles.histEditBtn}
-                      disabled={loadingEditId !== null}
-                    >
-                      {loadingEditId === item.id ? (
-                        <ActivityIndicator size={12} color={Brand.primary} />
-                      ) : (
-                        <MaterialCommunityIcons name="pencil-outline" size={15} color={Brand.primary} />
-                      )}
-                    </Pressable>
+                    {!item.is_cancelled && (
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <Pressable
+                          onPress={() => startEditSale(item.id)}
+                          hitSlop={8}
+                          style={styles.histEditBtn}
+                          disabled={loadingEditId !== null}
+                        >
+                          {loadingEditId === item.id ? (
+                            <ActivityIndicator size={12} color={Brand.primary} />
+                          ) : (
+                            <MaterialCommunityIcons name="pencil-outline" size={15} color={Brand.primary} />
+                          )}
+                        </Pressable>
+                        <Pressable
+                          onPress={() => confirmCancelSale(item)}
+                          hitSlop={8}
+                          style={styles.histEditBtn}
+                          disabled={cancellingId !== null}
+                        >
+                          {cancellingId === item.id ? (
+                            <ActivityIndicator size={12} color="#dc2626" />
+                          ) : (
+                            <MaterialCommunityIcons name="cancel" size={15} color="#dc2626" />
+                          )}
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
                 </View>
               );
