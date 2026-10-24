@@ -1054,12 +1054,15 @@ export async function receiveStock(data: {
   quantity: number;
   supplier?: string;
   unit_cost?: number;
+  warehouse_id?: number;
+  bin_location?: string;
 }): Promise<{
   po_number: string;
   product_id: number;
   product_name: string;
   quantity_received: number;
   stock_quantity: number;
+  warehouse_name?: string;
 }> {
   return apiRequest({ method: 'POST', url: `${SELLER_BASE}/inventory_receive/`, data });
 }
@@ -1399,6 +1402,8 @@ export interface POSRegisterRecord {
   id: number;
   name: string;
   location: string;
+  warehouse_id?: number | null;
+  warehouse_name?: string;
   is_open: boolean;
   current_float: string;
 }
@@ -1452,6 +1457,11 @@ export async function getPOSCustomers(): Promise<{ customers: POSCustomerRecord[
 /** GET /pos/registers/ — list store registers */
 export async function getPOSRegisters(): Promise<{ results: POSRegisterRecord[] }> {
   return apiRequest<{ results: POSRegisterRecord[] }>({ method: 'GET', url: '/pos/registers/' });
+}
+
+/** POST /pos/registers/ — update register warehouse assignment */
+export async function updatePOSRegisterWarehouse(registerId: number, warehouseId: number): Promise<any> {
+  return apiRequest<any>({ method: 'POST', url: '/pos/registers/', data: { id: registerId, warehouse_id: warehouseId } });
 }
 
 /** POST /pos/cashup/ — submit register end-of-day cash reconciliation */
@@ -1520,6 +1530,7 @@ export interface SellerWarehouseItem {
   quantity: number;
   reserved_quantity: number;
   available_quantity: number;
+  bin_location?: string;
   stock_value: number;
 }
 
@@ -1560,6 +1571,10 @@ export async function saveSellerWarehouse(payload: {
 
 export async function deleteSellerWarehouse(id: number): Promise<{ detail: string }> {
   return apiRequest({ method: 'DELETE', url: `${SELLER_BASE}/warehouses/`, params: { id } });
+}
+
+export async function updateWarehouseItemBin(itemId: number, binLocation: string): Promise<{ ok: boolean; bin_location: string }> {
+  return apiRequest({ method: 'POST', url: `${SELLER_BASE}/warehouse_item_bin/`, data: { item_id: itemId, bin_location: binLocation } });
 }
 
 // ── Expenses & Money Stocking ────────────────────────────────────

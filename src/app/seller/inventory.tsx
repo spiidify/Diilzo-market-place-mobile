@@ -125,6 +125,8 @@ export default function SellerInventoryScreen() {
   const [rcvSupplier, setRcvSupplier] = useState('');
   const [rcvQty, setRcvQty] = useState('');
   const [rcvCost, setRcvCost] = useState('');
+  const [rcvWhId, setRcvWhId] = useState<number | undefined>(undefined);
+  const [rcvBin, setRcvBin] = useState('');
   const [rcvSaving, setRcvSaving] = useState(false);
   const rcvTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -246,7 +248,7 @@ export default function SellerInventoryScreen() {
   }, []);
 
   useEffect(() => {
-    if (tab === 'warehouses' && !whLoaded) loadWarehouses();
+    if ((tab === 'warehouses' || tab === 'receive') && !whLoaded) loadWarehouses();
   }, [tab, whLoaded, loadWarehouses]);
 
   const submitWarehouse = async () => {
@@ -315,6 +317,8 @@ export default function SellerInventoryScreen() {
         quantity: qty,
         supplier: rcvSupplier.trim() || undefined,
         unit_cost: cost,
+        warehouse_id: rcvWhId,
+        bin_location: rcvBin.trim() || undefined,
       });
       Alert.alert('Received', `${res.product_name}: +${res.quantity_received} (on hand ${res.stock_quantity}) · ${res.po_number}`);
       setRcvProduct(null);
@@ -323,7 +327,9 @@ export default function SellerInventoryScreen() {
       setRcvSupplier('');
       setRcvQty('');
       setRcvCost('');
+      setRcvBin('');
       setMvLoaded(false);
+      setWhLoaded(false);
       load(1);
     } catch (e: any) {
       Alert.alert('Receive failed', e?.response?.data?.error || e?.message || 'Could not receive stock');
@@ -807,6 +813,43 @@ export default function SellerInventoryScreen() {
                 </View>
               </View>
             </View>
+            {warehouses.length > 0 && (
+              <>
+                <Text style={styles.fieldLabel}>Destination Warehouse</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }} contentContainerStyle={{ gap: 6 }}>
+                  {[...warehouses, ...diilzoWarehouses].map((w) => {
+                    const selected = (rcvWhId ?? warehouses[0]?.id) === w.id;
+                    return (
+                      <Pressable
+                        key={w.id}
+                        onPress={() => setRcvWhId(w.id)}
+                        style={{
+                          paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
+                          borderWidth: 1, borderColor: selected ? Brand.primary : colors.border,
+                          backgroundColor: selected ? Brand.primary + '14' : colors.background,
+                        }}
+                      >
+                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: selected ? Brand.primary : colors.text }}>
+                          {w.code} — {w.name}{!w.is_own ? ' (Diilzo FBD)' : ''}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
+
+            <Text style={styles.fieldLabel}>Bin / Shelf Location (optional)</Text>
+            <View style={styles.rcvInputWrap}>
+              <MaterialCommunityIcons name="map-marker-outline" size={16} color={colors.textTertiary} />
+              <TextInput
+                style={styles.rcvInput}
+                placeholder="e.g. Aisle 2 · Shelf B"
+                placeholderTextColor={colors.textTertiary}
+                value={rcvBin}
+                onChangeText={setRcvBin}
+              />
+            </View>
           </View>
 
           <Pressable
@@ -976,6 +1019,7 @@ export default function SellerInventoryScreen() {
                               </Text>
                               <Text style={{ fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
                                 {it.sku ? `SKU ${it.sku} · ` : ''}
+                                {it.bin_location ? `Bin ${it.bin_location} · ` : ''}
                                 {it.cost_price != null ? `Cost UGX ${Math.round(it.cost_price).toLocaleString()} · ` : ''}
                                 Price UGX {Math.round(it.price).toLocaleString()}
                               </Text>
