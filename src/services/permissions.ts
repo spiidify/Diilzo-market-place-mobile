@@ -1,7 +1,7 @@
 // ── Permissions Service ───────────────────────────────────────────
 // Runtime permission requests for camera, microphone, and photo library.
 
-import { Audio } from 'expo-av';
+import { requestRecordingPermissionsAsync, getRecordingPermissionsAsync } from 'expo-audio';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Linking, Platform } from 'react-native';
@@ -31,7 +31,7 @@ export async function requestCameraPermission(): Promise<PermissionResult> {
 /** Request microphone permission. */
 export async function requestMicrophonePermission(): Promise<PermissionResult> {
   try {
-    const { status } = await Audio.requestPermissionsAsync();
+    const { status } = await requestRecordingPermissionsAsync();
     return {
       granted: status === 'granted',
       status: status as PermissionStatus,
@@ -69,7 +69,7 @@ export async function checkCameraPermission(): Promise<PermissionStatus> {
 /** Check current microphone permission without prompting. */
 export async function checkMicrophonePermission(): Promise<PermissionStatus> {
   try {
-    const { status } = await Audio.getPermissionsAsync();
+    const { status } = await getRecordingPermissionsAsync();
     return status as PermissionStatus;
   } catch {
     return 'undetermined';

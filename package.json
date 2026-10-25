@@ -12,7 +12,6 @@
     "expo-asset": "~58.0.18",
     "expo-audio": "~58.0.10",
     "expo-auth-session": "~58.0.14",
-    "expo-av": "^16.0.8",
     "expo-camera": "~58.0.12",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.13",
