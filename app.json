@@ -68,7 +68,6 @@
         }
       ],
       [
-        "expo-av",
         {
           "microphonePermission": "Allow Diilzo to access your microphone for voice messages."
         }
