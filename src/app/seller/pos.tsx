@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -172,7 +172,7 @@ export default function SellerPOSScreen() {
   // be used inside a Modal (mis-measures, collapses children), so we pad the
   // scroll content by the keyboard height and auto-scroll to keep the
   // focused field visible.
-  const modalScrollRef = useRef<ScrollView>(null);
+  const modalScrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -878,7 +878,7 @@ export default function SellerPOSScreen() {
                   <View style={{ paddingVertical: 16, alignItems: 'center' }}>
                     <ActivityIndicator size="small" color={Brand.primary} />
                   </View>
-                ) : null
+                ) : undefined
               }
             />
           )}

@@ -7,7 +7,7 @@ import {
     requestForegroundPermissionsAsync,
 } from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -298,7 +298,7 @@ export default function SearchScreen() {
   const [autocompleteItems, setAutocompleteItems] = useState<string[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [trendingSearches, setTrendingSearches] = useState<{ term: string; icon: string }[]>(FALLBACK_TRENDING);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const listRef = useRef<FlatList>(null);
   // AbortController for the in-flight search request. Each new keystroke
   // (or filter change) cancels the previous request so we never render
@@ -1180,7 +1180,7 @@ export default function SearchScreen() {
                     <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
                   ) : !hasMore && products.length > 0 ? (
                     <Text style={styles.endText}>You've reached the end</Text>
-                  ) : null
+                  ) : undefined
                 }
               />
             )}

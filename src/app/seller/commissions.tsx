@@ -147,7 +147,7 @@ export default function SellerCommissionsScreen() {
                 </View>
               </View>
             </View>
-          ) : null
+          ) : undefined
         }
         ListEmptyComponent={
           <View style={styles.centerBody}>

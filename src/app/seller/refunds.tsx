@@ -148,7 +148,7 @@ export default function SellerRefundsScreen() {
                     <Text style={styles.statLabel}>Failed</Text>
                   </View>
                 </View>
-              ) : null
+              ) : undefined
             }
             ListEmptyComponent={
               <View style={styles.emptyState}>

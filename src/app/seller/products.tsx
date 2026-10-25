@@ -446,9 +446,9 @@ export default function SellerProductsScreen() {
             ListFooterComponent={
               loadingMore ? (
                 <ActivityIndicator size="small" color={Brand.primary} style={{ paddingVertical: 14 }} />
-              ) : hasMore ? null : products.length > 15 ? (
+              ) : hasMore ? undefined : products.length > 15 ? (
                 <Text style={styles.endText}>All {totalCount} products loaded</Text>
-              ) : null
+              ) : undefined
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(1)} colors={[Brand.primary]} tintColor={Brand.primary} />}
           />

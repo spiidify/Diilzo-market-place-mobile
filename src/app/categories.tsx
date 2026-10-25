@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -43,7 +43,7 @@ export default function CategoriesScreen() {
   const [productsLoading, setProductsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const leftListRef = useRef<FlatList>(null);
-  const rightScrollRef = useRef<ScrollView>(null);
+  const rightScrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const productCardSize = useImageDimensions('productCard');
   const categorySize = useImageDimensions('category');
   const selectedSlugRef = useRef<string | null>(null);

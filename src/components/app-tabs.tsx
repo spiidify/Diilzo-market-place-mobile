@@ -67,7 +67,7 @@ export default function AppTabs() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="home" size={26} color={color} />
+            <MaterialCommunityIcons name="home" size={26} color={color as string} />
           ),
         }}
       />
@@ -76,7 +76,7 @@ export default function AppTabs() {
         options={{
           title: 'Categories',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="format-list-bulleted" size={26} color={color} />
+            <MaterialCommunityIcons name="format-list-bulleted" size={26} color={color as string} />
           ),
         }}
       />
@@ -85,7 +85,7 @@ export default function AppTabs() {
         options={{
           title: 'Reels',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="play-circle" size={26} color={color} />
+            <MaterialCommunityIcons name="play-circle" size={26} color={color as string} />
           ),
         }}
       />
@@ -94,7 +94,7 @@ export default function AppTabs() {
         options={{
           title: 'Suppliers',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="factory" size={26} color={color} />
+            <MaterialCommunityIcons name="factory" size={26} color={color as string} />
           ),
         }}
       />
@@ -105,7 +105,7 @@ export default function AppTabs() {
           href: posAccess ? '/pos' : null,
           ...(posAccess ? {} : { tabBarItemStyle: { display: 'none' as const } }),
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="cash-register" size={26} color={color} />
+            <MaterialCommunityIcons name="cash-register" size={26} color={color as string} />
           ),
         }}
       />
@@ -114,7 +114,7 @@ export default function AppTabs() {
         options={{
           title: !isAuthenticated ? 'Account' : posAccess ? 'Dashboards' : 'My dashboard',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account" size={26} color={color} />
+            <MaterialCommunityIcons name="account" size={26} color={color as string} />
           ),
         }}
       />

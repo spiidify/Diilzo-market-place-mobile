@@ -4,7 +4,7 @@ import { useEvent } from 'expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
     ActivityIndicator,
     AppState,
@@ -561,7 +561,7 @@ export default function VideosScreen() {
   const [searchCount, setSearchCount] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const autocompleteAbortRef = useRef<AbortController | null>(null);
-  const searchInputRef = useRef<TextInput>(null);
+  const searchInputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   // Wishlist
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
@@ -1458,7 +1458,7 @@ export default function VideosScreen() {
                 <View style={styles.footerLoading}>
                   <ActivityIndicator size="small" color={Brand.primary} />
                 </View>
-              ) : null
+              ) : undefined
             }
           />
 
@@ -1509,7 +1509,7 @@ export default function VideosScreen() {
               <View style={styles.footerLoading}>
                 <ActivityIndicator size="small" color={Brand.primary} />
               </View>
-            ) : null
+            ) : undefined
           }
         />
       )}

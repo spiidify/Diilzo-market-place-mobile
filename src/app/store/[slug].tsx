@@ -436,7 +436,7 @@ export default function StoreDetailScreen() {
             <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
           ) : !hasMore ? (
             <Text style={styles.endText}>No more products</Text>
-          ) : null
+          ) : undefined
         }
       />
     </View>

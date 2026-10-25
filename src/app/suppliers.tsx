@@ -377,7 +377,7 @@ export default function SuppliersScreen() {
               <ActivityIndicator size="small" color={Brand.primary} style={styles.footer} />
             ) : !hasMore ? (
               <Text style={styles.endText}>You've seen all {count} suppliers</Text>
-            ) : null
+            ) : undefined
           }
         />
       )}

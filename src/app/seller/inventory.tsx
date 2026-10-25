@@ -665,7 +665,7 @@ export default function SellerInventoryScreen() {
                   <ActivityIndicator size="small" color={Brand.primary} style={{ paddingVertical: 14 }} />
                 ) : !hasMore && items.length > 15 ? (
                   <Text style={styles.endText}>All {total} products loaded</Text>
-                ) : null
+                ) : undefined
               }
             />
           )}
