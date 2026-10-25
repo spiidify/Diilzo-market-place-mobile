@@ -1577,6 +1577,39 @@ export async function updateWarehouseItemBin(itemId: number, binLocation: string
   return apiRequest({ method: 'POST', url: `${SELLER_BASE}/warehouse_item_bin/`, data: { item_id: itemId, bin_location: binLocation } });
 }
 
+export interface StockTransferRecord {
+  id: number;
+  product_id: number;
+  product_name: string;
+  source_warehouse: string;
+  source_warehouse_id: number;
+  destination_warehouse: string;
+  destination_warehouse_id: number;
+  quantity: number;
+  status: string;
+  created_at: string;
+  completed_at: string | null;
+  notes: string;
+}
+
+export async function getStockTransfers(): Promise<{ results: StockTransferRecord[] }> {
+  return apiRequest({ method: 'GET', url: `${SELLER_BASE}/stock_transfers/` });
+}
+
+export async function createStockTransfer(payload: {
+  product_id: number;
+  source_warehouse_id: number;
+  destination_warehouse_id: number;
+  quantity: number;
+  notes?: string;
+}): Promise<{ id: number; status: string; detail: string }> {
+  return apiRequest({ method: 'POST', url: `${SELLER_BASE}/stock_transfer_create/`, data: payload });
+}
+
+export async function actOnStockTransfer(transferId: number, action: 'approve' | 'complete' | 'cancel'): Promise<any> {
+  return apiRequest({ method: 'POST', url: `${SELLER_BASE}/${transferId}/stock_transfer_${action}/` });
+}
+
 // ── Expenses & Money Stocking ────────────────────────────────────
 
 export interface POSExpense {

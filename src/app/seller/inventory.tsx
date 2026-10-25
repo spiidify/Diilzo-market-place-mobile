@@ -22,6 +22,8 @@ import { GradientHeader } from '@/components/GradientHeader';
 import { Brand } from '@/constants/theme';
 import { useAppTheme, type ThemeColors } from '@/context/ThemeContext';
 import {
+    actOnStockTransfer,
+    createStockTransfer,
     deleteSellerWarehouse,
     getInventory,
     getInventoryMovements,
@@ -29,14 +31,18 @@ import {
     getInventoryReorderCount,
     getProductReservations,
     getSellerWarehouses,
+    getStockTransfers,
     receiveStock,
     saveSellerWarehouse,
     updateStock,
+    updateWarehouseItemBin,
     type InventoryItem,
     type InventoryKpis,
     type InventoryProductDetail,
     type SellerWarehouse,
-    type StockMovementRow
+    type SellerWarehouseItem,
+    type StockMovementRow,
+    type StockTransferRecord
 } from '@/services/seller';
 
 type Tab = 'stock' | 'activity' | 'receive' | 'warehouses';
@@ -151,6 +157,14 @@ export default function SellerInventoryScreen() {
   const [warehouses, setWarehouses] = useState<SellerWarehouse[]>([]);
   const [diilzoWarehouses, setDiilzoWarehouses] = useState<SellerWarehouse[]>([]);
   const [expandedWhId, setExpandedWhId] = useState<number | null>(null);
+  const [transfers, setTransfers] = useState<StockTransferRecord[]>([]);
+  const [fbdTarget, setFbdTarget] = useState<{ item: SellerWarehouseItem; srcWh: SellerWarehouse } | null>(null);
+  const [fbdDestId, setFbdDestId] = useState<number | undefined>(undefined);
+  const [fbdQty, setFbdQty] = useState('10');
+  const [fbdNotes, setFbdNotes] = useState('FBD Consignment — Send to Diilzo Warehouse');
+  const [fbdSaving, setFbdSaving] = useState(false);
+  const [binEditItem, setBinEditItem] = useState<SellerWarehouseItem | null>(null);
+  const [binEditText, setBinEditText] = useState('');
   const [whLoading, setWhLoading] = useState(false);
   const [whLoaded, setWhLoaded] = useState(false);
   const [whSaving, setWhSaving] = useState(false);
@@ -236,9 +250,13 @@ export default function SellerInventoryScreen() {
   const loadWarehouses = useCallback(async () => {
     try {
       setWhLoading(true);
-      const data = await getSellerWarehouses();
+      const [data, tfData] = await Promise.all([
+        getSellerWarehouses(),
+        getStockTransfers().catch(() => ({ results: [] })),
+      ]);
       setWarehouses(data.warehouses);
       setDiilzoWarehouses(data.diilzo_warehouses);
+      setTransfers(tfData.results || []);
       setWhLoaded(true);
     } catch {
       // non-critical
@@ -1004,35 +1022,63 @@ export default function SellerInventoryScreen() {
                     {isExpanded && whItems.length > 0 && (
                       <View style={{ marginTop: 6, paddingLeft: 10, gap: 6 }}>
                         {whItems.map((it) => (
-                          <Pressable
+                          <View
                             key={it.id}
-                            onPress={() => router.push(`/seller/products/edit?id=${it.product_id}` as any)}
                             style={{
-                              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-                              paddingVertical: 7, paddingHorizontal: 10, borderRadius: 8,
-                              backgroundColor: colors.background, gap: 8,
+                              paddingVertical: 8, paddingHorizontal: 10, borderRadius: 8,
+                              backgroundColor: colors.background, gap: 6,
                             }}
                           >
-                            <View style={{ flex: 1, minWidth: 0 }}>
-                              <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.text }} numberOfLines={1}>
-                                {it.product_name}
-                              </Text>
-                              <Text style={{ fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
-                                {it.sku ? `SKU ${it.sku} · ` : ''}
-                                {it.bin_location ? `Bin ${it.bin_location} · ` : ''}
-                                {it.cost_price != null ? `Cost UGX ${Math.round(it.cost_price).toLocaleString()} · ` : ''}
-                                Price UGX {Math.round(it.price).toLocaleString()}
-                              </Text>
+                            <Pressable
+                              onPress={() => router.push(`/seller/products/edit?id=${it.product_id}` as any)}
+                              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+                            >
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.text }} numberOfLines={1}>
+                                  {it.product_name}
+                                </Text>
+                                <Text style={{ fontSize: 11, color: colors.textSecondary }} numberOfLines={1}>
+                                  {it.sku ? `SKU ${it.sku} · ` : ''}
+                                  {it.bin_location ? `Bin ${it.bin_location} · ` : ''}
+                                  {it.cost_price != null ? `Cost UGX ${Math.round(it.cost_price).toLocaleString()} · ` : ''}
+                                  Price UGX {Math.round(it.price).toLocaleString()}
+                                </Text>
+                              </View>
+                              <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={{ fontSize: 12.5, fontWeight: '800', color: it.available_quantity > 0 ? Brand.primary : Brand.danger }}>
+                                  {it.quantity} units ({it.available_quantity} avail)
+                                </Text>
+                                <Text style={{ fontSize: 10.5, color: colors.textSecondary }}>
+                                  UGX {Math.round(it.stock_value || 0).toLocaleString()}
+                                </Text>
+                              </View>
+                            </Pressable>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                              <Pressable
+                                onPress={() => { setBinEditItem(it); setBinEditText(it.bin_location || ''); }}
+                                style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}
+                              >
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: colors.text }}>
+                                  {it.bin_location ? `Bin: ${it.bin_location}` : '+ Set Bin/Shelf'}
+                                </Text>
+                              </Pressable>
+                              {w.is_own && diilzoWarehouses.length > 0 && it.available_quantity > 0 && (
+                                <Pressable
+                                  onPress={() => {
+                                    setFbdTarget({ item: it, srcWh: w });
+                                    setFbdDestId(diilzoWarehouses[0]?.id);
+                                    setFbdQty(String(Math.min(10, it.available_quantity)));
+                                    setFbdNotes('FBD Consignment — Send to Diilzo Warehouse');
+                                  }}
+                                  style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#e0f2fe' }}
+                                >
+                                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#0369a1' }}>
+                                    Send to Diilzo (FBD)
+                                  </Text>
+                                </Pressable>
+                              )}
                             </View>
-                            <View style={{ alignItems: 'flex-end' }}>
-                              <Text style={{ fontSize: 12.5, fontWeight: '800', color: it.available_quantity > 0 ? Brand.primary : Brand.danger }}>
-                                {it.quantity} units ({it.available_quantity} avail)
-                              </Text>
-                              <Text style={{ fontSize: 10.5, color: colors.textSecondary }}>
-                                UGX {Math.round(it.stock_value || 0).toLocaleString()}
-                              </Text>
-                            </View>
-                          </Pressable>
+                          </View>
                         ))}
                       </View>
                     )}
@@ -1057,8 +1103,187 @@ export default function SellerInventoryScreen() {
               ))}
             </View>
           )}
+          {/* Stock Transfers section */}
+          {transfers.length > 0 && (
+            <View style={styles.rcvCard}>
+              <Text style={styles.fieldLabel}>Stock Transfers ({transfers.length})</Text>
+              {transfers.slice(0, 15).map((t) => (
+                <View key={t.id} style={[styles.whRow, { alignItems: 'flex-start' }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowName} numberOfLines={1}>{t.product_name} × {t.quantity}</Text>
+                    <Text style={styles.rowMeta} numberOfLines={1}>
+                      {t.source_warehouse} → {t.destination_warehouse} · {t.status.toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {t.status === 'pending' && (
+                      <Pressable
+                        onPress={() => Alert.alert('Approve Transfer?', `Approve ${t.quantity} × ${t.product_name}?`, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Approve', onPress: async () => { try { await actOnStockTransfer(t.id, 'approve'); await loadWarehouses(); } catch (e: any) { Alert.alert('Error', e?.response?.data?.error || 'Could not approve.'); } } },
+                        ])}
+                        style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#dbeafe' }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#1d4ed8' }}>Approve</Text>
+                      </Pressable>
+                    )}
+                    {(t.status === 'approved' || t.status === 'in_transit') && (
+                      <Pressable
+                        onPress={() => Alert.alert('Complete & Move Stock?', `Move ${t.quantity} × ${t.product_name} from ${t.source_warehouse} to ${t.destination_warehouse}?`, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Complete', onPress: async () => { try { await actOnStockTransfer(t.id, 'complete'); await loadWarehouses(); } catch (e: any) { Alert.alert('Error', e?.response?.data?.error || 'Could not complete.'); } } },
+                        ])}
+                        style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#dcfce7' }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#15803d' }}>Complete</Text>
+                      </Pressable>
+                    )}
+                    {(t.status === 'pending' || t.status === 'approved') && (
+                      <Pressable
+                        onPress={() => Alert.alert('Cancel Transfer?', `Cancel this transfer of ${t.quantity} × ${t.product_name}?`, [
+                          { text: 'Keep', style: 'cancel' },
+                          { text: 'Cancel Transfer', style: 'destructive', onPress: async () => { try { await actOnStockTransfer(t.id, 'cancel'); await loadWarehouses(); } catch (e: any) { Alert.alert('Error', e?.response?.data?.error || 'Could not cancel.'); } } },
+                        ])}
+                        style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: '#fee2e2' }}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#dc2626' }}>Cancel</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
+
+      {/* ── Send to Diilzo (FBD) Modal ── */}
+      <Modal visible={!!fbdTarget} transparent animationType="fade" onRequestClose={() => setFbdTarget(null)}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHead}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sheetTitle}>Send Stock to Diilzo (FBD)</Text>
+                <Text style={styles.sheetSub} numberOfLines={1}>{fbdTarget?.item.product_name}</Text>
+              </View>
+              <Pressable onPress={() => setFbdTarget(null)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <Text style={styles.fieldLabel}>Destination Diilzo Warehouse</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6 }}>
+              {diilzoWarehouses.map((dw) => {
+                const sel = (fbdDestId ?? diilzoWarehouses[0]?.id) === dw.id;
+                return (
+                  <Pressable
+                    key={dw.id}
+                    onPress={() => setFbdDestId(dw.id)}
+                    style={{
+                      paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
+                      borderWidth: 1, borderColor: sel ? '#0284c7' : colors.border,
+                      backgroundColor: sel ? '#e0f2fe' : colors.background,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11.5, fontWeight: '700', color: sel ? '#0369a1' : colors.text }}>
+                      {dw.code} — {dw.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <Text style={styles.fieldLabel}>
+              Quantity to Send (max {fbdTarget?.item.available_quantity || 0} available)
+            </Text>
+            <View style={styles.rcvInputWrap}>
+              <TextInput
+                style={styles.rcvInput}
+                value={fbdQty}
+                onChangeText={setFbdQty}
+                keyboardType="number-pad"
+                placeholder="1"
+              />
+            </View>
+            <Text style={styles.fieldLabel}>Notes</Text>
+            <View style={styles.rcvInputWrap}>
+              <TextInput
+                style={styles.rcvInput}
+                value={fbdNotes}
+                onChangeText={setFbdNotes}
+                placeholder="FBD Consignment"
+              />
+            </View>
+            <Pressable
+              style={[styles.receiveBtn, { marginTop: 12, backgroundColor: '#0284c7' }, fbdSaving && { opacity: 0.5 }]}
+              disabled={fbdSaving}
+              onPress={async () => {
+                if (!fbdTarget) return;
+                const q = parseInt(fbdQty, 10) || 0;
+                const dstId = fbdDestId ?? diilzoWarehouses[0]?.id;
+                if (q < 1 || !dstId) { Alert.alert('Invalid input', 'Enter a valid quantity and destination.'); return; }
+                try {
+                  setFbdSaving(true);
+                  await createStockTransfer({
+                    product_id: fbdTarget.item.product_id,
+                    source_warehouse_id: fbdTarget.srcWh.id,
+                    destination_warehouse_id: dstId,
+                    quantity: q,
+                    notes: fbdNotes,
+                  });
+                  setFbdTarget(null);
+                  await loadWarehouses();
+                  Alert.alert('FBD Transfer Created', `${q} × ${fbdTarget.item.product_name} queued for transfer to Diilzo.`);
+                } catch (e: any) {
+                  Alert.alert('Transfer Failed', e?.response?.data?.error || e?.message || 'Could not create transfer.');
+                } finally {
+                  setFbdSaving(false);
+                }
+              }}
+            >
+              <Text style={styles.receiveBtnText}>{fbdSaving ? 'Creating…' : 'Create FBD Transfer'}</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ── Edit Bin / Shelf Modal ── */}
+      <Modal visible={!!binEditItem} transparent animationType="fade" onRequestClose={() => setBinEditItem(null)}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHead}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sheetTitle}>Bin / Shelf Location</Text>
+                <Text style={styles.sheetSub} numberOfLines={1}>{binEditItem?.product_name}</Text>
+              </View>
+              <Pressable onPress={() => setBinEditItem(null)} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <View style={styles.rcvInputWrap}>
+              <TextInput
+                style={styles.rcvInput}
+                value={binEditText}
+                onChangeText={setBinEditText}
+                placeholder="e.g. Aisle 2 · Shelf B"
+              />
+            </View>
+            <Pressable
+              style={[styles.receiveBtn, { marginTop: 12 }]}
+              onPress={async () => {
+                if (!binEditItem) return;
+                try {
+                  await updateWarehouseItemBin(binEditItem.id, binEditText.trim());
+                  setBinEditItem(null);
+                  await loadWarehouses();
+                } catch (e: any) {
+                  Alert.alert('Error', e?.response?.data?.error || 'Could not save bin location.');
+                }
+              }}
+            >
+              <Text style={styles.receiveBtnText}>Save Bin Location</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* ── Adjust modal ── */}
       <Modal visible={!!adjustItem} transparent animationType="fade" onRequestClose={() => setAdjustItem(null)}>
