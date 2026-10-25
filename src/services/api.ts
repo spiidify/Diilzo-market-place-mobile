@@ -217,7 +217,16 @@ function retryAnonymous(config: InternalAxiosRequestConfig): Promise<unknown> {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _retry429?: boolean };
+
+    // 429 rate-limit — wait, then retry once. The home screen fires a
+    // parallel burst that can trip the anon throttle during dev/refresh.
+    if (error.response?.status === 429 && !originalRequest._retry429) {
+      originalRequest._retry429 = true;
+      const retryAfter = Number(error.response.headers?.['retry-after'] || 2);
+      await new Promise((r) => setTimeout(r, Math.min(retryAfter, 5) * 1000));
+      return api(originalRequest);
+    }
 
     // 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
