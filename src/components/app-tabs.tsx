@@ -136,8 +136,6 @@ export default function AppTabs() {
       <Tabs.Screen name="chat" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="buyer" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="seller" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="admin" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="adminops" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="merchant-studio" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen name="adpulse" options={{ href: null, tabBarItemStyle: { display: 'none' } }} />
     </Tabs>

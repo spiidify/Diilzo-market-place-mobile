@@ -279,65 +279,6 @@ export default function BuyerDashboardScreen() {
           </Animated.View>
         )}
 
-        {/* Super Admin — all dashboards */}
-        {user?.is_superuser && (
-          <Animated.View entering={FadeInDown.delay(300).duration(400).springify().damping(16)} style={styles.adminSection}>
-            <Text style={styles.adminSectionTitle}>Admin Access</Text>
-            <Pressable
-              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/seller' as any)}
-            >
-              <View style={[styles.adminCtaIcon, { backgroundColor: '#3B82F6' }]}>
-                <MaterialCommunityIcons name="store-cog" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.adminCtaInfo}>
-                <Text style={styles.adminCtaTitle}>Seller Dashboard</Text>
-                <Text style={styles.adminCtaSub}>Manage all stores and products</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/adpulse' as any)}
-            >
-              <View style={[styles.adminCtaIcon, { backgroundColor: '#EC4899' }]}>
-                <MaterialCommunityIcons name="rocket-launch" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.adminCtaInfo}>
-                <Text style={styles.adminCtaTitle}>AdPulse Studio</Text>
-                <Text style={styles.adminCtaSub}>Marketing & promotions</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/adminops' as any)}
-            >
-              <View style={[styles.adminCtaIcon, { backgroundColor: Brand.dark }]}>
-                <MaterialCommunityIcons name="shield-crown-outline" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.adminCtaInfo}>
-                <Text style={styles.adminCtaTitle}>AdminOps Central</Text>
-                <Text style={styles.adminCtaSub}>Operations dashboard</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.adminCta, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push('/admin' as any)}
-            >
-              <View style={[styles.adminCtaIcon, { backgroundColor: '#8B5CF6' }]}>
-                <MaterialCommunityIcons name="view-dashboard" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.adminCtaInfo}>
-                <Text style={styles.adminCtaTitle}>Admin Dashboard</Text>
-                <Text style={styles.adminCtaSub}>Full platform management</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-            </Pressable>
-          </Animated.View>
-        )}
-
         {/* Recently viewed strip */}
         {recent.length > 0 && (
           <Animated.View entering={FadeInDown.delay(360).duration(400).springify().damping(16)} style={styles.recentCard}>

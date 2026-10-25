@@ -410,24 +410,6 @@ export default function SellerDashboardScreen() {
 
         {/* ── Role switching ────────────────────────────────────────── */}
         <View style={styles.card}>
-          {user?.is_superuser && (
-            <>
-              <Pressable
-                style={({ pressed }) => [styles.menuRow, pressed && { backgroundColor: colors.surfaceAlt }]}
-                onPress={() => router.push('/admin' as any)}
-              >
-                <View style={[styles.menuIcon, { backgroundColor: '#8B5CF616' }]}>
-                  <MaterialCommunityIcons name="view-dashboard" size={18} color="#8B5CF6" />
-                </View>
-                <View style={styles.rowInfo}>
-                  <Text style={styles.menuLabel}>Admin Dashboard</Text>
-                  <Text style={styles.rowSub}>Full platform management</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
-              </Pressable>
-              <View style={styles.rowDivider} />
-            </>
-          )}
           <Pressable
             style={({ pressed }) => [styles.menuRow, pressed && { backgroundColor: colors.surfaceAlt }]}
             onPress={() => router.push('/buyer' as any)}
