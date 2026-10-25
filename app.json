@@ -68,11 +68,6 @@
         }
       ],
       [
-        {
-          "microphonePermission": "Allow Diilzo to access your microphone for voice messages."
-        }
-      ],
-      [
         "expo-audio",
         {
           "microphonePermission": "Allow Diilzo to access your microphone for voice messages.",
