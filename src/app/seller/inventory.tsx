@@ -1033,6 +1033,13 @@ export default function SellerInventoryScreen() {
                               onPress={() => router.push(`/seller/products/edit?id=${it.product_id}` as any)}
                               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
                             >
+                              {it.image ? (
+                                <Image source={{ uri: it.image }} style={{ width: 34, height: 34, borderRadius: 7, backgroundColor: colors.surface }} />
+                              ) : (
+                                <View style={{ width: 34, height: 34, borderRadius: 7, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                                  <MaterialCommunityIcons name="package-variant" size={16} color={colors.textTertiary} />
+                                </View>
+                              )}
                               <View style={{ flex: 1, minWidth: 0 }}>
                                 <Text style={{ fontSize: 12.5, fontWeight: '700', color: colors.text }} numberOfLines={1}>
                                   {it.product_name}
